@@ -11,27 +11,27 @@ type ImageCarousel = CarouselItem & ImageProp;
 
 const images: ImageCarousel[] = [
   {
-    url: "/restaurant/restaurant1.webp",
+    url: "https://shopware.shopbite.de/media/71/2a/1a/1762465670/restaurant1.webp",
     alt: "La Fattoria Restaurant Innenbereich 1",
   },
   {
-    url: "/restaurant/restaurant2.webp",
+    url: "https://shopware.shopbite.de/media/61/ea/77/1762465670/restaurant2.webp",
     alt: "La Fattoria Restaurant Innenbereich 2",
   },
   {
-    url: "/restaurant/restaurant3.webp",
+    url: "https://shopware.shopbite.de/media/6d/ac/ca/1762465670/restaurant3.webp",
     alt: "La Fattoria Restaurant Innenbereich 3",
   },
   {
-    url: "/restaurant/restaurant4.webp",
+    url: "https://shopware.shopbite.de/media/af/d6/da/1762465670/restaurant4.webp",
     alt: "La Fattoria Restaurant Innenbereich 4",
   },
   {
-    url: "/restaurant/restaurant5.webp",
+    url: "https://shopware.shopbite.de/media/6a/ff/e2/1762465670/restaurant5.webp",
     alt: "La Fattoria Restaurant Innenbereich 5",
   },
   {
-    url: "/restaurant/restaurant6.webp",
+    url: "https://shopware.shopbite.de/media/80/76/d0/1762465670/restaurant6.webp",
     alt: "La Fattoria Restaurant Innenbereich 6",
   },
 ];

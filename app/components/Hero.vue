@@ -19,7 +19,7 @@ defineProps<{
       playsinline
       class="absolute inset-0 w-full h-full object-cover -z-10"
     >
-      <source src="/video/background.mp4" type="video/mp4">
+      <source src="https://shopware.shopbite.de/media/10/59/96/1762465181/background.mp4" type="video/mp4">
     </video>
     <div class="bg-black/50 backdrop-blur-sm">
       <UPageHero

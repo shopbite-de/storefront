@@ -45,10 +45,10 @@ marquee:
   headline: ALTE SCHMIEDE
   items:
     - productId: 019a4f2e717b7df7a349761a56c43ac3
-      image: /food/72.webp
+      image: https://shopware.shopbite.de/media/e4/82/55/1762465420/72.webp
     - productId: 019a4f4552ff7251a1fa20a2e1a3a707
-      image: /food/131.webp
+      image: https://shopware.shopbite.de/media/5f/43/cc/1762465330/131.webp
     - productId: 019a4ea153e671c6ba20810b541e1455
-      image: /food/35.webp
+      image: https://shopware.shopbite.de/media/f1/53/f9/1762465329/35.webp
     - productId: 019a4ea153e671c6ba20810b541e1455
-      image: /food/122.webp
+      image: https://shopware.shopbite.de/media/5f/c7/ec/1762465330/122.webp
