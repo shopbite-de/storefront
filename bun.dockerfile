@@ -1,4 +1,4 @@
-FROM oven/bun:1-alpine AS build
+FROM oven/bun:1-debian AS build
 
 ARG NUXT_PUBLIC_SHOPWARE_ENDPOINT='https://my.shop/store-api'
 ARG NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN='TOKEN'
@@ -18,7 +18,7 @@ COPY . .
 
 RUN bun run build
 
-FROM oven/bun:1-alpine AS dev
+FROM oven/bun:1-debian AS dev
 
 ENV NODE_ENV=development
 ENV BUN_INSTALL_BIN=/usr/local/bin
@@ -42,7 +42,7 @@ EXPOSE 24678
 
 CMD [ "bun", "run", "dev" ]
 
-FROM oven/bun:1-alpine AS production
+FROM oven/bun:1-debian AS production
 
 WORKDIR /app
 
