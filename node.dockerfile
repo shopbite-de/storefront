@@ -1,6 +1,6 @@
 FROM node:24-alpine AS build
 
-ARG PNPM_VERSION=10.13.1
+ARG PNPM_VERSION=10.20.0
 ARG NUXT_PUBLIC_SHOPWARE_ENDPOINT='https://my.shop/store-api'
 ARG NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN='TOKEN'
 
@@ -16,7 +16,7 @@ RUN npm install -g pnpm@${PNPM_VERSION}
 
 COPY . .
 
-RUN pnpm install --frozen-lockfile --prefer-offline
+RUN pnpm install --frozen-lockfile --prefer-offline --no-scripts
 
 RUN pnpm build
 
