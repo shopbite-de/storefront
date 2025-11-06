@@ -1,0 +1,6 @@
+# Ignore artifacts:
+.nuxt
+node_modules
+bun.lockb
+tsconfig.json
+sw.*

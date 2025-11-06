@@ -1,0 +1,15 @@
+node_modules
+Dockerfile*
+docker-compose*
+.dockerignore
+.git
+.gitignore
+.vscode
+helm-charts
+.env
+.idea
+coverage*
+.output
+.nuxt
+.pnpm-store
+coverage

@@ -1,0 +1,48 @@
+name: Build and Push Docker Images
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for app image
+        id: meta-app
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}-app
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}},event=release
+            type=semver,pattern={{major}}.{{minor}},event=release
+            type=sha
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+
+      - name: Build and push Docker app image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./node.dockerfile
+          build-args: |
+            NUXT_PUBLIC_SHOPWARE_ENDPOINT=${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
+            NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN=${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
+            NUXT_UI_PRO_LICENSE=${{ secrets.NUXT_UI_PRO_LICENSE }}
+          push: true
+          tags: ${{ steps.meta-app.outputs.tags }}
+          labels: ${{ steps.meta-app.outputs.labels }}

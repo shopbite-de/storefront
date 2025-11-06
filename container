@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+if [ $# = 0 ]; then
+    echo "try './container pnpm -v'"
+else
+    docker compose exec app "$@"
+fi

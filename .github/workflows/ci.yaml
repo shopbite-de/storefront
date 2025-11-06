@@ -1,0 +1,89 @@
+name: CI
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    types: [opened, synchronize]
+jobs:
+  init:
+    name: Init dependecies
+    timeout-minutes: 15
+    env:
+      NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
+      NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
+      NUXT_UI_PRO_LICENSE: ${{ secrets.NUXT_UI_PRO_LICENSE }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+        run: pnpm run build
+  test:
+    name: Run Unit tests
+    if: github.event.pull_request.draft == false
+    needs: init
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Fetch main
+        run: git fetch origin main
+
+      - name: Enable corepack and pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.0.0 --activate
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/runner/.local/share/pnpm/store/v3
+            ./node_modules
+          key: ${{ runner.os }}-pnpm-${{ inputs.workdir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+        working-directory: ${{ inputs.workdir }}
+
+      - name: Unit test
+        env:
+          NUXT_PUBLIC_SHOPWARE_ENDPOINT: 'test'
+          NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: 'test'
+          NUXT_PUBLIC_SHOPWARE_DEV_STOREFRONT_URL: 'test'
+
+        run: pnpm test
+        working-directory: ${{ inputs.workdir }}
+

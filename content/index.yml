@@ -1,0 +1,54 @@
+seo:
+  title: ShopBite – Kostenloses Online-Bestellsystem für Gastronomie
+  description: Dein eigenes Bestellsystem ohne Provisionen, ohne monatliche Kosten – 100% Open Source und individuell anpassbar. Perfekt für Pizzerien, Imbisse und Lieferdienste.
+title: Pizzeria La Fattoria
+description: Italienisch-deutsche Küche in Obertshausen seit 1997.
+hero:
+  headline: ALTE SCHMIEDE
+  links:
+    - label: Speisekarte
+      icon: i-lucide-arrow-right
+      trailing: true
+      color: primary
+      to: /speisekarte
+      size: xl
+    - label: Tisch reservieren
+      icon: i-lucide-phone
+      size: xl
+      color: neutral
+      variant: outline
+      to: 'tel:+490610474127'
+      target: _blank
+features:
+  title: Alle [Informationen]{.text-primary} auf einen Blick
+  description: Sie können Speisen und Getränke abholen, liefern lassen, oder vor Ort in unserem Restaurant genießen.
+  headline: ALTE SCHMIEDE
+  features:
+    - title: Öffnungszeiten
+      description: Von 11:30 - 14:30 und 17:30 - 23:00 Uhr. Samstags von 17:30 - 23:30 Uhr. Dienstag ist Ruhetag.
+      icon: i-lucide-clock
+      ui:
+        leading: bg-accented/50 p-2 rounded-md border border-muted border-dashed
+    - title: Lieferung
+      description: Wir liefern nach Obertshausen und Lämmerspiel. Ab 15€ liefern wir frei Haus, darunter berechnen wir lediglich 1€. Die Lieferzeit beträgt bei normaler Auslastung ca. 30 min
+      icon: i-lucide-truck
+      ui:
+        leading: bg-accented/50 p-2 rounded-md border border-muted border-dashed
+    - title: Reservierungen und Bestellungen
+      description: Reservierungen nehmen wir ausschließlich telefonisch entgegen. Bestellungen nehmen wir gerne telefonisch oder online entgegen.
+      icon: i-lucide-pizza
+      ui:
+        leading: bg-accented/50 p-2 rounded-md border border-muted border-dashed
+marquee:
+  title: Das lieben unsere Kunden
+  description: Kundenbilder
+  headline: ALTE SCHMIEDE
+  items:
+    - productId: 019a4f2e717b7df7a349761a56c43ac3
+      image: /food/72.webp
+    - productId: 019a4f4552ff7251a1fa20a2e1a3a707
+      image: /food/131.webp
+    - productId: 019a4ea153e671c6ba20810b541e1455
+      image: /food/35.webp
+    - productId: 019a4ea153e671c6ba20810b541e1455
+      image: /food/122.webp
