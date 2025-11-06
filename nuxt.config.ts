@@ -35,9 +35,6 @@ export default defineNuxtConfig({
     "/registrierung/bestaetigen": {
       ssr: false,
     },
-    "/_ipx/**": {
-      prerender: false,
-    },
   },
 
   css: ["~/assets/css/main.css"],
@@ -53,7 +50,6 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/content",
     "@nuxtjs/robots",
-    "@vite-pwa/nuxt",
     "@sentry/nuxt/module",
     "@nuxt/ui",
     "@nuxtjs/plausible",
@@ -67,32 +63,6 @@ export default defineNuxtConfig({
     ignoredHostnames: ["localhost"],
   },
 
-  pwa: {
-    manifest: {
-      name: "ShopBite",
-      short_name: "ShopBite",
-      theme_color: "#4d7c0f",
-      icons: [
-        {
-          src: "lafattoria192x192.png",
-          sizes: "192x192",
-          type: "image/png",
-        },
-        {
-          src: "lafattoria512x512.png",
-          sizes: "512x512",
-          type: "image/png",
-        },
-        {
-          src: "lafattoria512x512.png",
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "any maskable",
-        },
-      ],
-    },
-  },
-
   nitro: {
     preset: 'bun',
     compressPublicAssets: {
@@ -100,10 +70,6 @@ export default defineNuxtConfig({
       brotli: true,
     },
     minify: true,
-    prerender: {
-      failOnError: false,
-      ignore: ['/_ipx/**'],
-    },
   },
 
   devtools: { enabled: true },
@@ -111,18 +77,9 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
-  compatibilityDate: "2024-11-27",
+  compatibilityDate: "2025-07-15",
 
   experimental: {
     asyncContext: true,
-  },
-
-  vite: {
-    build: {
-      cssCodeSplit: true,
-    },
-    css: {
-      preprocessorOptions: {},
-    },
   },
 });
