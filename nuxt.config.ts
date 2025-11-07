@@ -95,7 +95,6 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: 'bun',
     compressPublicAssets: {
       gzip: true,
       brotli: true,
