@@ -1,16 +1,28 @@
-node_modules
-Dockerfile*
-docker-compose*
-.dockerignore
-.git
-.gitignore
-.vscode
-helm-charts
-.env
-.idea
-coverage*
+# Nuxt dev/build outputs
 .output
-.nuxt
-.pnpm-store
-coverage
 .data
+.nuxt
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+
+# Database
+db.json
