@@ -1,15 +1,17 @@
 services:
   app:
     build:
-      dockerfile: bun.dockerfile
-      target: dev
+      dockerfile: node.dockerfile
       context: .
       args:
         NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${NUXT_PUBLIC_SHOPWARE_ENDPOINT:-https://my.shop/store-api}
         NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN:-TOKEN}
-    user: bun
+    user: node
     env_file:
       - .env
+    volumes:
+      - ".:/app"
+      - "/app/node_modules"
     ports:
       - '3000:3000'
       - '24678:24678'

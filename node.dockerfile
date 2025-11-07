@@ -16,7 +16,7 @@ RUN npm install -g pnpm@${PNPM_VERSION}
 
 COPY . .
 
-RUN pnpm install --frozen-lockfile --prefer-offline --no-scripts
+RUN pnpm install --frozen-lockfile --prefer-offline --production
 
 RUN pnpm build
 

@@ -10,6 +10,10 @@ ENV BUN_INSTALL_BIN=/usr/local/bin
 
 WORKDIR /app
 
+COPY --chown=bun:bun package.json bun.lock ./
+
+USER bun
+
 COPY package.json bun.lock ./
 
 RUN bun install --frozen-lockfile --production --ignore-scripts

@@ -64,6 +64,10 @@ export default defineNuxtConfig({
     ignoredHostnames: ["localhost"],
   },
 
+  content: {
+    experimental: { sqliteConnector: 'native' },
+  },
+
   pwa: {
     manifest: {
       name: "ShopBite",
