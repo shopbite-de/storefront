@@ -61,7 +61,6 @@ const links = ref<ButtonProps[]>([
         auto-height
         arrows
         loop
-        :autoplay="{ delay: 5000 }"
       >
         <img :src="item.url" :alt="item.alt" class="rounded-lg w-full">
       </UCarousel>

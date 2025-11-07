@@ -50,6 +50,7 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/content",
     "@nuxtjs/robots",
+    "@vite-pwa/nuxt",
     "@sentry/nuxt/module",
     "@nuxt/ui",
     "@nuxtjs/plausible",
@@ -61,6 +62,32 @@ export default defineNuxtConfig({
 
   plausible: {
     ignoredHostnames: ["localhost"],
+  },
+
+  pwa: {
+    manifest: {
+      name: "ShopBite",
+      short_name: "ShopBite",
+      theme_color: "#4d7c0f",
+      icons: [
+        {
+          src: "dark/Logo.svg",
+          sizes: "192x192",
+          type: "image/svg",
+        },
+        {
+          src: "dark/Logo.svg",
+          sizes: "512x512",
+          type: "image/svg",
+        },
+        {
+          src: "dark/Logo.svg",
+          sizes: "512x512",
+          type: "image/svg",
+          purpose: "any maskable",
+        },
+      ],
+    },
   },
 
   nitro: {
