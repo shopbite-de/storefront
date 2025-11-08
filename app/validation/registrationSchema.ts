@@ -8,6 +8,7 @@ export const createRegistrationSchema = (state: any) =>
     email: z.string().email("Invalid email"),
     firstName: z.string().min(1),
     lastName: z.string().min(1),
+    guest: z.boolean(),
     password: z
       .string()
       .optional()
@@ -48,45 +49,8 @@ export const createRegistrationSchema = (state: any) =>
           },
         ),
       department: z.string().optional(),
-      street: z
-        .string()
-        .min(1)
-        .refine(
-          (val) => {
-            // Require address to be selected from autocomplete when not using different shipping address
-            if (!state.isShippingAddressDifferent && val) {
-              return state.billingAddress?.addressValidated === true;
-            }
-            return true;
-          },
-          {
-            message:
-              "Bitte wählen Sie eine gültige Adresse aus den Vorschlägen aus.",
-          },
-        ),
-      addressValidated: z.boolean().optional(),
-      zipcode: z
-        .string()
-        .min(1)
-        .optional()
-        .refine(
-          (val) => {
-            // Validate zipcode matches the selected city
-            if (!val || state.isShippingAddressDifferent) return true;
-            const city = state.billingAddress?.city?.toLowerCase();
-            if (city === "obertshausen") {
-              return val === "63179";
-            }
-            if (city === "lämmerspiel") {
-              return val === "63165";
-            }
-            return true;
-          },
-          {
-            message:
-              "Die Postleitzahl stimmt nicht mit der ausgewählten Stadt überein.",
-          },
-        ),
+      street: z.string().min(1),
+      zipcode: z.string().min(1).optional(),
       city: z.string().min(1, {
         message: "Bitte geben Sie den Ort an.",
       }),
@@ -167,43 +131,8 @@ export const createRegistrationSchema = (state: any) =>
           {
             message: "Erforderlich.",
           },
-        )
-        .refine(
-          (val) => {
-            // Require address to be selected from autocomplete when using different shipping address
-            if (state.isShippingAddressDifferent && val) {
-              return state.shippingAddress?.addressValidated === true;
-            }
-            return true;
-          },
-          {
-            message:
-              "Bitte wählen Sie eine gültige Adresse aus den Vorschlägen aus.",
-          },
         ),
-      addressValidated: z.boolean().optional(),
-      zipcode: z
-        .string()
-        .min(1)
-        .optional()
-        .refine(
-          (val) => {
-            // Validate zipcode matches the selected city
-            if (!val || !state.isShippingAddressDifferent) return true;
-            const city = state.shippingAddress?.city?.toLowerCase();
-            if (city === "obertshausen") {
-              return val === "63179";
-            }
-            if (city === "lämmerspiel") {
-              return val === "63165";
-            }
-            return true;
-          },
-          {
-            message:
-              "Die Postleitzahl stimmt nicht mit der ausgewählten Stadt überein.",
-          },
-        ),
+      zipcode: z.string().min(1).optional(),
       city: z
         .string()
         .optional()

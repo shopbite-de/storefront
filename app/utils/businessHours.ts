@@ -57,8 +57,8 @@ export function getNextOpeningTime(now: Ref<Date>): string | null {
   // Find next opening today
   for (const interval of todayIntervals) {
     if (interval.start.getTime() > currentTime) {
-      const hours = interval.start.getHours().toString().padStart(2, '0');
-      const minutes = interval.start.getMinutes().toString().padStart(2, '0');
+      const hours = interval.start.getHours().toString().padStart(2, "0");
+      const minutes = interval.start.getMinutes().toString().padStart(2, "0");
       return `${hours}:${minutes} Uhr`;
     }
   }
@@ -76,9 +76,17 @@ export function getNextOpeningTime(now: Ref<Date>): string | null {
     const intervals = getServiceIntervals(checkDate);
     if (intervals.length > 0) {
       const nextOpen = intervals[0].start;
-      const dayName = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][nextOpen.getDay()];
-      const hours = nextOpen.getHours().toString().padStart(2, '0');
-      const minutes = nextOpen.getMinutes().toString().padStart(2, '0');
+      const dayName = [
+        "Sonntag",
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        "Samstag",
+      ][nextOpen.getDay()];
+      const hours = nextOpen.getHours().toString().padStart(2, "0");
+      const minutes = nextOpen.getMinutes().toString().padStart(2, "0");
 
       if (i === 0) {
         return `morgen um ${hours}:${minutes} Uhr`;
@@ -88,7 +96,7 @@ export function getNextOpeningTime(now: Ref<Date>): string | null {
   }
 
   return null;
-};
+}
 
 export function findActiveInterval(
   currentTime: Date,

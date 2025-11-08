@@ -17,7 +17,9 @@ const { getFormattedPrice } = usePrice({
 });
 
 const title = computed<string>(() => {
-  return "#" + product.value.productNumber + " " + product.value.name;
+  return (
+    "#" + product.value.productNumber + " " + product.value.translated.name
+  );
 });
 
 const isVegi = computed<boolean>(() => {
@@ -42,33 +44,47 @@ function toggleDetails() {
 </script>
 
 <template>
-  <UPageCard
-    :title="title"
-    :description="product.description"
-    :ui="{
-      root: 'shadow-md rounded-md',
-      footer: 'w-full',
-    }"
-    :icon="isVegi ? 'i-lucide-leaf' : ''"
+  <AnimatedSection
+    animation="fade-up"
+    duration="duration-1000"
+    delay="delay-100"
   >
-    <template #footer>
-      <div class="flex flex-row justify-between content-center w-full">
-        <p>{{ getFormattedPrice(product.calculatedPrice.totalPrice) }}</p>
-        <div class="flex flex-row gap-2">
-          <AddToWishlist v-if="withFavoriteButton" :product="product" />
-          <UButton
-            v-if="withAddToCartButton && isCheckoutEnabled"
-            icon="i-lucide-shopping-cart"
-            variant="subtle"
-            @click="toggleDetails"
-          />
-        </div>
+    <UPageCard
+      :title="title"
+      :description="product.description"
+      :orientation="product.cover?.media?.url ? 'horizontal' : 'vertical'"
+      variant="soft"
+      reverse
+      :ui="{ footer: 'w-full' }"
+      :icon="isVegi ? 'i-lucide-leaf' : ''"
+    >
+      <div v-if="product.cover?.media?.url">
+        <NuxtImg
+          :src="product.cover.media.url"
+          class="rounded-md h-auto max-w-full object-contain ransition-opacity duration-700"
+          sizes="(min-width: 1024px) 50vw, 100vw"
+        />
       </div>
-      <UCollapsible v-model:open="openDetails" class="flex flex-col gap-2">
-        <template #content>
-          <ProductDetail :product="product" @product-added="toggleDetails" />
-        </template>
-      </UCollapsible>
-    </template>
-  </UPageCard>
+
+      <template #footer>
+        <div class="flex flex-row justify-between content-center w-full">
+          <p>{{ getFormattedPrice(product.calculatedPrice.totalPrice) }}</p>
+          <div class="flex flex-row gap-2">
+            <AddToWishlist v-if="withFavoriteButton" :product="product" />
+            <UButton
+              v-if="withAddToCartButton && isCheckoutEnabled"
+              icon="i-lucide-shopping-cart"
+              variant="subtle"
+              @click="toggleDetails"
+            />
+          </div>
+        </div>
+        <UCollapsible v-model:open="openDetails" class="flex flex-col gap-2">
+          <template #content>
+            <ProductDetail :product="product" @product-added="toggleDetails" />
+          </template>
+        </UCollapsible>
+      </template>
+    </UPageCard>
+  </AnimatedSection>
 </template>

@@ -9,7 +9,6 @@ import { getNextOpeningTime } from "~/utils/businessHours";
 const { refresh } = usePizzaToppings();
 const toast = useToast();
 
-
 const colorMode = useColorMode();
 
 const color = computed(() =>
@@ -70,15 +69,17 @@ async function displayStoreStatus() {
       progress: false,
       duration: 0,
       icon: "i-lucide-party-popper",
-      actions: [{
-        icon: 'i-lucide-pizza',
-        label: 'Zur Speisekarte',
-        color: 'neutral',
-        variant: 'outline',
-        onClick: () => {
-          navigateTo('/speisekarte')
-        }
-      }]
+      actions: [
+        {
+          icon: "i-lucide-pizza",
+          label: "Zur Speisekarte",
+          color: "neutral",
+          variant: "outline",
+          onClick: () => {
+            navigateTo("/speisekarte");
+          },
+        },
+      ],
     });
   } else {
     toast.add({
@@ -92,7 +93,7 @@ async function displayStoreStatus() {
       duration: 0,
     });
   }
-};
+}
 </script>
 
 <template>

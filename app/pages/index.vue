@@ -1,28 +1,24 @@
 <script setup lang="ts">
-
-const { data: page } = await useAsyncData('index', () =>
-  queryCollection('home').first()
-)
+const { data: page } = await useAsyncData("index", () =>
+  queryCollection("home").first(),
+);
 if (!page.value) {
   throw createError({
     statusCode: 404,
-    statusMessage: 'Page not found',
-    fatal: true
-  })
+    statusMessage: "Page not found",
+    fatal: true,
+  });
 }
 
 useSeoMeta({
   title: page.value.seo?.title || page.value.title,
   ogTitle: page.value.seo?.title || page.value.title,
   description: page.value.seo?.description || page.value.description,
-  ogDescription: page.value.seo?.description || page.value.description
-})
+  ogDescription: page.value.seo?.description || page.value.description,
+});
 </script>
 <template>
-  <div
-    v-if="page"
-    class="relative"
-  >
+  <div v-if="page" class="relative">
     <Hero
       :title="page.title"
       :description="page.description"
@@ -33,11 +29,11 @@ useSeoMeta({
     <USeparator :ui="{ border: 'border-primary/30' }" />
 
     <Features
-        :title="page.features.title"
-        :description="page.features.description"
-        :headline="page.features.headline"
-        :features="page.features.features"
-      />
+      :title="page.features.title"
+      :description="page.features.description"
+      :headline="page.features.headline"
+      :features="page.features.features"
+    />
 
     <USeparator :ui="{ border: 'border-primary/30' }" />
 
@@ -51,5 +47,4 @@ useSeoMeta({
 
     <ImageGallery />
   </div>
-
 </template>

@@ -54,10 +54,9 @@ export default defineNuxtConfig({
     "@sentry/nuxt/module",
     "@nuxt/ui",
     "@nuxtjs/plausible",
-    ...process.env.NODE_ENV === 'development' ? [
-      "@nuxt/test-utils/module",
-      "@nuxt/eslint"
-    ] : [],
+    ...(process.env.NODE_ENV === "development"
+      ? ["@nuxt/test-utils/module", "@nuxt/eslint"]
+      : []),
   ],
 
   plausible: {
@@ -65,7 +64,7 @@ export default defineNuxtConfig({
   },
 
   content: {
-    experimental: { sqliteConnector: 'native' },
+    experimental: { sqliteConnector: "native" },
   },
 
   pwa: {

@@ -22,10 +22,8 @@ const searchInProgress = ref(false);
 </script>
 
 <template>
-  <div>
-    <div
-      class="sticky top-16 left-0 z-10 w-full px-4 md:px-6 lg:px-8"
-    >
+  <div v-if="navigationElements">
+    <div class="sticky top-16 left-0 z-10 w-full px-4 md:px-6 lg:px-8">
       <NavigationMobileTop v-if="!searchInProgress" />
       <ProductSearchBar
         ref="searchBarRef"
@@ -34,7 +32,7 @@ const searchInProgress = ref(false);
     </div>
     <div
       v-if="searchBarRef?.showSuggest"
-      class="flex flex-col gap-4 mt-4 px-4 md:px-6 lg:px-8 "
+      class="flex flex-col gap-4 mt-4 px-4 md:px-6 lg:px-8"
     >
       <div v-if="!searchBarRef?.loading" class="flex flex-col gap-4">
         <ProductCard
@@ -54,4 +52,5 @@ const searchInProgress = ref(false);
       />
     </div>
   </div>
+  <div v-else>Loading...</div>
 </template>

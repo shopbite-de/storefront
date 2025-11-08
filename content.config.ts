@@ -1,7 +1,7 @@
-import { defineCollection, defineContentConfig } from '@nuxt/content'
-import { z } from 'zod'
+import { defineCollection, defineContentConfig } from "@nuxt/content";
+import { z } from "zod";
 
-const createEnum = (options: [string, ...string[]]) => z.enum(options)
+const createEnum = (options: [string, ...string[]]) => z.enum(options);
 
 const createLinkSchema = () =>
   z.object({
@@ -28,14 +28,14 @@ const createLinkSchema = () =>
       "ghost",
       "link",
     ]),
-  })
+  });
 
 const createBaseSchema = () =>
   z.object({
     title: z.string().nonempty(),
     description: z.string().nonempty(),
     headline: z.string().optional(),
-  })
+  });
 
 const createFeatureSchema = () =>
   createBaseSchema().extend({
@@ -45,7 +45,7 @@ const createFeatureSchema = () =>
         leading: z.string().optional(),
       })
       .editor({ hidden: true }),
-  })
+  });
 
 export default defineContentConfig({
   collections: {
@@ -61,12 +61,14 @@ export default defineContentConfig({
           features: z.array(createFeatureSchema()),
         }),
         marquee: createBaseSchema().extend({
-          items: z.array(z.object({
-            image: z.string().nonempty(),
-            productId: z.string().nonempty(),
-          })),
-        })
+          items: z.array(
+            z.object({
+              image: z.string().nonempty(),
+              productId: z.string().nonempty(),
+            }),
+          ),
+        }),
       }),
     }),
   },
-})
+});

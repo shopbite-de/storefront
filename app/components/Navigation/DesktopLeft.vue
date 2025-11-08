@@ -49,16 +49,3 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
     />
   </div>
 </template>
-
-<style scoped>
-@import "tailwindcss";
-@import "@nuxt/ui";
-
-h1 {
-  @apply text-3xl sm:text-4xl lg:text-5xl text-pretty tracking-tight font-bold text-highlighted my-14;
-}
-
-h2 {
-  @apply mt-0 text-2xl sm:text-3xl lg:text-4xl text-pretty tracking-tight font-bold text-highlighted my-10;
-}
-</style>

@@ -2,11 +2,11 @@
 import type { MarqueeItem } from "~/components/Food/MarqueeItem.vue";
 
 defineProps<{
-  title: string
-  description?: string|undefined
-  headline?: string|undefined
-  items: MarqueeItem[]
-}>()
+  title: string;
+  description?: string | undefined;
+  headline?: string | undefined;
+  items: MarqueeItem[];
+}>();
 </script>
 
 <template>
@@ -32,5 +32,4 @@ defineProps<{
       </UMarquee>
     </UPageSection>
   </AnimatedSection>
-
 </template>

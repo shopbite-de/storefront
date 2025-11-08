@@ -48,11 +48,7 @@ const links = ref<ButtonProps[]>([
 </script>
 
 <template>
-  <UPageSection
-    headline="ALTE SCHMIEDE"
-    title="Restaurant"
-    :links="links"
-  >
+  <UPageSection headline="ALTE SCHMIEDE" title="Restaurant" :links="links">
     <template #body>
       <UCarousel
         v-slot="{ item }"
@@ -62,7 +58,7 @@ const links = ref<ButtonProps[]>([
         arrows
         loop
       >
-        <img :src="item.url" :alt="item.alt" class="rounded-lg w-full">
+        <img :src="item.url" :alt="item.alt" class="rounded-lg w-full" >
       </UCarousel>
     </template>
   </UPageSection>

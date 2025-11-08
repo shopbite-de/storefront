@@ -10,9 +10,7 @@ export function useTopSellers(): useTopSellersReturn {
     try {
       const result = await apiClient.invoke("getTopSellers post /product", {
         body: {
-          filter: [
-            { type: "equals", field: "markAsTopseller", value: true },
-          ],
+          filter: [{ type: "equals", field: "markAsTopseller", value: true }],
           includes: {
             product: [
               "productNumber",

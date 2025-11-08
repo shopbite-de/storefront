@@ -48,6 +48,7 @@ const fetchCategoryProducts = async () => {
             "children",
             "parentId",
             "sortedProperties",
+            "cover",
           ],
           property: ["id", "name", "translated", "options"],
           property_group_option: ["id", "name", "translated", "group"],
@@ -62,10 +63,15 @@ const fetchCategoryProducts = async () => {
         sort: [
           {
             field: "productNumber",
-            order: "asc",
+            order: "ASC",
           },
         ],
         associations: {
+          cover: {
+            associations: {
+              media: {},
+            },
+          },
           categories: {},
           properties: {
             associations: {
@@ -125,11 +131,26 @@ onMounted(() => {
     :id="category.name ?? ''"
     class="flex flex-col"
   >
-    <div class="mb-4 mt-8">
-      <h3 class="text-4xl">{{ category.name }}</h3>
-      <h4 v-if="category.description" class="text-gray-500">
-        {{ category.description }}
-      </h4>
+    <div class="relative mb-4 mt-8 h-40 w-full overflow-hidden rounded-lg">
+      <NuxtImg
+        v-if="category.media?.url"
+        :src="category.media.url"
+        class="absolute inset-0 h-full w-full object-cover"
+        sizes="sm:100vw md:700px"
+        alt="Pizza Kategorie"
+        placeholder
+      />
+      <div
+        class="absolute inset-0 bg-gradient-to-t from-black/50 to-black/10"
+      />
+      <div class="relative z-10 p-4">
+        <h2 class="text-3xl md:text-4xl text-white drop-shadow">
+          {{ category.name }}
+        </h2>
+        <h3 v-if="category.description" class="text-white/90">
+          {{ category.description }}
+        </h3>
+      </div>
     </div>
     <div v-if="category.childCount > 0" class="grid grid-cols-1 gap-4">
       <ProductCategory
@@ -148,10 +169,5 @@ onMounted(() => {
       />
     </div>
   </div>
-  <div v-else-if="isLoading" class="flex flex-col">
-    <div class="mb-4 mt-8">
-      <h3 class="text-4xl">{{ category.name }}</h3>
-      <div class="animate-pulse h-6 w-24 bg-gray-200 rounded" />
-    </div>
-  </div>
+  <div v-else-if="isLoading" class="flex flex-col" />
 </template>

@@ -23,7 +23,13 @@ const navi = computed<NavigationMenuItem[]>(() => [
     label: "Speisekarte",
     icon: "i-lucide-utensils",
     to: "/speisekarte",
-    active: route.path.startsWith("/speisekarte"),
+    active: route.path.endsWith("/speisekarte"),
+  },
+  {
+    label: "Speisekarte 2",
+    icon: "i-lucide-utensils",
+    to: "/c/Pizza/",
+    active: route.path.endsWith("/speisekarte2"),
   },
   {
     label: "Routenplaner",

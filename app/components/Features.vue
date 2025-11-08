@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { PageFeatureProps } from '#ui/components/PageFeature.vue'
+import type { PageFeatureProps } from "#ui/components/PageFeature.vue";
 
 defineProps<{
-  title: string
-  description: string
-  headline?: string|undefined
-  features: PageFeatureProps[]
-}>()
+  title: string;
+  description: string;
+  headline?: string | undefined;
+  features: PageFeatureProps[];
+}>();
 </script>
 
 <template>
@@ -29,10 +29,7 @@ defineProps<{
         class="absolute rounded-full -right-10 -bottom-10 size-[300px] z-10 bg-primary opacity-30 blur-[200px]"
       />
       <template #title>
-        <MDC
-          :value="title"
-          class="*:leading-9"
-        />
+        <MDC :value="title" class="*:leading-9" />
       </template>
     </UPageSection>
   </AnimatedSection>
