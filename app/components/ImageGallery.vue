@@ -48,7 +48,15 @@ const links = ref<ButtonProps[]>([
 </script>
 
 <template>
-  <UPageSection headline="ALTE SCHMIEDE" title="Restaurant" :links="links">
+  <UPageSection
+    headline="ALTE SCHMIEDE"
+    title="Restaurant"
+    :links="links"
+    :ui="{
+      container: 'bg-elevated rounded-lg shadow-md dark:bg-elevated',
+      root: 'mb-8',
+    }"
+  >
     <template #body>
       <UCarousel
         v-slot="{ item }"

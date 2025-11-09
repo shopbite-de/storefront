@@ -23,7 +23,7 @@ const { address, title, icon } = toRefs(props);
     :icon="icon"
     :title="title"
     :ui="{
-      root: 'bg-white shadow-md rounded-md ',
+      root: 'shadow-md rounded-md ',
       footer: 'w-full',
     }"
   >

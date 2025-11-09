@@ -35,7 +35,7 @@ const navi = computed<NavigationMenuItem[]>(() => [
     label: "Routenplaner",
     to: "https://www.openstreetmap.org/directions?from=&to=50.080610%2C8.863783#map=19/50.080323/8.864079",
     active: false,
-    icon: "i-lucide-car",
+    icon: "i-lucide-map-pinned",
     target: "_blank",
   },
   {

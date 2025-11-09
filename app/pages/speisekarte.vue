@@ -23,8 +23,10 @@ const searchInProgress = ref(false);
 
 <template>
   <div v-if="navigationElements">
-    <div class="sticky top-16 left-0 z-10 w-full px-4 md:px-6 lg:px-8">
-      <NavigationMobileTop v-if="!searchInProgress" />
+    <div
+      class="sticky top-16 left-0 z-20 w-full px-4 md:px-6 lg:px-8 backdrop-blur-md rounded-md"
+    >
+      <NavigationMobileTop v-if="!searchInProgress" class="" />
       <ProductSearchBar
         ref="searchBarRef"
         v-model:search-in-progress="searchInProgress"

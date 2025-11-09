@@ -1,42 +1,73 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from "@nuxt/ui";
-
-const navi = computed<NavigationMenuItem[]>(() => [
+const columns = [
   {
-    label: "Impressum",
-    to: "/impressum",
+    label: "Unternehmen",
+    children: [
+      {
+        label: "Impressum",
+        to: "/impressum",
+      },
+      {
+        label: "Datenschutz",
+        to: "/datenschutz",
+      },
+      {
+        label: "AGB",
+        to: "/agb",
+      },
+    ],
   },
   {
-    label: "Datenschutz",
-    to: "/datenschutz",
+    label: "Top Kategorien",
+    children: [
+      {
+        label: "Pizza",
+        to: "/c/Pizza/",
+      },
+      {
+        label: "Nudeln",
+        to: "/c/Nudeln/",
+      },
+      {
+        label: "Fleischgerichte",
+        to: "/c/Fleischgerichte/",
+      },
+    ],
   },
-  {
-    label: "AGB",
-    to: "/agb",
-  },
-]);
+];
 </script>
 
 <template>
-  <UFooter>
+  <USeparator class="h-px" />
+
+  <UFooter :ui="{ top: 'border-b border-default' }">
+    <template #top>
+      <UContainer>
+        <UFooterColumns :columns="columns" />
+      </UContainer>
+    </template>
+
     <template #left>
-      <p class="text-muted text-sm">
-        Copyright © {{ new Date().getFullYear() }}
+      <p class="text-sm text-muted">
+        Built with ShopBite • © {{ new Date().getFullYear() }}
       </p>
     </template>
 
-    <UNavigationMenu :items="navi" variant="link" />
+    <p class="text-muted text-sm">
+      Alle Preise inkl. gesetzlicher Mehrwertsteuer zzgl. Versandkosten, wenn
+      nicht anders beschrieben
+    </p>
 
     <template #right>
-      <UColorModeSwitch />
+      <UColorModeButton />
 
       <UButton
-        icon="i-simple-icons-facebook"
+        to="https://github.com/shopbite-de/storefront"
+        target="_blank"
+        icon="i-simple-icons-github"
+        aria-label="ShopBite on GitHub"
         color="neutral"
         variant="ghost"
-        to="https://www.facebook.com/p/La-Fattoria-Alte-Schmiede-100050881732859/?locale=de_DE"
-        target="_blank"
-        aria-label="Discord"
       />
     </template>
   </UFooter>

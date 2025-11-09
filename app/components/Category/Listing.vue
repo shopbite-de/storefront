@@ -176,7 +176,10 @@ watch(selectedListingFilters, () => {
                   :key="filter.id"
                   class="flex flex-col gap-4"
                 >
-                  <UCollapsible class="flex flex-col gap-2 w-48">
+                  <UCollapsible
+                    class="flex flex-col gap-2 w-48"
+                    :default-open="true"
+                  >
                     <UButton
                       :label="filter.translated.name"
                       color="neutral"
@@ -225,7 +228,10 @@ watch(selectedListingFilters, () => {
               :key="filter.id"
               class="flex flex-col gap-4"
             >
-              <UCollapsible class="flex flex-col gap-2 w-48">
+              <UCollapsible
+                class="flex flex-col gap-2 w-48"
+                :default-open="true"
+              >
                 <UButton
                   :label="filter.translated.name"
                   color="neutral"

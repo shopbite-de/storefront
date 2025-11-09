@@ -46,5 +46,6 @@ useSeoMeta({
     />
 
     <ImageGallery />
+    <Cta />
   </div>
 </template>

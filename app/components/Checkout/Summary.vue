@@ -91,30 +91,34 @@ const checkoutButtonLabel = computed<string>(() => {
           />
         </div>
       </div>
-      <div>
+      <div class="flex flex-col gap-4">
         <h3 class="text-xl font-bold">Warenkorb</h3>
-        <QuickView
-          :with-quantity-input="false"
-          :with-delete-button="false"
-          class="p-6"
-        />
-        <UButton
-          :icon="isValidToProceed ? 'i-lucide-shopping-cart' : 'i-lucide-lock'"
-          :disabled="!isValidToProceed"
-          :label="checkoutButtonLabel"
-          size="xl"
-          block
-          @click="handleCreateOrder"
-        />
-        <p class="font-light text-muted">
-          Mit Klick auf den Button "Jetzt bestellen!" erklärst du dich mit
-          unseren
-          <ULink to="agb" class="text-primary font-medium">AGB</ULink> und
-          <ULink to="datenschutz" class="text-primary font-medium"
-            >Datenschutzbestimmungen</ULink
-          >
-          einverstanden.
-        </p>
+        <div class="rounded-lg flex flex-col gap-4">
+          <QuickView
+            :with-quantity-input="false"
+            :with-delete-button="false"
+            class="p-6 bg-elevated"
+          />
+          <UButton
+            :icon="
+              isValidToProceed ? 'i-lucide-shopping-cart' : 'i-lucide-lock'
+            "
+            :disabled="!isValidToProceed"
+            :label="checkoutButtonLabel"
+            size="xl"
+            block
+            @click="handleCreateOrder"
+          />
+          <p class="font-light text-muted">
+            Mit Klick auf den Button "Jetzt bestellen!" erklärst du dich mit
+            unseren
+            <ULink to="/agb" class="text-primary font-medium">AGB</ULink> und
+            <ULink to="/datenschutz" class="text-primary font-medium"
+              >Datenschutzbestimmungen</ULink
+            >
+            einverstanden.
+          </p>
+        </div>
       </div>
     </div>
   </UContainer>

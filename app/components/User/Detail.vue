@@ -20,7 +20,7 @@ const areAddressesDifferent = computed(() => {
 </script>
 
 <template>
-  <div class="shadow-md rounded-md mb-4 p-6">
+  <div class="shadow-md rounded-md mb-4 p-6 bg-elevated">
     <div>{{ fullName }}</div>
     <div>{{ user?.email }}</div>
     <USeparator

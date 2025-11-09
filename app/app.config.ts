@@ -1,7 +1,7 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: "orange",
+      primary: "#ff5b00",
       gray: "cool",
     },
     drawer: {

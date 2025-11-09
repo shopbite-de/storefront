@@ -3,6 +3,46 @@
 
 @source "../../../content/**/*";
 
+@theme {
+    --font-sans: 'Public Sans', sans-serif;
+    --color-brand-50: #fff4ed;
+    --color-brand-100: #ffe4d1;
+    --color-brand-200: #ffc8a3;
+    --color-brand-300: #ffa169;
+    --color-brand-400: #ff7a2d;
+    --color-brand-500: #ff5b00;
+    --color-brand-600: #e64d00;
+    --color-brand-700: #c23d00;
+    --color-brand-800: #9a3200;
+    --color-brand-900: #7a2800;
+    --color-brand-950: #471500;
+    --color-neutral-950: #171717;
+}
+
+:root {
+    --ui-primary: var(--color-brand-500);
+    --ui-bg-elevated: var(--color-brand-50);
+    --ui-bg-inverted: #272727;
+    --ui-bg-accented: var(--color-brand-200);
+}
+
+:root.dark {
+    --ui-bg: #171717;
+    --ui-bg-elevated: #1e1e1e;
+    --ui-bg-accented: #272727;
+    --ui-bg-muted: #272727;
+    --ui-bg-default: #333333;
+
+    --ui-border-accented: #333333;
+    --ui-border: #333333;
+
+    --ui-text-accented: #ffffff;
+    --ui-text-default: #cccccc;
+    --ui-text-muted: #999999;
+    --ui-text-dimmed: #666666;
+    --ui-text-inverted: #171717;
+}
+
 html {
     scroll-behavior: smooth;
 }
