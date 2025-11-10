@@ -8,6 +8,7 @@ const props = defineProps<{
 const { id: categoryId } = toRefs(props);
 
 const {
+  resetFilters,
   loading,
   search,
   getElements,
@@ -31,7 +32,7 @@ const { data: category } = await useAsyncData(
   },
 );
 
-const currentSorting = ref(getCurrentSortingOrder.value);
+const currentSorting = ref(getCurrentSortingOrder.value ?? "Sortieren");
 
 const propertyFilters = computed<Schemas["PropertyGroup"][]>(() =>
   getAvailableFilters.value?.filter(
@@ -40,97 +41,107 @@ const propertyFilters = computed<Schemas["PropertyGroup"][]>(() =>
 );
 
 const selectedPropertyFilters = ref(getCurrentFilters.value?.properties ?? []);
+const selectedPropertyFiltersString = computed(() =>
+  selectedPropertyFilters.value?.join("|"),
+);
 
 const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
   return [
     {
       code: "properties",
-      value: selectedPropertyFilters.value?.join("|"),
+      value: selectedPropertyFiltersString.value,
     },
   ];
 });
 
-search({
-  includes: {
-    product: [
-      "id",
-      "productNumber",
-      "name",
-      "description",
-      "calculatedPrice",
-      "translated",
-      "categories",
-      "properties",
-      "propertyIds",
-      "options",
-      "optionIds",
-      "configuratorSettings",
-      "children",
-      "parentId",
-      "sortedProperties",
-      "cover",
+await useAsyncData(`listing${categoryId.value}`, async () => {
+  await search({
+    includes: {
+      product: [
+        "id",
+        "productNumber",
+        "name",
+        "description",
+        "calculatedPrice",
+        "translated",
+        "categories",
+        "properties",
+        "propertyIds",
+        "options",
+        "optionIds",
+        "configuratorSettings",
+        "children",
+        "parentId",
+        "sortedProperties",
+        "cover",
+      ],
+      property: ["id", "name", "translated", "options"],
+      property_group_option: ["id", "name", "translated", "group"],
+      product_configurator_setting: ["id", "optionId", "option", "productId"],
+      product_option: ["id", "groupId", "name", "translated", "group"],
+    },
+    sort: [
+      {
+        field: "productNumber",
+        order: "ASC",
+      },
     ],
-    property: ["id", "name", "translated", "options"],
-    property_group_option: ["id", "name", "translated", "group"],
-    product_configurator_setting: ["id", "optionId", "option", "productId"],
-    product_option: ["id", "groupId", "name", "translated", "group"],
-  },
-  sort: [
-    {
-      field: "productNumber",
-      order: "ASC",
-    },
-  ],
-  associations: {
-    cover: {
-      associations: {
-        media: {},
+    associations: {
+      cover: {
+        associations: {
+          media: {},
+        },
       },
-    },
-    categories: {},
-    properties: {
-      associations: {
-        group: {},
+      categories: {},
+      properties: {
+        associations: {
+          group: {},
+        },
       },
-    },
-    options: {
-      associations: {
-        group: {},
+      options: {
+        associations: {
+          group: {},
+        },
       },
-    },
-    configuratorSettings: {
-      associations: {
-        option: {
-          associations: {
-            group: {},
+      configuratorSettings: {
+        associations: {
+          option: {
+            associations: {
+              group: {},
+            },
+          },
+        },
+      },
+      children: {
+        associations: {
+          properties: {
+            associations: {
+              group: {},
+            },
+          },
+          options: {
+            associations: {
+              group: {},
+            },
           },
         },
       },
     },
-    children: {
-      associations: {
-        properties: {
-          associations: {
-            group: {},
-          },
-        },
-        options: {
-          associations: {
-            group: {},
-          },
-        },
-      },
-    },
-  },
+  });
 });
 
-watch(currentSorting, () => {
-  changeCurrentSortingOrder(currentSorting.value as string);
+await useAsyncData(currentSorting, async () => {
+  await changeCurrentSortingOrder(currentSorting.value as string);
 });
 
 watch(selectedListingFilters, () => {
   setCurrentFilters(selectedListingFilters.value);
 });
+
+async function handleFilterRest() {
+  await resetFilters();
+  selectedPropertyFilters.value = [];
+}
 </script>
 
 <template>
@@ -253,6 +264,12 @@ watch(selectedListingFilters, () => {
                   />
                 </template>
               </UCollapsible>
+              <UButton
+                label="Zurücksetzten"
+                variant="outline"
+                block
+                @click="handleFilterRest"
+              />
             </div>
           </div>
         </UPageAside>
