@@ -53,8 +53,8 @@ const links = ref<ButtonProps[]>([
     title="Restaurant"
     :links="links"
     :ui="{
-      container: 'bg-elevated rounded-lg shadow-md dark:bg-elevated',
-      root: 'mb-8',
+      container: 'bg-elevated dark:bg-elevated',
+      root: 'xl:mb-16'
     }"
   >
     <template #body>

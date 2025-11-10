@@ -21,17 +21,29 @@
 
 :root {
     --ui-primary: var(--color-brand-500);
+
+    --ui-bg: #fff;
+    --ui-bg-muted: #f5f5f5;
     --ui-bg-elevated: var(--color-brand-50);
-    --ui-bg-inverted: #272727;
     --ui-bg-accented: var(--color-brand-200);
+    --ui-bg-inverted: #171717;
+
+    --ui-border-accented: var(--color-brand-200);
+    --ui-border: #e5e5e5;
+
+    --ui-text-accented: #171717;
+    --ui-text-default: #404040;
+    --ui-text-muted: #737373;
+    --ui-text-dimmed: #a3a3a3;
+    --ui-text-inverted: #fff;
 }
 
 :root.dark {
     --ui-bg: #171717;
-    --ui-bg-elevated: #1e1e1e;
-    --ui-bg-accented: #272727;
-    --ui-bg-muted: #272727;
-    --ui-bg-default: #333333;
+    --ui-bg-muted: #1f1f1f;
+    --ui-bg-elevated: #2a2a2a;
+    --ui-bg-accented: #333333;
+    --ui-bg-inverted: #fff;
 
     --ui-border-accented: #333333;
     --ui-border: #333333;
