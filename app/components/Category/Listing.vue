@@ -217,7 +217,9 @@ async function handleFilterRest() {
             </UDrawer>
           </div>
 
-          <div v-if="loading === false" class="flex flex-col gap-4">
+          <Loading v-if="loading" text="Produkte werden geladen..." size="lg" />
+
+          <div v-else class="flex flex-col gap-4">
             <ProductCard
               v-for="product in getElements"
               :key="product.id"
@@ -226,7 +228,6 @@ async function handleFilterRest() {
               :with-add-to-cart-button="true"
             />
           </div>
-          <div v-else>Loading...</div>
         </div>
       </UPageBody>
 
