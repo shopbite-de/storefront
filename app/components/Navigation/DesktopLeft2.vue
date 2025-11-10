@@ -2,9 +2,14 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
 
-const { loadNavigationElements, navigationElements } = useNavigation();
+const { loadNavigationElements } = useNavigation();
 
-loadNavigationElements({ depth: 2 });
+const { data: navigationElements } = await useAsyncData(
+  `navigation`,
+  async () => {
+    return await loadNavigationElements({ depth: 2 });
+  },
+);
 
 const navItems = computed<NavigationMenuItem[][]>(() => {
   return navigationElements.value?.map((item: Schemas["Category"]) => {

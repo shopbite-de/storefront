@@ -11,7 +11,7 @@ const links = ref<ButtonProps[]>([
     label: "Tisch reservieren",
     variant: "outline",
     trailingIcon: "i-lucide-phone",
-    to: "+490610471427",
+    to: "tel:+490610471427",
   },
 ]);
 </script>
