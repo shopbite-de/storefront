@@ -54,7 +54,7 @@ const links = ref<ButtonProps[]>([
     :links="links"
     :ui="{
       container: 'bg-elevated dark:bg-elevated',
-      root: 'xl:mb-16'
+      root: 'xl:mb-16',
     }"
   >
     <template #body>

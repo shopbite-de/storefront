@@ -145,6 +145,15 @@ async function handleFilterRest() {
   await resetFilters();
   selectedPropertyFilters.value = [];
 }
+
+const moreThanOneFilterAndOption = computed<boolean>(() => {
+  return (
+    propertyFilters.value.length > 0 &&
+    propertyFilters.value.every(
+      (filter) => filter.options && filter.options.length > 1,
+    )
+  );
+});
 </script>
 
 <template>
@@ -172,7 +181,7 @@ async function handleFilterRest() {
               placeholder="Sortierung"
             />
             <UDrawer
-              v-if="propertyFilters.length > 0"
+              v-if="moreThanOneFilterAndOption"
               class="lg:hidden"
               title="Filter"
               direction="right"
@@ -236,7 +245,7 @@ async function handleFilterRest() {
 
       <template #right>
         <UPageAside>
-          <div v-if="propertyFilters.length > 0" class="flex flex-col gap-4">
+          <div v-if="moreThanOneFilterAndOption" class="flex flex-col gap-4">
             <h3>Filter</h3>
             <div
               v-for="filter in propertyFilters"

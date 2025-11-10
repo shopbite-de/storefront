@@ -6,15 +6,15 @@ const { loadNavigationElements, navigationElements } = useNavigation();
 
 loadNavigationElements({ depth: 1 });
 
-const navItems = computed<NavigationMenuItem[][]>(() => {
+const navItems = computed<NavigationMenuItem[]>(() => {
   return navigationElements.value?.map((item: Schemas["Category"]) => {
     return {
       label: item.translated?.name,
-      to: item.seoUrl,
+      to: item.children.length === 0 ? item.seoUrl : undefined,
       children: item.children?.map((child: Schemas["Category"]) => {
         return {
           label: child.translated?.name,
-          to: item.seoUrl,
+          to: child.seoUrl,
         };
       }),
     };

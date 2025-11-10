@@ -11,15 +11,18 @@ const { data: navigationElements } = await useAsyncData(
   },
 );
 
-const navItems = computed<NavigationMenuItem[][]>(() => {
+const navItems = computed<NavigationMenuItem[]>(() => {
   return navigationElements.value?.map((item: Schemas["Category"]) => {
     return {
       label: item.translated?.name,
+      description: `${item.translated?.name} Kategorie`,
       to: item.seoUrl,
+      defaultOpen: true,
       children: item.children?.map((child: Schemas["Category"]) => {
         return {
           label: child.translated?.name,
-          to: item.seoUrl,
+          description: `${child.translated?.name} Kategorie`,
+          to: child.seoUrl,
         };
       }),
     };
@@ -31,9 +34,10 @@ const navItems = computed<NavigationMenuItem[][]>(() => {
   <div>
     <h2>Navigation</h2>
     <UNavigationMenu
+      variant="link"
       orientation="vertical"
+      class="data-[orientation=vertical]:w-48"
       :items="navItems"
-      class="data-[orientation=vertical]"
     />
   </div>
 </template>
