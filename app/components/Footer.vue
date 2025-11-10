@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const columns = [
   {
-    label: "Unternehmen",
+    label: "Informationen",
     children: [
       {
         label: "Impressum",
@@ -34,6 +34,20 @@ const columns = [
       },
     ],
   },
+  {
+    label: "Unternehmen",
+    children: [
+      {
+        label: "Tel: 06104 71427",
+      },
+      {
+        label: "Kantstraße 6",
+      },
+      {
+        label: "631679 Oberthsuasen",
+      },
+    ],
+  },
 ];
 </script>
 
@@ -48,9 +62,13 @@ const columns = [
     </template>
 
     <template #left>
-      <p class="text-sm text-muted">
-        Built with ShopBite • © {{ new Date().getFullYear() }}
-      </p>
+      <NuxtLink
+        to="https://shopbite.de"
+        class="text-sm text-muted"
+        target="_blank"
+      >
+        Bestellsystm von ShopBite • © {{ new Date().getFullYear() }}
+      </NuxtLink>
     </template>
 
     <p class="text-muted text-sm">

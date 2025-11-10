@@ -25,8 +25,8 @@ const links = ref<ButtonProps[]>([
     />
     <UPageCTA
       variant="soft"
-      title="Trusted and supported by our amazing community"
-      description="We've built a strong, lasting partnership. Their trust is our driving force, propelling us towards shared success."
+      title="Jetzt bestellen!"
+      description="Genieße die italienische Küche, frisch zubereitet und direkt zu dir geliefert oder vor Ort genießen."
       :links="links"
       class="relative z-10"
     />

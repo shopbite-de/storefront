@@ -66,6 +66,18 @@ function toggleDetails() {
         />
       </div>
 
+      <template #title>
+        <div class="flex flex-row items-baseline gap-1">
+          <span class="text-sm text-brand-900"
+            >#{{ product.productNumber }}</span
+          >
+
+          <p class="text-base text-pretty font-semibold text-highlighted">
+            {{ product.translated.name }}
+          </p>
+        </div>
+      </template>
+
       <template #footer>
         <div class="flex flex-row justify-between content-center w-full">
           <p>{{ getFormattedPrice(product.calculatedPrice.totalPrice) }}</p>

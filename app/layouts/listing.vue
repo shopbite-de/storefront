@@ -13,7 +13,7 @@ onMounted(() => {
       <UPage>
         <template #left>
           <UPageAside>
-            <NavigationDesktopLeft2 />
+            <NavigationDesktopLeft />
           </UPageAside>
         </template>
 
