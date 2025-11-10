@@ -89,7 +89,6 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
             v-if="mainIngredients.length > 0"
             class="font-extralight text-sm text-pretty"
           >
-            <span class="font-semibold">Hauptzutaten:</span>
             {{
               mainIngredients
                 .map((ingredient) => ingredient.translated.name)

@@ -114,7 +114,9 @@ async function showSuccessToast() {
     description: `${selectedProduct.value.translated.name} wurde in den Warenkorb gelegt.`,
     icon: "i-lucide-shopping-cart",
     color: "success",
-    progress: false,
+    progress: true,
+    color: "primary",
+    duration: 2000,
   });
 }
 
