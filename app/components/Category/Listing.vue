@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { operations, Schemas } from "#shopware";
 
 const props = defineProps<{
   id: string;
@@ -54,80 +54,83 @@ const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
   ];
 });
 
-await useAsyncData(`listing${categoryId.value}`, async () => {
-  await search({
-    includes: {
-      product: [
-        "id",
-        "productNumber",
-        "name",
-        "description",
-        "calculatedPrice",
-        "translated",
-        "categories",
-        "properties",
-        "propertyIds",
-        "options",
-        "optionIds",
-        "configuratorSettings",
-        "children",
-        "parentId",
-        "sortedProperties",
-        "cover",
-      ],
-      property: ["id", "name", "translated", "options"],
-      property_group_option: ["id", "name", "translated", "group"],
-      product_configurator_setting: ["id", "optionId", "option", "productId"],
-      product_option: ["id", "groupId", "name", "translated", "group"],
-    },
-    sort: [
-      {
-        field: "productNumber",
-        order: "ASC",
-      },
+const query = {
+  includes: {
+    product: [
+      "id",
+      "productNumber",
+      "name",
+      "description",
+      "calculatedPrice",
+      "translated",
+      "categories",
+      "properties",
+      "propertyIds",
+      "options",
+      "optionIds",
+      "configuratorSettings",
+      "children",
+      "parentId",
+      "sortedProperties",
+      "cover",
+      "parentId",
     ],
-    associations: {
-      cover: {
-        associations: {
-          media: {},
-        },
+    property: ["id", "name", "translated", "options"],
+    property_group_option: ["id", "name", "translated", "group"],
+    product_configurator_setting: ["id", "optionId", "option", "productId"],
+    product_option: ["id", "groupId", "name", "translated", "group"],
+  },
+  sort: [
+    {
+      field: "productNumber",
+      order: "ASC",
+    },
+  ],
+  associations: {
+    cover: {
+      associations: {
+        media: {},
       },
-      categories: {},
-      properties: {
-        associations: {
-          group: {},
-        },
+    },
+    categories: {},
+    properties: {
+      associations: {
+        group: {},
       },
-      options: {
-        associations: {
-          group: {},
-        },
+    },
+    options: {
+      associations: {
+        group: {},
       },
-      configuratorSettings: {
-        associations: {
-          option: {
-            associations: {
-              group: {},
-            },
-          },
-        },
-      },
-      children: {
-        associations: {
-          properties: {
-            associations: {
-              group: {},
-            },
-          },
-          options: {
-            associations: {
-              group: {},
-            },
+    },
+    configuratorSettings: {
+      associations: {
+        option: {
+          associations: {
+            group: {},
           },
         },
       },
     },
-  });
+    children: {
+      associations: {
+        properties: {
+          associations: {
+            group: {},
+          },
+        },
+        options: {
+          associations: {
+            group: {},
+          },
+        },
+      },
+    },
+  },
+} as operations["searchPage post /search"]["body"];
+
+await useAsyncData(`listing${categoryId.value}`, async () => {
+  await search(query);
 });
 
 await useAsyncData(currentSorting, async () => {

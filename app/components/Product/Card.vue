@@ -16,21 +16,15 @@ const { getFormattedPrice } = usePrice({
   localeCode: "de-DE",
 });
 
-const title = computed<string>(() => {
-  return (
-    "#" + product.value.productNumber + " " + product.value.translated.name
-  );
-});
-
 const isVegi = computed<boolean>(() => {
   if (!product.value?.properties) {
     return false;
   }
 
-  return product.value.sortedProperties.some(
+  return product.value?.sortedProperties?.some(
     (propertyGroup: Schemas["PropertyGroup"]) =>
       propertyGroup.translated.name === "Typ" &&
-      propertyGroup.options.some(
+      propertyGroup.options?.some(
         (option: Schemas["PropertyGroupOption"]) =>
           option.translated.name === "Vegetarisch",
       ),
@@ -41,6 +35,18 @@ const openDetails = ref(false);
 function toggleDetails() {
   openDetails.value = !openDetails.value;
 }
+
+const MAIN_INGREDIENTS_PROPERTY_LABEL = "Hauptzutaten";
+
+const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
+  const sortedProps =
+    product.value?.sortedProperties ?? ([] as Schemas["PropertyGroup"][]);
+  const mainIngredientsProperty = sortedProps.find(
+    (propertyGroup: Schemas["PropertyGroup"]) =>
+      propertyGroup.translated.name === MAIN_INGREDIENTS_PROPERTY_LABEL,
+  );
+  return mainIngredientsProperty?.options ?? [];
+});
 </script>
 
 <template>
@@ -50,8 +56,6 @@ function toggleDetails() {
     delay="delay-100"
   >
     <UPageCard
-      :title="title"
-      :description="product.description"
       :orientation="product.cover?.media?.url ? 'horizontal' : 'vertical'"
       variant="soft"
       reverse
@@ -68,13 +72,30 @@ function toggleDetails() {
 
       <template #title>
         <div class="flex flex-row items-baseline gap-1">
-          <span class="text-sm text-brand-900"
+          <span class="text-sm text-brand-500"
             >#{{ product.productNumber }}</span
           >
 
           <p class="text-base text-pretty font-semibold text-highlighted">
             {{ product.translated.name }}
           </p>
+        </div>
+      </template>
+
+      <template #description>
+        <div class="flex flex-col gap-2">
+          <div>{{ product.description }}</div>
+          <div
+            v-if="mainIngredients.length > 0"
+            class="font-extralight text-sm text-pretty"
+          >
+            <span class="font-semibold">Hauptzutaten:</span>
+            {{
+              mainIngredients
+                .map((ingredient) => ingredient.translated.name)
+                .join(", ")
+            }}
+          </div>
         </div>
       </template>
 
