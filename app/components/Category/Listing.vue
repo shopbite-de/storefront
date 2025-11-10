@@ -133,12 +133,12 @@ await useAsyncData(`listing${categoryId.value}`, async () => {
   await search(query);
 });
 
-await useAsyncData(currentSorting, async () => {
-  await changeCurrentSortingOrder(currentSorting.value as string);
-});
-
 watch(selectedListingFilters, () => {
   setCurrentFilters(selectedListingFilters.value);
+});
+
+watch(currentSorting, () => {
+  changeCurrentSortingOrder(currentSorting.value as string);
 });
 
 async function handleFilterRest() {
@@ -146,14 +146,9 @@ async function handleFilterRest() {
   selectedPropertyFilters.value = [];
 }
 
-const moreThanOneFilterAndOption = computed<boolean>(() => {
-  return (
-    propertyFilters.value.length > 0 &&
-    propertyFilters.value.every(
-      (filter) => filter.options && filter.options.length > 1,
-    )
-  );
-});
+const moreThanOneFilterAndOption = computed<boolean>(
+  () => propertyFilters.value.length > 0,
+);
 </script>
 
 <template>
@@ -194,36 +189,44 @@ const moreThanOneFilterAndOption = computed<boolean>(() => {
               />
 
               <template #body>
-                <div
-                  v-for="filter in propertyFilters"
-                  :key="filter.id"
-                  class="flex flex-col gap-4"
-                >
-                  <UCollapsible
-                    class="flex flex-col gap-2 w-48"
-                    :default-open="true"
+                <div class="flex flex-col gap-4">
+                  <div
+                    v-for="filter in propertyFilters"
+                    :key="filter.id"
+                    class="flex flex-col gap-4"
                   >
-                    <UButton
-                      :label="filter.translated.name"
-                      color="neutral"
-                      variant="subtle"
-                      trailing-icon="i-lucide-chevron-down"
-                      block
-                      :ui="{
-                        trailingIcon:
-                          'group-data-[state=open]:rotate-180 transition-transform duration-200',
-                      }"
-                    />
-
-                    <template #content>
-                      <UCheckboxGroup
-                        v-model="selectedPropertyFilters"
-                        :items="filter.options"
-                        value-key="id"
-                        label-key="translated.name"
+                    <UCollapsible
+                      class="flex flex-col gap-2 w-48"
+                      :default-open="true"
+                    >
+                      <UButton
+                        :label="filter.translated.name"
+                        color="neutral"
+                        variant="subtle"
+                        trailing-icon="i-lucide-chevron-down"
+                        block
+                        :ui="{
+                          trailingIcon:
+                            'group-data-[state=open]:rotate-180 transition-transform duration-200',
+                        }"
                       />
-                    </template>
-                  </UCollapsible>
+
+                      <template #content>
+                        <UCheckboxGroup
+                          v-model="selectedPropertyFilters"
+                          :items="filter.options"
+                          value-key="id"
+                          label-key="translated.name"
+                        />
+                      </template>
+                    </UCollapsible>
+                  </div>
+                  <UButton
+                    label="Zurücksetzten"
+                    variant="outline"
+                    block
+                    @click="handleFilterRest"
+                  />
                 </div>
               </template>
             </UDrawer>
@@ -277,13 +280,13 @@ const moreThanOneFilterAndOption = computed<boolean>(() => {
                   />
                 </template>
               </UCollapsible>
-              <UButton
-                label="Zurücksetzten"
-                variant="outline"
-                block
-                @click="handleFilterRest"
-              />
             </div>
+            <UButton
+              label="Zurücksetzten"
+              variant="outline"
+              block
+              @click="handleFilterRest"
+            />
           </div>
         </UPageAside>
       </template>

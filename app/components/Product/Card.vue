@@ -23,10 +23,10 @@ const isVegi = computed<boolean>(() => {
 
   return product.value?.sortedProperties?.some(
     (propertyGroup: Schemas["PropertyGroup"]) =>
-      propertyGroup.translated.name === "Typ" &&
+      propertyGroup.translated.name === "Vegetarisch" &&
       propertyGroup.options?.some(
         (option: Schemas["PropertyGroupOption"]) =>
-          option.translated.name === "Vegetarisch",
+          option.translated.name === "Ja",
       ),
   );
 });
@@ -60,8 +60,18 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
       variant="soft"
       reverse
       :ui="{ footer: 'w-full' }"
-      :icon="isVegi ? 'i-lucide-leaf' : ''"
     >
+      <template #header>
+        <UBadge
+          v-if="isVegi"
+          icon="i-lucide-leaf"
+          color="success"
+          variant="outline"
+          size="sm"
+          label="Vegetarisch"
+        />
+      </template>
+
       <div v-if="product.cover?.media?.url">
         <NuxtImg
           :src="product.cover.media.url"
