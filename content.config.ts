@@ -54,6 +54,7 @@ export default defineContentConfig({
       type: "page",
       schema: z.object({
         hero: z.object({
+          backgroundVideo: z.string().optional(),
           headline: z.string().optional(),
           links: z.array(createLinkSchema()),
         }),
@@ -67,6 +68,15 @@ export default defineContentConfig({
               productId: z.string().nonempty(),
             }),
           ),
+        }),
+        gallery: createBaseSchema().extend({
+          images: z.array(
+            z.object({
+              image: z.string().nonempty(),
+              alt: z.string().nonempty(),
+            }),
+          ),
+          links: z.array(createLinkSchema()),
         }),
       }),
     }),

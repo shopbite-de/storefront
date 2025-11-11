@@ -4,6 +4,7 @@ seo:
 title: Pizzeria La Fattoria
 description: Italienisch-deutsche Küche in Obertshausen seit 1997.
 hero:
+  backgroundVideo: https://shopware.shopbite.de/media/10/59/96/1762465181/background.mp4
   headline: ALTE SCHMIEDE
   links:
     - label: Speisekarte
@@ -52,3 +53,26 @@ marquee:
       image: https://shopware.shopbite.de/media/f1/53/f9/1762465329/35.webp
     - productId: 019a4ea153e671c6ba20810b541e1455
       image: https://shopware.shopbite.de/media/5f/c7/ec/1762465330/122.webp
+gallery:
+  title: Restaurant
+  description: Genießen Sie leckeres Essen in einem rustikalen und gemütlichen Ambiente.
+  headline: ALTE SCHMIEDE
+  links:
+    - label: Tisch reservieren
+      to: tel:+49610471427
+      color: primary
+      variant: subtle
+      trailingIcon: i-lucide-phone
+  images:
+    - image: https://shopware.shopbite.de/media/71/2a/1a/1762465670/restaurant1.webp
+      alt: La Fattoria Restaurant Innenbereich 1
+    - image: https://shopware.shopbite.de/media/61/ea/77/1762465670/restaurant2.webp
+      alt: La Fattoria Restaurant Innenbereich 2
+    - image: https://shopware.shopbite.de/media/6d/ac/ca/1762465670/restaurant3.webp
+      alt: La Fattoria Restaurant Innenbereich 3
+    - image: https://shopware.shopbite.de/media/af/d6/da/1762465670/restaurant4.webp
+      alt: La Fattoria Restaurant Innenbereich 4
+    - image: https://shopware.shopbite.de/media/6a/ff/e2/1762465670/restaurant5.webp
+      alt: La Fattoria Restaurant Innenbereich 5
+    - image: https://shopware.shopbite.de/media/80/76/d0/1762465670/restaurant6.webp
+      alt: La Fattoria Restaurant Innenbereich 6

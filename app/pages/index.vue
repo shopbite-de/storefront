@@ -21,6 +21,7 @@ useSeoMeta({
   <div v-if="page" class="relative">
     <Hero
       :title="page.title"
+      :background-video="page.hero.backgroundVideo"
       :description="page.description"
       :headline="page.hero.headline"
       :links="page.hero.links"
@@ -45,7 +46,13 @@ useSeoMeta({
       :items="page.marquee.items"
     />
 
-    <ImageGallery />
+    <ImageGallery
+      :title="page.gallery.title"
+      :description="page.gallery.description"
+      :headline="page.gallery.headline"
+      :images="page.gallery.images"
+      :links="page.gallery.links"
+    />
     <Cta />
   </div>
 </template>
