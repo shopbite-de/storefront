@@ -1,99 +1,86 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
 import type { Schemas } from "#shopware";
 import * as Sentry from "@sentry/nuxt";
-import { useRuntimeConfig } from "#imports";
-import { isStoreOpen } from "~/utils/storeHours";
 import { getNextOpeningTime } from "~/utils/businessHours";
+import type { Toast } from "#ui/composables/useToast";
 
-const { refresh } = usePizzaToppings();
+// Composables
 const toast = useToast();
+const appConfig = useAppConfig();
+const runtimeConfig = useRuntimeConfig();
+const { apiClient } = useShopwareContext();
+const { refresh: refreshToppings } = usePizzaToppings();
+const { refreshCart } = useCart();
+const { getWishlistProducts } = useWishlist();
 
-const colorMode = useColorMode();
+// Initialize Sentry
+Sentry.init({
+  dsn: runtimeConfig.public.sentry.dsn,
+});
 
-const color = computed(() =>
-  colorMode.value === "dark" ? "#171717" : "white",
+// Initialize session context
+const { data: sessionContextData } = await useAsyncData(
+  "session-context",
+  async () => {
+    const response = await apiClient.invoke("readContext get /context");
+    return response.data as Schemas["SalesChannelContext"];
+  },
 );
 
-useHead({
-  meta: [
-    { name: "viewport", content: "width=device-width, initial-scale=1" },
-    { key: "theme-color", name: "theme-color", content: color },
-  ],
-  link: [{ rel: "icon", href: "/favicon.ico" }],
-  htmlAttrs: {
-    lang: "de",
-  },
-});
+if (sessionContextData.value) {
+  useSessionContext(sessionContextData.value);
+}
 
-refresh();
+// Toast configuration
+const TOAST_CONFIG = {
+  open: {
+    id: "currently-open",
+    title: "Wir haben geöffnet!",
+    color: "primary" as const,
+    progress: false,
+    duration: 0,
+    icon: "i-lucide-party-popper",
+    actions: [
+      {
+        icon: "i-lucide-pizza",
+        label: "Zur Speisekarte",
+        color: "neutral" as const,
+        variant: "outline" as const,
+        onClick: () => navigateTo("/speisekarte"),
+      },
+    ],
+  } as Partial<Toast>,
+  closed: {
+    id: "currently-closed",
+    title: "Wir haben geschlossen!",
+    color: "neutral" as const,
+    progress: false,
+    duration: 0,
+  } as Partial<Toast>,
+} as const;
 
-Sentry.init({
-  dsn: useRuntimeConfig().public.sentry.dsn,
-});
-
-useSeoMeta({
-  title: "Pizzeria La Fattoria - Alte Schmiede",
-  ogTitle: "Pizzeria La Fattoria - Alte Schmiede",
-  description: "Italienisch-deutsche Küche in Obertshausen",
-  ogDescription: "Italienisch-deutsche Küche in Obertshausen",
-});
-
-const appConfig = useAppConfig();
-const { apiClient } = useShopwareContext();
-const sessionContextData = ref<Schemas["SalesChannelContext"]>();
-const contextResponse = await apiClient.invoke("readContext get /context");
-sessionContextData.value = contextResponse.data;
-
-useSessionContext(sessionContextData.value as Schemas["SalesChannelContext"]);
-const { getWishlistProducts } = useWishlist();
-const { refreshCart } = useCart();
-onMounted(() => {
-  refreshCart();
-  getWishlistProducts();
-  displayStoreStatus();
-});
-
-const now = ref(new Date());
-
-async function displayStoreStatus() {
+function displayStoreStatus() {
   const isOpen = isStoreOpen();
 
-  const nextOpening = getNextOpeningTime(now);
-
   if (isOpen) {
-    toast.add({
-      id: "currently-open",
-      title: "Wir haben geöffnet!",
-      color: "primary",
-      progress: false,
-      duration: 0,
-      icon: "i-lucide-party-popper",
-      actions: [
-        {
-          icon: "i-lucide-pizza",
-          label: "Zur Speisekarte",
-          color: "neutral",
-          variant: "outline",
-          onClick: () => {
-            navigateTo("/speisekarte");
-          },
-        },
-      ],
-    });
+    toast.add(TOAST_CONFIG.open);
   } else {
+    const nextOpening = getNextOpeningTime(ref(new Date()));
     toast.add({
-      id: "currently-closed",
-      title: "Wir haben geschlossen!",
+      ...TOAST_CONFIG.closed,
       description: nextOpening
         ? `Wir öffnen wieder ${nextOpening}`
         : "Öffnungszeiten siehe Website",
-      color: "neutral",
-      progress: false,
-      duration: 0,
     });
   }
 }
+
+// Lifecycle
+onMounted(async () => {
+  await refreshToppings();
+  await Promise.all([refreshCart(), getWishlistProducts()]);
+  displayStoreStatus();
+});
 </script>
 
 <template>

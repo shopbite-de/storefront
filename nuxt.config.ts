@@ -1,5 +1,30 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 export default defineNuxtConfig({
+  app: {
+    head: {
+      title: "Pizzeria La Fattoria - Alte Schmiede",
+      htmlAttrs: {
+        lang: "de",
+      },
+      meta: [
+        { charset: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        {
+          name: "description",
+          content: "Italienisch-deutsche Küche in Obertshausen",
+        },
+        {
+          property: "og:title",
+          content: "Pizzeria La Fattoria - Alte Schmiede",
+        },
+        {
+          property: "og:description",
+          content: "Italienisch-deutsche Küche in Obertshausen",
+        },
+      ],
+      link: [{ rel: "icon", href: "/favicon.ico" }],
+    },
+  },
   colorMode: {
     preference: "light",
   },
