@@ -52,7 +52,7 @@ async function addToCart(productId: string) {
 </script>
 
 <template>
-  <div :id="product.id" class="relative inline-block">
+  <div v-if="product" :id="product.id" class="relative inline-block">
     <NuxtImg
       :src="image"
       :alt="alt"

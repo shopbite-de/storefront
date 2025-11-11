@@ -38,7 +38,7 @@ useSeoMeta({
     <USeparator :ui="{ border: 'border-primary/30' }" />
 
     <FoodMarquee
-      v-if="page.marquee.items.length > 0"
+      v-if="page.marquee.items?.length > 0"
       :title="page.marquee.title"
       :description="page.marquee.description"
       :headline="page.marquee.headline"
