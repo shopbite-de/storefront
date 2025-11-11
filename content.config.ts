@@ -57,6 +57,17 @@ const createNavigationItemSchema = () =>
     action: z.string().optional(),
   });
 
+const createFooterColumnSchema = () =>
+  z.object({
+    label: z.string().nonempty(),
+    children: z.array(
+      z.object({
+        label: z.string().nonempty(),
+        to: z.string().optional(),
+      }),
+    ),
+  });
+
 export default defineContentConfig({
   collections: {
     home: defineCollection({
@@ -98,6 +109,9 @@ export default defineContentConfig({
         account: z.object({
           loggedIn: z.array(z.array(createNavigationItemSchema())),
           loggedOut: z.array(z.array(createNavigationItemSchema())),
+        }),
+        footer: z.object({
+          columns: z.array(createFooterColumnSchema()),
         }),
       }),
     }),

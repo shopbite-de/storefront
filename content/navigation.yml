@@ -38,3 +38,27 @@ account:
     - - label: Zur Anmeldung
         icon: i-lucide-user
         to: /anmelden
+
+footer:
+  columns:
+    - label: Informationen
+      children:
+        - label: Impressum
+          to: /impressum
+        - label: Datenschutz
+          to: /datenschutz
+        - label: AGB
+          to: /agb
+    - label: Top Kategorien
+      children:
+        - label: Pizza
+          to: /c/Pizza/
+        - label: Nudeln
+          to: /c/Nudeln/
+        - label: Fleischgerichte
+          to: /c/Fleischgerichte/
+    - label: Unternehmen
+      children:
+        - label: 'Tel: 06104 71427'
+        - label: Kantstraße 6
+        - label: 631679 Oberthsuasen

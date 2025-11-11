@@ -1,54 +1,13 @@
 <script setup lang="ts">
-const columns = [
-  {
-    label: "Informationen",
-    children: [
-      {
-        label: "Impressum",
-        to: "/impressum",
-      },
-      {
-        label: "Datenschutz",
-        to: "/datenschutz",
-      },
-      {
-        label: "AGB",
-        to: "/agb",
-      },
-    ],
-  },
-  {
-    label: "Top Kategorien",
-    children: [
-      {
-        label: "Pizza",
-        to: "/c/Pizza/",
-      },
-      {
-        label: "Nudeln",
-        to: "/c/Nudeln/",
-      },
-      {
-        label: "Fleischgerichte",
-        to: "/c/Fleischgerichte/",
-      },
-    ],
-  },
-  {
-    label: "Unternehmen",
-    children: [
-      {
-        label: "Tel: 06104 71427",
-      },
-      {
-        label: "Kantstraße 6",
-      },
-      {
-        label: "631679 Oberthsuasen",
-      },
-    ],
-  },
-];
+// Fetch navigation from content
+const { data: navigationData } = await useAsyncData("footer-navigation", () =>
+  queryCollection("navigation").first(),
+);
+
+const columns = computed(() => {
+  if (!navigationData.value?.footer.columns) return [];
+  return navigationData.value.footer.columns;
+});
 </script>
 
 <template>
