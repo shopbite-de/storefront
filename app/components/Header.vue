@@ -4,55 +4,40 @@ import { useRoute } from "vue-router";
 import { useUser } from "@shopware/composables";
 
 const route = useRoute();
+const toast = useToast();
 
 const { isLoggedIn, user, logout } = useUser();
 const { isCheckoutEnabled } = usePizzaToppings();
-
 const { count } = useCart();
+const runtimeConfig = useRuntimeConfig();
 
-const loginSlide = ref(false);
+// Fetch navigation from content
+const { data: navigationData } = await useAsyncData("header-navigation", () =>
+  queryCollection("navigation").first(),
+);
 
-const navi = computed<NavigationMenuItem[]>(() => [
-  {
-    label: "Start",
-    icon: "i-lucide-home",
-    to: "/",
-    active: route.path.length === 1,
-  },
-  {
-    label: "Speisekarte",
-    icon: "i-lucide-utensils",
-    to: "/speisekarte",
-    active: route.path.endsWith("/speisekarte"),
-  },
-  {
-    label: "Speisekarte 2",
-    icon: "i-lucide-utensils",
-    to: "/c/Pizza/",
-    active: route.path.endsWith("/speisekarte2"),
-  },
-  {
-    label: "Routenplaner",
-    to: "https://www.openstreetmap.org/directions?from=&to=50.080610%2C8.863783#map=19/50.080323/8.864079",
-    active: false,
-    icon: "i-lucide-map-pinned",
-    target: "_blank",
-  },
-  {
-    label: "Merkliste",
-    to: "/merkliste",
-    icon: "i-lucide-book-heart",
-    active: route.path.startsWith("/merkliste"),
-  },
-]);
+const siteName = computed(() => runtimeConfig.public.site?.name ?? "ShopBite");
+
+const navi = computed<NavigationMenuItem[]>(() => {
+  if (!navigationData.value?.main) return [];
+
+  return navigationData.value.main.map((item) => ({
+    label: item.label,
+    icon: item.icon,
+    to: item.to,
+    target: item.target,
+    active:
+      item.to === "/"
+        ? route.path.length === 1
+        : route.path.startsWith(item.to),
+  }));
+});
 
 const accountHoverText = computed(() => {
   return isLoggedIn.value
-    ? user.value?.firstName + " " + user.value?.lastName
+    ? `${user.value?.firstName} ${user.value?.lastName}`
     : "Hallo";
 });
-
-const toast = useToast();
 
 const logoutHandler = () => {
   logout();
@@ -63,54 +48,34 @@ const logoutHandler = () => {
   });
 };
 
-const loggedInDropDown = ref<DropdownMenuItem[][]>([
-  [
-    {
-      label: accountHoverText.value,
-      type: "label",
-    },
-  ],
-  [
-    {
-      label: "Konto",
-      icon: "i-lucide-user",
-      to: "/konto",
-    },
-    {
-      label: "Bestellungen",
-      icon: "i-lucide-pizza",
-      to: "/konto/bestellungen",
-    },
-    {
-      label: "Adressen",
-      icon: "i-lucide-house",
-      to: "/konto/adressen",
-    },
-  ],
-  [
-    {
-      label: "Abmelden",
-      icon: "i-lucide-log-out",
-      onSelect: logoutHandler,
-    },
-  ],
-]);
+const loggedInDropDown = computed<DropdownMenuItem[][]>(() => {
+  if (!navigationData.value?.account.loggedIn) return [];
 
-const loggedOutDropDown = ref<DropdownMenuItem[][]>([
-  [
-    {
-      label: "Jetzt anmelden",
-      type: "label",
-    },
-  ],
-  [
-    {
-      label: "Zur Anmeldung",
-      icon: "i-lucide-user",
-      to: "/anmelden",
-    },
-  ],
-]);
+  return navigationData.value.account.loggedIn.map((group) =>
+    group.map((item) => ({
+      label: item.type === "label" ? accountHoverText.value : item.label,
+      type: item.type,
+      icon: item.icon,
+      to: item.to,
+      onSelect: item.action === "logout" ? logoutHandler : undefined,
+    })),
+  );
+});
+
+const loggedOutDropDown = computed<DropdownMenuItem[][]>(() => {
+  if (!navigationData.value?.account.loggedOut) return [];
+
+  return navigationData.value.account.loggedOut.map((group) =>
+    group.map((item) => ({
+      label: item.label,
+      type: item.type,
+      icon: item.icon,
+      to: item.to,
+    })),
+  );
+});
+
+const loginSlide = ref(false);
 const cartQuickViewOpen = ref(false);
 </script>
 
@@ -118,7 +83,7 @@ const cartQuickViewOpen = ref(false);
   <UHeader>
     <template #title>
       <NuxtLink to="/" class="-m-1.5 p-1.5">
-        <span class="sr-only">Pizzeria La Fattoria</span>
+        <span class="sr-only">{{ siteName }}</span>
         <UColorModeImage
           light="/light/Logo.svg"
           dark="/dark/Logo.svg"

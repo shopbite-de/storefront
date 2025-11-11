@@ -40,6 +40,10 @@ export default defineNuxtConfig({
     shopware: {},
     apiClientConfig: {},
     public: {
+      site: {
+        name: "Pizzeria La Fattoria",
+        description: "Italienisch-deutsche Küche in Obertshausen",
+      },
       storeUrl: "",
       sentry: {
         dsn: process.env.NUXT_PUBLIC_SENTRY_DSN,

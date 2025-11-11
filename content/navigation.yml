@@ -1,0 +1,40 @@
+main:
+  - label: Start
+    icon: i-lucide-home
+    to: /
+  - label: Speisekarte
+    icon: i-lucide-utensils
+    to: /speisekarte
+  - label: Speisekarte 2
+    icon: i-lucide-utensils
+    to: /c/Pizza/
+  - label: Routenplaner
+    icon: i-lucide-map-pinned
+    to: https://www.openstreetmap.org/directions?from=&to=50.080610%2C8.863783#map=19/50.080323/8.864079
+    target: _blank
+  - label: Merkliste
+    icon: i-lucide-book-heart
+    to: /merkliste
+
+account:
+  loggedIn:
+    - - label: Mein Konto
+        type: label
+    - - label: Konto
+        icon: i-lucide-user
+        to: /konto
+      - label: Bestellungen
+        icon: i-lucide-pizza
+        to: /konto/bestellungen
+      - label: Adressen
+        icon: i-lucide-house
+        to: /konto/adressen
+    - - label: Abmelden
+        icon: i-lucide-log-out
+        action: logout
+  loggedOut:
+    - - label: Jetzt anmelden
+        type: label
+    - - label: Zur Anmeldung
+        icon: i-lucide-user
+        to: /anmelden

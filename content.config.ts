@@ -47,6 +47,16 @@ const createFeatureSchema = () =>
       .editor({ hidden: true }),
   });
 
+const createNavigationItemSchema = () =>
+  z.object({
+    label: z.string().nonempty(),
+    icon: z.string().optional().editor({ input: "icon" }),
+    to: z.string().nonempty(),
+    target: createEnum(["_blank", "_self"]),
+    type: createEnum(["label", "item"]).optional(),
+    action: z.string().optional(),
+  });
+
 export default defineContentConfig({
   collections: {
     home: defineCollection({
@@ -77,6 +87,17 @@ export default defineContentConfig({
             }),
           ),
           links: z.array(createLinkSchema()),
+        }),
+      }),
+    }),
+    navigation: defineCollection({
+      source: "navigation.yml",
+      type: "page",
+      schema: z.object({
+        main: z.array(createNavigationItemSchema()),
+        account: z.object({
+          loggedIn: z.array(z.array(createNavigationItemSchema())),
+          loggedOut: z.array(z.array(createNavigationItemSchema())),
         }),
       }),
     }),

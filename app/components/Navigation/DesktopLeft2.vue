@@ -5,7 +5,7 @@ import type { Schemas } from "#shopware";
 const { loadNavigationElements } = useNavigation();
 
 const { data: navigationElements } = await useAsyncData(
-  `navigation`,
+  `menu-navigation`,
   async () => {
     return await loadNavigationElements({ depth: 2 });
   },
