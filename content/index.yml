@@ -6,6 +6,17 @@ description: Italienisch-deutsche Küche in Obertshausen seit 1997.
 hero:
   backgroundVideo: https://shopware.shopbite.de/media/10/59/96/1762465181/background.mp4
   headline: ALTE SCHMIEDE
+  usps:
+    - title: 4.5 ⭐
+      subtitle: 720+ Reviews
+      icon: i-simple-icons-google
+      link: https://www.google.com/maps/place/?q=place_id:ChIJJ-6VNfcTvUcR2r7Sax3SN2s
+    - title: 28 Jahre
+      subtitle: in Obertshausen
+      icon: i-lucide-award
+    - title: Lieferservice
+      subtitle: Schnell & zuverlässig
+      icon: i-lucide-bike
   links:
     - label: Speisekarte
       icon: i-lucide-arrow-right

@@ -78,6 +78,14 @@ export default defineContentConfig({
           backgroundVideo: z.string().optional(),
           headline: z.string().optional(),
           links: z.array(createLinkSchema()),
+          usps: z.array(
+            z.object({
+              title: z.string().optional(),
+              subtitle: z.string().optional(),
+              icon: z.string().optional(),
+              link: z.string().optional(),
+            }),
+          ),
         }),
         features: createBaseSchema().extend({
           features: z.array(createFeatureSchema()),

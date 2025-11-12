@@ -25,6 +25,7 @@ useSeoMeta({
       :description="page.description"
       :headline="page.hero.headline"
       :links="page.hero.links"
+      :usps="page.hero.usps"
     />
 
     <USeparator :ui="{ border: 'border-primary/30' }" />
