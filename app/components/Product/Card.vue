@@ -57,9 +57,9 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
   >
     <UPageCard
       :orientation="product.cover?.media?.url ? 'horizontal' : 'vertical'"
-      variant="soft"
+      variant="outline"
       reverse
-      :ui="{ footer: 'w-full' }"
+      :ui="{ footer: 'w-full', root: 'shadow-lg' }"
     >
       <template #header>
         <UBadge
