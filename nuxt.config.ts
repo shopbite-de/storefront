@@ -49,6 +49,7 @@ export default defineNuxtConfig({
       site: {
         name: "Pizzeria La Fattoria",
         description: "Italienisch-deutsche Küche in Obertshausen",
+        countryId: "",
       },
       storeUrl: "",
       sentry: {

@@ -3,6 +3,7 @@ import { createRegistrationSchema } from "~/validation/registrationSchema";
 import type { RegistrationSchema } from "~/validation/registrationSchema";
 import type { FormSubmitEvent } from "@nuxt/ui";
 
+const config = useRuntimeConfig();
 const { register, isLoggedIn } = useUser();
 
 if (import.meta.client && isLoggedIn.value) {
@@ -26,7 +27,7 @@ const state = reactive({
   passwordConfirm: undefined,
   acceptedDataProtection: true,
   isShippingAddressDifferent: false,
-  storefrontUrl: "https://pizzeria-lafattoria.de",
+  storefrontUrl: config.public.shopware.devStorefrontUrl,
   billingAddress: {
     company: undefined,
     department: undefined,
@@ -37,7 +38,7 @@ const state = reactive({
     street: undefined,
     zipcode: undefined,
     city: undefined,
-    countryId: "019a48db49a171b39b45d3b191c80870",
+    countryId: config.public.site.countryId,
   },
   shippingAddress: {
     company: undefined,
@@ -49,7 +50,7 @@ const state = reactive({
     street: undefined,
     zipcode: undefined,
     city: undefined,
-    countryId: "019a48db49a171b39b45d3b191c80870",
+    countryId: config.public.site.countryId,
   },
 });
 
