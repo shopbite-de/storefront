@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 
-useSeoMeta({
-  title: "Speisekarte | Pizzeria La Fattoria",
-});
+const {
+  public: { site },
+} = useRuntimeConfig();
+
+const pageTitle = computed(() => `Speisekarte | ${site?.name}`);
+
+useSeoMeta({ title: pageTitle });
 
 definePageMeta({
   layout: "listing",
@@ -23,19 +27,14 @@ const searchInProgress = ref(false);
 
 <template>
   <div v-if="navigationElements">
-    <div
-      class="sticky top-16 left-0 z-20 w-full px-4 md:px-6 lg:px-8 backdrop-blur-md rounded-md"
-    >
+    <div class="sticky top-16 left-0 z-20 w-full backdrop-blur-md rounded-md">
       <NavigationMobileTop v-if="!searchInProgress" class="" />
       <ProductSearchBar
         ref="searchBarRef"
         v-model:search-in-progress="searchInProgress"
       />
     </div>
-    <div
-      v-if="searchBarRef?.showSuggest"
-      class="flex flex-col gap-4 mt-4 px-4 md:px-6 lg:px-8"
-    >
+    <div v-if="searchBarRef?.showSuggest" class="flex flex-col gap-4 mt-4">
       <div v-if="!searchBarRef?.loading" class="flex flex-col gap-4">
         <ProductCard
           v-for="product in searchBarRef?.products"
@@ -46,7 +45,7 @@ const searchInProgress = ref(false);
         />
       </div>
     </div>
-    <div v-else class="px-4 md:px-6 lg:px-8">
+    <div v-else>
       <ProductCategory
         v-for="category in navigationElements"
         :key="category.id"

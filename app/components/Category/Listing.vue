@@ -32,6 +32,16 @@ const { data: category } = await useAsyncData(
   },
 );
 
+const pageTitle = computed(
+  () =>
+    `${category.value?.translated.name ?? category.value?.name} | Speisekarte`,
+);
+
+useSeoMeta({
+  title: pageTitle,
+  robots: "index,follow",
+});
+
 const currentSorting = ref(getCurrentSortingOrder.value ?? "Sortieren");
 
 const propertyFilters = computed<Schemas["PropertyGroup"][]>(() =>
