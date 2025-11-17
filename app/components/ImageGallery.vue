@@ -34,7 +34,12 @@ defineProps<{
         arrows
         loop
       >
-        <img :src="item.image" :alt="item.alt" class="rounded-lg w-full" >
+        <NuxtImg
+          :src="item.image"
+          :alt="item.alt"
+          class="rounded-lg w-full max-h-screen object-contain"
+          sizes="sm:100vw md:100vw lg:100vw"
+        />
       </UCarousel>
     </template>
   </UPageSection>
