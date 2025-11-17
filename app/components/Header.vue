@@ -87,8 +87,7 @@ const cartQuickViewOpen = ref(false);
         <UColorModeImage
           light="/light/Logo.svg"
           dark="/dark/Logo.svg"
-          :width="200"
-          :height="200"
+          class="h-12 w-auto"
         />
       </NuxtLink>
     </template>
