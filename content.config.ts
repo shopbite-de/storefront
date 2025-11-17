@@ -126,5 +126,9 @@ export default defineContentConfig({
         }),
       }),
     }),
+    unternehmen: defineCollection({
+      source: "unternehmen/*.md",
+      type: "page",
+    }),
   },
 });

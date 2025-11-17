@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   app: {
     head: {
-      title: "Pizzeria La Fattoria - Alte Schmiede",
+      title: "ShopBite Demo Shop",
       htmlAttrs: {
         lang: "de",
       },
@@ -15,7 +15,7 @@ export default defineNuxtConfig({
         },
         {
           property: "og:title",
-          content: "Pizzeria La Fattoria - Alte Schmiede",
+          content: "ShopBite - Demo Shop",
         },
         {
           property: "og:description",
@@ -30,6 +30,12 @@ export default defineNuxtConfig({
   },
   robots: {
     disallow: [
+      "/unternehmen/impressum",
+      "/unternehmen/datenschutz",
+      "/unternehmen/agb",
+      "/impressum",
+      "/datenschutz",
+      "/agb",
       "/merkliste",
       "/passwort-vergessen",
       "/account/recover/password",
@@ -52,11 +58,14 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    "/": {
-      prerender: true,
+    "/impressum": {
+      redirect: "/unternehmen/impressum",
     },
-    "/speisekarte": {
-      prerender: true,
+    "/datenschutz": {
+      redirect: "/unternehmen/datenschutz",
+    },
+    "/agb": {
+      redirect: "/unternehmen/agb",
     },
     "/merkliste": {
       ssr: false,
