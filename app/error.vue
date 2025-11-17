@@ -5,12 +5,18 @@ const props = defineProps<{
   error: NuxtError;
 }>();
 
+const {
+  public: { site },
+} = useRuntimeConfig();
+
+const pageTitle = computed(() => `${statusCode} | ${site?.name}`);
+
 console.error(props.error);
 
 const statusCode = props.error.statusCode;
 
 useSeoMeta({
-  title: `${statusCode} | Pizzeria La Fattoria`,
+  title: pageTitle,
 });
 </script>
 

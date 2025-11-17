@@ -47,8 +47,8 @@ export default defineNuxtConfig({
     apiClientConfig: {},
     public: {
       site: {
-        name: "Pizzeria La Fattoria",
-        description: "Italienisch-deutsche Küche in Obertshausen",
+        name: "ShopBite",
+        description: "Reduziere deine Kosten und steigere deinen Umsatz",
         countryId: "",
       },
       storeUrl: "",

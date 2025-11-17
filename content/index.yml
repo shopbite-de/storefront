@@ -1,17 +1,17 @@
 seo:
   title: ShopBite – Kostenloses Online-Bestellsystem für Gastronomie
   description: Dein eigenes Bestellsystem ohne Provisionen, ohne monatliche Kosten – 100% Open Source und individuell anpassbar. Perfekt für Pizzerien, Imbisse und Lieferdienste.
-title: Pizzeria La Fattoria
-description: Italienisch-deutsche Küche in Obertshausen seit 1997.
+title: ShopBite
+description: Reduziere Kosten und steigere deinen Umsatz
 hero:
   backgroundVideo: https://shopware.shopbite.de/media/10/59/96/1762465181/background.mp4
-  headline: ALTE SCHMIEDE
+  headline: SHOPBITE
   usps:
     - title: 4.5 ⭐
       subtitle: 720+ Reviews
       icon: i-simple-icons-google
-      link: https://www.google.com/maps/place/?q=place_id:ChIJJ-6VNfcTvUcR2r7Sax3SN2s
-    - title: 28 Jahre
+      link: https://www.google.com/maps/place/?q=place_id
+    - title: 20 Jahre
       subtitle: in Obertshausen
       icon: i-lucide-award
     - title: Lieferservice
@@ -29,12 +29,12 @@ hero:
       size: xl
       color: neutral
       variant: outline
-      to: 'tel:+490610474127'
+      to: 'tel:+490610477777'
       target: _blank
 features:
   title: Alle [Informationen]{.text-primary} auf einen Blick
   description: Sie können Speisen und Getränke abholen, liefern lassen, oder vor Ort in unserem Restaurant genießen.
-  headline: ALTE SCHMIEDE
+  headline: SHOPBITE
   features:
     - title: Öffnungszeiten
       description: Von 11:30 - 14:30 und 17:30 - 23:00 Uhr. Samstags von 17:30 - 23:30 Uhr. Dienstag ist Ruhetag.
@@ -54,7 +54,7 @@ features:
 marquee:
   title: Das lieben unsere Kunden
   description: Kundenbilder
-  headline: ALTE SCHMIEDE
+  headline: SHOPBITE
   items:
     - productId: 019a4f2e717b7df7a349761a56c43ac3
       image: https://shopware.shopbite.de/media/e4/82/55/1762465420/72.webp
@@ -67,7 +67,7 @@ marquee:
 gallery:
   title: Restaurant
   description: Genießen Sie leckeres Essen in einem rustikalen und gemütlichen Ambiente.
-  headline: ALTE SCHMIEDE
+  headline: SHOPBITE
   links:
     - label: Tisch reservieren
       to: tel:+49610471427

@@ -2,25 +2,21 @@
 
 ## Angaben gemäß § 5 TMG
 
-Bekim Veliu und Cefajet Veliu GbR
+Lirim Veliu<br>
+Hausener Straße 31<br>
+63165 Mühlheim am Main<br>
+Deutschland
 
-Kantstr. 6<br>63179 Obertshausen<br>Deutschland
-
-**Vertreten durch:**<br>Bekim Veliu
-
-**Kontakt:**<br>Telefon: +49 6104 71427<br>E-Mail: service@pizzeria-lafattoria.de
-
-## Umsatzsteuer-ID
-
-Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:
+lirim@veliu.net
 
 ## Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV
 
-Bekim Veliu<br>Kantstr. 6<br>63179 Obertshausen
+Lirim Veliu<br>
+Hausener Straße 31<br>
+63165 Mühlheim am Main<br>
+Deutschland
 
-## Administrator und technischer Ansprechpartner dieser Seite
-
-Lirim Veliu<br>lirim@veliu.net
+lirim@veliu.net
 
 ## Haftungshinweis
 
