@@ -119,6 +119,9 @@ export default defineContentConfig({
           loggedOut: z.array(z.array(createNavigationItemSchema())),
         }),
         footer: z.object({
+          withGithubLink: z.boolean(),
+          withColorModeSwitch: z.boolean(),
+          text: z.string().optional(),
           columns: z.array(createFooterColumnSchema()),
         }),
       }),

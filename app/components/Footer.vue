@@ -30,15 +30,15 @@ const columns = computed(() => {
       </NuxtLink>
     </template>
 
-    <p class="text-muted text-sm">
-      Alle Preise inkl. gesetzlicher Mehrwertsteuer zzgl. Versandkosten, wenn
-      nicht anders beschrieben
+    <p v-if="navigationData?.footer.text" class="text-muted text-sm">
+      {{ navigationData.footer.text }}
     </p>
 
     <template #right>
-      <UColorModeButton />
+      <UColorModeButton v-if="navigationData?.footer.withColorModeSwitch" />
 
       <UButton
+        v-if="navigationData?.footer.withGithubLink"
         to="https://github.com/shopbite-de/storefront"
         target="_blank"
         icon="i-simple-icons-github"

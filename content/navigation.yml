@@ -40,6 +40,9 @@ account:
         to: /anmelden
 
 footer:
+  withGithubLink: true
+  withColorModeSwitch: true
+  text: Alle Preise inkl. gesetzlicher Mehrwertsteuer zzgl. Versandkosten, wenn nicht anders beschrieben
   columns:
     - label: Informationen
       children:
