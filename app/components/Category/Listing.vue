@@ -7,63 +7,6 @@ const props = defineProps<{
 
 const { id: categoryId } = toRefs(props);
 
-const {
-  resetFilters,
-  loading,
-  search,
-  getElements,
-  getCurrentSortingOrder,
-  getSortingOrders,
-  changeCurrentSortingOrder,
-  getAvailableFilters,
-  getCurrentFilters,
-  setCurrentFilters,
-} = useListing({
-  listingType: "categoryListing",
-  categoryId: props.id,
-});
-
-const { search: categorySearch } = useCategorySearch();
-
-const { data: category } = await useAsyncData(
-  `category${categoryId.value}`,
-  async () => {
-    return await categorySearch(categoryId.value);
-  },
-);
-
-const pageTitle = computed(
-  () =>
-    `${category.value?.translated.name ?? category.value?.name} | Speisekarte`,
-);
-
-useSeoMeta({
-  title: pageTitle,
-  robots: "index,follow",
-});
-
-const currentSorting = ref(getCurrentSortingOrder.value ?? "Sortieren");
-
-const propertyFilters = computed<Schemas["PropertyGroup"][]>(() =>
-  getAvailableFilters.value?.filter(
-    (availableFilter) => availableFilter.code === "properties",
-  ),
-);
-
-const selectedPropertyFilters = ref(getCurrentFilters.value?.properties ?? []);
-const selectedPropertyFiltersString = computed(() =>
-  selectedPropertyFilters.value?.join("|"),
-);
-
-const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
-  return [
-    {
-      code: "properties",
-      value: selectedPropertyFiltersString.value,
-    },
-  ];
-});
-
 const query = {
   includes: {
     product: [
@@ -138,6 +81,64 @@ const query = {
     },
   },
 } as operations["searchPage post /search"]["body"];
+
+const {
+  resetFilters,
+  loading,
+  search,
+  getElements,
+  getCurrentSortingOrder,
+  getSortingOrders,
+  changeCurrentSortingOrder,
+  getAvailableFilters,
+  getCurrentFilters,
+  setCurrentFilters,
+} = useListing({
+  listingType: "categoryListing",
+  categoryId: props.id,
+  defaultSearchCriteria: query,
+});
+
+const { search: categorySearch } = useCategorySearch();
+
+const { data: category } = await useAsyncData(
+  `category${categoryId.value}`,
+  async () => {
+    return await categorySearch(categoryId.value);
+  },
+);
+
+const pageTitle = computed(
+  () =>
+    `${category.value?.translated.name ?? category.value?.name} | Speisekarte`,
+);
+
+useSeoMeta({
+  title: pageTitle,
+  robots: "index,follow",
+});
+
+const currentSorting = ref(getCurrentSortingOrder.value ?? "Sortieren");
+
+const propertyFilters = computed<Schemas["PropertyGroup"][]>(() =>
+  getAvailableFilters.value?.filter(
+    (availableFilter) => availableFilter.code === "properties",
+  ),
+);
+
+const selectedPropertyFilters = ref(getCurrentFilters.value?.properties ?? []);
+const selectedPropertyFiltersString = computed(() =>
+  selectedPropertyFilters.value?.join("|"),
+);
+
+const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
+  return [
+    {
+      code: "properties",
+      value: selectedPropertyFiltersString.value,
+    },
+  ];
+});
 
 await useAsyncData(`listing${categoryId.value}`, async () => {
   await search(query);
