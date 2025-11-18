@@ -26,7 +26,7 @@ defineProps<{
 
     <div v-else class="absolute inset-0 bg-primary" />
 
-    <div class="relative z-10 p-4">
+    <div class="relative p-4">
       <h2
         class="text-pretty font-semibold text-3xl md:text-4xl text-white drop-shadow"
       >
