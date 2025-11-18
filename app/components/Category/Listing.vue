@@ -33,12 +33,6 @@ const query = {
     product_configurator_setting: ["id", "optionId", "option", "productId"],
     product_option: ["id", "groupId", "name", "translated", "group"],
   },
-  sort: [
-    {
-      field: "productNumber",
-      order: "ASC",
-    },
-  ],
   associations: {
     cover: {
       associations: {
