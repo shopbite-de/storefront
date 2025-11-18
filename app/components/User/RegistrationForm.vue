@@ -61,7 +61,6 @@ const toast = useToast();
 async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
   const registrationData = { ...event.data };
 
-  console.log(registrationData);
   if (
     !registrationData.billingAddress.firstName &&
     registrationData.firstName

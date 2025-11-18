@@ -123,7 +123,7 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
         </div>
         <UCollapsible v-model:open="openDetails" class="flex flex-col gap-2">
           <template #content>
-            <ProductDetail :product="product" @product-added="toggleDetails" />
+            <ProductDetail2 :product="product" @product-added="toggleDetails" />
           </template>
         </UCollapsible>
       </template>

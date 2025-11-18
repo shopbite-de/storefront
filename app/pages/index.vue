@@ -54,6 +54,11 @@ useSeoMeta({
       :images="page.gallery.images"
       :links="page.gallery.links"
     />
-    <Cta />
+    <Cta
+      :title="page.cta.title"
+      :description="page.cta.description"
+      :background-image="page.cta.backgroundImage"
+      :links="page.cta.links"
+    />
   </div>
 </template>

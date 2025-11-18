@@ -60,7 +60,9 @@ const handleRemoveItem = () => {
             </h3>
 
             <p
-              v-for="option in cartItem?.payload?.options"
+              v-for="option in cartItem?.type === 'container'
+                ? cartItem?.children?.[0]?.payload?.options
+                : cartItem?.payload?.options"
               :key="option.group + option.option"
               class="text-sm text-pretty text-toned mt-1"
             >

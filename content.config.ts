@@ -10,6 +10,7 @@ const createLinkSchema = () =>
     icon: z.string().optional().editor({ input: "icon" }),
     size: createEnum(["xs", "sm", "md", "lg", "xl"]),
     trailing: z.boolean().optional(),
+    trailingIcon: z.string().optional().editor({ input: "icon" }),
     target: createEnum(["_blank", "_self"]),
     color: createEnum([
       "primary",
@@ -106,6 +107,10 @@ export default defineContentConfig({
             }),
           ),
           links: z.array(createLinkSchema()),
+        }),
+        cta: createBaseSchema().extend({
+          links: z.array(createLinkSchema()),
+          backgroundImage: z.string().optional(),
         }),
       }),
     }),

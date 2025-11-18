@@ -1,31 +1,22 @@
 <script setup lang="ts">
-import { onMounted, watch, computed, ref, toRefs } from "vue";
 import type { Schemas } from "#shopware";
 import type {
   AssociationItemProduct,
   AssociationItem,
 } from "~/types/Association";
+import { useShopwareContext } from "#imports";
 
 const DEFAULT_CURRENCY = "EUR";
 const DEFAULT_LOCALE = "de-DE";
-const ASSOCIATION_CONTEXT = "cross-selling";
 const LOADING_ICON = "i-lucide-loader";
 const DEFAULT_ICON = "i-lucide-plus";
-const LOAD_ASSOCIATIONS_METHOD = "post";
 
 const props = defineProps<{
   product: Schemas["Product"];
 }>();
-const { product } = toRefs(props);
-const selectedExtras = ref<AssociationItemProduct[]>([]);
 
-const {
-  loadAssociations,
-  isLoading: isAssociationsLoading,
-  productAssociations,
-} = useProductAssociations(product, {
-  associationContext: ASSOCIATION_CONTEXT,
-});
+const product = computed(() => props.product);
+const selectedExtras = ref<AssociationItemProduct[]>([]);
 
 const { getFormattedPrice } = usePrice({
   currencyCode: DEFAULT_CURRENCY,
@@ -48,13 +39,23 @@ function mapAssociationToItems(
   }));
 }
 
-const associationItems = computed(() =>
-  mapAssociationToItems(productAssociations.value),
-);
+const { apiClient } = useShopwareContext();
 
-onMounted(() => {
-  loadAssociations({ method: LOAD_ASSOCIATIONS_METHOD, searchParams: {} });
-});
+const { data: productAssociations, pending: isAssociationsLoading } =
+  useAsyncData(`cross-selling-${product.value.id}`, async () => {
+    const response = await apiClient.invoke(
+      "readProductCrossSellings post /product/{productId}/cross-selling",
+      {
+        pathParams: { productId: product.value.id },
+      },
+    );
+
+    return response.data;
+  });
+
+const associationItems = computed(() =>
+  mapAssociationToItems(productAssociations.value ?? []),
+);
 
 watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
   deep: true,
