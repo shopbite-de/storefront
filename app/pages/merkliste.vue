@@ -12,6 +12,6 @@ useSeoMeta({
 
 <template>
   <UContainer>
-    <Wishlist />
+    <Wishlist :show-menu-button="true" />
   </UContainer>
 </template>
