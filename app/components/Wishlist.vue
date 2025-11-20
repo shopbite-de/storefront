@@ -4,37 +4,26 @@ import type { Schemas } from "#shopware";
 const props = withDefaults(
   defineProps<{
     showMenuButton?: boolean;
+    useGridLayout?: boolean;
   }>(),
   {
     showMenuButton: false,
+    useGridLayout: false,
   },
 );
 
-const { getWishlistProducts, items, clearWishlist } = useWishlist();
+const { getWishlistProducts, items } = useWishlist();
 const { apiClient } = useShopwareContext();
-const { addProducts, refreshCart } = useCart();
-const toast = useToast();
-const { triggerProductAdded } = useProductEvents();
+const {
+  isAddingToCart,
+  addingItemId,
+  isLoading,
+  clearWishlistHandler,
+  addSingleItemToCart,
+  addAllItemsToCart,
+} = useWishlistActions();
 
 const products = ref<Schemas["Product"][]>([]);
-const isLoading = ref(false);
-const isAddingToCart = ref(false);
-const addingItemId = ref<string | null>(null);
-
-const clearWishlistHandler = async () => {
-  try {
-    isLoading.value = true;
-    clearWishlist();
-    toast.add({
-      title: "Merkliste geleert",
-      description: "Alle Produkte wurden von der Merkliste entfernt.",
-      icon: "i-lucide-trash",
-      color: "neutral",
-    });
-  } finally {
-    isLoading.value = false;
-  }
-};
 
 const loadProductsByItemIds = async (itemIds: string[]): Promise<void> => {
   isLoading.value = true;
@@ -52,149 +41,6 @@ const loadProductsByItemIds = async (itemIds: string[]): Promise<void> => {
   }
 
   isLoading.value = false;
-};
-
-const addSingleItemToCart = async (product: Schemas["Product"]) => {
-  try {
-    addingItemId.value = product.id;
-    
-    console.log("[wishlist][addSingleItemToCart] Adding product:", {
-      id: product.id,
-      productNumber: product.productNumber,
-      name: product.translated.name,
-      childCount: product.childCount,
-    });
-    
-    // Check if this is a base product with variants
-    const isBaseProduct = product.childCount && product.childCount > 0;
-    if (isBaseProduct) {
-      console.warn("[wishlist][addSingleItemToCart] Cannot add base product with variants");
-      toast.add({
-        title: "Variante erforderlich",
-        description: `${product.translated.name} hat Varianten. Bitte wähle eine spezifische Variante aus.`,
-        icon: "i-lucide-alert-circle",
-        color: "warning",
-      });
-      return;
-    }
-    
-    const cartItems = [
-      {
-        id: product.id,
-        quantity: 1,
-        type: "product" as const,
-      },
-    ];
-    
-    const newCart = await addProducts(cartItems);
-    await refreshCart(newCart);
-    
-    console.log("[wishlist][addSingleItemToCart] Product added successfully");
-    
-    triggerProductAdded();
-    
-    toast.add({
-      title: "In den Warenkorb gelegt",
-      description: `${product.translated.name} wurde hinzugefügt.`,
-      icon: "i-lucide-shopping-cart",
-      color: "primary",
-    });
-    
-    useTrackEvent("add_to_cart", {
-      props: {
-        product_number: product.productNumber,
-        quantity: 1,
-      },
-    });
-  } catch (error) {
-    console.error("[wishlist][addSingleItemToCart] Error details:", error);
-    toast.add({
-      title: "Fehler",
-      description: "Produkt konnte nicht hinzugefügt werden.",
-      icon: "i-lucide-alert-circle",
-      color: "error",
-    });
-  } finally {
-    addingItemId.value = null;
-  }
-};
-
-const addAllItemsToCart = async () => {
-  if (products.value.length === 0) {
-    console.warn("[wishlist][addAllItemsToCart] No products to add");
-    return;
-  }
-  
-  try {
-    isAddingToCart.value = true;
-    
-    console.log("[wishlist][addAllItemsToCart] Adding products:", products.value.length);
-    
-    // Filter out base products (parent products with childCount > 0)
-    // Only add actual variants or simple products
-    const addableProducts = products.value.filter((product) => {
-      const isBaseProduct = product.childCount && product.childCount > 0;
-      if (isBaseProduct) {
-        console.warn("[wishlist][addAllItemsToCart] Skipping base product:", product.productNumber, product.translated.name);
-      }
-      return !isBaseProduct;
-    });
-    
-    if (addableProducts.length === 0) {
-      toast.add({
-        title: "Keine Produkte hinzugefügt",
-        description: "Bitte wähle zuerst Varianten für deine Produkte aus.",
-        icon: "i-lucide-alert-circle",
-        color: "warning",
-      });
-      return;
-    }
-    
-    const cartItems = addableProducts.map((product) => ({
-      id: product.id,
-      quantity: 1,
-      type: "product" as const,
-    }));
-    
-    console.log("[wishlist][addAllItemsToCart] Cart items:", cartItems);
-    
-    const newCart = await addProducts(cartItems);
-    await refreshCart(newCart);
-    
-    triggerProductAdded();
-    
-    const skippedCount = products.value.length - addableProducts.length;
-    const successMessage = skippedCount > 0
-      ? `${addableProducts.length} Produkte hinzugefügt. ${skippedCount} Produkt(e) übersprungen (Varianten müssen einzeln ausgewählt werden).`
-      : `${addableProducts.length} Produkte wurden in den Warenkorb gelegt.`;
-    
-    toast.add({
-      title: "Produkte hinzugefügt",
-      description: successMessage,
-      icon: "i-lucide-shopping-cart",
-      color: "primary",
-    });
-    
-    useTrackEvent("add_to_cart", {
-      props: {
-        product_count: addableProducts.length,
-        skipped_count: products.value.length - addableProducts.length,
-        source: "wishlist_bulk",
-      },
-    });
-    
-    console.log("[wishlist][addAllItemsToCart] Success");
-  } catch (error) {
-    console.error("[wishlist][addAllItemsToCart] Error:", error);
-    toast.add({
-      title: "Fehler",
-      description: "Produkte konnten nicht hinzugefügt werden.",
-      icon: "i-lucide-alert-circle",
-      color: "error",
-    });
-  } finally {
-    isAddingToCart.value = false;
-  }
 };
 
 watch(
@@ -222,11 +68,6 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <!-- Header -->
-    <div class="flex flex-row items-center gap-3">
-      <h2 class="text-2xl font-bold">Merkliste</h2>
-    </div>
-
     <!-- Primary Action - Add All to Cart -->
     <div v-if="products.length > 0">
       <UButton
@@ -236,7 +77,7 @@ onMounted(async () => {
         size="xl"
         block
         :loading="isAddingToCart"
-        @click="addAllItemsToCart"
+        @click="addAllItemsToCart(products)"
         class="font-semibold shadow-md"
       >
         Alle in den Warenkorb ({{ products.length }})
@@ -284,10 +125,11 @@ onMounted(async () => {
     <!-- Products List -->
     <div v-if="products.length > 0" class="flex flex-col gap-4">
       <!-- Product Items -->
-      <div
-        v-for="product in products"
-        :key="product.id"
-      >
+      <div :class="props.useGridLayout ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'flex flex-col gap-4'">
+        <div
+          v-for="product in products"
+          :key="product.id"
+        >
         <div class="relative">
           <UPageCard variant="outline" :ui="{ root: 'shadow-sm hover:shadow-md transition-shadow' }">
             <div class="flex flex-col gap-3">
@@ -339,21 +181,34 @@ onMounted(async () => {
             </div>
           </UPageCard>
         </div>
+        </div>
       </div>
 
       <!-- Secondary Actions -->
-      <div class="pt-4 border-t border-gray-200 dark:border-gray-800">
+      <div class="pt-4 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row gap-2">
         <UButton
           icon="i-lucide-trash-2"
           color="neutral"
           variant="ghost"
           size="md"
-          block
+          class="flex-1"
           :disabled="isLoading"
           @click="clearWishlistHandler"
         >
           Merkliste leeren
         </UButton>
+        
+        <NuxtLink v-if="showMenuButton" to="/speisekarte" class="flex-1">
+          <UButton
+            icon="i-lucide-utensils"
+            color="neutral"
+            variant="outline"
+            size="md"
+            block
+          >
+            Zur Speisekarte
+          </UButton>
+        </NuxtLink>
       </div>
     </div>
   </div>

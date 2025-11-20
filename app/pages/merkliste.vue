@@ -12,6 +12,12 @@ useSeoMeta({
 
 <template>
   <UContainer>
-    <Wishlist :show-menu-button="true" />
+    <UPageSection
+      title="Merkliste"
+      description="Verwalte deine Lieblingsprodukte."
+      icon="i-lucide-heart"
+    >
+      <Wishlist :show-menu-button="true" :use-grid-layout="true" />
+    </UPageSection>
   </UContainer>
 </template>
