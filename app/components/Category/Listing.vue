@@ -7,7 +7,7 @@ const props = defineProps<{
 
 const { id: categoryId } = toRefs(props);
 
-const query = {
+const searchCriteria = {
   includes: {
     product: [
       "id",
@@ -76,6 +76,20 @@ const query = {
   },
 } as operations["searchPage post /search"]["body"];
 
+const defaultSorting = {
+  sort: [
+    {
+      field: "productNumber",
+      order: "ASC",
+    },
+  ],
+};
+
+const searchCriteriaWithSorting = {
+  ...searchCriteria,
+  ...defaultSorting,
+} as operations["searchPage post /search"]["body"];
+
 const {
   resetFilters,
   loading,
@@ -90,7 +104,7 @@ const {
 } = useListing({
   listingType: "categoryListing",
   categoryId: props.id,
-  defaultSearchCriteria: query,
+  defaultSearchCriteria: searchCriteria,
 });
 
 const { search: categorySearch } = useCategorySearch();
@@ -135,20 +149,30 @@ const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
 });
 
 await useAsyncData(`listing${categoryId.value}`, async () => {
-  await search(query);
+  await search(searchCriteriaWithSorting);
 });
 
 watch(selectedListingFilters, () => {
-  setCurrentFilters(selectedListingFilters.value);
+  if (selectedListingFilters.value[0]?.value == "") {
+    handleFilterRest();
+  } else {
+    setCurrentFilters(selectedListingFilters.value);
+  }
 });
 
 watch(currentSorting, () => {
-  changeCurrentSortingOrder(currentSorting.value as string);
+  const q = {
+    query: getCurrentFilters.value?.search,
+    properties: getCurrentFilters.value?.properties?.join("|"),
+  };
+
+  changeCurrentSortingOrder(currentSorting.value as string, q);
 });
 
 async function handleFilterRest() {
   await resetFilters();
   selectedPropertyFilters.value = [];
+  currentSorting.value = "number-asc";
 }
 
 const moreThanOneFilterAndOption = computed<boolean>(
