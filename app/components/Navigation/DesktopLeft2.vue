@@ -32,7 +32,7 @@ const navItems = computed<NavigationMenuItem[]>(() => {
 
 <template>
   <div>
-    <h2>Navigation</h2>
+    <h2 class="text-3xl md:text-4xl mt-8 mb-3 pb-2">Speisekarte</h2>
     <UNavigationMenu
       variant="link"
       orientation="vertical"

@@ -18,6 +18,7 @@ defineProps<{
     <UPageSection
       id="features"
       :description="description"
+      :title="title"
       :features="features"
       :headline="headline"
       class="relative overflow-hidden"

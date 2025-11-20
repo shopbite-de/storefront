@@ -1,14 +1,81 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { operations, Schemas } from "#shopware";
 import type { AssociationItemProduct } from "~/types/Association";
 
 const props = defineProps<{
-  product: Schemas["Product"];
+  productId: string;
 }>();
 
 const { apiClient } = useShopwareContext();
 
-const productId = toRef(props.product.id);
+const productId = toRef(props.productId);
+
+const searchCriteria = {
+  includes: {
+    product: [
+      "id",
+      "productNumber",
+      "name",
+      "description",
+      "calculatedPrice",
+      "translated",
+      "properties",
+      "propertyIds",
+      "options",
+      "optionIds",
+      "configuratorSettings",
+      "children",
+      "parentId",
+      "sortedProperties",
+      "cover",
+    ],
+    property: ["id", "name", "translated", "options"],
+    property_group_option: ["id", "name", "translated", "group"],
+    product_configurator_setting: ["id", "optionId", "option", "productId"],
+    product_option: ["id", "groupId", "name", "translated", "group"],
+  },
+  associations: {
+    cover: {
+      associations: {
+        media: {},
+      },
+    },
+    properties: {
+      associations: {
+        group: {},
+      },
+    },
+    options: {
+      associations: {
+        group: {},
+      },
+    },
+    configuratorSettings: {
+      associations: {
+        option: {
+          associations: {
+            group: {},
+          },
+        },
+      },
+    },
+    children: {
+      associations: {
+        properties: {
+          associations: {
+            group: {},
+          },
+        },
+        options: {
+          associations: {
+            group: {},
+          },
+        },
+      },
+    },
+  },
+} as operations["searchPage post /search"]["body"];
+
 const { data: productDetails, pending } = useAsyncData(
   () => `product-${productId.value ?? "none"}`,
   async () => {
@@ -17,6 +84,7 @@ const { data: productDetails, pending } = useAsyncData(
       "readProductDetail post /product/{productId}",
       {
         pathParams: { productId: productId.value },
+        body: searchCriteria,
       },
     );
     return response.data;
@@ -65,7 +133,7 @@ const emit = defineEmits(["product-added"]);
     <div v-if="productDetails?.configurator">
       <ProductConfigurator2
         v-if="productDetails?.configurator"
-        :p="product"
+        :p="productDetails.product"
         :c="productDetails.configurator"
         @variant-switched="onVariantSwitched"
       />

@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
   duration: "duration-1000",
   delay: "delay-0",
   threshold: 0.1,
-  rootMargin: "0px 0px -100px 0px",
+  rootMargin: "0px 0px 100px 0px",
 });
 
 const { isVisible, elementRef } = useScrollAnimation({

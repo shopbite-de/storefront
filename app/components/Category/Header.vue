@@ -27,17 +27,12 @@ defineProps<{
     <div v-else class="absolute inset-0 bg-primary" />
 
     <div class="relative p-4">
-      <h2
-        class="text-pretty font-semibold text-3xl md:text-4xl text-white drop-shadow"
-      >
+      <h1 class="text-white font-semibold">
         {{ category.name }}
-      </h2>
-      <h3
-        v-if="category.description"
-        class="text-white/90 text-[15px] text-pretty mt-1"
-      >
+      </h1>
+      <p v-if="category.description">
         {{ category.description }}
-      </h3>
+      </p>
     </div>
   </div>
   <UPageCard
@@ -51,3 +46,15 @@ defineProps<{
     }"
   />
 </template>
+
+<style scoped>
+@import "tailwindcss";
+
+h1 {
+  @apply text-white text-4xl md:text-5xl lg:text-6xl font-extrabold leading-none tracking-tighter mb-3;
+}
+
+p {
+  @apply text-white/90 text-[16px] text-pretty mt-1;
+}
+</style>

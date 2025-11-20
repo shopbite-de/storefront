@@ -127,6 +127,17 @@ const cartQuickViewOpen = ref(false);
             icon="i-lucide-shopping-cart"
           />
         </UChip>
+
+        <template #header>
+          <h2 class="text-3xl md:text-4xl mt-8 mb-3 pb-2">
+            <UIcon
+              name="i-lucide-shopping-cart"
+              class="size-8"
+              color="primary"
+            />
+            Warenkorb
+          </h2>
+        </template>
         <template #body>
           <CartQuickView
             :with-to-cart-button="true"

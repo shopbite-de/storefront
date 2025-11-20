@@ -87,7 +87,7 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
           >
 
           <p class="text-base text-pretty font-semibold text-highlighted">
-            {{ product.translated.name }}
+            {{ product.translated.name ?? product.name }}
           </p>
         </div>
       </template>
@@ -123,7 +123,10 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
         </div>
         <UCollapsible v-model:open="openDetails" class="flex flex-col gap-2">
           <template #content>
-            <ProductDetail2 :product="product" @product-added="toggleDetails" />
+            <ProductDetail2
+              :product-id="product.id"
+              @product-added="toggleDetails"
+            />
           </template>
         </UCollapsible>
       </template>

@@ -16,21 +16,13 @@ const searchCriteria = {
       "description",
       "calculatedPrice",
       "translated",
-      "categories",
       "properties",
       "propertyIds",
-      "options",
-      "optionIds",
-      "configuratorSettings",
-      "children",
-      "parentId",
       "sortedProperties",
       "cover",
-      "parentId",
     ],
     property: ["id", "name", "translated", "options"],
     property_group_option: ["id", "name", "translated", "group"],
-    product_configurator_setting: ["id", "optionId", "option", "productId"],
     product_option: ["id", "groupId", "name", "translated", "group"],
   },
   associations: {
@@ -39,55 +31,12 @@ const searchCriteria = {
         media: {},
       },
     },
-    categories: {},
     properties: {
       associations: {
         group: {},
       },
     },
-    options: {
-      associations: {
-        group: {},
-      },
-    },
-    configuratorSettings: {
-      associations: {
-        option: {
-          associations: {
-            group: {},
-          },
-        },
-      },
-    },
-    children: {
-      associations: {
-        properties: {
-          associations: {
-            group: {},
-          },
-        },
-        options: {
-          associations: {
-            group: {},
-          },
-        },
-      },
-    },
   },
-} as operations["searchPage post /search"]["body"];
-
-const defaultSorting = {
-  sort: [
-    {
-      field: "productNumber",
-      order: "ASC",
-    },
-  ],
-};
-
-const searchCriteriaWithSorting = {
-  ...searchCriteria,
-  ...defaultSorting,
 } as operations["searchPage post /search"]["body"];
 
 const {
@@ -149,30 +98,27 @@ const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
 });
 
 await useAsyncData(`listing${categoryId.value}`, async () => {
-  await search(searchCriteriaWithSorting);
+  await search(searchCriteria);
 });
 
-watch(selectedListingFilters, () => {
-  if (selectedListingFilters.value[0]?.value == "") {
-    handleFilterRest();
-  } else {
-    setCurrentFilters(selectedListingFilters.value);
+watch(selectedListingFilters, (newFilters, oldFilters) => {
+  if (newFilters[0]?.value === oldFilters?.[0]?.value) {
+    return;
   }
+  setCurrentFilters(newFilters);
+  currentSorting.value = "Sortieren";
 });
 
-watch(currentSorting, () => {
-  const q = {
+watch(currentSorting, async () => {
+  const sortingQuery = {
     query: getCurrentFilters.value?.search,
     properties: getCurrentFilters.value?.properties?.join("|"),
   };
-
-  changeCurrentSortingOrder(currentSorting.value as string, q);
+  await changeCurrentSortingOrder(currentSorting.value as string, sortingQuery);
 });
 
 async function handleFilterRest() {
   await resetFilters();
-  selectedPropertyFilters.value = [];
-  currentSorting.value = "number-asc";
 }
 
 const moreThanOneFilterAndOption = computed<boolean>(
@@ -278,7 +224,7 @@ const moreThanOneFilterAndOption = computed<boolean>(
       <template #right>
         <UPageAside>
           <div v-if="moreThanOneFilterAndOption" class="flex flex-col gap-4">
-            <h3>Filter</h3>
+            <h2 class="text-3xl md:text-4xl mt-8 mb-3 pb-2">Filter</h2>
             <div
               v-for="filter in propertyFilters"
               :key="filter.id"

@@ -17,6 +17,9 @@
     --color-brand-900: #7a2800;
     --color-brand-950: #471500;
     --color-neutral-950: #171717;
+
+    /* This is important because apple devices will zoom in when the font size is below 16px */
+    --text-sm: 16px;
 }
 
 :root {
