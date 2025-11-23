@@ -9,7 +9,7 @@ const { resolvePath } = useNavigationSearch();
 const route = useRoute();
 const routePath = route.path;
 
-const { data: seoResult } = await useAsyncData(
+const { data: seoResult, error } = await useAsyncData(
   `cmsResponse${routePath}`,
   async () => {
     // For client links if the history state contains seo url information we can omit the api call
@@ -22,17 +22,20 @@ const { data: seoResult } = await useAsyncData(
       }
     }
     const seoUrl = await resolvePath(routePath);
+
+    if (!seoUrl?.foreignKey) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: `No data fetched from API for ${routePath}`,
+      });
+    }
+
     return seoUrl;
   },
 );
 
-if (!seoResult.value?.foreignKey) {
-  console.error("c/[...all].vue:", `No data found in API for ${routePath}`);
-
-  throw createError({
-    statusCode: 404,
-    statusMessage: `No data fetched from API for ${routePath}`,
-  });
+if (error.value) {
+  throw error.value;
 }
 
 const { foreignKey } = useNavigationContext(
