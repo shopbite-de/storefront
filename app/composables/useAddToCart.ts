@@ -79,9 +79,9 @@ export function useAddToCart() {
     if (extras.length === 0 && deselectedIngredients.value.length === 0) {
       return [
         {
-          id: selectedProduct.value.id,
           quantity: selectedQuantity.value,
           type: LINE_ITEM_PRODUCT,
+          referencedId: selectedProduct.value.id,
         },
       ];
     }
