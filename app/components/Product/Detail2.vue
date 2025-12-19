@@ -94,6 +94,7 @@ const { data: productDetails, pending } = useAsyncData(
 const {
   selectedProduct,
   selectedQuantity,
+  isLoading,
   addToCart,
   setSelectedProduct,
   setSelectedExtras,
@@ -157,6 +158,7 @@ const emit = defineEmits(["product-added"]);
         :max="100"
       />
       <UButton
+        :disabled="isLoading"
         size="xl"
         label="In den Warenkorb"
         icon="i-lucide-shopping-cart"

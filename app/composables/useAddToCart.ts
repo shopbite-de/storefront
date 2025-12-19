@@ -1,6 +1,6 @@
 import type { Schemas, operations } from "#shopware";
 import type { AssociationItemProduct } from "~/types/Association";
-import { v5 as uuidv5 } from "uuid";
+import { v5 as uuidv5, v4 as uuidv4 } from "uuid";
 import { computed, ref } from "vue";
 
 const UUID_NAMESPACE = "b098ef7e-0fa2-4073-b002-7ceec4360fbf";
@@ -17,6 +17,7 @@ export function useAddToCart() {
   const deselectedIngredients = ref<string[]>([]);
   const selectedQuantity = ref(1);
   const selectedProduct = ref<Schemas["Product"] | null>(null);
+  const isLoading = ref(false);
 
   const cartItemLabel = computed(() => {
     if (!selectedProduct.value) return "";
@@ -75,22 +76,22 @@ export function useAddToCart() {
 
     const extras = createExtras();
 
-    // Simple product when no extras
-    if (extras.length === 0 && deselectedIngredients.value.length === 0) {
-      return [
-        {
-          quantity: selectedQuantity.value,
-          type: LINE_ITEM_PRODUCT,
-          referencedId: selectedProduct.value.id,
-        },
-      ];
-    }
-
     // Container product when extras are selected
     const generatedUuid = uuidv5(
       generateProductId(selectedProduct.value.id, selectedExtras.value),
       UUID_NAMESPACE,
     );
+
+    // Simple product when no extras
+    if (extras.length === 0 && deselectedIngredients.value.length === 0) {
+      return [
+        {
+          id: selectedProduct.value.id,
+          quantity: selectedQuantity.value,
+          type: LINE_ITEM_PRODUCT,
+        },
+      ];
+    }
 
     return [
       {
@@ -103,9 +104,10 @@ export function useAddToCart() {
         },
         children: [
           {
-            id: selectedProduct.value.id,
+            id: uuidv4().replaceAll("-", ""),
             quantity: selectedQuantity.value,
             type: LINE_ITEM_PRODUCT,
+            referencedId: selectedProduct.value.id,
           },
           ...extras,
         ],
@@ -128,6 +130,7 @@ export function useAddToCart() {
 
   async function addToCart(onSuccess?: () => void) {
     if (!selectedProduct.value) return;
+    isLoading.value = true;
 
     const cartItems = createCartItems();
     const newCart = await addProducts(cartItems);
@@ -143,6 +146,7 @@ export function useAddToCart() {
       },
     });
 
+    isLoading.value = false;
     if (onSuccess) {
       onSuccess();
     }
@@ -166,6 +170,7 @@ export function useAddToCart() {
     deselectedIngredients,
     selectedQuantity,
     cartItemLabel,
+    isLoading,
     addToCart,
     setSelectedProduct,
     setSelectedExtras,
