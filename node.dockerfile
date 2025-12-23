@@ -1,6 +1,7 @@
+
 FROM node:24-alpine AS build
 
-ARG PNPM_VERSION=10.20.0
+ARG PNPM_VERSION=10.26.2
 ARG NUXT_PUBLIC_SHOPWARE_ENDPOINT='https://my.shop/store-api'
 ARG NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN='TOKEN'
 
@@ -26,7 +27,11 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=build /app/.output /app/.output
+RUN mkdir -p /app/.data && chown -R node:node /app
+
+COPY --from=build --chown=node:node /app/.output /app/.output
+
+USER node
 
 EXPOSE 3000
 
