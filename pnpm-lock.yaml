@@ -49,7 +49,7 @@ importers:
         version: 1.10.0(vue@3.5.26(typescript@5.9.3))
       '@shopware/helpers':
         specifier: ^1.5.0
-        version: 1.5.0
+        version: 1.6.0
       '@shopware/nuxt-module':
         specifier: ^1.4.1
         version: 1.4.2(magicast@0.5.1)(vue@3.5.26(typescript@5.9.3))
@@ -2711,9 +2711,6 @@ packages:
 
   '@shopware/composables@1.10.0':
     resolution: {integrity: sha512-wvrGSN99AJ3xY3xJcpX5uy6tSxfEw/l7rElsmtOH4QRdR1NuMQnAemR4x3TPOYgES0o7MbfoTPrAjsdOi/kEvQ==}
-
-  '@shopware/helpers@1.5.0':
-    resolution: {integrity: sha512-F86+RZYI8yZGyceCnV6Alne3GT8igW3Dizqw7HwuYCHxT/zwlSoapE3wHRCGJOjxHGzgIZBbS44rXVU/Vl57NA==}
 
   '@shopware/helpers@1.6.0':
     resolution: {integrity: sha512-Ta9RdL0ovMSu777ntsQbVePFFu8DEHrpYaNuafVrWHv8guYexWhy/Sb/lXCYkwfmUEv3l5UhPmZIRpxqdNRsfg==}
@@ -11525,8 +11522,6 @@ snapshots:
       scule: 1.3.0
     transitivePeerDependencies:
       - vue
-
-  '@shopware/helpers@1.5.0': {}
 
   '@shopware/helpers@1.6.0': {}
 
