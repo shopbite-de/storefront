@@ -20,6 +20,8 @@ test("Simple Checkout As Recurring Customer", async ({ page }) => {
   await verifyCheckoutQuantity(page);
   await selectPaymentAndShipping(page);
   await proceedToOrderReview(page);
+  await page.goto("/");
+  await clearCart(page);
 });
 
 // Helper Functions
