@@ -45,8 +45,21 @@ jobs:
         env:
           NODE_OPTIONS: "--max_old_space_size=4096"
         run: pnpm run build
+
   test:
     name: Run Unit tests
+    environment: test
+    env:
+      NUXT_PUBLIC_APP_ENV: 'test'
+      NUXT_PUBLIC_STORE_URL: 'http://localhost:3005'
+      NUXT_PUBLIC_SHOPWARE_DEV_STORE_FRONT_URL: 'http://localhost:3005'
+      PORT: '3005'
+      NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
+      NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
+      NUXT_PUBLIC_SITE_COUNTRY_ID: ${{ secrets.NUXT_PUBLIC_SITE_COUNTRY_ID }}
+      GEOPIFY: ${{ secrets.GEOPIFY }}
+      TEST_USER: ${{ secrets.TEST_USER }}
+      TEST_USER_PASS: ${{ secrets.TEST_USER_PASS }}
     if: github.event.pull_request.draft == false
     needs: init
     timeout-minutes: 15
@@ -85,18 +98,33 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
-        working-directory: ${{ inputs.workdir }}
 
       - name: Rebuild native modules
         run: pnpm rebuild better-sqlite3
-        working-directory: ${{ inputs.workdir }}
 
-      - name: Unit test
+      - name: Build
         env:
-          NUXT_PUBLIC_SHOPWARE_ENDPOINT: 'test'
-          NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: 'test'
-          NUXT_PUBLIC_SHOPWARE_DEV_STOREFRONT_URL: 'test'
+          NODE_OPTIONS: "--max_old_space_size=4096"
+        run: pnpm run build
 
-        run: pnpm test
-        working-directory: ${{ inputs.workdir }}
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+      - name: E2E tests
+        env:
+          TEST_USER: ${{ secrets.TEST_USER }}
+          TEST_USER_PASS: ${{ secrets.TEST_USER_PASS }}
+
+        run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { useProductEvents } from "./useProductEvents";
+import { useProductEvents } from "../../app/composables/useProductEvents";
 import { nextTick } from "vue";
 
 /**

@@ -22,3 +22,12 @@ logs
 .env
 .env.*
 !.env.example
+coverage
+test-results
+playwright-report
+
+# Playwright
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
