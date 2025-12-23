@@ -51,6 +51,7 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
 
 <template>
   <AnimatedSection
+    :id="`product-card-${product.id}`"
     animation="fade-up"
     duration="duration-1000"
     delay="delay-100"
