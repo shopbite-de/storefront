@@ -47,7 +47,7 @@ jobs:
         run: pnpm run build
 
   test:
-    name: Run Unit tests
+    name: Run unit and e2e tests
     environment: test
     env:
       NUXT_PUBLIC_APP_ENV: 'test'
