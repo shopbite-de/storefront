@@ -55,6 +55,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@nuxt/devtools-kit": "^3.1.1",
     "@nuxt/eslint": "^1.10.0",
     "@nuxt/test-utils": "^3.20.1",
     "@playwright/test": "^1.57.0",
@@ -63,6 +64,8 @@
     "@vitest/coverage-v8": "4.0.16",
     "@vitest/ui": "4.0.16",
     "@vue/test-utils": "^2.4.6",
+    "@vue/compiler-dom": "^3.5.26",
+    "@vue/server-renderer": "^3.5.26",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.1",
     "happy-dom": "^20.0.10",
