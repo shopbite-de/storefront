@@ -5,47 +5,6 @@ on:
   pull_request:
     types: [opened, synchronize]
 jobs:
-  init:
-    name: Init dependecies
-    timeout-minutes: 15
-    env:
-      NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
-      NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v6
-
-      - name: Install Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v5
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        env:
-          NODE_OPTIONS: "--max_old_space_size=4096"
-        run: pnpm run build
-
   test:
     name: Run unit and e2e tests
     environment: test
@@ -61,7 +20,6 @@ jobs:
       TEST_USER: ${{ secrets.TEST_USER }}
       TEST_USER_PASS: ${{ secrets.TEST_USER_PASS }}
     if: github.event.pull_request.draft == false
-    needs: init
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
