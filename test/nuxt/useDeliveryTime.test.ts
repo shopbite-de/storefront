@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref } from "vue";
-import { useDeliveryTime } from "../../app/composables/useDeliveryTime";
+import { useDeliveryTime } from "~/composables/useDeliveryTime";
 
 const { mockDeliveryTime } = vi.hoisted(() => ({
   mockDeliveryTime: { value: 45 }, // Use object to keep reference
 }));
 
-mockNuxtImport("usePizzaToppings", () => () => ({
+mockNuxtImport("useShopBiteConfig", () => () => ({
   deliveryTime: mockDeliveryTime,
 }));
 

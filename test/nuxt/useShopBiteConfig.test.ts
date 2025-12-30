@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
-import { usePizzaToppings } from "../../app/composables/usePizzaToppings";
+import { useShopBiteConfig } from "~/composables/useShopBiteConfig";
 
 const {
   mockInvoke,
@@ -24,7 +24,7 @@ mockNuxtImport("useContext", () => (key: string) => {
   return { value: null };
 });
 
-describe("usePizzaToppings", () => {
+describe("useShopBiteConfig", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDeliveryTime.value = 0;
@@ -34,7 +34,7 @@ describe("usePizzaToppings", () => {
   it("should initialize with values from context", () => {
     mockDeliveryTime.value = 30;
     mockIsCheckoutEnabled.value = true;
-    const { deliveryTime, isCheckoutEnabled } = usePizzaToppings();
+    const { deliveryTime, isCheckoutEnabled } = useShopBiteConfig();
     expect(deliveryTime.value).toBe(30);
     expect(isCheckoutEnabled.value).toBe(true);
   });
@@ -47,10 +47,12 @@ describe("usePizzaToppings", () => {
       }
     });
 
-    const { refresh, deliveryTime, isCheckoutEnabled } = usePizzaToppings();
+    const { refresh, deliveryTime, isCheckoutEnabled } = useShopBiteConfig();
     await refresh();
 
-    expect(mockInvoke).toHaveBeenCalledWith("pizza-toppings.get get /pizza-toppings");
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "shopbite.config.get get /shopbite/config",
+    );
     expect(deliveryTime.value).toBe(45);
     expect(isCheckoutEnabled.value).toBe(true);
     expect(mockDeliveryTime.value).toBe(45);

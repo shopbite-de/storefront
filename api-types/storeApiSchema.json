@@ -7,7 +7,7 @@
       "name": "MIT",
       "url": "https://github.com/shopware/shopware/blob/trunk/LICENSE"
     },
-    "version": "6.7.3.1"
+    "version": "6.7.5.1"
   },
   "servers": [{ "url": "https://shopware.shopbite.de/store-api" }],
   "components": {
@@ -580,6 +580,7 @@
                     "type": "object"
                   },
                   "children": {
+                    "description": "Child categories within this category for hierarchical navigation",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -608,6 +609,7 @@
                     "type": "object"
                   },
                   "media": {
+                    "description": "Category image or banner",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -634,6 +636,7 @@
                     "type": "object"
                   },
                   "tags": {
+                    "description": "Tags for organizing and filtering categories",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -662,6 +665,7 @@
                     "type": "object"
                   },
                   "cmsPage": {
+                    "description": "CMS page layout for the category",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -688,6 +692,7 @@
                     "type": "object"
                   },
                   "seoUrls": {
+                    "description": "SEO-friendly URLs for the category across different sales channels",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -812,16 +817,25 @@
           },
           "parent": { "$ref": "#/components/schemas/Category" },
           "children": {
+            "description": "Child categories within this category for hierarchical navigation",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Category" }
           },
-          "media": { "$ref": "#/components/schemas/Media" },
+          "media": {
+            "$ref": "#/components/schemas/Media",
+            "description": "Category image or banner"
+          },
           "tags": {
+            "description": "Tags for organizing and filtering categories",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Tag" }
           },
-          "cmsPage": { "$ref": "#/components/schemas/CmsPage" },
+          "cmsPage": {
+            "$ref": "#/components/schemas/CmsPage",
+            "description": "CMS page layout for the category"
+          },
           "seoUrls": {
+            "description": "SEO-friendly URLs for the category across different sales channels",
             "type": "array",
             "items": { "$ref": "#/components/schemas/SeoUrl" }
           },
@@ -918,11 +932,16 @@
           },
           "translated": { "type": "object" },
           "sections": {
+            "description": "Content sections within the CMS page (layout blocks containing slots)",
             "type": "array",
             "items": { "$ref": "#/components/schemas/CmsSection" }
           },
-          "previewMedia": { "$ref": "#/components/schemas/Media" },
+          "previewMedia": {
+            "$ref": "#/components/schemas/Media",
+            "description": "Preview image for the CMS page in admin panel and page selection"
+          },
           "landingPages": {
+            "description": "Landing pages using this CMS layout",
             "type": "array",
             "items": { "$ref": "#/components/schemas/LandingPage" }
           },
@@ -1071,6 +1090,7 @@
               "relationships": {
                 "properties": {
                   "states": {
+                    "description": "States/provinces/regions within the country",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -1163,6 +1183,7 @@
           },
           "translated": { "type": "object" },
           "states": {
+            "description": "States/provinces/regions within the country",
             "type": "array",
             "items": { "$ref": "#/components/schemas/CountryState" }
           }
@@ -1522,27 +1543,45 @@
             "format": "date-time",
             "readOnly": true
           },
-          "group": { "$ref": "#/components/schemas/CustomerGroup" },
-          "language": { "$ref": "#/components/schemas/Language" },
-          "lastPaymentMethod": { "$ref": "#/components/schemas/PaymentMethod" },
+          "group": {
+            "$ref": "#/components/schemas/CustomerGroup",
+            "description": "Customer group determining pricing and permissions"
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language",
+            "description": "Preferred language for customer communication"
+          },
+          "lastPaymentMethod": {
+            "$ref": "#/components/schemas/PaymentMethod",
+            "description": "Last used payment method by the customer"
+          },
           "defaultBillingAddress": {
-            "$ref": "#/components/schemas/CustomerAddress"
+            "$ref": "#/components/schemas/CustomerAddress",
+            "description": "Default billing address for the customer"
           },
           "activeBillingAddress": {
-            "$ref": "#/components/schemas/CustomerAddress"
+            "$ref": "#/components/schemas/CustomerAddress",
+            "description": "Currently active billing address in the session"
           },
           "defaultShippingAddress": {
-            "$ref": "#/components/schemas/CustomerAddress"
+            "$ref": "#/components/schemas/CustomerAddress",
+            "description": "Default shipping address for the customer"
           },
           "activeShippingAddress": {
-            "$ref": "#/components/schemas/CustomerAddress"
+            "$ref": "#/components/schemas/CustomerAddress",
+            "description": "Currently active shipping address in the session"
           },
-          "salutation": { "$ref": "#/components/schemas/Salutation" },
+          "salutation": {
+            "$ref": "#/components/schemas/Salutation",
+            "description": "Customer salutation (e.g., Mr., Mrs., Ms.)"
+          },
           "addresses": {
+            "description": "All addresses saved for the customer",
             "type": "array",
             "items": { "$ref": "#/components/schemas/CustomerAddress" }
           },
           "tags": {
+            "description": "Tags assigned to the customer for organization and segmentation",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Tag" }
           },
@@ -2042,6 +2081,7 @@
               "relationships": {
                 "properties": {
                   "cmsPage": {
+                    "description": "CMS page layout for the landing page",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -2068,6 +2108,7 @@
                     "type": "object"
                   },
                   "seoUrls": {
+                    "description": "SEO-friendly URLs for the landing page across different sales channels",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -2130,8 +2171,12 @@
             "readOnly": true
           },
           "translated": { "type": "object" },
-          "cmsPage": { "$ref": "#/components/schemas/CmsPage" },
+          "cmsPage": {
+            "$ref": "#/components/schemas/CmsPage",
+            "description": "CMS page layout for the landing page"
+          },
           "seoUrls": {
+            "description": "SEO-friendly URLs for the landing page across different sales channels",
             "type": "array",
             "items": { "$ref": "#/components/schemas/SeoUrl" }
           },
@@ -2195,6 +2240,7 @@
                     "type": "object"
                   },
                   "locale": {
+                    "description": "Locale defining regional settings (date, time, number formats)",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -2221,6 +2267,7 @@
                     "type": "object"
                   },
                   "translationCode": {
+                    "description": "Locale used for translating content",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -2247,6 +2294,7 @@
                     "type": "object"
                   },
                   "children": {
+                    "description": "Child languages inheriting from this parent language",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -2307,9 +2355,16 @@
             "readOnly": true
           },
           "parent": { "$ref": "#/components/schemas/Language" },
-          "locale": { "$ref": "#/components/schemas/Locale" },
-          "translationCode": { "$ref": "#/components/schemas/Locale" },
+          "locale": {
+            "$ref": "#/components/schemas/Locale",
+            "description": "Locale defining regional settings (date, time, number formats)"
+          },
+          "translationCode": {
+            "$ref": "#/components/schemas/Locale",
+            "description": "Locale used for translating content"
+          },
           "children": {
+            "description": "Child languages inheriting from this parent language",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Language" }
           }
@@ -2635,6 +2690,7 @@
           },
           "translated": { "type": "object" },
           "thumbnails": {
+            "description": "Generated thumbnail images in various sizes",
             "type": "array",
             "items": { "$ref": "#/components/schemas/MediaThumbnail" }
           },
@@ -3018,39 +3074,60 @@
             "readOnly": true
           },
           "stateMachineState": {
-            "$ref": "#/components/schemas/StateMachineState"
+            "$ref": "#/components/schemas/StateMachineState",
+            "description": "Current order state (e.g., open, in_progress, completed, cancelled)"
           },
           "primaryOrderDelivery": {
-            "$ref": "#/components/schemas/OrderDelivery"
+            "$ref": "#/components/schemas/OrderDelivery",
+            "description": "Primary delivery information for the order"
           },
           "primaryOrderTransaction": {
-            "$ref": "#/components/schemas/OrderTransaction"
+            "$ref": "#/components/schemas/OrderTransaction",
+            "description": "Primary payment transaction for the order"
           },
-          "orderCustomer": { "$ref": "#/components/schemas/OrderCustomer" },
-          "currency": { "$ref": "#/components/schemas/Currency" },
-          "language": { "$ref": "#/components/schemas/Language" },
+          "orderCustomer": {
+            "$ref": "#/components/schemas/OrderCustomer",
+            "description": "Customer information associated with the order"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency",
+            "description": "Currency used for the order"
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language",
+            "description": "Language used when placing the order"
+          },
           "addresses": {
+            "description": "All addresses associated with the order (billing and shipping)",
             "type": "array",
             "items": { "$ref": "#/components/schemas/OrderAddress" }
           },
-          "billingAddress": { "$ref": "#/components/schemas/OrderAddress" },
+          "billingAddress": {
+            "$ref": "#/components/schemas/OrderAddress",
+            "description": "Billing address for the order"
+          },
           "deliveries": {
+            "description": "Delivery information including shipping address and tracking",
             "type": "array",
             "items": { "$ref": "#/components/schemas/OrderDelivery" }
           },
           "lineItems": {
+            "description": "Order line items (products, discounts, fees)",
             "type": "array",
             "items": { "$ref": "#/components/schemas/OrderLineItem" }
           },
           "transactions": {
+            "description": "Payment transactions for the order",
             "type": "array",
             "items": { "$ref": "#/components/schemas/OrderTransaction" }
           },
           "documents": {
+            "description": "Generated documents (invoices, delivery notes, credit notes)",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Document" }
           },
           "tags": {
+            "description": "Tags assigned to the order for organization and filtering",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Tag" }
           }
@@ -3201,13 +3278,19 @@
             "readOnly": true
           },
           "stateMachineState": {
-            "$ref": "#/components/schemas/StateMachineState"
+            "$ref": "#/components/schemas/StateMachineState",
+            "description": "Current delivery state (e.g., open, shipped, delivered, cancelled)"
           },
           "shippingOrderAddress": {
-            "$ref": "#/components/schemas/OrderAddress"
+            "$ref": "#/components/schemas/OrderAddress",
+            "description": "Shipping address for this delivery"
           },
-          "shippingMethod": { "$ref": "#/components/schemas/ShippingMethod" },
+          "shippingMethod": {
+            "$ref": "#/components/schemas/ShippingMethod",
+            "description": "Shipping method used for this delivery"
+          },
           "positions": {
+            "description": "Line items included in this delivery",
             "type": "array",
             "items": { "$ref": "#/components/schemas/OrderDeliveryPosition" }
           }
@@ -3378,13 +3461,21 @@
             "format": "date-time",
             "readOnly": true
           },
-          "cover": { "$ref": "#/components/schemas/Media" },
-          "product": { "$ref": "#/components/schemas/Product" },
+          "cover": {
+            "$ref": "#/components/schemas/Media",
+            "description": "Line item image or thumbnail"
+          },
+          "product": {
+            "$ref": "#/components/schemas/Product",
+            "description": "Referenced product if this is a product line item"
+          },
           "orderDeliveryPositions": {
+            "description": "Delivery positions for this line item",
             "type": "array",
             "items": { "$ref": "#/components/schemas/OrderDeliveryPosition" }
           },
           "downloads": {
+            "description": "Digital downloads associated with this line item",
             "type": "array",
             "items": { "$ref": "#/components/schemas/OrderLineItemDownload" }
           },
@@ -3498,10 +3589,15 @@
             "readOnly": true
           },
           "stateMachineState": {
-            "$ref": "#/components/schemas/StateMachineState"
+            "$ref": "#/components/schemas/StateMachineState",
+            "description": "Current payment transaction state (e.g., open, paid, cancelled)"
           },
-          "paymentMethod": { "$ref": "#/components/schemas/PaymentMethod" },
+          "paymentMethod": {
+            "$ref": "#/components/schemas/PaymentMethod",
+            "description": "Payment method used for this transaction"
+          },
           "captures": {
+            "description": "Payment captures for this transaction",
             "type": "array",
             "items": { "$ref": "#/components/schemas/OrderTransactionCapture" }
           }
@@ -3732,6 +3828,7 @@
               "relationships": {
                 "properties": {
                   "media": {
+                    "description": "Payment method logo or icon image",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -3794,7 +3891,10 @@
             "readOnly": true
           },
           "translated": { "type": "object" },
-          "media": { "$ref": "#/components/schemas/Media" }
+          "media": {
+            "$ref": "#/components/schemas/Media",
+            "description": "Payment method logo or icon image"
+          }
         },
         "type": "object"
       },
@@ -4002,6 +4102,7 @@
               "relationships": {
                 "properties": {
                   "downloads": {
+                    "description": "Downloadable files associated with the product (e.g., manuals, digital content)",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4059,6 +4160,7 @@
                     "type": "object"
                   },
                   "children": {
+                    "description": "Product variants that inherit from this parent product",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4087,6 +4189,7 @@
                     "type": "object"
                   },
                   "deliveryTime": {
+                    "description": "Estimated delivery time for the product",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4116,6 +4219,7 @@
                     "type": "object"
                   },
                   "tax": {
+                    "description": "Tax configuration (rate and calculation rules)",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4142,6 +4246,7 @@
                     "type": "object"
                   },
                   "manufacturer": {
+                    "description": "Product manufacturer or brand information",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4171,6 +4276,7 @@
                     "type": "object"
                   },
                   "unit": {
+                    "description": "Product unit of measure (e.g., piece, liter, kg)",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4197,6 +4303,7 @@
                     "type": "object"
                   },
                   "cover": {
+                    "description": "Main product image displayed in listings and detail pages",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4226,6 +4333,7 @@
                     "type": "object"
                   },
                   "cmsPage": {
+                    "description": "Custom CMS page layout for the product detail page",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4252,6 +4360,7 @@
                     "type": "object"
                   },
                   "canonicalProduct": {
+                    "description": "Canonical product reference for variant consolidation and SEO purposes",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4278,6 +4387,7 @@
                     "type": "object"
                   },
                   "media": {
+                    "description": "Product images and media gallery",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4309,6 +4419,7 @@
                     "type": "object"
                   },
                   "crossSellings": {
+                    "description": "Cross-selling configurations (related products, accessories, similar items)",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4340,6 +4451,7 @@
                     "type": "object"
                   },
                   "configuratorSettings": {
+                    "description": "Variant configurator settings defining available options for product variants",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4371,6 +4483,7 @@
                     "type": "object"
                   },
                   "productReviews": {
+                    "description": "Customer reviews and ratings for the product",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4402,6 +4515,7 @@
                     "type": "object"
                   },
                   "mainCategories": {
+                    "description": "Primary category assignments per sales channel for SEO and navigation",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4433,6 +4547,7 @@
                     "type": "object"
                   },
                   "seoUrls": {
+                    "description": "SEO-friendly URLs for the product across different sales channels",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4461,6 +4576,7 @@
                     "type": "object"
                   },
                   "options": {
+                    "description": "Product variant options (e.g., size, color) that define different variants",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4492,6 +4608,7 @@
                     "type": "object"
                   },
                   "properties": {
+                    "description": "Product properties and characteristics for filtering",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4523,6 +4640,7 @@
                     "type": "object"
                   },
                   "categories": {
+                    "description": "Categories this product is assigned to",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4551,6 +4669,7 @@
                     "type": "object"
                   },
                   "streams": {
+                    "description": "Dynamic product streams this product belongs to based on defined filters",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4582,6 +4701,7 @@
                     "type": "object"
                   },
                   "categoriesRo": {
+                    "description": "Read-only category tree including all parent categories for optimized queries",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4610,6 +4730,7 @@
                     "type": "object"
                   },
                   "tags": {
+                    "description": "Tags for organizing and filtering products",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4638,6 +4759,7 @@
                     "type": "object"
                   },
                   "seoCategory": {
+                    "description": "Main category used for SEO URL generation in the current sales channel",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -4872,74 +4994,110 @@
           },
           "translated": { "type": "object" },
           "downloads": {
+            "description": "Downloadable files associated with the product (e.g., manuals, digital content)",
             "type": "array",
             "items": { "$ref": "#/components/schemas/ProductDownload" }
           },
           "parent": { "$ref": "#/components/schemas/Product" },
           "children": {
+            "description": "Product variants that inherit from this parent product",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Product" }
           },
-          "deliveryTime": { "$ref": "#/components/schemas/DeliveryTime" },
-          "tax": { "$ref": "#/components/schemas/Tax" },
-          "manufacturer": {
-            "$ref": "#/components/schemas/ProductManufacturer"
+          "deliveryTime": {
+            "$ref": "#/components/schemas/DeliveryTime",
+            "description": "Estimated delivery time for the product"
           },
-          "unit": { "$ref": "#/components/schemas/Unit" },
-          "cover": { "$ref": "#/components/schemas/ProductMedia" },
-          "cmsPage": { "$ref": "#/components/schemas/CmsPage" },
-          "canonicalProduct": { "$ref": "#/components/schemas/Product" },
+          "tax": {
+            "$ref": "#/components/schemas/Tax",
+            "description": "Tax configuration (rate and calculation rules)"
+          },
+          "manufacturer": {
+            "$ref": "#/components/schemas/ProductManufacturer",
+            "description": "Product manufacturer or brand information"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit",
+            "description": "Product unit of measure (e.g., piece, liter, kg)"
+          },
+          "cover": {
+            "$ref": "#/components/schemas/ProductMedia",
+            "description": "Main product image displayed in listings and detail pages"
+          },
+          "cmsPage": {
+            "$ref": "#/components/schemas/CmsPage",
+            "description": "Custom CMS page layout for the product detail page"
+          },
+          "canonicalProduct": {
+            "$ref": "#/components/schemas/Product",
+            "description": "Canonical product reference for variant consolidation and SEO purposes"
+          },
           "media": {
+            "description": "Product images and media gallery",
             "type": "array",
             "items": { "$ref": "#/components/schemas/ProductMedia" }
           },
           "crossSellings": {
+            "description": "Cross-selling configurations (related products, accessories, similar items)",
             "type": "array",
             "items": { "$ref": "#/components/schemas/ProductCrossSelling" }
           },
           "configuratorSettings": {
+            "description": "Variant configurator settings defining available options for product variants",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductConfiguratorSetting"
             }
           },
           "productReviews": {
+            "description": "Customer reviews and ratings for the product",
             "type": "array",
             "items": { "$ref": "#/components/schemas/ProductReview" }
           },
           "mainCategories": {
+            "description": "Primary category assignments per sales channel for SEO and navigation",
             "type": "array",
             "items": { "$ref": "#/components/schemas/MainCategory" }
           },
           "seoUrls": {
+            "description": "SEO-friendly URLs for the product across different sales channels",
             "type": "array",
             "items": { "$ref": "#/components/schemas/SeoUrl" }
           },
           "options": {
+            "description": "Product variant options (e.g., size, color) that define different variants",
             "type": "array",
             "items": { "$ref": "#/components/schemas/PropertyGroupOption" }
           },
           "properties": {
+            "description": "Product properties and characteristics for filtering",
             "type": "array",
             "items": { "$ref": "#/components/schemas/PropertyGroupOption" }
           },
           "categories": {
+            "description": "Categories this product is assigned to",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Category" }
           },
           "streams": {
+            "description": "Dynamic product streams this product belongs to based on defined filters",
             "type": "array",
             "items": { "$ref": "#/components/schemas/ProductStream" }
           },
           "categoriesRo": {
+            "description": "Read-only category tree including all parent categories for optimized queries",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Category" }
           },
           "tags": {
+            "description": "Tags for organizing and filtering products",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Tag" }
           },
-          "seoCategory": { "$ref": "#/components/schemas/Category" },
+          "seoCategory": {
+            "$ref": "#/components/schemas/Category",
+            "description": "Main category used for SEO URL generation in the current sales channel"
+          },
           "apiAlias": { "type": "string", "enum": ["product"] },
           "variantListingConfig": {
             "oneOf": [
@@ -5608,18 +5766,43 @@
             "readOnly": true
           },
           "translated": { "type": "object" },
-          "language": { "$ref": "#/components/schemas/Language" },
-          "currency": { "$ref": "#/components/schemas/Currency" },
-          "paymentMethod": { "$ref": "#/components/schemas/PaymentMethod" },
-          "shippingMethod": { "$ref": "#/components/schemas/ShippingMethod" },
-          "country": { "$ref": "#/components/schemas/Country" },
+          "language": {
+            "$ref": "#/components/schemas/Language",
+            "description": "Default language for the sales channel"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency",
+            "description": "Default currency for the sales channel"
+          },
+          "paymentMethod": {
+            "$ref": "#/components/schemas/PaymentMethod",
+            "description": "Default payment method for the sales channel"
+          },
+          "shippingMethod": {
+            "$ref": "#/components/schemas/ShippingMethod",
+            "description": "Default shipping method for the sales channel"
+          },
+          "country": {
+            "$ref": "#/components/schemas/Country",
+            "description": "Default country for the sales channel"
+          },
           "domains": {
+            "description": "Domain URLs configured for the sales channel",
             "type": "array",
             "items": { "$ref": "#/components/schemas/SalesChannelDomain" }
           },
-          "navigationCategory": { "$ref": "#/components/schemas/Category" },
-          "footerCategory": { "$ref": "#/components/schemas/Category" },
-          "serviceCategory": { "$ref": "#/components/schemas/Category" },
+          "navigationCategory": {
+            "$ref": "#/components/schemas/Category",
+            "description": "Root category for navigation menu"
+          },
+          "footerCategory": {
+            "$ref": "#/components/schemas/Category",
+            "description": "Root category for footer navigation"
+          },
+          "serviceCategory": {
+            "$ref": "#/components/schemas/Category",
+            "description": "Root category for service pages"
+          },
           "hreflangDefaultDomain": {
             "$ref": "#/components/schemas/SalesChannelDomain"
           }
@@ -5944,6 +6127,7 @@
               "relationships": {
                 "properties": {
                   "deliveryTime": {
+                    "description": "Estimated delivery time information",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -5973,6 +6157,7 @@
                     "type": "object"
                   },
                   "availabilityRule": {
+                    "description": "Rule defining when this shipping method is available",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -5999,6 +6184,7 @@
                     "type": "object"
                   },
                   "prices": {
+                    "description": "Shipping prices based on weight, volume, or cart value",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -6030,6 +6216,7 @@
                     "type": "object"
                   },
                   "media": {
+                    "description": "Shipping method logo or carrier image",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -6056,6 +6243,7 @@
                     "type": "object"
                   },
                   "tags": {
+                    "description": "Tags for organizing shipping methods",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -6084,6 +6272,7 @@
                     "type": "object"
                   },
                   "tax": {
+                    "description": "Tax configuration for shipping costs",
                     "properties": {
                       "links": {
                         "type": "object",
@@ -6143,18 +6332,32 @@
             "readOnly": true
           },
           "translated": { "type": "object" },
-          "deliveryTime": { "$ref": "#/components/schemas/DeliveryTime" },
-          "availabilityRule": { "$ref": "#/components/schemas/Rule" },
+          "deliveryTime": {
+            "$ref": "#/components/schemas/DeliveryTime",
+            "description": "Estimated delivery time information"
+          },
+          "availabilityRule": {
+            "$ref": "#/components/schemas/Rule",
+            "description": "Rule defining when this shipping method is available"
+          },
           "prices": {
+            "description": "Shipping prices based on weight, volume, or cart value",
             "type": "array",
             "items": { "$ref": "#/components/schemas/ShippingMethodPrice" }
           },
-          "media": { "$ref": "#/components/schemas/Media" },
+          "media": {
+            "$ref": "#/components/schemas/Media",
+            "description": "Shipping method logo or carrier image"
+          },
           "tags": {
+            "description": "Tags for organizing shipping methods",
             "type": "array",
             "items": { "$ref": "#/components/schemas/Tag" }
           },
-          "tax": { "$ref": "#/components/schemas/Tax" }
+          "tax": {
+            "$ref": "#/components/schemas/Tax",
+            "description": "Tax configuration for shipping costs"
+          }
         },
         "type": "object"
       },
@@ -7304,7 +7507,7 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/LineItem" }
           },
-          "cover": { "$ref": "#/components/schemas/ProductMedia" },
+          "cover": { "$ref": "#/components/schemas/Media" },
           "dataContextHash": { "type": "string" },
           "dataTimestamp": { "type": "string" },
           "deliveryInformation": {
@@ -8661,7 +8864,7 @@
         "type": "array",
         "items": { "$ref": "#/components/schemas/Breadcrumb" }
       },
-      "ShopBite": {
+      "ShopBiteConfig": {
         "type": "object",
         "description": "ShopBite configuration data",
         "properties": {
@@ -9742,7 +9945,7 @@
       "post": {
         "tags": ["Profile", "Endpoints supporting Criteria "],
         "summary": "Get information about current customer",
-        "description": "Returns information about the current customer.",
+        "description": "Returns information about the current customer.\n\n**Available Associations:**\n- `group` - Customer group determining pricing and permissions\n- `language` - Preferred language for customer communication\n- `lastPaymentMethod` - Last used payment method by the customer\n- `defaultBillingAddress` - Default billing address for the customer\n- `activeBillingAddress` - Currently active billing address in the session\n- `defaultShippingAddress` - Default shipping address for the customer\n- `activeShippingAddress` - Currently active shipping address in the session\n- `salutation` - Customer salutation (e.g., Mr., Mrs., Ms.)\n- `addresses` - All addresses saved for the customer\n- `tags` - Tags assigned to the customer for organization and segmentation",
         "operationId": "readCustomer",
         "requestBody": {
           "required": false,
@@ -10387,7 +10590,7 @@
       "post": {
         "tags": ["System & Context", "Endpoints supporting Criteria "],
         "summary": "Fetch languages",
-        "description": "Perform a filtered search for languages.",
+        "description": "Perform a filtered search for languages.\n\n**Available Associations:**\n- `locale` - Locale defining regional settings (date, time, number formats)\n- `translationCode` - Locale used for translating content\n- `children` - Child languages inheriting from this parent language",
         "operationId": "readLanguages",
         "parameters": [
           {
@@ -10423,7 +10626,7 @@
       "get": {
         "tags": ["System & Context", "Endpoints supporting Criteria "],
         "summary": "Fetch languages",
-        "description": "Perform a filtered search for languages.",
+        "description": "Perform a filtered search for languages.\n\n**Available Associations:**\n- `locale` - Locale defining regional settings (date, time, number formats)\n- `translationCode` - Locale used for translating content\n- `children` - Child languages inheriting from this parent language",
         "operationId": "readLanguagesGet",
         "parameters": [
           {
@@ -10459,7 +10662,7 @@
       "post": {
         "tags": ["Product"],
         "summary": "Fetch a product listing by category",
-        "description": "Fetches a product listing for a specific category. It also provides filters, sortings and property aggregations, analogous to the /search endpoint.",
+        "description": "Fetches a product listing for a specific category. It also provides filters, sortings and property aggregations, analogous to the /search endpoint.\n\n**Available Associations:**\n- `downloads` - Downloadable files associated with the product (e.g., manuals, digital content)\n- `children` - Product variants that inherit from this parent product\n- `deliveryTime` - Estimated delivery time for the product\n- `tax` - Tax configuration (rate and calculation rules)\n- `manufacturer` - Product manufacturer or brand information\n- `unit` - Product unit of measure (e.g., piece, liter, kg)\n- `cover` - Main product image displayed in listings and detail pages\n- `cmsPage` - Custom CMS page layout for the product detail page\n- `canonicalProduct` - Canonical product reference for variant consolidation and SEO purposes\n- `media` - Product images and media gallery\n- `crossSellings` - Cross-selling configurations (related products, accessories, similar items)\n- `configuratorSettings` - Variant configurator settings defining available options for product variants\n- `productReviews` - Customer reviews and ratings for the product\n- `mainCategories` - Primary category assignments per sales channel for SEO and navigation\n- `seoUrls` - SEO-friendly URLs for the product across different sales channels\n- `options` - Product variant options (e.g., size, color) that define different variants\n- `properties` - Product properties and characteristics for filtering\n- `categories` - Categories this product is assigned to\n- `streams` - Dynamic product streams this product belongs to based on defined filters\n- `categoriesRo` - Read-only category tree including all parent categories for optimized queries\n- `tags` - Tags for organizing and filtering products\n- `seoCategory` - Main category used for SEO URL generation in the current sales channel",
         "operationId": "readProductListing",
         "parameters": [
           {
@@ -10575,7 +10778,7 @@
       "post": {
         "tags": ["Order", "Endpoints supporting Criteria "],
         "summary": "Fetch a list of orders",
-        "description": "List orders of a customer.",
+        "description": "List orders of a customer.\n\n**Available Associations:**\n- `stateMachineState` - Current order state (e.g., open, in_progress, completed, cancelled)\n- `primaryOrderDelivery` - Primary delivery information for the order\n- `primaryOrderTransaction` - Primary payment transaction for the order\n- `orderCustomer` - Customer information associated with the order\n- `currency` - Currency used for the order\n- `language` - Language used when placing the order\n- `addresses` - All addresses associated with the order (billing and shipping)\n- `billingAddress` - Billing address for the order\n- `deliveries` - Delivery information including shipping address and tracking\n- `lineItems` - Order line items (products, discounts, fees)\n- `transactions` - Payment transactions for the order\n- `documents` - Generated documents (invoices, delivery notes, credit notes)\n- `tags` - Tags assigned to the order for organization and filtering",
         "operationId": "readOrder",
         "parameters": [
           {
@@ -10764,7 +10967,7 @@
       "post": {
         "tags": ["Payment & Shipping", "Endpoints supporting Criteria "],
         "summary": "Fetch shipping methods",
-        "description": "Perform a filtered search for shipping methods.",
+        "description": "Perform a filtered search for shipping methods.\n\n**Available Associations:**\n- `prices` - Shipping method price configurations (based on current cart and context)\n- `deliveryTime` - Delivery time information (min/max days, unit)\n- `media` - Media/images associated with the shipping method (loaded by default)\n- `availabilityRule` - Availability rule determining when this method is available\n- `tax` - Tax configuration for the shipping method\n\n**Example with associations:**\n```json\n{\n  \"associations\": {\n    \"prices\": {},\n    \"deliveryTime\": {}\n  }\n}\n```\n\nNote: The `prices` association is essential for accessing shipping cost configurations.",
         "operationId": "readShippingMethod",
         "parameters": [
           {
@@ -10837,7 +11040,7 @@
       "get": {
         "tags": ["Payment & Shipping", "Endpoints supporting Criteria "],
         "summary": "Fetch shipping methods",
-        "description": "Perform a filtered search for shipping methods.",
+        "description": "Perform a filtered search for shipping methods.\n\n**Available Associations:**\n- `prices` - Shipping method price configurations (graduated prices, quantity-based pricing)\n- `deliveryTime` - Delivery time information (min/max days, unit)\n- `media` - Media/images associated with the shipping method (loaded by default)\n- `availabilityRule` - Availability rule determining when this method is available\n- `tax` - Tax configuration for the shipping method\n\nNote: The `prices` association is essential for accessing shipping cost configurations.",
         "operationId": "readShippingMethodGet",
         "parameters": [
           {
@@ -10945,7 +11148,7 @@
       "post": {
         "tags": ["Content"],
         "summary": "Fetch and resolve a CMS page",
-        "description": "Loads a content management page by its identifier and resolve the slot data. This could be media files, product listing and so on.\n\n**Important notice**\n\nThe criteria passed with this route also affects the listing, if there is one within the cms page.",
+        "description": "Loads a content management page by its identifier and resolve the slot data. This could be media files, product listing and so on.\n\n**Important notice**\n\nThe criteria passed with this route also affects the listing, if there is one within the cms page.\n\n**Available Associations:**\n- `sections` - Content sections within the CMS page (layout blocks containing slots)\n- `previewMedia` - Preview image for the CMS page in admin panel and page selection\n- `landingPages` - Landing pages using this CMS layout",
         "operationId": "readCms",
         "parameters": [
           {
@@ -11006,7 +11209,7 @@
       "get": {
         "tags": ["Content"],
         "summary": "Fetch and resolve a CMS page",
-        "description": "Loads a content management page by its identifier and resolve the slot data. This could be media files, product listing and so on.\n\n**Important notice**\n\nThe criteria passed with this route also affects the listing, if there is one within the cms page.",
+        "description": "Loads a content management page by its identifier and resolve the slot data. This could be media files, product listing and so on.\n\n**Important notice**\n\nThe criteria passed with this route also affects the listing, if there is one within the cms page.\n\n**Available Associations:**\n- `sections` - Content sections within the CMS page (layout blocks containing slots)\n- `previewMedia` - Preview image for the CMS page in admin panel and page selection\n- `landingPages` - Landing pages using this CMS layout",
         "operationId": "readCmsGet",
         "parameters": [
           {
@@ -11349,7 +11552,7 @@
       "post": {
         "tags": ["System & Context", "Endpoints supporting Criteria "],
         "summary": "Fetch countries",
-        "description": "Perform a filtered search for countries",
+        "description": "Perform a filtered search for countries\n\n**Available Associations:**\n- `states` - States/provinces/regions within the country",
         "operationId": "readCountry",
         "parameters": [
           {
@@ -11385,7 +11588,7 @@
       "get": {
         "tags": ["System & Context", "Endpoints supporting Criteria "],
         "summary": "Fetch countries",
-        "description": "Perform a filtered search for countries",
+        "description": "Perform a filtered search for countries\n\n**Available Associations:**\n- `states` - States/provinces/regions within the country",
         "operationId": "readCountryGet",
         "parameters": [
           {
@@ -11719,7 +11922,8 @@
                 "schema": { "$ref": "#/components/schemas/Cart" }
               }
             }
-          }
+          },
+          "400": { "$ref": "#/components/responses/400" }
         },
         "security": [{ "ApiKey": [] }]
       },
@@ -11976,7 +12180,7 @@
       "post": {
         "tags": ["Category", "Endpoints supporting Criteria "],
         "summary": "Fetch a list of categories",
-        "description": "Perform a filtered search for categories.",
+        "description": "Perform a filtered search for categories.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `cmsPage` - CMS page layout for the category\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
         "operationId": "readCategoryList",
         "parameters": [
           {
@@ -12012,7 +12216,7 @@
       "get": {
         "tags": ["Category", "Endpoints supporting Criteria "],
         "summary": "Fetch a list of categories",
-        "description": "Perform a filtered search for categories.",
+        "description": "Perform a filtered search for categories.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `cmsPage` - CMS page layout for the category\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
         "operationId": "readCategoryListGet",
         "parameters": [
           {
@@ -12048,7 +12252,7 @@
       "post": {
         "tags": ["Category", "Endpoints supporting Criteria "],
         "summary": "Fetch a single category",
-        "description": "This endpoint returns information about the category, as well as a fully resolved (hydrated with mapping values) CMS page, if one is assigned to the category. You can pass slots which should be resolved exclusively.",
+        "description": "This endpoint returns information about the category, as well as a fully resolved (hydrated with mapping values) CMS page, if one is assigned to the category. You can pass slots which should be resolved exclusively.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `cmsPage` - CMS page layout for the category\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
         "operationId": "readCategory",
         "parameters": [
           {
@@ -12112,7 +12316,7 @@
       "get": {
         "tags": ["Category", "Endpoints supporting Criteria "],
         "summary": "Fetch a single category",
-        "description": "This endpoint returns information about the category, as well as a fully resolved (hydrated with mapping values) CMS page, if one is assigned to the category. You can pass slots which should be resolved exclusively.",
+        "description": "This endpoint returns information about the category, as well as a fully resolved (hydrated with mapping values) CMS page, if one is assigned to the category. You can pass slots which should be resolved exclusively.\n\n**Available Associations:**\n- `children` - Child categories within this category for hierarchical navigation\n- `media` - Category image or banner\n- `tags` - Tags for organizing and filtering categories\n- `cmsPage` - CMS page layout for the category\n- `seoUrls` - SEO-friendly URLs for the category across different sales channels",
         "operationId": "readCategoryGet",
         "parameters": [
           {
@@ -12270,7 +12474,7 @@
       "post": {
         "tags": ["Content", "Endpoints supporting Criteria "],
         "summary": "Fetch a landing page with the resolved CMS page",
-        "description": "Loads a landing page by its identifier and resolves the CMS page.\n\n**Important notice**\n\nThe criteria passed with this route also affects the listing, if there is one within the cms page.",
+        "description": "Loads a landing page by its identifier and resolves the CMS page.\n\n**Important notice**\n\nThe criteria passed with this route also affects the listing, if there is one within the cms page.\n\n**Available Associations:**\n- `cmsPage` - CMS page layout for the landing page\n- `seoUrls` - SEO-friendly URLs for the landing page across different sales channels",
         "operationId": "readLandingPage",
         "parameters": [
           {
@@ -12818,7 +13022,7 @@
       "post": {
         "tags": ["Product"],
         "summary": "Fetch a single product",
-        "description": "This route is used to load a single product with the corresponding details. In addition to loading the data, the best variant of the product is determined when a parent id is passed.",
+        "description": "This route is used to load a single product with the corresponding details. In addition to loading the data, the best variant of the product is determined when a parent id is passed.\n\n**Available Associations:**\n- `downloads` - Downloadable files associated with the product (e.g., manuals, digital content)\n- `children` - Product variants that inherit from this parent product\n- `deliveryTime` - Estimated delivery time for the product\n- `tax` - Tax configuration (rate and calculation rules)\n- `manufacturer` - Product manufacturer or brand information\n- `unit` - Product unit of measure (e.g., piece, liter, kg)\n- `cover` - Main product image displayed in listings and detail pages\n- `cmsPage` - Custom CMS page layout for the product detail page\n- `canonicalProduct` - Canonical product reference for variant consolidation and SEO purposes\n- `media` - Product images and media gallery\n- `crossSellings` - Cross-selling configurations (related products, accessories, similar items)\n- `configuratorSettings` - Variant configurator settings defining available options for product variants\n- `productReviews` - Customer reviews and ratings for the product\n- `mainCategories` - Primary category assignments per sales channel for SEO and navigation\n- `seoUrls` - SEO-friendly URLs for the product across different sales channels\n- `options` - Product variant options (e.g., size, color) that define different variants\n- `properties` - Product properties and characteristics for filtering\n- `categories` - Categories this product is assigned to\n- `streams` - Dynamic product streams this product belongs to based on defined filters\n- `categoriesRo` - Read-only category tree including all parent categories for optimized queries\n- `tags` - Tags for organizing and filtering products\n- `seoCategory` - Main category used for SEO URL generation in the current sales channel",
         "operationId": "readProductDetail",
         "parameters": [
           {
@@ -12893,7 +13097,7 @@
       "post": {
         "tags": ["Product", "Endpoints supporting Criteria "],
         "summary": "Fetch a list of products",
-        "description": "List products that match the given criteria. For performance reasons a limit should always be set.",
+        "description": "List products that match the given criteria. For performance reasons a limit should always be set.\n\n**Available Associations:**\n- `downloads` - Downloadable files associated with the product (e.g., manuals, digital content)\n- `children` - Product variants that inherit from this parent product\n- `deliveryTime` - Estimated delivery time for the product\n- `tax` - Tax configuration (rate and calculation rules)\n- `manufacturer` - Product manufacturer or brand information\n- `unit` - Product unit of measure (e.g., piece, liter, kg)\n- `cover` - Main product image displayed in listings and detail pages\n- `cmsPage` - Custom CMS page layout for the product detail page\n- `canonicalProduct` - Canonical product reference for variant consolidation and SEO purposes\n- `media` - Product images and media gallery\n- `crossSellings` - Cross-selling configurations (related products, accessories, similar items)\n- `configuratorSettings` - Variant configurator settings defining available options for product variants\n- `productReviews` - Customer reviews and ratings for the product\n- `mainCategories` - Primary category assignments per sales channel for SEO and navigation\n- `seoUrls` - SEO-friendly URLs for the product across different sales channels\n- `options` - Product variant options (e.g., size, color) that define different variants\n- `properties` - Product properties and characteristics for filtering\n- `categories` - Categories this product is assigned to\n- `streams` - Dynamic product streams this product belongs to based on defined filters\n- `categoriesRo` - Read-only category tree including all parent categories for optimized queries\n- `tags` - Tags for organizing and filtering products\n- `seoCategory` - Main category used for SEO URL generation in the current sales channel",
         "operationId": "readProduct",
         "parameters": [
           {
@@ -12929,7 +13133,7 @@
       "get": {
         "tags": ["Product", "Endpoints supporting Criteria "],
         "summary": "Fetch a list of products",
-        "description": "List products that match the given criteria. For performance reasons a limit should always be set.",
+        "description": "List products that match the given criteria. For performance reasons a limit should always be set.\n\n**Available Associations:**\n- `downloads` - Downloadable files associated with the product (e.g., manuals, digital content)\n- `children` - Product variants that inherit from this parent product\n- `deliveryTime` - Estimated delivery time for the product\n- `tax` - Tax configuration (rate and calculation rules)\n- `manufacturer` - Product manufacturer or brand information\n- `unit` - Product unit of measure (e.g., piece, liter, kg)\n- `cover` - Main product image displayed in listings and detail pages\n- `cmsPage` - Custom CMS page layout for the product detail page\n- `canonicalProduct` - Canonical product reference for variant consolidation and SEO purposes\n- `media` - Product images and media gallery\n- `crossSellings` - Cross-selling configurations (related products, accessories, similar items)\n- `configuratorSettings` - Variant configurator settings defining available options for product variants\n- `productReviews` - Customer reviews and ratings for the product\n- `mainCategories` - Primary category assignments per sales channel for SEO and navigation\n- `seoUrls` - SEO-friendly URLs for the product across different sales channels\n- `options` - Product variant options (e.g., size, color) that define different variants\n- `properties` - Product properties and characteristics for filtering\n- `categories` - Categories this product is assigned to\n- `streams` - Dynamic product streams this product belongs to based on defined filters\n- `categoriesRo` - Read-only category tree including all parent categories for optimized queries\n- `tags` - Tags for organizing and filtering products\n- `seoCategory` - Main category used for SEO URL generation in the current sales channel",
         "operationId": "readProductGet",
         "parameters": [
           {
@@ -13821,25 +14025,19 @@
         "security": [{ "ApiKey": [] }]
       }
     },
-    "/shop-bite": {
+    "/shopbite/config": {
       "get": {
         "tags": ["ShopBite"],
         "summary": "Get ShopBite configuration",
         "description": "Retrieves ShopBite configuration including checkout status and delivery time",
-        "operationId": "shop-bite.get",
+        "operationId": "shopbite.config.get",
         "parameters": [],
         "responses": {
           "200": {
             "description": "Returns ShopBite Information",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": { "$ref": "#/components/schemas/ShopBite" }
-                  },
-                  "required": ["data"]
-                }
+                "schema": { "$ref": "#/components/schemas/ShopBiteConfig" }
               }
             }
           },

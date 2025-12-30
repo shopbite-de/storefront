@@ -13,7 +13,7 @@ const emit = defineEmits<{
   (e: "update:valid", value: boolean): void;
 }>();
 
-const { deliveryTime } = usePizzaToppings();
+const { deliveryTime } = useShopBiteConfig();
 
 const selected = ref<string>(props.modelValue ?? "");
 const now = ref<Date>(new Date());

@@ -18,7 +18,7 @@ function isTimeWithinBounds(
 }
 
 export function useDeliveryTime(now: Ref<Date>) {
-  const { deliveryTime } = usePizzaToppings();
+  const { deliveryTime } = useShopBiteConfig();
   const earliest = computed<Date>(() =>
     getEarliestSelectableTime(now.value, deliveryTime.value),
   );

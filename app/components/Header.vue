@@ -7,7 +7,7 @@ const route = useRoute();
 const toast = useToast();
 
 const { isLoggedIn, user, logout } = useUser();
-const { isCheckoutEnabled } = usePizzaToppings();
+const { isCheckoutEnabled } = useShopBiteConfig();
 const { count } = useCart();
 const runtimeConfig = useRuntimeConfig();
 

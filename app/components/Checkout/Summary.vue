@@ -7,7 +7,7 @@ const { selectedPaymentMethod, selectedShippingMethod } = useCheckout();
 const { createOrder } = useCheckout();
 const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession } = useUser();
-const { isCheckoutEnabled, refresh } = usePizzaToppings();
+const { isCheckoutEnabled, refresh } = useShopBiteConfig();
 
 const toast = useToast();
 

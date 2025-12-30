@@ -2,7 +2,7 @@
  * This file is auto-generated. Do not make direct changes to the file.
  * Instead override it in your shopware.d.ts file.
  *
- * Shopware API version: 6.7.3.1
+ * Shopware API version: 6.7.5.1
  *
  */
 type GenericRecord =
@@ -323,16 +323,6 @@ export type Schemas = {
             message: string;
             messageKey: string;
           };
-        }
-      | components["schemas"]["CartError"][]
-      | {
-          [key: string]: {
-            code: number;
-            key: string;
-            level: number;
-            message: string;
-            messageKey: string;
-          };
         };
     /** All items within the cart */
     lineItems?: components["schemas"]["LineItem"][];
@@ -458,10 +448,12 @@ export type Schemas = {
     afterCategoryVersionId?: string;
     /** @enum {string} */
     apiAlias: "category";
-    breadcrumb: string[];
+    readonly breadcrumb: string[];
     /** Format: int64 */
     readonly childCount: number;
+    /** Child categories within this category for hierarchical navigation */
     children: components["schemas"]["Category"][];
+    /** CMS page layout for the category */
     cmsPage?: components["schemas"]["CmsPage"];
     cmsPageId?: string;
     /** Runtime field, cannot be used as part of the criteria. */
@@ -481,6 +473,7 @@ export type Schemas = {
     readonly level?: number;
     linkNewTab?: boolean;
     linkType?: string;
+    /** Category image or banner */
     media?: components["schemas"]["Media"];
     mediaId?: string;
     metaDescription?: string;
@@ -493,7 +486,9 @@ export type Schemas = {
     productAssignmentType?: string;
     /** Runtime field, cannot be used as part of the criteria. */
     seoUrl?: string;
+    /** SEO-friendly URLs for the category across different sales channels */
     seoUrls?: components["schemas"]["SeoUrl"][];
+    /** Tags for organizing and filtering categories */
     tags?: components["schemas"]["Tag"][];
     translated: {
       afterCategoryId: string;
@@ -520,7 +515,7 @@ export type Schemas = {
       versionId: string;
     };
     /** @enum {string} */
-    type: "link" | "page";
+    type: "page" | "link";
     /** Format: date-time */
     readonly updatedAt?: string;
     versionId?: string;
@@ -565,6 +560,7 @@ export type Schemas = {
     readonly path?: string;
     productAssignmentType?: string;
     relationships?: {
+      /** Child categories within this category for hierarchical navigation */
       children?: {
         data?: {
           /** @example 268184c12df027f536154d099d497b31 */
@@ -580,6 +576,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** CMS page layout for the category */
       cmsPage?: {
         data?: {
           /** @example 7b1460918b1abb93311108f3dc021c9b */
@@ -595,6 +592,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Category image or banner */
       media?: {
         data?: {
           /** @example 62933a2951ef01f4eafd9bdf4d3cd2f0 */
@@ -625,6 +623,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** SEO-friendly URLs for the category across different sales channels */
       seoUrls?: {
         data?: {
           /** @example 5321b5a71127b8b98cdd4b068ad56c4c */
@@ -640,6 +639,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Tags for organizing and filtering categories */
       tags?: {
         data?: {
           /** @example d57ac45256849d9b13e2422d91580fb9 */
@@ -737,10 +737,13 @@ export type Schemas = {
     customFields?: GenericRecord;
     entity?: string;
     id: string;
+    /** Landing pages using this CMS layout */
     landingPages?: components["schemas"]["LandingPage"][];
     name?: string;
+    /** Preview image for the CMS page in admin panel and page selection */
     previewMedia?: components["schemas"]["Media"];
     previewMediaId?: string;
+    /** Content sections within the CMS page (layout blocks containing slots) */
     sections: components["schemas"]["CmsSection"][];
     translated: {
       cssClass: string;
@@ -792,9 +795,11 @@ export type Schemas = {
     block?: components["schemas"]["CmsBlock"];
     blockId: string;
     cmsBlockVersionId?: string;
+    config?: GenericRecord;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    readonly data?: GenericRecord;
     fieldConfig?: GenericRecord;
     id: string;
     locked?: boolean;
@@ -902,6 +907,7 @@ export type Schemas = {
     position?: number;
     postalCodeRequired?: boolean;
     shippingAvailable?: boolean;
+    /** States/provinces/regions within the country */
     states?: components["schemas"]["CountryState"][];
     translated: {
       advancedPostalCodePattern: string;
@@ -950,6 +956,7 @@ export type Schemas = {
     position?: number;
     postalCodeRequired?: boolean;
     relationships?: {
+      /** States/provinces/regions within the country */
       states?: {
         data?: {
           /** @example 34d955a0df5f7af9c9b4e4dccb3c3564 */
@@ -1020,7 +1027,7 @@ export type Schemas = {
   };
   Criteria: {
     aggregations?: components["schemas"]["Aggregation"][];
-    associations?: components["schemas"]["Association"];
+    associations?: components["schemas"]["Associations"];
     excludes?: components["schemas"]["Excludes"];
     /** Fields which should be returned in the search result. */
     fields?: string[];
@@ -1183,8 +1190,11 @@ export type Schemas = {
   };
   Customer: {
     active?: boolean;
+    /** Currently active billing address in the session */
     activeBillingAddress: components["schemas"]["CustomerAddress"];
+    /** Currently active shipping address in the session */
     activeShippingAddress: components["schemas"]["CustomerAddress"];
+    /** All addresses saved for the customer */
     addresses?: components["schemas"]["CustomerAddress"][];
     affiliateCode?: string;
     /** @enum {string} */
@@ -1196,8 +1206,10 @@ export type Schemas = {
     createdById?: string;
     customerNumber: string;
     customFields?: GenericRecord;
+    /** Default billing address for the customer */
     defaultBillingAddress?: components["schemas"]["CustomerAddress"];
     defaultBillingAddressId: string;
+    /** Default shipping address for the customer */
     defaultShippingAddress?: components["schemas"]["CustomerAddress"];
     defaultShippingAddressId: string;
     /** Format: date-time */
@@ -1209,11 +1221,13 @@ export type Schemas = {
     /** Format: date-time */
     firstLogin?: string;
     firstName: string;
+    /** Customer group determining pricing and permissions */
     group?: components["schemas"]["CustomerGroup"];
     groupId: string;
     guest?: boolean;
     hash?: string;
     id: string;
+    /** Preferred language for customer communication */
     language?: components["schemas"]["Language"];
     languageId: string;
     /** Format: date-time */
@@ -1221,6 +1235,7 @@ export type Schemas = {
     lastName: string;
     /** Format: date-time */
     readonly lastOrderDate?: string;
+    /** Last used payment method by the customer */
     lastPaymentMethod?: components["schemas"]["PaymentMethod"];
     lastPaymentMethodId?: string;
     /** Format: int64 */
@@ -1230,25 +1245,17 @@ export type Schemas = {
     /** Format: int64 */
     readonly reviewCount?: number;
     salesChannelId: string;
+    /** Customer salutation (e.g., Mr., Mrs., Ms.) */
     salutation?: components["schemas"]["Salutation"];
     salutationId?: string;
     readonly tagIds?: string[];
+    /** Tags assigned to the customer for organization and segmentation */
     tags?: components["schemas"]["Tag"][];
     title?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
     updatedById?: string;
   } & (
-    | {
-        /** @enum {string} */
-        accountType: "private";
-      }
-    | {
-        /** @enum {string} */
-        accountType: "business";
-        company: string;
-        vatIds: [string, ...string[]];
-      }
     | {
         /** @enum {string} */
         accountType: "private";
@@ -1371,7 +1378,6 @@ export type Schemas = {
     /** Format: date-time */
     readonly updatedAt?: string;
   };
-  DeliveryInformation: unknown;
   DeliveryTime: {
     /** Format: date-time */
     readonly createdAt?: string;
@@ -1548,6 +1554,7 @@ export type Schemas = {
     active?: boolean;
     /** @enum {string} */
     apiAlias: "landing_page";
+    /** CMS page layout for the landing page */
     cmsPage?: components["schemas"]["CmsPage"];
     cmsPageId?: string;
     cmsPageVersionId?: string;
@@ -1559,6 +1566,7 @@ export type Schemas = {
     metaDescription?: string;
     metaTitle?: string;
     name: string;
+    /** SEO-friendly URLs for the landing page across different sales channels */
     seoUrls?: components["schemas"]["SeoUrl"][];
     slotConfig?: GenericRecord;
     translated: {
@@ -1589,6 +1597,7 @@ export type Schemas = {
     metaTitle?: string;
     name: string;
     relationships?: {
+      /** CMS page layout for the landing page */
       cmsPage?: {
         data?: {
           /** @example 7b1460918b1abb93311108f3dc021c9b */
@@ -1604,6 +1613,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** SEO-friendly URLs for the landing page across different sales channels */
       seoUrls?: {
         data?: {
           /** @example 5321b5a71127b8b98cdd4b068ad56c4c */
@@ -1638,16 +1648,19 @@ export type Schemas = {
   };
   Language: {
     active?: boolean;
+    /** Child languages inheriting from this parent language */
     children?: components["schemas"]["Language"][];
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
+    /** Locale defining regional settings (date, time, number formats) */
     locale?: components["schemas"]["Locale"];
     localeId: string;
     name: string;
     parent?: components["schemas"]["Language"];
     parentId?: string;
+    /** Locale used for translating content */
     translationCode?: components["schemas"]["Locale"];
     translationCodeId?: string;
     /** Format: date-time */
@@ -1663,6 +1676,7 @@ export type Schemas = {
     name: string;
     parentId?: string;
     relationships?: {
+      /** Child languages inheriting from this parent language */
       children?: {
         data?: {
           /** @example 268184c12df027f536154d099d497b31 */
@@ -1678,6 +1692,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Locale defining regional settings (date, time, number formats) */
       locale?: {
         data?: {
           /** @example fb216d9e8791e63c8d12bdc420956839 */
@@ -1708,6 +1723,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Locale used for translating content */
       translationCode?: {
         data?: {
           /** @example 6ef2035242b8fcb7b61c3a41850e60b3 */
@@ -1730,7 +1746,7 @@ export type Schemas = {
   };
   LineItem: {
     children?: components["schemas"]["LineItem"][];
-    cover?: components["schemas"]["ProductMedia"];
+    cover: components["schemas"]["Media"] | null;
     dataContextHash?: string;
     dataTimestamp?: string;
     deliveryInformation: components["schemas"]["CartDeliveryInformation"];
@@ -1979,7 +1995,7 @@ export type Schemas = {
     /** Runtime field, cannot be used as part of the criteria. */
     hasFile: boolean;
     id: string;
-    metaData?: {
+    readonly metaData?: {
       /** Format: int64 */
       height?: number;
       /** Format: int64 */
@@ -1988,6 +2004,7 @@ export type Schemas = {
     mimeType?: string;
     path: string;
     private: boolean;
+    /** Generated thumbnail images in various sizes */
     thumbnails?: components["schemas"]["MediaThumbnail"][];
     title?: string;
     translated: {
@@ -2161,12 +2178,14 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   Order: {
+    /** All addresses associated with the order (billing and shipping) */
     addresses?: components["schemas"]["OrderAddress"][];
     affiliateCode?: string;
     /** Format: float */
     readonly amountNet?: number;
     /** Format: float */
     readonly amountTotal?: number;
+    /** Billing address for the order */
     billingAddress?: components["schemas"]["OrderAddress"];
     billingAddressId: string;
     billingAddressVersionId?: string;
@@ -2174,6 +2193,7 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     createdById?: string;
+    /** Currency used for the order */
     currency?: components["schemas"]["Currency"];
     /** Format: float */
     currencyFactor: number;
@@ -2181,12 +2201,17 @@ export type Schemas = {
     customerComment?: string;
     customFields?: GenericRecord;
     deepLinkCode?: string;
+    /** Delivery information including shipping address and tracking */
     deliveries?: components["schemas"]["OrderDelivery"][];
+    /** Generated documents (invoices, delivery notes, credit notes) */
     documents: components["schemas"]["Document"][];
     id: string;
+    /** Language used when placing the order */
     language?: components["schemas"]["Language"];
     languageId: string;
+    /** Order line items (products, discounts, fees) */
     lineItems?: components["schemas"]["OrderLineItem"][];
+    /** Customer information associated with the order */
     orderCustomer?: components["schemas"]["OrderCustomer"];
     readonly orderDate: string;
     /** Format: date-time */
@@ -2195,9 +2220,11 @@ export type Schemas = {
     /** Format: float */
     readonly positionPrice?: number;
     price: components["schemas"]["CalculatedPrice"];
+    /** Primary delivery information for the order */
     primaryOrderDelivery?: components["schemas"]["OrderDelivery"];
     primaryOrderDeliveryId?: string;
     primaryOrderDeliveryVersionId?: string;
+    /** Primary payment transaction for the order */
     primaryOrderTransaction?: components["schemas"]["OrderTransaction"];
     primaryOrderTransactionId?: string;
     primaryOrderTransactionVersionId?: string;
@@ -2228,10 +2255,13 @@ export type Schemas = {
     /** Format: float */
     readonly shippingTotal?: number;
     source?: string;
+    /** Current order state (e.g., open, in_progress, completed, cancelled) */
     stateMachineState: components["schemas"]["StateMachineState"];
+    /** Tags assigned to the order for organization and filtering */
     tags?: components["schemas"]["Tag"][];
     taxCalculationType?: string;
     readonly taxStatus?: string;
+    /** Payment transactions for the order */
     transactions?: components["schemas"]["OrderTransaction"][];
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -2291,6 +2321,7 @@ export type Schemas = {
     id: string;
     orderId: string;
     orderVersionId?: string;
+    /** Line items included in this delivery */
     positions?: components["schemas"]["OrderDeliveryPosition"][];
     shippingCosts?: {
       calculatedTaxes?: GenericRecord;
@@ -2319,12 +2350,15 @@ export type Schemas = {
     shippingDateEarliest: string;
     /** Format: date-time */
     shippingDateLatest: string;
+    /** Shipping method used for this delivery */
     shippingMethod?: components["schemas"]["ShippingMethod"];
     shippingMethodId: string;
+    /** Shipping address for this delivery */
     shippingOrderAddress?: components["schemas"]["OrderAddress"];
     shippingOrderAddressId: string;
     shippingOrderAddressVersionId?: string;
     stateId: string;
+    /** Current delivery state (e.g., open, shipped, delivered, cancelled) */
     stateMachineState?: components["schemas"]["StateMachineState"];
     trackingCodes?: string[];
     /** Format: date-time */
@@ -2377,18 +2411,21 @@ export type Schemas = {
     /** @enum {string} */
     apiAlias: "order_line_item";
     children: components["schemas"]["OrderLineItem"][];
+    /** Line item image or thumbnail */
     cover?: components["schemas"]["Media"];
     coverId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
     description?: string;
+    /** Digital downloads associated with this line item */
     downloads?: components["schemas"]["OrderLineItemDownload"][];
     extensions?: GenericRecord;
     good?: boolean;
     id: string;
     identifier: string;
     label: string;
+    /** Delivery positions for this line item */
     orderDeliveryPositions?: components["schemas"]["OrderDeliveryPosition"][];
     orderId: string;
     orderVersionId?: string;
@@ -2422,6 +2459,7 @@ export type Schemas = {
     /** Format: int64 */
     position?: number;
     priceDefinition?: components["schemas"]["CartPriceQuantity"];
+    /** Referenced product if this is a product line item */
     product?: components["schemas"]["Product"];
     productId?: string;
     productVersionId?: string;
@@ -2515,6 +2553,7 @@ export type Schemas = {
       /** Format: float */
       unitPrice: number;
     };
+    /** Payment captures for this transaction */
     captures?: components["schemas"]["OrderTransactionCapture"][];
     /** Format: date-time */
     readonly createdAt?: string;
@@ -2522,9 +2561,11 @@ export type Schemas = {
     id: string;
     orderId: string;
     orderVersionId?: string;
+    /** Payment method used for this transaction */
     paymentMethod?: components["schemas"]["PaymentMethod"];
     paymentMethodId: string;
     stateId: string;
+    /** Current payment transaction state (e.g., open, paid, cancelled) */
     stateMachineState?: components["schemas"]["StateMachineState"];
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -2661,6 +2702,7 @@ export type Schemas = {
     description?: string;
     readonly distinguishableName?: string;
     id: string;
+    /** Payment method logo or icon image */
     media?: components["schemas"]["Media"];
     mediaId?: string;
     name: string;
@@ -2694,6 +2736,7 @@ export type Schemas = {
     /** Format: int64 */
     position?: number;
     relationships?: {
+      /** Payment method logo or icon image */
       media?: {
         data?: {
           /** @example 62933a2951ef01f4eafd9bdf4d3cd2f0 */
@@ -2760,25 +2803,15 @@ export type Schemas = {
       /** @enum {string} */
       apiAlias?: "calculated_cheapest_price";
       hasRange?: boolean;
-      listPrice?:
-        | components["schemas"]["ListPrice"]
-        | null
-        | components["schemas"]["ListPrice"];
+      listPrice?: components["schemas"]["ListPrice"] | null;
       quantity?: number;
-      referencePrice?:
-        | components["schemas"]["ReferencePrice"]
-        | null
-        | components["schemas"]["ReferencePrice"];
-      regulationPrice?:
-        | ({
-            price: number;
-          } & ({
-            price: number;
-          } | null))
-        | null;
+      referencePrice?: components["schemas"]["ReferencePrice"] | null;
+      regulationPrice?: {
+        price: number;
+      } | null;
       totalPrice?: number;
       unitPrice?: number;
-      variantId?: (string | null) | null;
+      variantId?: string | null;
     };
     /**
      * Format: int64
@@ -2787,30 +2820,40 @@ export type Schemas = {
     calculatedMaxPurchase?: number;
     calculatedPrice: components["schemas"]["CalculatedPrice"];
     calculatedPrices: components["schemas"]["CalculatedPrice"][];
+    /** Canonical product reference for variant consolidation and SEO purposes */
     canonicalProduct?: components["schemas"]["Product"];
     canonicalProductId?: string;
     canonicalProductVersionId?: string;
+    /** Categories this product is assigned to */
     categories?: components["schemas"]["Category"][];
+    /** Read-only category tree including all parent categories for optimized queries */
     categoriesRo?: components["schemas"]["Category"][];
     readonly categoryIds?: string[];
     readonly categoryTree?: string[];
     /** Format: int64 */
     readonly childCount?: number;
+    /** Product variants that inherit from this parent product */
     children?: components["schemas"]["Product"][];
+    /** Custom CMS page layout for the product detail page */
     cmsPage?: components["schemas"]["CmsPage"];
     cmsPageId?: string;
     cmsPageVersionId?: string;
+    /** Variant configurator settings defining available options for product variants */
     configuratorSettings?: components["schemas"]["ProductConfiguratorSetting"][];
+    /** Main product image displayed in listings and detail pages */
     cover?: components["schemas"]["ProductMedia"];
     coverId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
+    /** Cross-selling configurations (related products, accessories, similar items) */
     crossSellings?: components["schemas"]["ProductCrossSelling"][];
     customFields?: GenericRecord;
+    /** Estimated delivery time for the product */
     deliveryTime?: components["schemas"]["DeliveryTime"];
     deliveryTimeId?: string;
     description?: string;
     readonly displayGroup?: string;
+    /** Downloadable files associated with the product (e.g., manuals, digital content) */
     downloads?: components["schemas"]["ProductDownload"][];
     ean?: string;
     /** Format: float */
@@ -2822,7 +2865,9 @@ export type Schemas = {
     keywords?: string;
     /** Format: float */
     length?: number;
+    /** Primary category assignments per sales channel for SEO and navigation */
     mainCategories?: components["schemas"]["MainCategory"][];
+    /** Product manufacturer or brand information */
     manufacturer?: components["schemas"]["ProductManufacturer"];
     manufacturerId?: string;
     manufacturerNumber?: string;
@@ -2830,6 +2875,7 @@ export type Schemas = {
     /** Format: int64 */
     maxPurchase?: number;
     measurements?: components["schemas"]["ProductMeasurements"];
+    /** Product images and media gallery */
     media?: components["schemas"]["ProductMedia"][];
     metaDescription?: string;
     metaTitle?: string;
@@ -2837,6 +2883,7 @@ export type Schemas = {
     minPurchase?: number;
     name: string;
     readonly optionIds?: string[];
+    /** Product variant options (e.g., size, color) that define different variants */
     options?: components["schemas"]["PropertyGroupOption"][];
     packUnit?: string;
     packUnitPlural?: string;
@@ -2846,7 +2893,9 @@ export type Schemas = {
     productManufacturerVersionId?: string;
     productMediaVersionId?: string;
     productNumber: string;
+    /** Customer reviews and ratings for the product */
     productReviews?: components["schemas"]["ProductReview"][];
+    /** Product properties and characteristics for filtering */
     properties?: components["schemas"]["PropertyGroupOption"][];
     readonly propertyIds?: string[];
     /** Format: int64 */
@@ -2863,7 +2912,9 @@ export type Schemas = {
     restockTime?: number;
     /** Format: int64 */
     readonly sales?: number;
+    /** Main category used for SEO URL generation in the current sales channel */
     seoCategory: components["schemas"]["Category"];
+    /** SEO-friendly URLs for the product across different sales channels */
     seoUrls?: components["schemas"]["SeoUrl"][];
     shippingFree?: boolean;
     sortedProperties?: GenericRecord;
@@ -2871,9 +2922,12 @@ export type Schemas = {
     /** Format: int64 */
     stock: number;
     readonly streamIds?: string[];
+    /** Dynamic product streams this product belongs to based on defined filters */
     streams?: components["schemas"]["ProductStream"][];
     readonly tagIds?: string[];
+    /** Tags for organizing and filtering products */
     tags?: components["schemas"]["Tag"][];
+    /** Tax configuration (rate and calculation rules) */
     tax?: components["schemas"]["Tax"];
     taxId: string;
     translated: {
@@ -2904,6 +2958,7 @@ export type Schemas = {
       unitId: string;
       versionId: string;
     };
+    /** Product unit of measure (e.g., piece, liter, kg) */
     unit?: components["schemas"]["Unit"];
     unitId?: string;
     /** Format: date-time */
@@ -3065,6 +3120,7 @@ export type Schemas = {
     /** Format: float */
     referenceUnit?: number;
     relationships?: {
+      /** Canonical product reference for variant consolidation and SEO purposes */
       canonicalProduct?: {
         data?: {
           /** @example 023995a50b56c0de077323e958b2bbcd */
@@ -3080,6 +3136,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Categories this product is assigned to */
       categories?: {
         data?: {
           /** @example b0b5ccb4a195a07fd3eed14affb8695f */
@@ -3095,6 +3152,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Read-only category tree including all parent categories for optimized queries */
       categoriesRo?: {
         data?: {
           /** @example 7f0702d3a90d965b8c9158c451f43fdb */
@@ -3110,6 +3168,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Product variants that inherit from this parent product */
       children?: {
         data?: {
           /** @example 268184c12df027f536154d099d497b31 */
@@ -3125,6 +3184,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Custom CMS page layout for the product detail page */
       cmsPage?: {
         data?: {
           /** @example 7b1460918b1abb93311108f3dc021c9b */
@@ -3140,6 +3200,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Variant configurator settings defining available options for product variants */
       configuratorSettings?: {
         data?: {
           /** @example c0827fee13725d41f1fd7e292243f5aa */
@@ -3155,6 +3216,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Main product image displayed in listings and detail pages */
       cover?: {
         data?: {
           /** @example 41d0e299ca1abeb2094852da042165c7 */
@@ -3170,6 +3232,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Cross-selling configurations (related products, accessories, similar items) */
       crossSellings?: {
         data?: {
           /** @example 89936e14544d1b403cecef938101b6b0 */
@@ -3185,6 +3248,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Estimated delivery time for the product */
       deliveryTime?: {
         data?: {
           /** @example 8c888ae25a7bd42057370e31f7e01044 */
@@ -3200,6 +3264,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Downloadable files associated with the product (e.g., manuals, digital content) */
       downloads?: {
         data?: {
           /** @example d07d50a751bc6ddf12bf3af0efee9b45 */
@@ -3215,6 +3280,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Primary category assignments per sales channel for SEO and navigation */
       mainCategories?: {
         data?: {
           /** @example 1fb731fc4139cbb575429e28846f0c39 */
@@ -3230,6 +3296,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Product manufacturer or brand information */
       manufacturer?: {
         data?: {
           /** @example c2904bca62b22443d6cf5e9d89cab204 */
@@ -3245,6 +3312,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Product images and media gallery */
       media?: {
         data?: {
           /** @example 62933a2951ef01f4eafd9bdf4d3cd2f0 */
@@ -3260,6 +3328,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Product variant options (e.g., size, color) that define different variants */
       options?: {
         data?: {
           /** @example 93da65a9fd0004d9477aeac024e08e15 */
@@ -3290,6 +3359,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Customer reviews and ratings for the product */
       productReviews?: {
         data?: {
           /** @example 01e78541ea343ed72424a5222796a4cd */
@@ -3305,6 +3375,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Product properties and characteristics for filtering */
       properties?: {
         data?: {
           /** @example 74693d2fc58b46bd06410f278e39aa71 */
@@ -3320,6 +3391,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Main category used for SEO URL generation in the current sales channel */
       seoCategory?: {
         data?: {
           /** @example 9354d004d12e03d35ad8292bf0bb234d */
@@ -3335,6 +3407,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** SEO-friendly URLs for the product across different sales channels */
       seoUrls?: {
         data?: {
           /** @example 5321b5a71127b8b98cdd4b068ad56c4c */
@@ -3350,6 +3423,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Dynamic product streams this product belongs to based on defined filters */
       streams?: {
         data?: {
           /** @example 2f6f4768f1c2d7c8f1f54823723f1a70 */
@@ -3365,6 +3439,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Tags for organizing and filtering products */
       tags?: {
         data?: {
           /** @example d57ac45256849d9b13e2422d91580fb9 */
@@ -3380,6 +3455,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Tax configuration (rate and calculation rules) */
       tax?: {
         data?: {
           /** @example 06565e5611f23fdf8cc43e5077b92b54 */
@@ -3395,6 +3471,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Product unit of measure (e.g., piece, liter, kg) */
       unit?: {
         data?: {
           /** @example 3e34bdebd9bd5edda27e8728904a2552 */
@@ -3645,7 +3722,6 @@ export type Schemas = {
     position?: number;
     productId: string;
     productVersionId?: string;
-    thumbnails?: components["schemas"]["MediaThumbnail"][];
     /** Format: date-time */
     readonly updatedAt?: string;
     versionId?: string;
@@ -3662,7 +3738,6 @@ export type Schemas = {
     content: string;
     /** Format: date-time */
     readonly createdAt?: string;
-    customerId?: string;
     customFields?: GenericRecord;
     externalUser?: string;
     id: string;
@@ -3843,7 +3918,6 @@ export type Schemas = {
   } & {
     [key: string]: unknown;
   };
-  Quote: unknown;
   RangeFilter: {
     field: string;
     parameters: {
@@ -3859,27 +3933,17 @@ export type Schemas = {
     /** @enum {string} */
     apiAlias?: "cart_price_reference";
     hasRange: boolean;
-    listPrice:
-      | components["schemas"]["ListPrice"]
-      | null
-      | components["schemas"]["ListPrice"];
+    listPrice: components["schemas"]["ListPrice"] | null;
     price?: number;
     purchaseUnit?: number;
     referenceUnit?: number;
-    regulationPrice:
-      | ({
-          /** @enum {string} */
-          apiAlias?: "cart_regulation_price";
-          price?: number;
-        } & ({
-          /** @enum {string} */
-          apiAlias?: "cart_regulation_price";
-          price?: number;
-        } | null))
-      | null;
+    regulationPrice: {
+      /** @enum {string} */
+      apiAlias?: "cart_regulation_price";
+      price?: number;
+    } | null;
     unitName: string;
-    /** Format: ^[0-9a-f]{32}$ */
-    variantId?: (string | null) | null;
+    variantId?: string | null;
   };
   Rule: {
     /** Format: date-time */
@@ -3901,15 +3965,19 @@ export type Schemas = {
   SalesChannel: {
     active?: boolean;
     configuration?: GenericRecord;
+    /** Default country for the sales channel */
     country?: components["schemas"]["Country"];
     countryId: string;
     /** Format: date-time */
     readonly createdAt?: string;
+    /** Default currency for the sales channel */
     currency?: components["schemas"]["Currency"];
     currencyId: string;
     customerGroupId: string;
     customFields?: GenericRecord;
+    /** Domain URLs configured for the sales channel */
     domains?: components["schemas"]["SalesChannelDomain"][];
+    /** Root category for footer navigation */
     footerCategory?: components["schemas"]["Category"];
     footerCategoryId?: string;
     footerCategoryVersionId?: string;
@@ -3917,22 +3985,27 @@ export type Schemas = {
     hreflangDefaultDomain?: components["schemas"]["SalesChannelDomain"];
     hreflangDefaultDomainId?: string;
     id: string;
+    /** Default language for the sales channel */
     language?: components["schemas"]["Language"];
     languageId: string;
     mailHeaderFooterId?: string;
     maintenance?: boolean;
     measurementUnits?: components["schemas"]["MeasurementUnits"];
     name: string;
+    /** Root category for navigation menu */
     navigationCategory?: components["schemas"]["Category"];
     /** Format: int64 */
     navigationCategoryDepth?: number;
     navigationCategoryId: string;
     navigationCategoryVersionId?: string;
+    /** Default payment method for the sales channel */
     paymentMethod?: components["schemas"]["PaymentMethod"];
     paymentMethodId: string;
+    /** Root category for service pages */
     serviceCategory?: components["schemas"]["Category"];
     serviceCategoryId?: string;
     serviceCategoryVersionId?: string;
+    /** Default shipping method for the sales channel */
     shippingMethod?: components["schemas"]["ShippingMethod"];
     shippingMethodId: string;
     shortName?: string;
@@ -4168,21 +4241,27 @@ export type Schemas = {
   };
   ShippingMethod: {
     active?: boolean;
+    /** Rule defining when this shipping method is available */
     availabilityRule?: components["schemas"]["Rule"];
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** Estimated delivery time information */
     deliveryTime?: components["schemas"]["DeliveryTime"];
     deliveryTimeId: string;
     description?: string;
     id: string;
+    /** Shipping method logo or carrier image */
     media?: components["schemas"]["Media"];
     mediaId?: string;
     name: string;
     /** Format: int64 */
     position?: number;
+    /** Shipping prices based on weight, volume, or cart value */
     prices?: components["schemas"]["ShippingMethodPrice"][];
+    /** Tags for organizing shipping methods */
     tags?: components["schemas"]["Tag"][];
+    /** Tax configuration for shipping costs */
     tax?: components["schemas"]["Tax"];
     taxType?: string;
     technicalName: string;
@@ -4212,6 +4291,7 @@ export type Schemas = {
     /** Format: int64 */
     position?: number;
     relationships?: {
+      /** Rule defining when this shipping method is available */
       availabilityRule?: {
         data?: {
           /** @example 9fbb7961d1cb158094924c679e1b302c */
@@ -4227,6 +4307,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Estimated delivery time information */
       deliveryTime?: {
         data?: {
           /** @example 8c888ae25a7bd42057370e31f7e01044 */
@@ -4242,6 +4323,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Shipping method logo or carrier image */
       media?: {
         data?: {
           /** @example 62933a2951ef01f4eafd9bdf4d3cd2f0 */
@@ -4257,6 +4339,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Shipping prices based on weight, volume, or cart value */
       prices?: {
         data?: {
           /** @example afae32efe0f84fece3f96b377b768b33 */
@@ -4272,6 +4355,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Tags for organizing shipping methods */
       tags?: {
         data?: {
           /** @example d57ac45256849d9b13e2422d91580fb9 */
@@ -4287,6 +4371,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Tax configuration for shipping costs */
       tax?: {
         data?: {
           /** @example 06565e5611f23fdf8cc43e5077b92b54 */
@@ -4455,7 +4540,7 @@ export type Schemas = {
     /** Format: date-time */
     readonly updatedAt?: string;
   };
-  ShopBite: {
+  ShopBiteConfig: {
     /** Default delivery time in minutes */
     deliveryTime: number;
     /** Whether checkout is enabled for ShopBite */
@@ -5044,27 +5129,6 @@ export type operations = {
           /** VAT IDs of the customer's company. Only valid when `accountType` is `business`. */
           vatIds: [string, ...string[]];
         }
-      | {
-          /**
-           * Type of the customer account. Default value is 'private'.
-           * @default private
-           * @enum {string}
-           */
-          accountType?: "private";
-          company?: null;
-          vatIds?: null;
-        }
-      | {
-          /**
-           * Type of the customer account. Can be `private` or `business`.
-           * @enum {string}
-           */
-          accountType: "business";
-          /** Company of the customer. Only required when `accountType` is `business`. */
-          company: string;
-          /** VAT IDs of the customer's company. Only valid when `accountType` is `business`. */
-          vatIds: [string, ...string[]];
-        }
     );
     response: components["schemas"]["SuccessResponse"];
     responseCode: 200;
@@ -5122,9 +5186,7 @@ export type operations = {
     body?: components["schemas"]["Criteria"];
     response: {
       elements: components["schemas"]["CustomerAddress"][];
-    } & components["schemas"]["EntitySearchResult"] & {
-        elements: components["schemas"]["CustomerAddress"][];
-      } & components["schemas"]["EntitySearchResult"];
+    } & components["schemas"]["EntitySearchResult"];
     responseCode: 200;
   };
   "loginCustomer post /account/login": {
@@ -5243,27 +5305,6 @@ export type operations = {
       /** (Academic) title of the customer */
       title?: string;
     } & (
-      | {
-          /**
-           * Type of the customer account. Default value is 'private'.
-           * @default private
-           * @enum {string}
-           */
-          accountType?: "private";
-          company?: null;
-          vatIds?: null;
-        }
-      | {
-          /**
-           * Type of the customer account. Can be `private` or `business`.
-           * @enum {string}
-           */
-          accountType: "business";
-          /** Company of the customer. Only required when `accountType` is `business`. */
-          company: string;
-          /** VAT IDs of the customer's company. Only valid when `accountType` is `business`. */
-          vatIds: [string, ...string[]];
-        }
       | {
           /**
            * Type of the customer account. Default value is 'private'.
@@ -6452,6 +6493,9 @@ export type operations = {
     body: components["schemas"]["Criteria"] & {
       /** List only available */
       onlyAvailable?: boolean;
+    } & {
+      /** List only available */
+      onlyAvailable?: boolean;
     };
     response: {
       /** aggregation result */
@@ -6960,12 +7004,10 @@ export type operations = {
     } & components["schemas"]["EntitySearchResult"];
     responseCode: 200;
   };
-  "shop-bite.get get /shop-bite": {
+  "shopbite.config.get get /shopbite/config": {
     contentType?: "application/json";
     accept?: "application/json";
-    response: {
-      data: components["schemas"]["ShopBite"];
-    };
+    response: components["schemas"]["ShopBiteConfig"];
     responseCode: 200;
   };
   "readSitemap get /sitemap": {

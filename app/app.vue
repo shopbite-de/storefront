@@ -9,7 +9,7 @@ const toast = useToast();
 const appConfig = useAppConfig();
 const runtimeConfig = useRuntimeConfig();
 const { apiClient } = useShopwareContext();
-const { refresh: refreshToppings } = usePizzaToppings();
+const { refresh: refreshToppings } = useShopBiteConfig();
 const { refreshCart } = useCart();
 const { getWishlistProducts } = useWishlist();
 

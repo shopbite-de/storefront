@@ -7,7 +7,7 @@ const props = defineProps<{
   withAddToCartButton: boolean;
 }>();
 
-const { isCheckoutEnabled } = usePizzaToppings();
+const { isCheckoutEnabled } = useShopBiteConfig();
 
 const { product, withFavoriteButton, withAddToCartButton } = toRefs(props);
 

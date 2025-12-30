@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { count } = useWishlist();
-const { refresh } = usePizzaToppings();
+const { refresh } = useShopBiteConfig();
 
 onMounted(() => {
   refresh();

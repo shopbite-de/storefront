@@ -1,21 +1,21 @@
 import { useContext, useShopwareContext } from "#imports";
 import type { Schemas } from "#shopware";
 
-type usePizzaToppingsReturn = {
+type useShopBiteConfigReturn = {
   deliveryTime: ComputedRef<number>;
   isCheckoutEnabled: ComputedRef<boolean>;
-  refresh(): Promise<Schemas["PizzaToppings"]>;
+  refresh(): Promise<Schemas["ShopBiteConfig"]>;
 };
 
-export function usePizzaToppings(): usePizzaToppingsReturn {
+export function useShopBiteConfig(): useShopBiteConfigReturn {
   const { apiClient } = useShopwareContext();
 
   const _deliveryTime = useContext<number>("deliveryTime");
   const _isCheckoutEnabled = useContext<boolean>("isCheckoutActive");
 
-  async function refresh(): Promise<Schemas["PizzaToppings"]> {
+  async function refresh(): Promise<Schemas["ShopBiteConfig"]> {
     const { data } = await apiClient.invoke(
-      "pizza-toppings.get get /pizza-toppings",
+      "shopbite.config.get get /shopbite/config",
     );
     _deliveryTime.value = data.deliveryTime;
     _isCheckoutEnabled.value = data.isCheckoutEnabled;
