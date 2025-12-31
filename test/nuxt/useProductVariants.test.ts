@@ -18,10 +18,10 @@ describe("useProductVariants", () => {
           group: {
             id: "group-size",
             name: "Size",
-            translated: { name: "Größe" }
+            translated: { name: "Größe" },
           },
-          translated: { name: "Klein" }
-        }
+          translated: { name: "Klein" },
+        },
       },
       {
         option: {
@@ -30,10 +30,10 @@ describe("useProductVariants", () => {
           group: {
             id: "group-size",
             name: "Size",
-            translated: { name: "Größe" }
+            translated: { name: "Größe" },
           },
-          translated: { name: "Groß" }
-        }
+          translated: { name: "Groß" },
+        },
       },
       {
         option: {
@@ -42,22 +42,22 @@ describe("useProductVariants", () => {
           group: {
             id: "group-color",
             name: "Color",
-            translated: { name: "Farbe" }
+            translated: { name: "Farbe" },
           },
-          translated: { name: "Rot" }
-        }
-      }
+          translated: { name: "Rot" },
+        },
+      },
     ]);
 
     const { variants } = useProductVariants(settings as any);
-    
+
     expect(variants.value["group-size"]).toBeDefined();
     expect(variants.value["group-size"].name).toBe("Größe");
     expect(variants.value["group-size"].options).toHaveLength(2);
     expect(variants.value["group-size"].options[0]).toEqual({
       label: "Klein",
       value: "opt-1",
-      productId: "opt-1"
+      productId: "opt-1",
     });
 
     expect(variants.value["group-color"]).toBeDefined();
@@ -71,16 +71,16 @@ describe("useProductVariants", () => {
         option: {
           id: "opt-1",
           name: "Small",
-          group: { id: "group-size", name: "Size" }
-        }
+          group: { id: "group-size", name: "Size" },
+        },
       },
       {
         option: {
           id: "opt-1",
           name: "Small",
-          group: { id: "group-size", name: "Size" }
-        }
-      }
+          group: { id: "group-size", name: "Size" },
+        },
+      },
     ]);
 
     const { variants } = useProductVariants(settings as any);

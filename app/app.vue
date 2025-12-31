@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 import * as Sentry from "@sentry/nuxt";
-import { getNextOpeningTime } from "~/utils/businessHours";
 import type { Toast } from "#ui/composables/useToast";
 
 // Composables

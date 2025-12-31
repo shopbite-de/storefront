@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { useWishlistActions } from "../../app/composables/useWishlistActions";
 
-
 const {
   mockAddProducts,
   mockRefreshCart,
@@ -53,7 +52,9 @@ describe("useWishlistActions", () => {
     const { clearWishlistHandler, isLoading } = useWishlistActions();
     await clearWishlistHandler();
     expect(mockClearWishlist).toHaveBeenCalled();
-    expect(mockToastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: "Merkliste geleert" }));
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Merkliste geleert" }),
+    );
     expect(isLoading.value).toBe(false);
   });
 
@@ -63,11 +64,18 @@ describe("useWishlistActions", () => {
 
     await addSingleItemToCart(mockProduct);
 
-    expect(mockAddProducts).toHaveBeenCalledWith([{ id: "prod-1", quantity: 1, type: "product" }]);
+    expect(mockAddProducts).toHaveBeenCalledWith([
+      { id: "prod-1", quantity: 1, type: "product" },
+    ]);
     expect(mockRefreshCart).toHaveBeenCalled();
     expect(mockTriggerProductAdded).toHaveBeenCalled();
-    expect(mockToastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: "In den Warenkorb gelegt" }));
-    expect(mockTrackEvent).toHaveBeenCalledWith("add_to_cart", expect.any(Object));
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "In den Warenkorb gelegt" }),
+    );
+    expect(mockTrackEvent).toHaveBeenCalledWith(
+      "add_to_cart",
+      expect.any(Object),
+    );
   });
 
   it("should warn when adding a base product with variants", async () => {
@@ -77,7 +85,9 @@ describe("useWishlistActions", () => {
     await addSingleItemToCart(baseProduct);
 
     expect(mockAddProducts).not.toHaveBeenCalled();
-    expect(mockToastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: "Variante erforderlich" }));
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Variante erforderlich" }),
+    );
   });
 
   it("should add all items to cart", async () => {
@@ -94,7 +104,9 @@ describe("useWishlistActions", () => {
       { id: "p1", quantity: 1, type: "product" },
       { id: "p2", quantity: 1, type: "product" },
     ]);
-    expect(mockToastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: "Produkte hinzugefügt" }));
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Produkte hinzugefügt" }),
+    );
     expect(isAddingToCart.value).toBe(false);
   });
 
@@ -117,8 +129,12 @@ describe("useWishlistActions", () => {
     expect(mockAddProducts).toHaveBeenCalledWith([
       { id: "p1", quantity: 1, type: "product" },
     ]);
-    expect(mockToastAdd).toHaveBeenCalledWith(expect.objectContaining({
-      description: expect.stringContaining("1 Produkte hinzugefügt. 1 Produkt(e) übersprungen")
-    }));
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: expect.stringContaining(
+          "1 Produkte hinzugefügt. 1 Produkt(e) übersprungen",
+        ),
+      }),
+    );
   });
 });

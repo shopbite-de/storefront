@@ -1,6 +1,3 @@
-import { setTime } from "./time";
-import { isClosedHoliday } from "~/utils/holidays";
-
 export type ServiceInterval = { start: Date; end: Date };
 
 export function isTuesday(date: Date): boolean {
@@ -45,54 +42,52 @@ export function getEarliestSelectableTime(
 export function getNextOpeningTime(now: Ref<Date>): string | null {
   const currentDate = now.value;
 
-  // Check if closed for holiday
-  if (isClosedHoliday(currentDate)) {
-    return "13.08."; // Based on your existing code
-  }
-
-  // Check today's intervals
-  const todayIntervals = getServiceIntervals(currentDate);
-  const currentTime = currentDate.getTime();
-
-  // Find next opening today
-  for (const interval of todayIntervals) {
-    if (interval.start.getTime() > currentTime) {
-      const hours = interval.start.getHours().toString().padStart(2, "0");
-      const minutes = interval.start.getMinutes().toString().padStart(2, "0");
-      return `${hours}:${minutes} Uhr`;
-    }
-  }
-
-  // Check tomorrow
-  const tomorrow = new Date(currentDate);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-
-  // Try up to 7 days ahead to find next opening
-  for (let i = 0; i < 7; i++) {
-    const checkDate = new Date(tomorrow);
+  // Try up to 60 days ahead to find next opening (covers long holiday periods)
+  for (let i = 0; i < 60; i++) {
+    const checkDate = new Date(currentDate);
     checkDate.setDate(checkDate.getDate() + i);
+    checkDate.setHours(12, 0, 0, 0); // Set to midday to avoid timezone issues
+
+    // Skip holidays
+    if (isClosedHoliday(checkDate)) continue;
 
     const intervals = getServiceIntervals(checkDate);
-    if (intervals.length > 0) {
-      const nextOpen = intervals[0].start;
-      const dayName = [
-        "Sonntag",
-        "Montag",
-        "Dienstag",
-        "Mittwoch",
-        "Donnerstag",
-        "Freitag",
-        "Samstag",
-      ][nextOpen.getDay()];
-      const hours = nextOpen.getHours().toString().padStart(2, "0");
-      const minutes = nextOpen.getMinutes().toString().padStart(2, "0");
+    if (intervals.length === 0) continue;
 
-      if (i === 0) {
-        return `morgen um ${hours}:${minutes} Uhr`;
+    // For today, check if there's still an opening coming
+    if (i === 0) {
+      for (const interval of intervals) {
+        if (interval.start.getTime() > currentDate.getTime()) {
+          const hours = interval.start.getHours().toString().padStart(2, "0");
+          const minutes = interval.start
+            .getMinutes()
+            .toString()
+            .padStart(2, "0");
+          return `${hours}:${minutes} Uhr`;
+        }
       }
-      return `${dayName} um ${hours}:${minutes} Uhr`;
+      continue; // Today's openings have passed, check next days
     }
+
+    const nextOpen = intervals[0].start;
+    const day = nextOpen.getDate().toString().padStart(2, "0");
+    const month = (nextOpen.getMonth() + 1).toString().padStart(2, "0");
+    const dayName = [
+      "Sonntag",
+      "Montag",
+      "Dienstag",
+      "Mittwoch",
+      "Donnerstag",
+      "Freitag",
+      "Samstag",
+    ][nextOpen.getDay()];
+    const hours = nextOpen.getHours().toString().padStart(2, "0");
+    const minutes = nextOpen.getMinutes().toString().padStart(2, "0");
+
+    if (i === 1) {
+      return `morgen um ${hours}:${minutes} Uhr`;
+    }
+    return `${dayName}, ${day}.${month}. um ${hours}:${minutes} Uhr`;
   }
 
   return null;

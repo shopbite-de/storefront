@@ -15,12 +15,14 @@ describe("useScrollAnimation", () => {
     disconnectMock = vi.fn();
 
     // Mock IntersectionObserver
-    global.IntersectionObserver = vi.fn().mockImplementation(function (callback) {
-      intersectionCallback = callback;
-      this.observe = observeMock;
-      this.unobserve = unobserveMock;
-      this.disconnect = disconnectMock;
-    }) as any;
+    global.IntersectionObserver = vi
+      .fn()
+      .mockImplementation(function (callback) {
+        intersectionCallback = callback;
+        this.observe = observeMock;
+        this.unobserve = unobserveMock;
+        this.disconnect = disconnectMock;
+      }) as any;
   });
 
   it("should initialize with isVisible false", () => {

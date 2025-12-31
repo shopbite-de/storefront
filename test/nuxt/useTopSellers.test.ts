@@ -30,15 +30,18 @@ describe("useTopSellers", () => {
     const { loadTopSellers } = useTopSellers();
     const result = await loadTopSellers();
 
-    expect(mockInvoke).toHaveBeenCalledWith("getTopSellers post /product", expect.any(Object));
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "getTopSellers post /product",
+      expect.any(Object),
+    );
     expect(result).toEqual(mockElements);
   });
 
   it("should return empty array on error", async () => {
     mockInvoke.mockRejectedValue(new Error("Network error"));
-    
+
     // Silence console.error for this test
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const { loadTopSellers } = useTopSellers();
     const result = await loadTopSellers();

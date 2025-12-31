@@ -42,7 +42,9 @@ describe("useDeliveryTime", () => {
 
   it("should return error for invalid format", () => {
     const { validate } = useDeliveryTime(now);
-    expect(validate("invalid")).toBe("Bitte eine gültige Uhrzeit im Format HH:MM eingeben.");
+    expect(validate("invalid")).toBe(
+      "Bitte eine gültige Uhrzeit im Format HH:MM eingeben.",
+    );
   });
 
   it("should return error for time before minTime", () => {
@@ -52,10 +54,15 @@ describe("useDeliveryTime", () => {
       const [hours, mins] = minTime.value.split(":").map(Number);
       const earlyTime = new Date(now.value);
       earlyTime.setHours(hours as number);
-      earlyTime.setMinutes(mins as number - 5);
-      const earlyTimeStr = earlyTime.getHours().toString().padStart(2, '0') + ":" + earlyTime.getMinutes().toString().padStart(2, '0');
-      
-      expect(validate(earlyTimeStr)).toContain("vor dem frühestmöglichen Zeitpunkt");
+      earlyTime.setMinutes((mins as number) - 5);
+      const earlyTimeStr =
+        earlyTime.getHours().toString().padStart(2, "0") +
+        ":" +
+        earlyTime.getMinutes().toString().padStart(2, "0");
+
+      expect(validate(earlyTimeStr)).toContain(
+        "vor dem frühestmöglichen Zeitpunkt",
+      );
     }
   });
 });
