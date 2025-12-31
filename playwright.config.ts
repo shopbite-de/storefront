@@ -1,8 +1,8 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 import type { ConfigOptions } from "@nuxt/test-utils/playwright";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
-import path from 'path';
+import path from "path";
 
 dotenv.config({ path: path.resolve(".env.test") });
 

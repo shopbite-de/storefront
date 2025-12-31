@@ -10,7 +10,7 @@ const {
   mockRefreshCart,
   mockToastAdd,
   mockTriggerProductAdded,
-  mockTrackEvent
+  mockTrackEvent,
 } = vi.hoisted(() => ({
   mockAddProducts: vi.fn(),
   mockRefreshCart: vi.fn(),
@@ -43,17 +43,17 @@ mockNuxtImport("useTrackEvent", () => {
 });
 
 // Provide the mocks globally or in a way that they are picked up
-vi.stubGlobal('useCart', () => ({
+vi.stubGlobal("useCart", () => ({
   addProducts: mockAddProducts,
   refreshCart: mockRefreshCart,
 }));
-vi.stubGlobal('useToast', () => ({
+vi.stubGlobal("useToast", () => ({
   add: mockToastAdd,
 }));
-vi.stubGlobal('useProductEvents', () => ({
+vi.stubGlobal("useProductEvents", () => ({
   triggerProductAdded: mockTriggerProductAdded,
 }));
-vi.stubGlobal('useTrackEvent', mockTrackEvent);
+vi.stubGlobal("useTrackEvent", mockTrackEvent);
 
 describe("useAddToCart", () => {
   const mockProduct = {
@@ -114,7 +114,7 @@ describe("useAddToCart", () => {
   it("should add simple product to cart", async () => {
     const { setSelectedProduct, addToCart, isLoading } = useAddToCart();
     setSelectedProduct(mockProduct);
-    
+
     mockAddProducts.mockResolvedValue({ id: "cart-123" });
     mockRefreshCart.mockResolvedValue({});
 
@@ -131,7 +131,10 @@ describe("useAddToCart", () => {
     expect(mockRefreshCart).toHaveBeenCalled();
     expect(mockToastAdd).toHaveBeenCalled();
     expect(mockTriggerProductAdded).toHaveBeenCalled();
-    expect(mockTrackEvent).toHaveBeenCalledWith("add_to_cart", expect.any(Object));
+    expect(mockTrackEvent).toHaveBeenCalledWith(
+      "add_to_cart",
+      expect.any(Object),
+    );
   });
 
   it("should add product with extras to cart as container", async () => {

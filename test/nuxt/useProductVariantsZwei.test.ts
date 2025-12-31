@@ -17,13 +17,13 @@ describe("useProductVariantsZwei", () => {
         translated: { name: "Größe" },
         options: [
           { id: "opt-1", name: "Small", translated: { name: "Klein" } },
-          { id: "opt-2", name: "Large", translated: { name: "Groß" } }
-        ]
-      }
+          { id: "opt-2", name: "Large", translated: { name: "Groß" } },
+        ],
+      },
     ]);
 
     const { variants } = useProductVariantsZwei(settings);
-    
+
     expect(variants.value["group-size"]).toBeDefined();
     expect(variants.value["group-size"]?.name).toBe("Größe");
     expect(variants.value["group-size"]?.options).toHaveLength(2);
@@ -37,9 +37,9 @@ describe("useProductVariantsZwei", () => {
         name: "Size",
         options: [
           { id: "opt-1", name: "Small" },
-          { id: "opt-1", name: "Small" }
-        ]
-      }
+          { id: "opt-1", name: "Small" },
+        ],
+      },
     ]);
 
     const { variants } = useProductVariantsZwei(settings);

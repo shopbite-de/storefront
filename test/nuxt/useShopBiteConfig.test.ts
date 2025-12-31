@@ -2,15 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { useShopBiteConfig } from "~/composables/useShopBiteConfig";
 
-const {
-  mockInvoke,
-  mockDeliveryTime,
-  mockIsCheckoutEnabled,
-} = vi.hoisted(() => ({
-  mockInvoke: vi.fn(),
-  mockDeliveryTime: { value: 0 },
-  mockIsCheckoutEnabled: { value: false },
-}));
+const { mockInvoke, mockDeliveryTime, mockIsCheckoutEnabled } = vi.hoisted(
+  () => ({
+    mockInvoke: vi.fn(),
+    mockDeliveryTime: { value: 0 },
+    mockIsCheckoutEnabled: { value: false },
+  }),
+);
 
 mockNuxtImport("useShopwareContext", () => () => ({
   apiClient: {
@@ -43,8 +41,8 @@ describe("useShopBiteConfig", () => {
     mockInvoke.mockResolvedValue({
       data: {
         deliveryTime: 45,
-        isCheckoutEnabled: true
-      }
+        isCheckoutEnabled: true,
+      },
     });
 
     const { refresh, deliveryTime, isCheckoutEnabled } = useShopBiteConfig();

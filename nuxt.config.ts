@@ -110,7 +110,7 @@ export default defineNuxtConfig({
     manifest: {
       name: "ShopBite",
       short_name: "ShopBite",
-      theme_color: "#4d7c0f",
+      theme_color: "#ff5b00",
       icons: [
         {
           src: "dark/Logo.svg",
