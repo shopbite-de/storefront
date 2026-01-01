@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, computed } from "vue";
 import { useDeliveryTime } from "~/composables/useDeliveryTime";
-import { isClosedHoliday } from "~/utils/holidays";
+import { useHolidays } from "~/composables/useHolidays";
 
 const props = defineProps<{
   modelValue?: string;
@@ -44,13 +44,15 @@ const {
   validate,
 } = useDeliveryTime(now);
 
+const { isClosedHoliday } = useHolidays();
+
 const validationError = computed<string | null>(() =>
   selected.value ? validate(selected.value) : null,
 );
 
 const isValid = computed<boolean>(() => {
   if (!selected.value) return false;
-  if (isClosedHoliday(now.value)) return false;
+  if (isClosedHoliday(now.value) === true) return false;
   return validate(selected.value) === null;
 });
 
@@ -130,7 +132,7 @@ function handleTimeInput(event: Event): void {
 </script>
 
 <template>
-  <div v-if="!isClosedHoliday(now)" class="flex flex-col gap-2 mt-4">
+  <div v-if="isClosedHoliday(now) === false" class="flex flex-col gap-2 mt-4">
     <div class="flex flex-row items-center justify-between gap-4">
       <div>Wunschlieferung- oder Abholzeit ab:</div>
       <client-only>
@@ -138,7 +140,7 @@ function handleTimeInput(event: Event): void {
           type="time"
           :min="minTime ?? undefined"
           :max="maxTime ?? undefined"
-          :disabled="isClosedToday || isClosedHoliday(now)"
+          :disabled="isClosedToday || isClosedHoliday(now) === true"
           :value="selected"
           step="300"
           class="border rounded px-2 py-1"
@@ -165,13 +167,22 @@ function handleTimeInput(event: Event): void {
       variant="subtle"
     />
   </div>
-  <div v-else>
+  <div v-else-if="isClosedHoliday(now) === true">
     <UBadge
       variant="subtle"
       class="w-full"
       icon="i-lucide-info"
       color="error"
       label="Geschlossen wegen Betriebsferien"
+    />
+  </div>
+  <div v-else>
+    <UBadge
+      variant="subtle"
+      class="w-full"
+      icon="i-lucide-loader"
+      color="neutral"
+      label="Lade Öffnungszeiten..."
     />
   </div>
 </template>

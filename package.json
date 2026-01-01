@@ -1,6 +1,6 @@
 {
   "name": "@shopbite-de/storefront",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "main": "nuxt.config.ts",
   "description": "Shopware storefront for food delivery shops",
   "keywords": [
@@ -27,7 +27,7 @@
     "prettier": "prettier --check \"**/*.{ts,tsx,md,vue}\"",
     "prettier:fix": "prettier --check \"**/*.{ts,tsx,md,vue}\" --write",
     "generate-types": "shopware-api-gen generate --apiType=store",
-    "load-schema": "bunx @shopware/api-gen loadSchema --apiType=store",
+    "load-schema": "pnpx @shopware/api-gen loadSchema --apiType=store",
     "lint:fix": "npm run prettier:fix && npm run eslint:fix"
   },
   "dependencies": {
