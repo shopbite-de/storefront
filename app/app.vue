@@ -17,6 +17,15 @@ Sentry.init({
   dsn: runtimeConfig.public.sentry.dsn,
 });
 
+const {
+  getNextOpeningTime,
+  isStoreOpen,
+  refresh: refreshBusinessHours,
+} = useBusinessHours();
+const { isClosedHoliday, refresh: refreshHolidays } = useHolidays();
+
+await Promise.all([refreshBusinessHours(), refreshHolidays()]);
+
 // Initialize session context
 const { data: sessionContextData } = await useAsyncData(
   "session-context",
@@ -59,12 +68,12 @@ const TOAST_CONFIG = {
 } as const;
 
 function displayStoreStatus() {
-  const isOpen = isStoreOpen();
+  const isOpen = isStoreOpen(undefined, isClosedHoliday);
 
   if (isOpen) {
     toast.add(TOAST_CONFIG.open);
   } else {
-    const nextOpening = getNextOpeningTime(ref(new Date()));
+    const nextOpening = getNextOpeningTime(ref(new Date()), isClosedHoliday);
     toast.add({
       ...TOAST_CONFIG.closed,
       description: nextOpening

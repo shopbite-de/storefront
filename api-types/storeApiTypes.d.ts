@@ -268,6 +268,24 @@ export type Schemas = {
     type: "page" | "link" | "folder";
   };
   BreadcrumbCollection: components["schemas"]["Breadcrumb"][];
+  BusinessHour: {
+    apiAlias?: string;
+    closingTime?: string;
+    /** Format: date-time */
+    createdAt?: string;
+    dayOfWeek?: number;
+    /** Format: uuid */
+    id?: string;
+    openingTime?: string;
+    /** Format: uuid */
+    salesChannelId?: string;
+    translated: [];
+    /** Format: date-time */
+    updatedAt?: string | null;
+  };
+  BusinessHourStruct: {
+    businessHours?: components["schemas"]["BusinessHour"][];
+  };
   CalculatedPrice: {
     /** @enum {string} */
     apiAlias: "calculated_price";
@@ -1518,6 +1536,25 @@ export type Schemas = {
     id?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
+  };
+  Holiday: {
+    apiAlias?: string;
+    /** Format: date-time */
+    createdAt?: string;
+    /** Format: date-time */
+    end?: string;
+    /** Format: uuid */
+    id?: string;
+    /** Format: uuid */
+    salesChannelId?: string;
+    /** Format: date-time */
+    start?: string;
+    translated: [];
+    /** Format: date-time */
+    updatedAt?: string | null;
+  };
+  HolidayStruct: {
+    holidays?: components["schemas"]["Holiday"][];
   };
   ImportExportFile: {
     /** Format: date-time */
@@ -4546,6 +4583,30 @@ export type Schemas = {
     /** Whether checkout is enabled for ShopBite */
     isCheckoutEnabled: boolean;
   };
+  ShopbiteBusinessHour: {
+    closingTime: string;
+    /** Format: date-time */
+    readonly createdAt?: string;
+    /** Format: int64 */
+    dayOfWeek: number;
+    id: string;
+    openingTime: string;
+    salesChannelId: string;
+    /** Format: date-time */
+    readonly updatedAt?: string;
+  };
+  ShopbiteHoliday: {
+    /** Format: date-time */
+    readonly createdAt?: string;
+    /** Format: date-time */
+    end: string;
+    id: string;
+    salesChannelId: string;
+    /** Format: date-time */
+    start: string;
+    /** Format: date-time */
+    readonly updatedAt?: string;
+  };
   SimpleFilter: {
     field: string;
     /** @enum {string} */
@@ -7004,10 +7065,22 @@ export type operations = {
     } & components["schemas"]["EntitySearchResult"];
     responseCode: 200;
   };
+  "shopbite.business-hour.get get /shopbite/business-hour": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    response: components["schemas"]["BusinessHourStruct"];
+    responseCode: 200;
+  };
   "shopbite.config.get get /shopbite/config": {
     contentType?: "application/json";
     accept?: "application/json";
     response: components["schemas"]["ShopBiteConfig"];
+    responseCode: 200;
+  };
+  "shopbite.holiday.get get /shopbite/holiday": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    response: components["schemas"]["HolidayStruct"];
     responseCode: 200;
   };
   "readSitemap get /sitemap": {

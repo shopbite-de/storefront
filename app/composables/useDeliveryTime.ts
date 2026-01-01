@@ -1,12 +1,4 @@
 import { computed, type Ref } from "vue";
-import { toTimeString, parseTimeString } from "~/utils/time";
-import {
-  getEarliestSelectableTime,
-  findActiveInterval,
-  getServiceIntervals,
-  isTuesday,
-  type ServiceInterval,
-} from "~/utils/businessHours";
 
 function isTimeWithinBounds(
   time: string,
@@ -19,6 +11,14 @@ function isTimeWithinBounds(
 
 export function useDeliveryTime(now: Ref<Date>) {
   const { deliveryTime } = useShopBiteConfig();
+  const {
+    getServiceIntervals,
+    getEarliestSelectableTime,
+    findActiveInterval,
+    businessHours,
+  } = useBusinessHours();
+  const { isClosedHoliday } = useHolidays();
+
   const earliest = computed<Date>(() =>
     getEarliestSelectableTime(now.value, deliveryTime.value),
   );
@@ -28,6 +28,7 @@ export function useDeliveryTime(now: Ref<Date>) {
   );
 
   const minTime = computed<string | null>(() => {
+    if (isClosedHoliday(now.value) !== false) return null;
     const interval = activeInterval.value;
     if (!interval) return null;
     const minDate = new Date(
@@ -37,6 +38,7 @@ export function useDeliveryTime(now: Ref<Date>) {
   });
 
   const maxTime = computed<string | null>(() => {
+    if (isClosedHoliday(now.value) !== false) return null;
     const interval = activeInterval.value;
     return interval ? toTimeString(interval.end) : null;
   });
@@ -44,11 +46,33 @@ export function useDeliveryTime(now: Ref<Date>) {
   const isClosedToday = computed<boolean>(() => activeInterval.value === null);
 
   const helperText = computed<string>(() => {
+    const isHoliday = isClosedHoliday(now.value);
+    if (isHoliday === undefined) {
+      return "Lade Informationen...";
+    }
+    if (isHoliday) {
+      return "Wegen Betriebsferien geschlossen.";
+    }
+
     const interval = activeInterval.value;
     if (!interval) {
-      if (isTuesday(now.value)) {
-        return "Heute (Dienstag) ist Ruhetag. Bitte an einem anderen Tag bestellen.";
+      const dayOfWeek = now.value.getDay();
+      const hasOpeningsToday =
+        businessHours.value?.some((bh) => bh.dayOfWeek === dayOfWeek) ?? false;
+
+      if (!hasOpeningsToday) {
+        const dayName = [
+          "Sonntag",
+          "Montag",
+          "Dienstag",
+          "Mittwoch",
+          "Donnerstag",
+          "Freitag",
+          "Samstag",
+        ][dayOfWeek];
+        return `Heute (${dayName}) ist Ruhetag. Bitte an einem anderen Tag bestellen.`;
       }
+
       const intervals = getServiceIntervals(now.value);
       const lastInterval = intervals.at(-1);
       if (lastInterval && earliest.value > lastInterval.end) {
