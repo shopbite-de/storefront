@@ -84,9 +84,8 @@ const cartQuickViewOpen = ref(false);
     <template #title>
       <NuxtLink to="/" class="-m-1.5 p-1.5">
         <span class="sr-only">{{ siteName }}</span>
-        <UColorModeImage
-          light="/light/Logo.svg"
-          dark="/dark/Logo.svg"
+        <NuxtImg
+          src="/light/Logo.svg"
           class="h-12 w-auto"
         />
       </NuxtLink>
