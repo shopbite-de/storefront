@@ -22,7 +22,7 @@ export function useBusinessHours() {
   const getServiceIntervals = (date: Date): Array<ServiceInterval> => {
     if (!data.value) return [];
 
-    const dayOfWeek = date.getDay();
+    const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
     const dayBusinessHours = data.value.filter(
       (bh) => bh.dayOfWeek === dayOfWeek,
     );
@@ -38,6 +38,7 @@ export function useBusinessHours() {
           end: setTime(date, endH, endM),
         };
       })
+      .sort((a, b) => a.start.getTime() - b.start.getTime())
       .filter((interval): interval is ServiceInterval => interval !== null);
   };
 
