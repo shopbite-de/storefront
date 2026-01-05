@@ -6,7 +6,7 @@ import { useUser } from "@shopware/composables";
 const route = useRoute();
 const toast = useToast();
 
-const { isLoggedIn, user, logout } = useUser();
+const { isLoggedIn, isGuestSession, user, logout } = useUser();
 const { isCheckoutEnabled } = useShopBiteConfig();
 const { count } = useCart();
 const runtimeConfig = useRuntimeConfig();
@@ -34,7 +34,7 @@ const navi = computed<NavigationMenuItem[]>(() => {
 });
 
 const accountHoverText = computed(() => {
-  return isLoggedIn.value
+  return isLoggedIn.value || isGuestSession.value
     ? `${user.value?.firstName} ${user.value?.lastName}`
     : "Hallo";
 });
@@ -51,15 +51,24 @@ const logoutHandler = () => {
 const loggedInDropDown = computed<DropdownMenuItem[][]>(() => {
   if (!navigationData.value?.account.loggedIn) return [];
 
-  return navigationData.value.account.loggedIn.map((group) =>
-    group.map((item) => ({
-      label: item.type === "label" ? accountHoverText.value : item.label,
-      type: item.type,
-      icon: item.icon,
-      to: item.to,
-      onSelect: item.action === "logout" ? logoutHandler : undefined,
-    })),
-  );
+  return navigationData.value.account.loggedIn
+    .map((group) =>
+      group
+        .filter((item) => {
+          if (isGuestSession.value) {
+            return item.type === "label" || item.action === "logout";
+          }
+          return true;
+        })
+        .map((item) => ({
+          label: item.type === "label" ? accountHoverText.value : item.label,
+          type: item.type,
+          icon: item.icon,
+          to: item.to,
+          onSelect: item.action === "logout" ? logoutHandler : undefined,
+        })),
+    )
+    .filter((group) => group.length > 0);
 });
 
 const loggedOutDropDown = computed<DropdownMenuItem[][]>(() => {
@@ -103,8 +112,12 @@ const cartQuickViewOpen = ref(false);
         icon="i-lucide-phone"
         aria-label="Anrufen"
       />
-      <UDropdownMenu :items="isLoggedIn ? loggedInDropDown : loggedOutDropDown">
-        <UChip v-if="isLoggedIn" size="3xl" text="✓">
+      <UDropdownMenu
+        :items="
+          isLoggedIn || isGuestSession ? loggedInDropDown : loggedOutDropDown
+        "
+      >
+        <UChip v-if="isLoggedIn || isGuestSession" size="3xl" text="✓">
           <UButton icon="i-lucide-user" color="neutral" variant="outline" />
         </UChip>
         <UButton

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { createRegistrationSchema } from "~/validation/registrationSchema";
 import type { RegistrationSchema } from "~/validation/registrationSchema";
+import { ApiClientError } from "@shopware/api-client";
 import type { FormSubmitEvent } from "@nuxt/ui";
 
 const config = useRuntimeConfig();
@@ -18,38 +19,40 @@ watch(isLoggedIn, (isLoggedIn) => {
 
 const state = reactive({
   accountType: "private",
-  salutationId: undefined,
-  firstName: undefined,
-  lastName: undefined,
-  email: undefined,
+  salutationId: "",
+  firstName: "",
+  lastName: "",
+  email: "",
   guest: true,
-  password: undefined,
-  passwordConfirm: undefined,
-  acceptedDataProtection: true,
+  password: "",
+  passwordConfirm: "",
+  acceptedDataProtection: false,
   isShippingAddressDifferent: false,
   storefrontUrl: config.public.shopware.devStorefrontUrl,
   billingAddress: {
-    company: undefined,
-    department: undefined,
-    salutationId: undefined,
-    firstName: undefined,
-    lastName: undefined,
-    phoneNumber: undefined,
-    street: undefined,
-    zipcode: undefined,
-    city: undefined,
+    company: "",
+    department: "",
+    salutationId: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    additionalAddressLine1: "",
+    street: "",
+    zipcode: "",
+    city: "",
     countryId: config.public.site.countryId,
   },
   shippingAddress: {
-    company: undefined,
-    department: undefined,
-    salutationId: undefined,
-    firstName: undefined,
-    lastName: undefined,
-    phoneNumber: undefined,
-    street: undefined,
-    zipcode: undefined,
-    city: undefined,
+    company: "",
+    department: "",
+    salutationId: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    additionalAddressLine1: "",
+    street: "",
+    zipcode: "",
+    city: "",
     countryId: config.public.site.countryId,
   },
 });
@@ -76,7 +79,13 @@ async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
     delete registrationData.shippingAddress;
   }
 
+  if (registrationData.guest) {
+    delete registrationData.password;
+    delete registrationData.passwordConfirm;
+  }
+
   try {
+    // @ts-expect-error - password is required in the API type but not for guests
     await register(registrationData);
 
     toast.add({
@@ -86,9 +95,19 @@ async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
     emit("registration-success", registrationData);
   } catch (error) {
     console.error("Registration failed:", error);
+    let description = "Bitte versuchen Sie es erneut.";
+    if (error instanceof ApiClientError) {
+      const errors = error.details?.errors;
+      if (Array.isArray(errors) && errors.length > 0) {
+        description = errors
+          .map((e) => e.detail || e.title)
+          .filter(Boolean)
+          .join("\n");
+      }
+    }
     toast.add({
       title: "Registrierung fehlgeschlagen",
-      description: "Bitte versuchen Sie es erneut.",
+      description,
       color: "error",
     });
   }
@@ -101,15 +120,13 @@ const accountTypes = ref([
   },
   {
     label: "Geschäftskunde",
-    value: "commercial",
+    value: "business",
   },
 ]);
 
 const emit = defineEmits<{
   "registration-success": [data: RegistrationSchema];
 }>();
-
-const allowedCities = ref(["Obertshausen", "Lämmerspiel"]);
 </script>
 
 <template>
@@ -118,7 +135,7 @@ const allowedCities = ref(["Obertshausen", "Lämmerspiel"]);
     :state="state"
     class="space-y-4"
     @submit="onSubmit"
-    @error="(error) => console.log('Form validation error:', error)"
+    @error="(error: any) => console.log('Form validation error:', error)"
   >
     <UFormField name="accountType">
       <USelect
@@ -151,14 +168,6 @@ const allowedCities = ref(["Obertshausen", "Lämmerspiel"]);
       <UInput v-model="state.email" class="w-full" />
     </UFormField>
 
-    <UFormField label="Telefon" name="billingAddress.phoneNumber" required>
-      <UInput
-        v-model="state.billingAddress.phoneNumber"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
-
     <UFormField v-if="!state.guest" label="Password" name="password">
       <UInput v-model="state.password" type="password" class="w-full" />
     </UFormField>
@@ -180,70 +189,13 @@ const allowedCities = ref(["Obertshausen", "Lämmerspiel"]);
       "
     />
 
-    <UFormField
-      v-if="state.accountType === 'commercial'"
-      label="Unternehmen"
-      name="billingAddress.company"
-    >
-      <UInput
-        v-model="state.billingAddress.company"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
+    <AddressFields
+      v-model="state.billingAddress"
+      prefix="billingAddress"
+      :account-type="state.accountType"
+    />
 
-    <UFormField
-      v-if="state.accountType === 'commercial'"
-      label="Abteilung"
-      name="billingAddress.department"
-    >
-      <UInput
-        v-model="state.billingAddress.department"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField
-      label="Straße und Hausnr."
-      name="billingAddress.street"
-      required
-    >
-      <UInput
-        v-model="state.billingAddress.street"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField
-      v-if="state.isShippingAddressDifferent"
-      label="Postleitzahl"
-      name="billingAddress.zipcode"
-    >
-      <UInput
-        v-model="state.billingAddress.zipcode"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField label="Ort" name="billingAddress.city" required>
-      <USelect
-        v-if="!state.isShippingAddressDifferent"
-        v-model="state.billingAddress.city"
-        :items="allowedCities"
-        class="w-full"
-      />
-      <UInput
-        v-else
-        v-model="state.billingAddress.city"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField name="guest">
+    <UFormField name="isShippingAddressDifferent">
       <UCheckbox
         v-model="state.isShippingAddressDifferent"
         label="Rechnungsadresse weicht von Lieferadresse ab"
@@ -251,87 +203,30 @@ const allowedCities = ref(["Obertshausen", "Lämmerspiel"]);
       />
     </UFormField>
 
-    <USeparator
-      v-if="state.isShippingAddressDifferent"
-      color="primary"
-      label="Lieferadresse"
-    />
+    <template v-if="state.isShippingAddressDifferent">
+      <USeparator color="primary" label="Lieferadresse" />
 
-    <UFormField
-      v-if="
-        state.accountType === 'commercial' && state.isShippingAddressDifferent
-      "
-      label="Unternehmen"
-      name="shippingAddress.company"
-    >
-      <UInput
-        v-model="state.shippingAddress.company"
-        type="text"
-        class="w-full"
+      <AddressFields
+        v-model="state.shippingAddress"
+        prefix="shippingAddress"
+        :account-type="state.accountType"
+        show-names
+        is-shipping
       />
-    </UFormField>
+    </template>
 
-    <UFormField
-      v-if="
-        state.accountType === 'commercial' && state.isShippingAddressDifferent
-      "
-      label="Abteilung"
-      name="billingAddress.department"
-    >
-      <UInput
-        v-model="state.shippingAddress.department"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField
-      v-if="state.isShippingAddressDifferent"
-      label="Vorname"
-      name="shippingAddress.firstName"
-      required
-    >
-      <UInput
-        v-model="state.shippingAddress.firstName"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField
-      v-if="state.isShippingAddressDifferent"
-      label="Nachname"
-      name="shippingAddress.lastName"
-    >
-      <UInput
-        v-model="state.shippingAddress.lastName"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField
-      v-if="state.isShippingAddressDifferent"
-      label="Straße und Hausnr."
-      name="shippingAddress.street"
-    >
-      <UInput
-        v-model="state.shippingAddress.street"
-        type="text"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField
-      v-if="state.isShippingAddressDifferent"
-      label="Ort"
-      name="shippingAddress.city"
-    >
-      <USelect
-        v-model="state.shippingAddress.city"
-        :items="allowedCities"
-        class="w-full"
-      />
+    <UFormField name="acceptedDataProtection">
+      <UCheckbox v-model="state.acceptedDataProtection" class="w-full">
+        <template #label>
+          <span>
+            Ich habe die
+            <ULink to="/unternehmen/datenschutz">
+              Datenschutzbestimmungen
+            </ULink>
+            gelesen und akzeptiere diese.
+          </span>
+        </template>
+      </UCheckbox>
     </UFormField>
 
     <UButton block type="submit">Speichern</UButton>

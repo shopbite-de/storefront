@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from "zod";
 import { useWishlist, useUser } from "@shopware/composables";
+import { ApiClientError } from "@shopware/api-client";
 import type { FormSubmitEvent } from "@nuxt/ui";
 
 const { isLoggedIn, login, user } = useUser();
@@ -55,17 +56,37 @@ const schema = z.object({
 type Schema = z.output<typeof schema>;
 
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
-  await login({
-    username: payload.data.email,
-    password: payload.data.password,
-  });
-  toast.add({
-    title: "Hallo " + user.value.firstName + " " + user.value.lastName + "!",
-    description: "Erfolreich angemeldet.",
-    color: "success",
-  });
-  mergeWishlistProducts();
-  emit("login-success", payload.data.email);
+  try {
+    await login({
+      username: payload.data.email,
+      password: payload.data.password,
+    });
+    toast.add({
+      title:
+        "Hallo " + user.value?.firstName + " " + user.value?.lastName + "!",
+      description: "Erfolreich angemeldet.",
+      color: "success",
+    });
+    mergeWishlistProducts();
+    emit("login-success", payload.data.email);
+  } catch (error) {
+    console.error("Login failed:", error);
+    let description = "Bitte überprüfen Sie Ihre Zugangsdaten.";
+    if (error instanceof ApiClientError) {
+      const errors = error.details?.errors;
+      if (Array.isArray(errors) && errors.length > 0) {
+        description = errors
+          .map((e) => e.detail || e.title)
+          .filter(Boolean)
+          .join("\n");
+      }
+    }
+    toast.add({
+      title: "Login fehlgeschlagen",
+      description,
+      color: "error",
+    });
+  }
 }
 </script>
 
