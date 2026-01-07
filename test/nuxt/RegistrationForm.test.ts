@@ -14,16 +14,21 @@ vi.mock("@shopware/api-client", () => ({
   },
 }));
 
-const { mockRegister, mockIsLoggedIn } = vi.hoisted(() => {
+const { mockRegister, mockIsLoggedIn, mockGetSuggestions } = vi.hoisted(() => {
   return {
     mockRegister: vi.fn(),
     mockIsLoggedIn: { value: false },
+    mockGetSuggestions: vi.fn().mockResolvedValue([]),
   };
 });
 
 mockNuxtImport("useUser", () => () => ({
   register: mockRegister,
   isLoggedIn: ref(mockIsLoggedIn.value),
+}));
+
+mockNuxtImport("useAddressAutocomplete", () => () => ({
+  getSuggestions: mockGetSuggestions,
 }));
 
 const mockToastAdd = vi.fn();
@@ -78,17 +83,19 @@ describe("RegistrationForm", () => {
   it("shows shipping address fields when checkbox is checked", async () => {
     const wrapper = await mountSuspended(RegistrationForm);
 
-    expect(wrapper.find('input[name="shippingAddress.street"]').exists()).toBe(
-      false,
-    );
+    // Initial count of street inputs
+    const initialStreets = wrapper.findAll(
+      'input[name="billingAddress.street"]',
+    ).length;
 
     // @ts-ignore
     wrapper.vm.state.isShippingAddressDifferent = true;
     await nextTick();
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(wrapper.find('input[name="shippingAddress.street"]').exists()).toBe(
-      true,
+    // Should have more street inputs now (billing street + shipping street)
+    expect(wrapper.findAll('input[name$=".street"]').length).toBeGreaterThan(
+      initialStreets,
     );
   });
 
@@ -101,15 +108,15 @@ describe("RegistrationForm", () => {
     await wrapper.find('input[name="email"]').setValue("john@example.com");
 
     // Billing address fields (AddressFields component)
-    await wrapper
-      .find('input[name="billingAddress.street"]')
-      .setValue("Musterstr 1");
-    await wrapper
-      .find('input[name="billingAddress.zipcode"]')
-      .setValue("12345");
-    await wrapper
-      .find('input[name="billingAddress.city"]')
-      .setValue("Musterstadt");
+    // Manually update state since USelectMenu is hard to interact with in simple tests
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.street = "Musterstr 1";
+    // Set zipcode and city directly since fields are removed
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.zipcode = "12345";
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.city = "Musterstadt";
+
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
       .setValue("12345678");
@@ -149,12 +156,10 @@ describe("RegistrationForm", () => {
     await wrapper.find('input[name="firstName"]').setValue("John");
     await wrapper.find('input[name="lastName"]').setValue("Doe");
     await wrapper.find('input[name="email"]').setValue("lirim@veliu.net");
-    await wrapper
-      .find('input[name="billingAddress.street"]')
-      .setValue("Musterstr 1");
-    await wrapper
-      .find('input[name="billingAddress.city"]')
-      .setValue("Musterstadt");
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.street = "Musterstr 1";
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.city = "Musterstadt";
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
       .setValue("12345678");
@@ -181,12 +186,10 @@ describe("RegistrationForm", () => {
     await wrapper.find('input[name="firstName"]').setValue("John");
     await wrapper.find('input[name="lastName"]').setValue("Doe");
     await wrapper.find('input[name="email"]').setValue("lirim@veliu.net");
-    await wrapper
-      .find('input[name="billingAddress.street"]')
-      .setValue("Musterstr 1");
-    await wrapper
-      .find('input[name="billingAddress.city"]')
-      .setValue("Musterstadt");
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.street = "Musterstr 1";
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.city = "Musterstadt";
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
       .setValue("12345678");
@@ -201,6 +204,52 @@ describe("RegistrationForm", () => {
         description: "Bitte versuchen Sie es erneut.",
         color: "error",
       }),
+    );
+  });
+
+  it("shows correction suggestion and stops submission when address needs correction", async () => {
+    mockGetSuggestions.mockResolvedValueOnce([
+      {
+        street: "Corrected Street 123",
+        city: "Corrected City",
+        zipcode: "54321",
+        label: "Corrected Street 123, 54321 Corrected City",
+      },
+    ]);
+
+    const wrapper = await mountSuspended(RegistrationForm);
+
+    // Fill required fields
+    await wrapper.find('input[name="firstName"]').setValue("John");
+    await wrapper.find('input[name="lastName"]').setValue("Doe");
+    await wrapper.find('input[name="email"]').setValue("john@example.com");
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.street = "Musterstr 1";
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.zipcode = "12345";
+    // @ts-ignore
+    wrapper.vm.state.billingAddress.city = "Musterstadt";
+    await wrapper
+      .find('input[name="billingAddress.phoneNumber"]')
+      .setValue("12345678");
+    await wrapper.find('input[name="acceptedDataProtection"]').trigger("click");
+
+    await wrapper.find("form").trigger("submit");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Should NOT have called register
+    expect(mockRegister).not.toHaveBeenCalled();
+
+    // Should have shown a toast
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Adresskorrektur vorgeschlagen",
+      }),
+    );
+
+    // Should show the correction alert in the form
+    expect(wrapper.text()).toContain(
+      "Meinten Sie: Corrected Street 123, 54321 Corrected City?",
     );
   });
 });

@@ -61,8 +61,36 @@ const schema = computed(() => createRegistrationSchema(state));
 
 const toast = useToast();
 
+const billingAddressFields = ref();
+const shippingAddressFields = ref();
+
 async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
   const registrationData = { ...event.data };
+
+  // Check for address corrections
+  // Only check if correction is not already shown (user might have ignored it)
+  let billingCorrectionFound = false;
+  if (!billingAddressFields.value?.showCorrection) {
+    billingCorrectionFound = await billingAddressFields.value?.checkAddress();
+  }
+
+  let shippingCorrectionFound = false;
+  if (
+    state.isShippingAddressDifferent &&
+    !shippingAddressFields.value?.showCorrection
+  ) {
+    shippingCorrectionFound = await shippingAddressFields.value?.checkAddress();
+  }
+
+  if (billingCorrectionFound || shippingCorrectionFound) {
+    toast.add({
+      title: "Adresskorrektur vorgeschlagen",
+      description:
+        "Bitte überprüfen Sie die vorgeschlagene Adresskorrektur, bevor Sie fortfahren.",
+      color: "info",
+    });
+    return;
+  }
 
   if (
     !registrationData.billingAddress.firstName &&
@@ -190,6 +218,7 @@ const emit = defineEmits<{
     />
 
     <AddressFields
+      ref="billingAddressFields"
       v-model="state.billingAddress"
       prefix="billingAddress"
       :account-type="state.accountType"
@@ -207,6 +236,7 @@ const emit = defineEmits<{
       <USeparator color="primary" label="Lieferadresse" />
 
       <AddressFields
+        ref="shippingAddressFields"
         v-model="state.shippingAddress"
         prefix="shippingAddress"
         :account-type="state.accountType"

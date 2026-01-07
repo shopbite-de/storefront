@@ -45,6 +45,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     shopware: {},
     apiClientConfig: {},
+    geoapifyApiKey: "",
     public: {
       site: {
         name: "ShopBite",
