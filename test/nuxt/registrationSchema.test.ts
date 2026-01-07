@@ -195,4 +195,48 @@ describe("registrationSchema", () => {
       expect(result.error.issues[0].path).toContain("acceptedDataProtection");
     }
   });
+
+  it("should fail if street does not contain a house number", () => {
+    const schema = createRegistrationSchema(baseState);
+    const result = schema.safeParse({
+      ...validData,
+      billingAddress: {
+        ...validAddress,
+        street: "Musterstraße",
+      },
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe(
+        "Bitte geben Sie Ihre Straße und Hausnummer an.",
+      );
+      expect(result.error.issues[0].path).toContain("billingAddress");
+      expect(result.error.issues[0].path).toContain("street");
+    }
+  });
+
+  it("should fail if shipping street does not contain a house number when different", () => {
+    const shippingState = { ...baseState, isShippingAddressDifferent: true };
+    const shippingData = {
+      ...validData,
+      isShippingAddressDifferent: true,
+      shippingAddress: {
+        ...validAddress,
+        street: "Shipping Street",
+      },
+    };
+    const schema = createRegistrationSchema(shippingState);
+    const result = schema.safeParse(shippingData);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message);
+      expect(messages).toContain(
+        "Bitte geben Sie Ihre Straße und Hausnummer an.",
+      );
+      const streetIssue = result.error.issues.find((i) =>
+        i.path.includes("street"),
+      );
+      expect(streetIssue?.path).toContain("shippingAddress");
+    }
+  });
 });

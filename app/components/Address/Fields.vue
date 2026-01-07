@@ -3,18 +3,32 @@ import type { AddressSchema } from "~/validation/registrationSchema";
 
 const model = defineModel<AddressSchema>({ required: true });
 
-const { validCities } = useValidCitiesForDelivery();
-
-const cityOptions = computed(() =>
-  validCities.value.map((city) => ({ label: city, value: city })),
-);
-
-defineProps<{
+const props = defineProps<{
   prefix: string;
   accountType?: string;
   showNames?: boolean;
   isShipping?: boolean;
 }>();
+
+const { getSuggestions } = useAddressAutocomplete();
+const { validCities } = useValidCitiesForDelivery();
+
+const {
+  showCorrection,
+  correction,
+  isInvalidCity,
+  checkAddress,
+  applyCorrection,
+} = useAddressValidation(model, {
+  isShipping: props.isShipping,
+  getSuggestions,
+  validCities,
+});
+
+defineExpose({
+  checkAddress,
+  showCorrection,
+});
 </script>
 
 <template>
@@ -59,20 +73,45 @@ defineProps<{
       <UInput v-model="model.street" type="text" class="w-full" />
     </UFormField>
 
-    <UFormField label="Postleitzahl" :name="`${prefix}.zipcode`" required>
-      <UInput v-model="model.zipcode" type="text" class="w-full" />
-    </UFormField>
+    <div class="flex flex-row gap-4">
+      <UFormField label="PLZ" :name="`${prefix}.zipcode`" class="w-24">
+        <UInput v-model="model.zipcode" type="text" class="w-full" />
+      </UFormField>
 
-    <UFormField label="Ort" :name="`${prefix}.city`" required>
-      <USelect
-        v-if="isShipping && validCities.length > 0"
-        v-model="model.city"
-        :items="cityOptions"
-        value-key="value"
-        class="w-full"
+      <UFormField label="Ort" :name="`${prefix}.city`" required class="flex-1">
+        <UInput v-model="model.city" type="text" class="w-full" />
+      </UFormField>
+    </div>
+
+    <div v-if="showCorrection" class="flex flex-col items-center gap-2">
+      <UAlert
+        color="info"
+        variant="soft"
+        icon="i-lucide-info"
+        :title="`Meinten Sie: ${correction?.label}?`"
+        class="flex-1"
       />
-      <UInput v-else v-model="model.city" type="text" class="w-full" />
-    </UFormField>
+      <UButton
+        label="Korrigieren"
+        color="info"
+        variant="solid"
+        size="sm"
+        block
+        @click="applyCorrection"
+      />
+    </div>
+
+    <UAlert
+      v-if="isInvalidCity"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-triangle-alert"
+    >
+      <template #title>
+        An diese Adresse können wir leider nicht liefern.
+        <ULink to="/unternehmen/zahlung-und-versand">Weitere Infos.</ULink>
+      </template>
+    </UAlert>
 
     <UFormField label="Adresszusatz" :name="`${prefix}.additionalAddressLine1`">
       <UInput

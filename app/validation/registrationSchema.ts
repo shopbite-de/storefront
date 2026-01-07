@@ -9,7 +9,10 @@ const baseAddressSchema = z.object({
   salutationId: z.string().optional(),
   street: z
     .string()
-    .min(1, { message: "Bitte geben Sie Ihre Straße und Hausnummer an." }),
+    .min(1, { message: "Bitte geben Sie Ihre Straße und Hausnummer an." })
+    .refine((val) => /[0-9]/.test(val), {
+      message: "Bitte geben Sie Ihre Straße und Hausnummer an.",
+    }),
   additionalAddressLine1: z.string().optional(),
   zipcode: z.string().optional(),
   city: z.string().min(1, {
@@ -114,6 +117,12 @@ export const createRegistrationSchema = (state: any) =>
               code: z.ZodIssueCode.custom,
               message: fieldMessages[field] || "Dieses Feld ist erforderlich.",
               path: [field],
+            });
+          } else if (field === "street" && !/[0-9]/.test(data.street || "")) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Bitte geben Sie Ihre Straße und Hausnummer an.",
+              path: ["street"],
             });
           }
         });

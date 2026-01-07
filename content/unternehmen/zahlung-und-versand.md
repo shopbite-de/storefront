@@ -5,7 +5,7 @@
 Wir bieten Ihnen zwei Möglichkeiten, Ihre Bestellung zu erhalten:
 
 - **Lieferung:** Wir bringen Ihre Bestellung direkt zu Ihnen nach Hause (beachten Sie bitte unsere Liefergebiete).
-- **Abholung:** Sie können Ihre Bestellung auch direkt bei uns abholen (Hausener Straße 31, 63165 Mühlheim am Main).
+- **Abholung:** Sie können Ihre Bestellung auch direkt bei uns abholen (Kantstraße 6, 63179 Obertshausen).
 
 ### Zahlungsmöglichkeiten
 
