@@ -93,10 +93,8 @@ export default defineNuxtConfig({
     "@vite-pwa/nuxt",
     "@sentry/nuxt/module",
     "@nuxt/ui",
+    "@nuxt/scripts",
     "@nuxtjs/plausible",
-    ...(process.env.NODE_ENV === "development"
-      ? ["@nuxt/test-utils/module", "@nuxt/eslint"]
-      : []),
   ],
 
   plausible: {
@@ -150,5 +148,30 @@ export default defineNuxtConfig({
 
   experimental: {
     asyncContext: true,
+  },
+  $development: {
+    modules: [
+      "@shopware/nuxt-module",
+      "@nuxt/image",
+      "@nuxt/content",
+      "@nuxtjs/robots",
+      "@vite-pwa/nuxt",
+      "@sentry/nuxt/module",
+      "@nuxt/ui",
+      "@nuxt/scripts",
+      "@nuxtjs/plausible",
+      "@nuxt/test-utils/module",
+      "@nuxt/eslint",
+    ],
+  },
+  $production: {
+    scripts: {
+      registry: {
+        matomoAnalytics: {
+          matomoUrl: "",
+          siteId: "",
+        },
+      },
+    },
   },
 });
