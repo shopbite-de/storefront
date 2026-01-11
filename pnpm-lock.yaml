@@ -19,7 +19,7 @@ importers:
         version: 1.2.83
       '@iconify-json/simple-icons':
         specifier: ^1.2.59
-        version: 1.2.65
+        version: 1.2.66
       '@nuxt/content':
         specifier: ^3.8.2
         version: 3.10.0(better-sqlite3@12.4.1)(magicast@0.5.1)(valibot@1.2.0(typescript@5.9.3))
@@ -1208,8 +1208,8 @@ packages:
   '@iconify-json/lucide@1.2.83':
     resolution: {integrity: sha512-k/255BFdcE+gY8cwQOlJMKjxOScW++8tiMxWw8jJXqHoQhBmOgsxm8SHVUIZqSrquMCcSNJn6rx67ZTQhoR2cA==}
 
-  '@iconify-json/simple-icons@1.2.65':
-    resolution: {integrity: sha512-v/O0UeqrDz6ASuRVE5g2Puo5aWyej4M/CxX6WYDBARgswwxK0mp3VQbGgPFEAAUU9QN02IjTgjMuO021gpWf2w==}
+  '@iconify-json/simple-icons@1.2.66':
+    resolution: {integrity: sha512-D1OnnXwiQXFkVMw5M+Bt8mPsXeMkQyGmMdrmN7lsQlKMUkfLOp6JWhnUJ92po51WXT046aF/zzqSmkKqg08p4Q==}
 
   '@iconify/collections@1.0.632':
     resolution: {integrity: sha512-7P03mskPh9cg6O/hnURtQ6nCNKamtKrTGHnVsGX6mJaTpsaLGlpsyGEpayS7trMLvtSvIgKhpN0SPzLwa8HKnA==}
@@ -9218,7 +9218,7 @@ snapshots:
     dependencies:
       '@iconify/types': 2.0.0
 
-  '@iconify-json/simple-icons@1.2.65':
+  '@iconify-json/simple-icons@1.2.66':
     dependencies:
       '@iconify/types': 2.0.0
 
