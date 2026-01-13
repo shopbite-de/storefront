@@ -30,12 +30,6 @@ export default defineNuxtConfig({
   },
   robots: {
     disallow: [
-      "/unternehmen/impressum",
-      "/unternehmen/datenschutz",
-      "/unternehmen/agb",
-      "/impressum",
-      "/datenschutz",
-      "/agb",
       "/merkliste",
       "/passwort-vergessen",
       "/account/recover/password",
@@ -60,15 +54,6 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    "/impressum": {
-      redirect: "/unternehmen/impressum",
-    },
-    "/datenschutz": {
-      redirect: "/unternehmen/datenschutz",
-    },
-    "/agb": {
-      redirect: "/unternehmen/agb",
-    },
     "/merkliste": {
       ssr: false,
     },
