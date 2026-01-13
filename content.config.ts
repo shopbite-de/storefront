@@ -135,8 +135,8 @@ export default defineContentConfig({
       source: "**/*.md",
       type: "page",
       schema: z.object({
-        title: z.string().nonempty(),
-        description: z.string().nonempty(),
+        title: z.string().min(1),
+        description: z.string().optional(),
       }),
     }),
   },

@@ -9,6 +9,17 @@ if (!page.value) {
     fatal: true,
   });
 }
+
+useSeoMeta({
+  title: page.value.seo?.title || page.value.title,
+  ogTitle: page.value.seo?.title || page.value.title,
+  twitterTitle: page.value.seo?.title || page.value.title,
+  description: page.value.seo?.description || page.value.description,
+  ogDescription: page.value.seo?.description || page.value.description,
+  twitterDescription: page.value.seo?.description || page.value.description,
+  ogImage: page.value.seo?.image,
+  twitterImage: page.value.seo?.image,
+});
 </script>
 <template>
   <div v-if="page" class="relative">
