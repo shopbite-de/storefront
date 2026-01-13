@@ -10,7 +10,7 @@ const { data: page, error } = await useAsyncData(
 if (error.value || !page.value) {
   throw createError({
     statusCode: 404,
-    statusMessage: "Page not found",
+    statusMessage: `Page ${route.path} not found!`,
     fatal: true,
   });
 }

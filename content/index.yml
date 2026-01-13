@@ -1,6 +1,7 @@
 seo:
-  title: ShopBite – Kostenloses Online-Bestellsystem für Gastronomie
+  title: ShopBite – Demo Store
   description: Dein eigenes Bestellsystem ohne Provisionen, ohne monatliche Kosten – 100% Open Source und individuell anpassbar. Perfekt für Pizzerien, Imbisse und Lieferdienste.
+  image: /card.png
 title: ShopBite
 description: Reduziere Kosten und steigere deinen Umsatz
 hero:

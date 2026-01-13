@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   app: {
     head: {
-      title: "ShopBite Demo Shop",
+      title: "ShopBite – Kostenloses Online-Bestellsystem für Gastronomie",
       htmlAttrs: {
         lang: "de",
       },
@@ -11,18 +11,20 @@ export default defineNuxtConfig({
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         {
           name: "description",
-          content: "Italienisch-deutsche Küche in Obertshausen",
+          content:
+            "Dein eigenes Bestellsystem ohne Provisionen, ohne monatliche Kosten – 100% Open Source und individuell anpassbar. Perfekt für Pizzerien, Imbisse und Lieferdienste.",
         },
         {
           property: "og:title",
-          content: "ShopBite - Demo Shop",
+          content:
+            "Dein eigenes Bestellsystem ohne Provisionen, ohne monatliche Kosten – 100% Open Source und individuell anpassbar. Perfekt für Pizzerien, Imbisse und Lieferdienste.",
         },
         {
           property: "og:description",
           content: "Italienisch-deutsche Küche in Obertshausen",
         },
       ],
-      link: [{ rel: "icon", href: "/favicon.ico" }],
+      link: [{ rel: "icon", href: "/favicon.ico", type: "image/png" }],
     },
   },
   colorMode: {

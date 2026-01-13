@@ -1,3 +1,8 @@
+---
+title: Impressum
+description: Impressum für unsere Website
+---
+
 # Impressum
 
 ## Angaben gemäß § 5 TMG
