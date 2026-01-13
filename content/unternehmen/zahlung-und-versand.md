@@ -1,3 +1,8 @@
+---
+title: Zahlungs- und Lieferinformationen
+description: Zahlungs- und Lieferinformationen
+---
+
 # Zahlungs- und Lieferinformationen
 
 ### Liefermethoden

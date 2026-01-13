@@ -131,9 +131,13 @@ export default defineContentConfig({
         }),
       }),
     }),
-    unternehmen: defineCollection({
-      source: "unternehmen/*.md",
+    landingpages: defineCollection({
+      source: "**/*.md",
       type: "page",
+      schema: z.object({
+        title: z.string().nonempty(),
+        description: z.string().nonempty(),
+      }),
     }),
   },
 });
