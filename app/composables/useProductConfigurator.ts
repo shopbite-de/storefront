@@ -73,6 +73,7 @@ export function useProductConfigurator() {
               "productNumber",
               "options",
               "properties",
+              "calculatedPrice",
             ],
             product_option: ["id", "groupId", "name", "translated", "group"],
             property: ["id", "name", "translated", "options"],

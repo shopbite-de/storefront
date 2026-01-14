@@ -114,6 +114,7 @@ watch(
 
 const onVariantSwitched = (variant: Schemas["Product"]) => {
   setSelectedProduct(variant);
+  emit("variant-selected", variant);
 };
 
 const onExtrasSelected = (extras: AssociationItemProduct[]) => {
@@ -126,7 +127,7 @@ const onIngredientsDeselected = (deselected: string[]) => {
 
 const onAddToCart = () => emit("product-added");
 
-const emit = defineEmits(["product-added"]);
+const emit = defineEmits(["product-added", "variant-selected"]);
 </script>
 
 <template>
