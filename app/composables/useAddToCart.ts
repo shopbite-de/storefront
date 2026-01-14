@@ -98,6 +98,8 @@ export function useAddToCart() {
         id: generatedUuid,
         quantity: selectedQuantity.value,
         type: LINE_ITEM_CONTAINER,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         label: cartItemLabel.value,
         payload: {
           productNumber: selectedProduct.value.productNumber,

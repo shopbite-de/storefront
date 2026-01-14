@@ -16,6 +16,8 @@ const { getFormattedPrice } = usePrice({
   localeCode: "de-DE",
 });
 
+const price = ref(product.value.calculatedPrice.totalPrice);
+
 const isVegi = computed<boolean>(() => {
   if (!product.value?.properties) {
     return false;
@@ -47,6 +49,10 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
   );
   return mainIngredientsProperty?.options ?? [];
 });
+
+function onVariantSelected(variant: Schemas["Product"]) {
+  price.value = variant.calculatedPrice.totalPrice;
+}
 </script>
 
 <template>
@@ -111,7 +117,7 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
 
       <template #footer>
         <div class="flex flex-row justify-between content-center w-full">
-          <p>{{ getFormattedPrice(product.calculatedPrice.totalPrice) }}</p>
+          <p>{{ getFormattedPrice(price) }}</p>
           <div class="flex flex-row gap-2">
             <AddToWishlist v-if="withFavoriteButton" :product="product" />
             <UButton
@@ -127,6 +133,7 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
             <ProductDetail2
               :product-id="product.id"
               @product-added="toggleDetails"
+              @variant-selected="onVariantSelected"
             />
           </template>
         </UCollapsible>
