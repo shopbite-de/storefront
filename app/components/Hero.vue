@@ -53,7 +53,7 @@ withDefaults(
             :key="index"
             as="button"
             :to="usp.link ?? ''"
-            class="flex items-center text-left gap-2"
+            class="flex flex-col md:flex-row items-center text-center md:text-left gap-2"
             target="_blank"
           >
             <UIcon

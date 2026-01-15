@@ -1,11 +1,5 @@
 main:
-  - label: Start
-    icon: i-lucide-home
-    to: /
   - label: Speisekarte
-    icon: i-lucide-utensils
-    to: /speisekarte
-  - label: Speisekarte 2
     icon: i-lucide-utensils
     to: /c/Pizza/
   - label: Routenplaner

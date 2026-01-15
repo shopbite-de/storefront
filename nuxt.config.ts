@@ -39,10 +39,19 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    shopware: {},
+    shopware: {
+      adminClientId: "",
+      adminClientSecret: "",
+      adminEndpoint: "",
+    },
     apiClientConfig: {},
     geoapifyApiKey: "",
     public: {
+      shopBite: {
+        feature: {
+          multiChannel: "",
+        },
+      },
       site: {
         name: "ShopBite",
         description: "Reduziere deine Kosten und steigere deinen Umsatz",
