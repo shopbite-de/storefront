@@ -1,4 +1,6 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
+const sw = process.env.SW === "true";
+
 export default defineNuxtConfig({
   app: {
     head: {
@@ -107,28 +109,43 @@ export default defineNuxtConfig({
   },
 
   pwa: {
+    strategies: sw ? "injectManifest" : "generateSW",
+    srcDir: sw ? "service-worker" : undefined,
+    filename: sw ? "sw.ts" : undefined,
+    registerType: "autoUpdate",
     manifest: {
       name: "ShopBite",
       short_name: "ShopBite",
       theme_color: "#ff5b00",
       icons: [
         {
-          src: "dark/Logo.svg",
+          src: "shopbite-192.png",
           sizes: "192x192",
-          type: "image/svg",
+          type: "image/png",
         },
         {
-          src: "dark/Logo.svg",
+          src: "shopbite-512.png",
           sizes: "512x512",
-          type: "image/svg",
+          type: "image/png",
         },
         {
-          src: "dark/Logo.svg",
+          src: "shopbite-512.png",
           sizes: "512x512",
           type: "image/svg",
           purpose: "any maskable",
         },
       ],
+    },
+    workbox: {
+      globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
+      globIgnores: ["**/_payload.json"],
+    },
+    injectManifest: {
+      globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
+      globIgnores: ["**/_payload.json"],
+    },
+    client: {
+      installPrompt: true,
     },
   },
 
@@ -149,6 +166,8 @@ export default defineNuxtConfig({
 
   experimental: {
     asyncContext: true,
+    payloadExtraction: true,
+    watcher: "parcel",
   },
   $development: {
     modules: [
