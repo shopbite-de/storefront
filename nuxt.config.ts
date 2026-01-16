@@ -1,10 +1,11 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 const sw = process.env.SW === "true";
+const storeName = process.env.STORE_NAME || "ShopBite";
 
 export default defineNuxtConfig({
   app: {
     head: {
-      title: "ShopBite – Kostenloses Online-Bestellsystem für Gastronomie",
+      title: storeName,
       htmlAttrs: {
         lang: "de",
       },
@@ -23,7 +24,8 @@ export default defineNuxtConfig({
         },
         {
           property: "og:description",
-          content: "Italienisch-deutsche Küche in Obertshausen",
+          content:
+            "Dein eigenes Bestellsystem ohne Provisionen, ohne monatliche Kosten – 100% Open Source und individuell anpassbar. Perfekt für Pizzerien, Imbisse und Lieferdienste.",
         },
       ],
       link: [{ rel: "icon", href: "/favicon.ico", type: "image/png" }],
@@ -114,24 +116,24 @@ export default defineNuxtConfig({
     filename: sw ? "sw.ts" : undefined,
     registerType: "autoUpdate",
     manifest: {
-      name: "ShopBite",
-      short_name: "ShopBite",
+      name: storeName,
+      short_name: storeName,
       theme_color: "#ff5b00",
       icons: [
         {
-          src: "shopbite-192.png",
+          src: "logo-192.png",
           sizes: "192x192",
           type: "image/png",
         },
         {
-          src: "shopbite-512.png",
+          src: "logo-512.png",
           sizes: "512x512",
           type: "image/png",
         },
         {
-          src: "shopbite-512.png",
+          src: "logo-512.png",
           sizes: "512x512",
-          type: "image/svg",
+          type: "image/png",
           purpose: "any maskable",
         },
       ],
