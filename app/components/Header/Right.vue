@@ -77,9 +77,20 @@ const loggedOutDropDown = computed<DropdownMenuItem[][]>(() => {
     :items="isLoggedIn || isGuestSession ? loggedInDropDown : loggedOutDropDown"
   >
     <UChip v-if="isLoggedIn || isGuestSession" size="3xl" text="✓">
-      <UButton icon="i-lucide-user" color="neutral" variant="outline" />
+      <UButton
+        aria-label="Konto Dropdown öffnen"
+        icon="i-lucide-user"
+        color="neutral"
+        variant="outline"
+      />
     </UChip>
-    <UButton v-else icon="i-lucide-user" color="neutral" variant="outline" />
+    <UButton
+      v-else
+      aria-label="Konto Dropdown öffnen"
+      icon="i-lucide-user"
+      color="neutral"
+      variant="outline"
+    />
   </UDropdownMenu>
   <UDrawer
     v-if="isCheckoutEnabled"
@@ -89,6 +100,7 @@ const loggedOutDropDown = computed<DropdownMenuItem[][]>(() => {
   >
     <UChip :text="count" size="3xl">
       <UButton
+        aria-label="Zum Warenkorb"
         color="neutral"
         variant="outline"
         icon="i-lucide-shopping-cart"

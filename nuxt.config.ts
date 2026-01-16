@@ -91,6 +91,7 @@ export default defineNuxtConfig({
     "@nuxt/ui",
     "@nuxt/scripts",
     "@nuxtjs/plausible",
+    "nuxt-vitalizer",
   ],
 
   plausible: {
@@ -99,6 +100,10 @@ export default defineNuxtConfig({
 
   content: {
     experimental: { sqliteConnector: "native" },
+  },
+
+  vitalizer: {
+    disablePrefetchLinks: true,
   },
 
   pwa: {

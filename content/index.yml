@@ -5,7 +5,7 @@ seo:
 title: ShopBite
 description: Reduziere Kosten und steigere deinen Umsatz
 hero:
-  backgroundVideo: https://shopware.shopbite.de/media/10/59/96/1762465181/background.mp4
+  backgroundVideo: https://shopware.shopbite.de/media/10/59/96/1762465181/background.mp4?ts=1762465194
   headline: SHOPBITE
   usps:
     - title: 4.5 ⭐
@@ -68,20 +68,19 @@ gallery:
       variant: subtle
       trailingIcon: i-lucide-phone
   images:
-    - image: https://shopware.shopbite.de/media/71/2a/1a/1762465670/restaurant1.webp
+    - image: https://shopware.shopbite.de/media/71/2a/1a/1762465670/restaurant1.webp?ts=1762465670
       alt: La Fattoria Restaurant Innenbereich 1
-    - image: https://shopware.shopbite.de/media/61/ea/77/1762465670/restaurant2.webp
+    - image: https://shopware.shopbite.de/media/61/ea/77/1762465670/restaurant2.webp?ts=1762465670
       alt: La Fattoria Restaurant Innenbereich 2
-    - image: https://shopware.shopbite.de/media/6d/ac/ca/1762465670/restaurant3.webp
+    - image: https://shopware.shopbite.de/media/6d/ac/ca/1762465670/restaurant3.webp?ts=1762465670
       alt: La Fattoria Restaurant Innenbereich 3
-    - image: https://shopware.shopbite.de/media/af/d6/da/1762465670/restaurant4.webp
+    - image: https://shopware.shopbite.de/media/af/d6/da/1762465670/restaurant4.webp?ts=1762465670
       alt: La Fattoria Restaurant Innenbereich 4
-    - image: https://shopware.shopbite.de/media/6a/ff/e2/1762465670/restaurant5.webp
+    - image: https://shopware.shopbite.de/media/6a/ff/e2/1762465670/restaurant5.webp?ts=1762465670
       alt: La Fattoria Restaurant Innenbereich 5
-    - image: https://shopware.shopbite.de/media/80/76/d0/1762465670/restaurant6.webp
+    - image: https://shopware.shopbite.de/media/80/76/d0/1762465670/restaurant6.webp?ts=1762465670
       alt: La Fattoria Restaurant Innenbereich 6
-    - image: https://nbg1.your-objectstorage.com/lafattoria-public/media/30/f7/76/1763383122/restaurant10.webp
-      alt: La Fattoria Restaurant Innenbereich 10
+
 cta:
   title: Jetzt bestellen!
   description: Genieße die italienische Küche, frisch zubereitet und direkt zu dir geliefert oder vor Ort genießen.
