@@ -22,18 +22,30 @@ withDefaults(
     usps: () => [],
   },
 );
+
+const videoRef = ref<HTMLVideoElement>();
+
+onMounted(() => {
+  // Handle video playback on bfcache restore
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted && videoRef.value) {
+      videoRef.value.play();
+    }
+  });
+});
 </script>
 
 <template>
   <div class="relative">
     <video
+      ref="videoRef"
       autoplay
       loop
       muted
       playsinline
       class="absolute inset-0 w-full h-full object-cover -z-10"
     >
-      <source :src="backgroundVideo" type="video/mp4" >
+      <source fetchpriority="high" :src="backgroundVideo" type="video/mp4" >
     </video>
     <div class="bg-black/50 backdrop-blur-sm">
       <UPageHero
