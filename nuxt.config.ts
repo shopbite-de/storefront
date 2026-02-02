@@ -1,6 +1,9 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 const sw = process.env.SW === "true";
 const storeName = process.env.STORE_NAME || "ShopBite";
+const storeDescription =
+  process.env.STORE_DESCRIPTION ||
+  "Reduziere deine Kosten und steigere deinen Umsatz";
 
 export default defineNuxtConfig({
   app: {
@@ -57,8 +60,8 @@ export default defineNuxtConfig({
         },
       },
       site: {
-        name: "ShopBite",
-        description: "Reduziere deine Kosten und steigere deinen Umsatz",
+        name: storeName,
+        description: storeDescription,
         countryId: "",
       },
       storeUrl: "",

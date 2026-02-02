@@ -17,6 +17,9 @@ const { getFormattedPrice } = usePrice({
 });
 
 const price = ref(product.value.calculatedPrice.totalPrice);
+const label = ref(product.value.translated.name ?? product.value.name);
+const description = ref(product.value.description);
+const number = ref(product.value.productNumber);
 
 const isVegi = computed<boolean>(() => {
   if (!product.value?.properties) {
@@ -52,6 +55,9 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
 
 function onVariantSelected(variant: Schemas["Product"]) {
   price.value = variant.calculatedPrice.totalPrice;
+  label.value = variant.translated.name ?? variant.name;
+  description.value = variant.description;
+  number.value = variant.productNumber;
 }
 </script>
 
@@ -89,19 +95,17 @@ function onVariantSelected(variant: Schemas["Product"]) {
 
       <template #title>
         <div class="flex flex-row items-baseline gap-1">
-          <span class="text-sm text-brand-500"
-            >#{{ product.productNumber }}</span
-          >
+          <span class="text-sm text-brand-500">#{{ number }}</span>
 
           <p class="text-base text-pretty font-semibold text-highlighted">
-            {{ product.translated.name ?? product.name }}
+            {{ label }}
           </p>
         </div>
       </template>
 
       <template #description>
         <div class="flex flex-col gap-2">
-          <div>{{ product.description }}</div>
+          <div>{{ description }}</div>
           <div
             v-if="mainIngredients.length > 0"
             class="font-extralight text-sm text-pretty"
