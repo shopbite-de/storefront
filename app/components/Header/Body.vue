@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { navi } = useHeaderNavigation();
+const { navi } = await useHeaderNavigation();
 </script>
 
 <template>

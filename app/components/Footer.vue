@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Fetch navigation from content
-const { data: navigationData } = await useAsyncData("footer-navigation", () =>
+const { data: navigationData } = await useAsyncData("navigation", () =>
   queryCollection("navigation").first(),
 );
 

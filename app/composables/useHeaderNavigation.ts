@@ -1,9 +1,9 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 
-export const useHeaderNavigation = () => {
+export const useHeaderNavigation = async () => {
   const route = useRoute();
 
-  const { data: navigationData } = useAsyncData("header-navigation", () =>
+  const { data: navigationData } = await useAsyncData("navigation", () =>
     queryCollection("navigation").first(),
   );
 
