@@ -56,7 +56,7 @@ const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
 function onVariantSelected(variant: Schemas["Product"]) {
   price.value = variant.calculatedPrice.totalPrice;
   label.value = variant.translated.name ?? variant.name;
-  description.value = variant.description;
+  description.value = variant.translated.description ?? variant.description;
   number.value = variant.productNumber;
 }
 </script>
