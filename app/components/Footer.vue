@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// Fetch navigation from content
 const { data: navigationData } = await useAsyncData("navigation", () =>
   queryCollection("navigation").first(),
 );
