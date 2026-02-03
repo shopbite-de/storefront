@@ -21,7 +21,7 @@ importers:
         specifier: ^1.2.59
         version: 1.2.65
       '@nuxt/content':
-        specifier: ^3.8.2
+        specifier: 3.8.2
         version: 3.8.2(better-sqlite3@12.4.1)(magicast@0.5.1)(valibot@1.2.0(typescript@5.9.3))
       '@nuxt/image':
         specifier: ^2.0.0
