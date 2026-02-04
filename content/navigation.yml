@@ -48,12 +48,8 @@ footer:
           to: /agb
     - label: Top Kategorien
       children:
-        - label: Pizza
-          to: /c/Pizza/
-        - label: Nudeln
-          to: /c/Nudeln/
-        - label: Fleischgerichte
-          to: /c/Fleischgerichte/
+        - label: Burger
+          to: /menu/burger/
     - label: Unternehmen
       children:
         - label: 'Tel: 06104 71427'

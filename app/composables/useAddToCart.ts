@@ -12,6 +12,7 @@ export function useAddToCart() {
   const { addProducts, refreshCart } = useCart();
   const toast = useToast();
   const { triggerProductAdded } = useProductEvents();
+  const { trackAddToCart: trackAddToCartEvent } = useTrackEvent();
 
   const selectedExtras = ref<AssociationItemProduct[]>([]);
   const deselectedIngredients = ref<string[]>([]);
@@ -140,13 +141,7 @@ export function useAddToCart() {
     await showSuccessToast();
 
     triggerProductAdded();
-
-    useTrackEvent("add_to_cart", {
-      props: {
-        product_number: selectedProduct.value.productNumber,
-        quantity: selectedQuantity.value,
-      },
-    });
+    trackAddToCartEvent(selectedProduct.value, selectedQuantity.value);
 
     isLoading.value = false;
     if (onSuccess) {

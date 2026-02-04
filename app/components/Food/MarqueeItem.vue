@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useTrackEvent } from "#imports";
 import { useProductSearch } from "@shopware/composables";
 import type { Schemas } from "#shopware";
 
@@ -42,12 +41,6 @@ async function addToCart(productId: string) {
   });
   await refreshCart(newCart);
   await showSuccessToast();
-  useTrackEvent("add_to_cart", {
-    props: {
-      product_number: product.productNumber,
-      quantity: 1,
-    },
-  });
 }
 </script>
 

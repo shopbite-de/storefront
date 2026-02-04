@@ -39,7 +39,9 @@ mockNuxtImport("useProductEvents", () => {
 });
 
 mockNuxtImport("useTrackEvent", () => {
-  return mockTrackEvent;
+  return () => ({
+    trackAddToCart: mockTrackEvent,
+  });
 });
 
 // Provide the mocks globally or in a way that they are picked up
@@ -53,7 +55,9 @@ vi.stubGlobal("useToast", () => ({
 vi.stubGlobal("useProductEvents", () => ({
   triggerProductAdded: mockTriggerProductAdded,
 }));
-vi.stubGlobal("useTrackEvent", mockTrackEvent);
+vi.stubGlobal("useTrackEvent", () => ({
+  trackAddToCart: mockTrackEvent,
+}));
 
 describe("useAddToCart", () => {
   const mockProduct = {
@@ -131,10 +135,7 @@ describe("useAddToCart", () => {
     expect(mockRefreshCart).toHaveBeenCalled();
     expect(mockToastAdd).toHaveBeenCalled();
     expect(mockTriggerProductAdded).toHaveBeenCalled();
-    expect(mockTrackEvent).toHaveBeenCalledWith(
-      "add_to_cart",
-      expect.any(Object),
-    );
+    expect(mockTrackEvent).toHaveBeenCalledWith(mockProduct, 1);
   });
 
   it("should add product with extras to cart as container", async () => {

@@ -5,6 +5,7 @@ export function useWishlistActions() {
   const toast = useToast();
   const { triggerProductAdded } = useProductEvents();
   const { clearWishlist } = useWishlist();
+  const { trackAddToCart: trackAddToCartEvent } = useTrackEvent();
 
   const isAddingToCart = ref(false);
   const addingItemId = ref<string | null>(null);
@@ -53,19 +54,13 @@ export function useWishlistActions() {
       await refreshCart(newCart);
 
       triggerProductAdded();
+      trackAddToCartEvent(product, 1);
 
       toast.add({
         title: "In den Warenkorb gelegt",
         description: `${product.translated.name} wurde hinzugefügt.`,
         icon: "i-lucide-shopping-cart",
         color: "primary",
-      });
-
-      useTrackEvent("add_to_cart", {
-        props: {
-          product_number: product.productNumber,
-          quantity: 1,
-        },
       });
     } catch (error) {
       console.error("[wishlist][addSingleItemToCart] Error details:", error);
@@ -127,14 +122,6 @@ export function useWishlistActions() {
         description: successMessage,
         icon: "i-lucide-shopping-cart",
         color: "primary",
-      });
-
-      useTrackEvent("add_to_cart", {
-        props: {
-          product_count: addableProducts.length,
-          skipped_count: products.length - addableProducts.length,
-          source: "wishlist_bulk",
-        },
       });
     } catch (error) {
       console.error("[wishlist][addAllItemsToCart] Error:", error);

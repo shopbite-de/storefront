@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { onClickOutside, useDebounceFn, useFocus } from "@vueuse/core";
-import type { Schemas } from "#shopware";
-import { useTrackEvent } from "#imports";
 
 withDefaults(
   defineProps<{
@@ -53,18 +51,6 @@ watch(typingQuery, (value) => {
 const performSuggestSearch = useDebounceFn((value) => {
   searchTerm.value = value;
   search();
-  trackEvent(value);
-}, 500);
-
-const trackEvent = useDebounceFn((searchTerm: string) => {
-  const searchResult = getProducts.value.map(function (
-    product: Schemas["Product"],
-  ) {
-    return product.productNumber;
-  });
-  useTrackEvent("search", {
-    props: { search_term: searchTerm, search_result: searchResult.join(",") },
-  });
 }, 500);
 
 if (import.meta.client) {
