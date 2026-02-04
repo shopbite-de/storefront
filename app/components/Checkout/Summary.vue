@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import QuickView from "~/components/Cart/QuickView.vue";
 import { useIntervalFn } from "@vueuse/core";
-import { useTrackEvent } from "#imports";
 
 const { selectedPaymentMethod, selectedShippingMethod } = useCheckout();
 const { createOrder } = useCheckout();
 const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession } = useUser();
 const { isCheckoutEnabled, refresh } = useShopBiteConfig();
+const { trackOrder } = useTrackEvent();
 
 const toast = useToast();
 
@@ -24,12 +24,7 @@ async function handleCreateOrder() {
     customerComment: "Wunschlieferzeit: " + selectedDeliveryTime.value,
   });
 
-  useTrackEvent("checkout", {
-    revenue: {
-      currency: "EUR",
-      amount: order.amountTotal as number,
-    },
-  });
+  trackOrder(order);
 
   await refreshCart();
   toast.add({

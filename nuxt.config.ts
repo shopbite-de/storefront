@@ -97,13 +97,8 @@ export default defineNuxtConfig({
     "@sentry/nuxt/module",
     "@nuxt/ui",
     "@nuxt/scripts",
-    "@nuxtjs/plausible",
     "nuxt-vitalizer",
   ],
-
-  plausible: {
-    ignoredHostnames: ["localhost"],
-  },
 
   content: {
     experimental: { sqliteConnector: "native" },
@@ -184,7 +179,6 @@ export default defineNuxtConfig({
       "@sentry/nuxt/module",
       "@nuxt/ui",
       "@nuxt/scripts",
-      "@nuxtjs/plausible",
       "@nuxt/test-utils/module",
       "@nuxt/eslint",
     ],

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
-import { useTrackEvent } from "#imports";
 
 const props = defineProps<{
   product: Schemas["Product"];
@@ -10,25 +9,17 @@ const { addToWishlist, isInWishlist, removeFromWishlist } = useProductWishlist(
   props.product.id,
 );
 const { getWishlistProducts } = useWishlist();
-
-const trackWishlistEvent = (
-  action: "add_to_wishlist" | "remove_from_wishlist",
-) => {
-  useTrackEvent(action, {
-    props: { product_number: props.product.productNumber },
-  });
-};
+const { trackAddToWishlist } = useTrackEvent();
 
 const toggleWishlistProduct = async () => {
   try {
     if (isInWishlist.value) {
       await removeFromWishlist();
-      trackWishlistEvent("remove_from_wishlist");
       await getWishlistProducts();
     } else {
       await addToWishlist();
-      trackWishlistEvent("add_to_wishlist");
       await getWishlistProducts();
+      trackAddToWishlist(props.product);
     }
   } catch (error) {
     console.error("[wishlist][handleWishlistError]", error);

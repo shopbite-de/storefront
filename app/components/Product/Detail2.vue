@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { operations, Schemas } from "#shopware";
 import type { AssociationItemProduct } from "~/types/Association";
+import { useTrackEvent } from "~/composables/useTrackEvent";
 
 const props = defineProps<{
   productId: string;
 }>();
 
 const { apiClient } = useShopwareContext();
+const { trackProductView } = useTrackEvent();
 
 const productId = toRef(props.productId);
 
@@ -23,6 +25,7 @@ const searchCriteria = {
       "propertyIds",
       "options",
       "optionIds",
+      "seoCategory",
       "configuratorSettings",
       "children",
       "parentId",
@@ -33,6 +36,7 @@ const searchCriteria = {
     property_group_option: ["id", "name", "translated", "group"],
     product_configurator_setting: ["id", "optionId", "option", "productId"],
     product_option: ["id", "groupId", "name", "translated", "group"],
+    category: ["id", "name", "translated"],
   },
   associations: {
     cover: {
@@ -128,6 +132,11 @@ const onIngredientsDeselected = (deselected: string[]) => {
 const onAddToCart = () => emit("product-added");
 
 const emit = defineEmits(["product-added", "variant-selected"]);
+
+watch(productDetails, () => {
+  if (!productDetails.value) return;
+  trackProductView(productDetails.value.product);
+});
 </script>
 
 <template>

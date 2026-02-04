@@ -35,7 +35,9 @@ mockNuxtImport("useWishlist", () => () => ({
   clearWishlist: mockClearWishlist,
 }));
 
-mockNuxtImport("useTrackEvent", () => mockTrackEvent);
+mockNuxtImport("useTrackEvent", () => () => ({
+  trackAddToCart: mockTrackEvent,
+}));
 
 describe("useWishlistActions", () => {
   const mockProduct = {
@@ -72,10 +74,7 @@ describe("useWishlistActions", () => {
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({ title: "In den Warenkorb gelegt" }),
     );
-    expect(mockTrackEvent).toHaveBeenCalledWith(
-      "add_to_cart",
-      expect.any(Object),
-    );
+    expect(mockTrackEvent).toHaveBeenCalledWith(mockProduct, 1);
   });
 
   it("should warn when adding a base product with variants", async () => {

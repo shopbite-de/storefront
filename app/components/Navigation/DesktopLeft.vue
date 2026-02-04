@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
-import { useTrackEvent } from "#imports";
 
 const { loadNavigationElements, navigationElements } = useNavigation();
 
@@ -16,9 +15,6 @@ const scrollToElement = (elementId: string, margin = 0) => {
     window.scrollTo({
       top: offsetPosition,
       behavior: "smooth",
-    });
-    useTrackEvent("scroll_to_category", {
-      props: { category_name: elementId },
     });
   }
 };
