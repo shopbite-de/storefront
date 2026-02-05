@@ -10,6 +10,8 @@ if (!page.value) {
   });
 }
 
+const config = useRuntimeConfig();
+
 useSeoMeta({
   title: page.value.seo?.title || page.value.title,
   ogTitle: page.value.seo?.title || page.value.title,
@@ -17,8 +19,10 @@ useSeoMeta({
   description: page.value.seo?.description || page.value.description,
   ogDescription: page.value.seo?.description || page.value.description,
   twitterDescription: page.value.seo?.description || page.value.description,
-  ogImage: page.value.seo?.image,
-  twitterImage: page.value.seo?.image,
+  twitterCard: "summary",
+  ogImage: page.value.seo?.image as string,
+  twitterImage: page.value.seo?.image as string,
+  ogUrl: config.public.storeUrl,
 });
 </script>
 <template>

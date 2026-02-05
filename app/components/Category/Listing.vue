@@ -65,15 +65,7 @@ const { data: category } = await useAsyncData(
   },
 );
 
-const pageTitle = computed(
-  () =>
-    `${category.value?.translated.name ?? category.value?.name} | Speisekarte`,
-);
-
-useSeoMeta({
-  title: pageTitle,
-  robots: "index,follow",
-});
+useCategorySeo(category);
 
 const currentSorting = ref(getCurrentSortingOrder.value ?? "Sortieren");
 

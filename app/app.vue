@@ -89,6 +89,19 @@ onMounted(async () => {
   await Promise.all([refreshCart(), getWishlistProducts()]);
   displayStoreStatus();
 });
+
+useHead({
+  htmlAttrs: {
+    lang: "de",
+  },
+  link: [
+    {
+      rel: "icon",
+      type: "image/png",
+      href: "/favicon.ico",
+    },
+  ],
+});
 </script>
 
 <template>
