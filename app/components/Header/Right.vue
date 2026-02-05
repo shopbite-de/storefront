@@ -17,7 +17,7 @@ const logoutHandler = () => {
   });
 };
 
-const { data: navigationData } = await useAsyncData("navigation", () =>
+const { data: navigationData } = await useAsyncData("navigation:right", () =>
   queryCollection("navigation").first(),
 );
 

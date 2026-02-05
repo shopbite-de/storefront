@@ -30,7 +30,9 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
 
   const breadcrumb = computed<string[]>(
     () =>
-      category.value?.translated.breadcrumb ?? category.value?.breadcrumb ?? [],
+      category.value?.translated?.breadcrumb ??
+      category.value?.breadcrumb ??
+      [],
   );
 
   // Build BreadcrumbList items from category breadcrumb
@@ -86,13 +88,6 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
       return "de";
     }
   });
-
-  const keywords = computed(
-    () =>
-      category.value?.translated?.keywords ||
-      category.value?.keywords ||
-      undefined,
-  );
 
   const robots = computed(() => {
     const active = category.value?.active;
@@ -167,7 +162,6 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
     seoUrl,
     ogImage,
     canonicalUrl,
-    keywords,
     robots,
     siteName,
     locale,
