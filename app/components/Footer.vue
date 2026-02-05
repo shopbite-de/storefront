@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { data: navigationData } = await useAsyncData("navigation", () =>
+const { data: navigationData } = await useAsyncData("navigation:footer", () =>
   queryCollection("navigation").first(),
 );
 

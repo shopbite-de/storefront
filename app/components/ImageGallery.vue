@@ -41,7 +41,7 @@ defineProps<{
           :src="item.image"
           :alt="item.alt"
           class="rounded-lg w-full max-h-screen object-contain"
-        />
+        >
       </UCarousel>
     </template>
   </UPageSection>

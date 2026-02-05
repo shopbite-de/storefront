@@ -20,8 +20,8 @@ useSeoMeta({
   ogDescription: page.value.seo?.description || page.value.description,
   twitterDescription: page.value.seo?.description || page.value.description,
   twitterCard: "summary",
-  ogImage: page.value.seo?.image as string,
-  twitterImage: page.value.seo?.image as string,
+  ogImage: page.value.seo?.image as string | undefined,
+  twitterImage: page.value.seo?.image as string | undefined,
   ogUrl: config.public.storeUrl,
 });
 </script>
