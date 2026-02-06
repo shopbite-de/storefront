@@ -37,6 +37,7 @@ const searchCriteria = {
       },
     },
   },
+  limit: 100,
 } as operations["searchPage post /search"]["body"];
 
 const {

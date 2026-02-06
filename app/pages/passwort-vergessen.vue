@@ -83,7 +83,7 @@ async function handlePasswordRecovery(payload: FormSubmitEvent<Schema>) {
     >
       <template #description>
         <p>
-          Geben Sie Ihre E-Mail-Adresse ein um Ihr Passwort zurückzusetzten.
+          Geben Sie Ihre E-Mail-Adresse ein um Ihr Passwort zurück zusetzten.
         </p>
         <p>
           Wenn Sie bei uns ein Kundenkonto mit dieser Adresse angelegt haben
