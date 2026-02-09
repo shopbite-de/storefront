@@ -28,19 +28,15 @@ defineProps<{
     <template #body>
       <UCarousel
         v-slot="{ item, index }"
-        :items="images"
-        class="mx-auto w-full"
-        auto-height
         arrows
-        loop
+        :items="images"
+        class="w-full max-w-2xl mx-auto"
       >
         <img
-          v-if="item"
-          :loading="index === 0 ? 'eager' : 'lazy'"
-          :fetchpriority="index === 0 ? 'high' : 'low'"
           :src="item.image"
           :alt="item.alt"
-          class="rounded-lg w-full max-h-screen object-contain"
+          :fetchpriority="index === 0 ? 'high' : 'auto'"
+          class="rounded-lg"
         >
       </UCarousel>
     </template>
