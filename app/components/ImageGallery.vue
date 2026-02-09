@@ -38,7 +38,7 @@ defineProps<{
           v-if="item"
           :src="item.image"
           :alt="item.alt"
-          class="rounded-lg w-full"
+          class="rounded-lg w-full max-h-[50vh] object-contain"
         >
       </UCarousel>
     </template>
