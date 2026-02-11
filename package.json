@@ -1,6 +1,6 @@
 {
   "name": "@shopbite-de/storefront",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "main": "nuxt.config.ts",
   "description": "Shopware storefront for food delivery shops",
   "keywords": [
@@ -35,7 +35,7 @@
     "@heroicons/vue": "^2.2.0",
     "@iconify-json/lucide": "^1.2.73",
     "@iconify-json/simple-icons": "^1.2.59",
-    "@nuxt/content": "3.11.2",
+    "@nuxt/content": "3.10.0",
     "@nuxt/image": "^2.0.0",
     "@nuxt/scripts": "0.13.2",
     "@nuxt/ui": "^4.1.0",
