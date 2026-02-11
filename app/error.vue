@@ -30,7 +30,7 @@ useSeoMeta({
       <h3 class="max-w-lg whitespace-pre-line pb-8 pt-5 text-3xl">
         {{ error.statusCode }}
       </h3>
-      <NuxtLink to="" class="button">Zurück zur Starseite</NuxtLink>
+      <NuxtLink to="/" class="button">Zurück zur Startseite</NuxtLink>
     </div>
   </NuxtLayout>
 </template>

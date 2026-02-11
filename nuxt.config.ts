@@ -57,6 +57,7 @@ export default defineNuxtConfig({
       shopBite: {
         feature: {
           multiChannel: "",
+          secureKey: "",
         },
       },
       site: {
