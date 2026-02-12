@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { operations, Schemas } from "#shopware";
+import Breadcrumb from "~/components/Category/Breadcrumb.vue";
 
 const props = defineProps<{
   id: string;
@@ -59,12 +60,11 @@ const {
 
 const { search: categorySearch } = useCategorySearch();
 
-const { data: category } = await useAsyncData(
-  `category${categoryId.value}`,
-  async () => {
-    return await categorySearch(categoryId.value);
-  },
-);
+const categoryCacheKey = computed(() => `category-${categoryId.value}`);
+
+const { data: category } = await useAsyncData(categoryCacheKey, async () => {
+  return await categorySearch(categoryId.value);
+});
 
 useCategorySeo(category);
 
@@ -130,6 +130,7 @@ const moreThanOneFilterAndOption = computed<boolean>(
 
       <UPageBody>
         <div>
+          <Breadcrumb :category-id="category?.id" />
           <CategoryHeader v-if="category" :category="category" />
           <div class="flex flex-row justify-between gap-4 mb-4">
             <UBadge

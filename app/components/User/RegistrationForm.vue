@@ -250,9 +250,7 @@ const emit = defineEmits<{
         <template #label>
           <span>
             Ich habe die
-            <ULink to="/unternehmen/datenschutz">
-              Datenschutzbestimmungen
-            </ULink>
+            <ULink to="/datenschutz"> Datenschutzbestimmungen </ULink>
             gelesen und akzeptiere diese.
           </span>
         </template>

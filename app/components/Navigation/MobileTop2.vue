@@ -2,23 +2,43 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
 
+type Category = Schemas["Category"];
+
+const props = withDefaults(
+  defineProps<{
+    shouldSkipFirstLevel?: boolean;
+  }>(),
+  {
+    shouldSkipFirstLevel: false,
+  },
+);
+
 const { loadNavigationElements, navigationElements } = useNavigation();
 
-loadNavigationElements({ depth: 1 });
+loadNavigationElements({ depth: 3 });
 
 const navItems = computed<NavigationMenuItem[]>(() => {
-  return navigationElements.value?.map((item: Schemas["Category"]) => {
+  const elements = navigationElements.value ?? [];
+
+  const mapCategoryRecursively = (category: Category): NavigationMenuItem => {
+    const hasChildren = (category.children?.length ?? 0) > 0;
+
     return {
-      label: item.translated?.name,
-      to: item.children.length === 0 ? item.seoUrl : undefined,
-      children: item.children?.map((child: Schemas["Category"]) => {
-        return {
-          label: child.translated?.name,
-          to: child.seoUrl,
-        };
-      }),
+      label: category.translated?.name ?? "",
+      to: hasChildren ? undefined : category.seoUrl,
+      children: hasChildren
+        ? category.children!.map(mapCategoryRecursively)
+        : undefined,
     };
-  });
+  };
+
+  if (props.shouldSkipFirstLevel) {
+    return elements
+      .flatMap((item: Category) => item.children ?? [])
+      .map(mapCategoryRecursively);
+  }
+
+  return elements.map(mapCategoryRecursively);
 });
 </script>
 

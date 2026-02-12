@@ -28,53 +28,6 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
     return base + path;
   });
 
-  const breadcrumb = computed<string[]>(
-    () =>
-      category.value?.translated?.breadcrumb ??
-      category.value?.breadcrumb ??
-      [],
-  );
-
-  // Build BreadcrumbList items from category breadcrumb
-  type BreadcrumbListItem = {
-    "@type": "ListItem";
-    position: number;
-    name: string;
-    item?: string;
-  };
-  const breadcrumbItems = computed(() => {
-    const names = (breadcrumb.value || []) as string[];
-    const items: BreadcrumbListItem[] = [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: config.public.storeUrl || "/",
-      },
-    ];
-
-    if (names.length > 0) {
-      names.forEach((name: string, idx: number) => {
-        const isLast = idx === names.length - 1;
-        items.push({
-          "@type": "ListItem",
-          position: idx + 2,
-          name,
-          ...(isLast && canonicalUrl.value ? { item: canonicalUrl.value } : {}),
-        });
-      });
-    } else if (pageTitle.value) {
-      items.push({
-        "@type": "ListItem",
-        position: 2,
-        name: pageTitle.value,
-        ...(canonicalUrl.value ? { item: canonicalUrl.value } : {}),
-      });
-    }
-
-    return items;
-  });
-
   const ogImage = computed(() => category.value?.media?.url);
 
   const siteName = computed(() => config.public.site?.name || "");
@@ -143,14 +96,6 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
               }
             : {}),
           ...(ogImage.value ? { image: [ogImage.value] } : {}),
-        }),
-      },
-      {
-        type: "application/ld+json",
-        innerHTML: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          itemListElement: breadcrumbItems.value,
         }),
       },
     ],
