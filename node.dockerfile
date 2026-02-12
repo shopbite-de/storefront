@@ -35,4 +35,4 @@ USER node
 
 EXPOSE 3000
 
-CMD [ "node", ".output/server/index.mjs" ]
+CMD [ "node", "--trace-warnings", ".output/server/index.mjs" ]
