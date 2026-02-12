@@ -84,7 +84,7 @@ gallery:
 cta:
   title: Jetzt bestellen!
   description: Genieße die italienische Küche, frisch zubereitet und direkt zu dir geliefert oder vor Ort genießen.
-  backgroundImage: https://shopware.shopbite.de/media/f5/19/4a/1762546880/category-pizza-header.webp
+  backgroundImage: https://shopware.shopbite.de/media/f2/22/5f/1770899823/category-pizza-header2.webp
   links:
     - label: Zur Speisekarte
       to: /menu/
