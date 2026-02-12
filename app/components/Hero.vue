@@ -43,9 +43,10 @@ onMounted(() => {
       loop
       muted
       playsinline
+      fetchpriority="high"
       class="absolute inset-0 w-full h-full object-cover -z-10"
     >
-      <source fetchpriority="high" :src="backgroundVideo" type="video/mp4" >
+      <source :src="backgroundVideo" type="video/mp4" >
     </video>
     <div class="bg-black/50 backdrop-blur-sm">
       <UPageHero
