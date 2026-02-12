@@ -23,7 +23,7 @@ hero:
       icon: i-lucide-arrow-right
       trailing: true
       color: primary
-      to: /menu/
+      to: /speisekarte/
       size: xl
     - label: Tisch reservieren
       icon: i-lucide-phone
@@ -87,7 +87,7 @@ cta:
   backgroundImage: https://shopware.shopbite.de/media/f2/22/5f/1770899823/category-pizza-header2.webp
   links:
     - label: Zur Speisekarte
-      to: /menu/
+      to: /speisekarte/
       color: primary
     - label: Tisch reservieren
       to: tel:+49610471427

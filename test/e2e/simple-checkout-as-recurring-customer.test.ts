@@ -50,7 +50,7 @@ async function clearCart(page: Page) {
 }
 
 async function navigateToCategoryAndVerifyProducts(page: Page) {
-  await page.goto("/c/Pizza/", { waitUntil: "load" });
+  await page.goto("/speisekarte/pizza/", { waitUntil: "load" });
   await expect(page.locator("h1")).toHaveText("Pizza");
 
   const productCards = page.locator('[id^="product-card-"]');

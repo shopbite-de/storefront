@@ -1,60 +1,42 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 
-defineProps<{
+const props = defineProps<{
   category: Schemas["Category"];
 }>();
+
+const { category: categoryRef } = toRefs(props);
+
+const categoryCover = computed(
+  () => categoryRef.value.media?.url ?? "/category-placeholder.webp",
+);
 </script>
 
 <template>
   <div
-    v-if="category.media?.url"
-    class="relative mb-4 mt-8 h-40 w-full overflow-hidden rounded-lg"
+    class="relative mb-4 mt-8 min-h-36 w-full overflow-hidden rounded-[0.5rem]"
   >
     <NuxtImg
-      v-if="category.media?.url"
-      :src="category.media.url"
+      :src="categoryCover"
       class="absolute inset-0 h-full w-full object-cover"
       sizes="sm:100vw md:700px"
-      alt="Pizza Kategorie"
+      :alt="category.name + ' Cover Image'"
       placeholder
     />
-    <div
-      v-if="category.media?.url"
-      class="absolute inset-0 bg-gradient-to-t from-black/50 to-black/10"
-    />
-
-    <div v-else class="absolute inset-0 bg-primary" />
+    <div class="absolute inset-0 bg-linear-to-t from-black/50 to-black/10" />
 
     <div class="relative p-4">
-      <h1 class="text-white font-semibold">
-        {{ category.name }}
+      <h1
+        class="text-white text-4xl md:text-5xl lg:text-6xl font-extrabold leading-none tracking-tighter mb-3"
+      >
+        {{ categoryRef.name }}
       </h1>
-      <p v-if="category.description">
-        {{ category.description }}
+      <p
+        v-if="categoryRef.description"
+        class="text-white/90 text-[16px] text-pretty mt-1"
+      >
+        {{ categoryRef.description }}
       </p>
     </div>
   </div>
-  <UPageCard
-    v-else
-    :title="category.translated.name ?? category.name"
-    :description="category.translated.description ?? category.description"
-    variant="soft"
-    class="my-4"
-    :ui="{
-      title: 'text-3xl md:text-4xl',
-    }"
-  />
 </template>
-
-<style scoped>
-@import "tailwindcss";
-
-h1 {
-  @apply text-white text-4xl md:text-5xl lg:text-6xl font-extrabold leading-none tracking-tighter mb-3;
-}
-
-p {
-  @apply text-white/90 text-[16px] text-pretty mt-1;
-}
-</style>

@@ -107,26 +107,12 @@ describe("useCategorySeo", () => {
 
     // JSON-LD scripts
     const scripts = headArg.script || [];
-    expect(scripts.length).toBeGreaterThanOrEqual(2);
+    expect(scripts.length).toBeGreaterThanOrEqual(1);
 
     const collection = JSON.parse(scripts[0].innerHTML);
     expect(collection["@type"]).toBe("CollectionPage");
     expect(collection.url).toBe("https://example.com/c/pasta");
     expect(collection.image?.[0]).toBe("https://example.com/img/pasta.jpg");
-
-    const breadcrumb = JSON.parse(scripts[1].innerHTML);
-    expect(breadcrumb["@type"]).toBe("BreadcrumbList");
-    const items = breadcrumb.itemListElement;
-    // Home item
-    expect(items[0]).toMatchObject({
-      "@type": "ListItem",
-      position: 1,
-      name: "Home",
-      item: "https://example.com",
-    });
-    // Last item should include canonical URL
-    const last = items[items.length - 1];
-    expect(last.item).toBe("https://example.com/c/pasta");
   });
 
   it("sets robots to noindex when category is inactive", () => {

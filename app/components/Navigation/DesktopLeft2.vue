@@ -7,26 +7,26 @@ const { loadNavigationElements } = useNavigation();
 const { data: navigationElements } = await useAsyncData(
   `menu-navigation`,
   async () => {
-    return await loadNavigationElements({ depth: 2 });
+    return await loadNavigationElements({ depth: 3 });
   },
 );
 
+const mapCategoryToNavItem = (
+  category: Schemas["Category"],
+): NavigationMenuItem => {
+  const label = category.translated?.name ?? "";
+
+  return {
+    label,
+    description: `${label} Kategorie`,
+    to: category.seoUrl,
+    defaultOpen: true,
+    children: (category.children ?? []).map(mapCategoryToNavItem),
+  };
+};
+
 const navItems = computed<NavigationMenuItem[]>(() => {
-  return navigationElements.value?.map((item: Schemas["Category"]) => {
-    return {
-      label: item.translated?.name,
-      description: `${item.translated?.name} Kategorie`,
-      to: item.seoUrl,
-      defaultOpen: true,
-      children: item.children?.map((child: Schemas["Category"]) => {
-        return {
-          label: child.translated?.name,
-          description: `${child.translated?.name} Kategorie`,
-          to: child.seoUrl,
-        };
-      }),
-    };
-  });
+  return (navigationElements.value ?? []).map(mapCategoryToNavItem);
 });
 </script>
 
