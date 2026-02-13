@@ -177,7 +177,6 @@ export default defineNuxtConfig({
       "@nuxt/content",
       "@nuxtjs/robots",
       "@vite-pwa/nuxt",
-      "@sentry/nuxt/module",
       "@nuxt/ui",
       "@nuxt/scripts",
       "@nuxt/test-utils/module",
@@ -193,5 +192,5 @@ export default defineNuxtConfig({
         },
       },
     },
-  },
+  }
 });
