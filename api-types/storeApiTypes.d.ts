@@ -2,7 +2,7 @@
  * This file is auto-generated. Do not make direct changes to the file.
  * Instead override it in your shopware.d.ts file.
  *
- * Shopware API version: 6.7.5.1
+ * Shopware API version: 6.7.7.1
  *
  */
 type GenericRecord =
@@ -17,6 +17,8 @@ type GenericRecord =
 export type components = {
   schemas: Schemas;
   parameters: {
+    CompressedCriteria: string;
+    CompressedNoneFieldsCriteria: string;
     accept: string;
     contentType: string;
     criteriaAggregations: components["schemas"]["Aggregation"][];
@@ -44,6 +46,8 @@ export type components = {
     criteriaSort: components["schemas"]["Sort"][];
     criteriaTerm: string;
     criteriaTotalCountMode: components["schemas"]["TotalCountMode"];
+    noAggregations: string | null;
+    onlyAggregations: string | null;
   };
 };
 export type Schemas = {
@@ -461,7 +465,9 @@ export type Schemas = {
     variantId?: string | null;
   };
   Category: {
+    /** When boolean value is `true`, the category is listed for selection. */
     active?: boolean;
+    /** Unique identity of the category under which the new category is to be created. */
     afterCategoryId?: string;
     afterCategoryVersionId?: string;
     /** @enum {string} */
@@ -473,6 +479,7 @@ export type Schemas = {
     children: components["schemas"]["Category"][];
     /** CMS page layout for the category */
     cmsPage?: components["schemas"]["CmsPage"];
+    /** Unique identity of CMS page. */
     cmsPageId?: string;
     /** Runtime field, cannot be used as part of the criteria. */
     cmsPageIdSwitched?: boolean;
@@ -482,25 +489,33 @@ export type Schemas = {
     customEntityTypeId?: string;
     customFields?: GenericRecord;
     description?: string;
+    /** Shows nested categories on a product category page. */
     displayNestedProducts?: boolean;
     externalLink?: string;
     id: string;
     internalLink?: string;
     keywords?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * An integer value that denotes the level of nesting of a particular category located in an hierarchical category tree.
+     */
     readonly level?: number;
     linkNewTab?: boolean;
     linkType?: string;
     /** Category image or banner */
     media?: components["schemas"]["Media"];
+    /** Unique identity of media added to identify category. */
     mediaId?: string;
     metaDescription?: string;
     metaTitle?: string;
     name: string;
+    /** Unique identity of category. */
     parent?: components["schemas"]["Category"];
     parentId?: string;
     parentVersionId?: string;
+    /** A relative URL to the category. */
     readonly path?: string;
+    /** Type of product assignment: Dynamic product group as or `product_stream` or Manual assignment as `product`. */
     productAssignmentType?: string;
     /** Runtime field, cannot be used as part of the criteria. */
     seoUrl?: string;
@@ -532,11 +547,15 @@ export type Schemas = {
       type: string;
       versionId: string;
     };
-    /** @enum {string} */
+    /**
+     * Type of categories like `page`, `folder`, `link`.
+     * @enum {string}
+     */
     type: "page" | "link";
     /** Format: date-time */
     readonly updatedAt?: string;
     versionId?: string;
+    /** Displays categories on category page when true. */
     visible?: boolean;
     /**
      * Format: int64
@@ -545,12 +564,15 @@ export type Schemas = {
     visibleChildCount?: number;
   };
   CategoryJsonApi: components["schemas"]["resource"] & {
+    /** When boolean value is `true`, the category is listed for selection. */
     active?: boolean;
+    /** Unique identity of the category under which the new category is to be created. */
     afterCategoryId?: string;
     afterCategoryVersionId?: string;
     readonly breadcrumb?: GenericRecord[];
     /** Format: int64 */
     readonly childCount?: number;
+    /** Unique identity of CMS page. */
     cmsPageId?: string;
     /** Runtime field, cannot be used as part of the criteria. */
     cmsPageIdSwitched?: boolean;
@@ -560,22 +582,29 @@ export type Schemas = {
     customEntityTypeId?: string;
     customFields?: GenericRecord;
     description?: string;
+    /** Shows nested categories on a product category page. */
     displayNestedProducts?: boolean;
     externalLink?: string;
     id: string;
     internalLink?: string;
     keywords?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * An integer value that denotes the level of nesting of a particular category located in an hierarchical category tree.
+     */
     readonly level?: number;
     linkNewTab?: boolean;
     linkType?: string;
+    /** Unique identity of media added to identify category. */
     mediaId?: string;
     metaDescription?: string;
     metaTitle?: string;
     name: string;
     parentId?: string;
     parentVersionId?: string;
+    /** A relative URL to the category. */
     readonly path?: string;
+    /** Type of product assignment: Dynamic product group as or `product_stream` or Manual assignment as `product`. */
     productAssignmentType?: string;
     relationships?: {
       /** Child categories within this category for hierarchical navigation */
@@ -626,6 +655,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Unique identity of category. */
       parent?: {
         data?: {
           /** @example d0e45878043844ffc41aac437e86b602 */
@@ -699,10 +729,12 @@ export type Schemas = {
       type: string;
       versionId: string;
     };
+    /** Type of categories like `page`, `folder`, `link`. */
     type?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
     versionId?: string;
+    /** Displays categories on category page when true. */
     visible?: boolean;
     /**
      * Format: int64
@@ -713,26 +745,41 @@ export type Schemas = {
   CmsBlock: {
     /** @enum {string} */
     apiAlias: "cms_block";
+    /** Defines the background color of an element. */
     backgroundColor?: string;
     backgroundMedia?: components["schemas"]["Media"];
+    /** Unique identity of background media. */
     backgroundMediaId?: string;
+    /** Background media mode accept values `cover`, `auto`, `contain`. */
     backgroundMediaMode?: string;
     cmsSectionVersionId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
+    /** One or more CSS classes added and separated by spaces. */
     cssClass?: string;
     customFields?: GenericRecord;
     id: string;
+    /** Defines for the margin area on the bottom of an element. */
     marginBottom?: string;
+    /** Defines for the margin area on the left of an element. */
     marginLeft?: string;
+    /** Defines the margin area on the right of an element. */
     marginRight?: string;
+    /** Defines the margin area on the top of an element. */
     marginTop?: string;
+    /** Unique name of the CMS Block. */
     name?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Order of the block indicated by number like 0, 1, 2,...
+     */
     position: number;
+    /** Unique identity of section. */
     sectionId: string;
+    /** Position of the section. It can either be `main` or `sidebar`. */
     sectionPosition?: string;
     slots: components["schemas"]["CmsSlot"][];
+    /** Type of block can be 'image`, `text`, 'product-listing`, `image-two-column`, etc. */
     type: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -751,8 +798,10 @@ export type Schemas = {
     };
     /** Format: date-time */
     readonly createdAt?: string;
+    /** One or more CSS classes added and separated by spaces. */
     cssClass?: string;
     customFields?: GenericRecord;
+    /** This field will be implemented in the future. */
     entity?: string;
     id: string;
     /** Landing pages using this CMS layout */
@@ -760,6 +809,7 @@ export type Schemas = {
     name?: string;
     /** Preview image for the CMS page in admin panel and page selection */
     previewMedia?: components["schemas"]["Media"];
+    /** Unique identity of media to be previewed. */
     previewMediaId?: string;
     /** Content sections within the CMS page (layout blocks containing slots) */
     sections: components["schemas"]["CmsSection"][];
@@ -771,6 +821,7 @@ export type Schemas = {
       type: string;
       versionId: string;
     };
+    /** CMS page types can be `landingpage`, `page`, `product_list`, `product_detail`. */
     type: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -779,25 +830,39 @@ export type Schemas = {
   CmsSection: {
     /** @enum {string} */
     apiAlias: "cms_section";
+    /** Background color of CMS page. */
     backgroundColor?: string;
     backgroundMedia?: components["schemas"]["Media"];
+    /** Unique identity of CMS section's background media. */
     backgroundMediaId?: string;
+    /** Background media mode can be `cover`, `auto` or `contain`. */
     backgroundMediaMode?: string;
     blocks: components["schemas"]["CmsBlock"][];
     cmsPageVersionId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
+    /** One or more CSS classes added and separated by spaces. */
     cssClass?: string;
     customFields?: GenericRecord;
     id: string;
+    /** Hides the sidebar on mobile viewports. It can hold values such as 'mobile', 'wrap', any other string or be unset. */
     mobileBehavior?: string;
+    /** Name of the CMS section defined. */
     name?: string;
     page?: components["schemas"]["CmsPage"];
+    /** Unique identity of page where CMS section is defined. */
     pageId: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Position of occurrence of each section denoted by numerical values 0, 1, 2...
+     */
     position: number;
+    /** Sizing mode can be `boxed` or `full_width`. */
     sizingMode?: string;
-    /** @enum {string} */
+    /**
+     * Types of sections can be `sidebar` or `fullwidth`.
+     * @enum {string}
+     */
     type: "default" | "sidebar";
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -811,6 +876,7 @@ export type Schemas = {
     /** @enum {string} */
     apiAlias: "cms_slot";
     block?: components["schemas"]["CmsBlock"];
+    /** Unique identity of CMS block where slot is defined. */
     blockId: string;
     cmsBlockVersionId?: string;
     config?: GenericRecord;
@@ -821,6 +887,7 @@ export type Schemas = {
     fieldConfig?: GenericRecord;
     id: string;
     locked?: boolean;
+    /** Key-value pair to configure which element to be shown in which slot. */
     slot: string;
     translated: {
       blockId: string;
@@ -829,6 +896,7 @@ export type Schemas = {
       type: string;
       versionId: string;
     };
+    /** It indicates the types of content that can be defined within the slot which includes `image`, `text`, `form`, `product-listing`, `category-navigation`, `product-box`, `buy-box`, `sidebar-filter`, etc. */
     type: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -890,13 +958,24 @@ export type Schemas = {
      * @example f86b6a872cb83dbd22d838ceda1aa3d4
      */
     hash: string;
+    /**
+     * Format: uuid
+     * The language ID for which the cookie configuration was generated. Used to store hashes per language.
+     * @example 2fbb5fe2e29a4d70aa5854ce7ce3e20b
+     */
+    languageId: string;
   };
   Country: {
+    /** When boolean value is `true`, the country is available for selection in the storefront. */
     active?: boolean;
     addressFormat: GenericRecord;
+    /** Wildcard formatted zip codes to allow easy searching in the frontend based on initial constants, for example - 24****, 1856**. */
     advancedPostalCodePattern?: string;
+    /** Verify for advanced postal code pattern. */
     checkAdvancedPostalCodePattern?: boolean;
+    /** Verify for valid postal code pattern. */
     checkPostalCodePattern?: boolean;
+    /** Verify if VAT ID is valid or not. */
     checkVatIdPattern?: boolean;
     companyTax?: {
       /** Format: float */
@@ -913,17 +992,27 @@ export type Schemas = {
       enabled: boolean;
     };
     customFields?: GenericRecord;
+    /** Default pattern of postal or zip code. */
     defaultPostalCodePattern?: string;
+    /** The country's state is displayed in the address when boolean value is `true`. */
     displayStateInRegistration?: boolean;
+    /** State details in the address are force included when boolean value is `true`. */
     forceStateInRegistration?: boolean;
     id: string;
     isEu?: boolean;
+    /** Internationally recognized two-letter country codes. For example, DE, IN, NO, etc. */
     iso?: string;
+    /** Internationally recognized three-letter country codes. For example, DEU, IND, NOR, etc. */
     iso3?: string;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Numerical value that indicates the order in which the defined countries must be displayed in the frontend.
+     */
     position?: number;
+    /** The postal code is made mandatory specification in the address, when boolean value is `true`. */
     postalCodeRequired?: boolean;
+    /** The shipping availability for a country is enabled when boolean value is `true`. */
     shippingAvailable?: boolean;
     /** States/provinces/regions within the country */
     states?: components["schemas"]["CountryState"][];
@@ -937,15 +1026,22 @@ export type Schemas = {
     };
     /** Format: date-time */
     readonly updatedAt?: string;
+    /** Unique VAT ID with country code and numbers, for example - GB999 9999 */
     vatIdPattern?: string;
+    /** Set to true, if VAT ID is to be made mandatory. */
     vatIdRequired?: boolean;
   };
   CountryJsonApi: components["schemas"]["resource"] & {
+    /** When boolean value is `true`, the country is available for selection in the storefront. */
     active?: boolean;
     addressFormat: GenericRecord;
+    /** Wildcard formatted zip codes to allow easy searching in the frontend based on initial constants, for example - 24****, 1856**. */
     advancedPostalCodePattern?: string;
+    /** Verify for advanced postal code pattern. */
     checkAdvancedPostalCodePattern?: boolean;
+    /** Verify for valid postal code pattern. */
     checkPostalCodePattern?: boolean;
+    /** Verify if VAT ID is valid or not. */
     checkVatIdPattern?: boolean;
     companyTax?: {
       /** Format: float */
@@ -962,16 +1058,25 @@ export type Schemas = {
       enabled: boolean;
     };
     customFields?: GenericRecord;
+    /** Default pattern of postal or zip code. */
     defaultPostalCodePattern?: string;
+    /** The country's state is displayed in the address when boolean value is `true`. */
     displayStateInRegistration?: boolean;
+    /** State details in the address are force included when boolean value is `true`. */
     forceStateInRegistration?: boolean;
     id: string;
     isEu?: boolean;
+    /** Internationally recognized two-letter country codes. For example, DE, IN, NO, etc. */
     iso?: string;
+    /** Internationally recognized three-letter country codes. For example, DEU, IND, NOR, etc. */
     iso3?: string;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Numerical value that indicates the order in which the defined countries must be displayed in the frontend.
+     */
     position?: number;
+    /** The postal code is made mandatory specification in the address, when boolean value is `true`. */
     postalCodeRequired?: boolean;
     relationships?: {
       /** States/provinces/regions within the country */
@@ -991,6 +1096,7 @@ export type Schemas = {
         };
       };
     };
+    /** The shipping availability for a country is enabled when boolean value is `true`. */
     shippingAvailable?: boolean;
     translated: {
       advancedPostalCodePattern: string;
@@ -1002,19 +1108,27 @@ export type Schemas = {
     };
     /** Format: date-time */
     readonly updatedAt?: string;
+    /** Unique VAT ID with country code and numbers, for example - GB999 9999 */
     vatIdPattern?: string;
+    /** Set to true, if VAT ID is to be made mandatory. */
     vatIdRequired?: boolean;
   };
   CountryState: {
+    /** When boolean value is `true`, the country's state is available for selection in the storefront. */
     active?: boolean;
+    /** Unique identity of the country. */
     countryId: string;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Numerical value that indicates the order in which the defined states must be displayed in the frontend.
+     */
     position?: number;
+    /** An abbreviation for the country's state. */
     shortCode: string;
     translated: {
       countryId: string;
@@ -1025,15 +1139,21 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   CountryStateJsonApi: components["schemas"]["resource"] & {
+    /** When boolean value is `true`, the country's state is available for selection in the storefront. */
     active?: boolean;
+    /** Unique identity of the country. */
     countryId: string;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Numerical value that indicates the order in which the defined states must be displayed in the frontend.
+     */
     position?: number;
+    /** An abbreviation for the country's state. */
     shortCode: string;
     translated: {
       countryId: string;
@@ -1095,9 +1215,13 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
-    /** Format: float */
+    /**
+     * Format: float
+     * Currency exchange rate.
+     */
     factor: number;
     id: string;
+    /** Standard international three digit code to represent currency. For example, USD. */
     isoCode: string;
     /** Runtime field, cannot be used as part of the criteria. */
     isSystemDefault?: boolean;
@@ -1109,11 +1233,18 @@ export type Schemas = {
       roundForNet: boolean;
     };
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of the tabs for multiple currencies defined.
+     */
     position?: number;
     shortName: string;
+    /** A currency symbol is a graphical representation used as shorthand for a currency's name, for example US Dollar - $ */
     symbol: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * The value from which the tax must be exempted.
+     */
     taxFreeFrom?: number;
     totalRounding: {
       /** Format: int64 */
@@ -1142,9 +1273,13 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
-    /** Format: float */
+    /**
+     * Format: float
+     * Currency exchange rate.
+     */
     factor: number;
     id: string;
+    /** Standard international three digit code to represent currency. For example, USD. */
     isoCode: string;
     /** Runtime field, cannot be used as part of the criteria. */
     isSystemDefault?: boolean;
@@ -1156,11 +1291,18 @@ export type Schemas = {
       roundForNet: boolean;
     };
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of the tabs for multiple currencies defined.
+     */
     position?: number;
     shortName: string;
+    /** A currency symbol is a graphical representation used as shorthand for a currency's name, for example US Dollar - $ */
     symbol: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * The value from which the tax must be exempted.
+     */
     taxFreeFrom?: number;
     totalRounding: {
       /** Format: int64 */
@@ -1207,6 +1349,7 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   Customer: {
+    /** To keep the status of the customer active, the boolean value is set to `true`. */
     active?: boolean;
     /** Currently active billing address in the session */
     activeBillingAddress: components["schemas"]["CustomerAddress"];
@@ -1214,61 +1357,103 @@ export type Schemas = {
     activeShippingAddress: components["schemas"]["CustomerAddress"];
     /** All addresses saved for the customer */
     addresses?: components["schemas"]["CustomerAddress"][];
+    /** An affiliate code is an identification option with which website operators can mark outgoing links. */
     affiliateCode?: string;
     /** @enum {string} */
     apiAlias: "customer";
+    /** To capture customer's birthday details. */
     birthday?: string;
+    /** A campaign code is the globally unique identifier for a campaign. */
     campaignCode?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     createdById?: string;
+    /** Unique  number assigned to identity a customer. */
     customerNumber: string;
     customFields?: GenericRecord;
     /** Default billing address for the customer */
     defaultBillingAddress?: components["schemas"]["CustomerAddress"];
+    /** Unique identity of default billing address. */
     defaultBillingAddressId: string;
     /** Default shipping address for the customer */
     defaultShippingAddress?: components["schemas"]["CustomerAddress"];
+    /** Unique identity of default shipping address. */
     defaultShippingAddressId: string;
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * Date and time when the double opt-in email was confirmed.
+     */
     doubleOptInConfirmDate?: string;
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * Date and time when the double opt-in email was sent.
+     */
     doubleOptInEmailSentDate?: string;
+    /** Set to `true` to allow user subscriptions to an email marketing list. */
     doubleOptInRegistration?: boolean;
+    /** Email ID of the customer. */
     email: string;
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * To capture date and time of customer's first login.
+     */
     firstLogin?: string;
+    /** First name of the customer. */
     firstName: string;
     /** Customer group determining pricing and permissions */
     group?: components["schemas"]["CustomerGroup"];
+    /** Unique identity of customer group. */
     groupId: string;
+    /** Boolean value is `true` if it is to be a guest account. */
     guest?: boolean;
+    /** Password hash for customer recovery. */
     hash?: string;
     id: string;
     /** Preferred language for customer communication */
     language?: components["schemas"]["Language"];
+    /** Unique identity of language. */
     languageId: string;
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * To capture date and time of customer's last login.
+     */
     lastLogin?: string;
+    /** Last name of the customer. */
     lastName: string;
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * Captures last order date.
+     */
     readonly lastOrderDate?: string;
     /** Last used payment method by the customer */
     lastPaymentMethod?: components["schemas"]["PaymentMethod"];
+    /** Unique identity of previous payment method. */
     lastPaymentMethodId?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Captures the number of orders placed.
+     */
     readonly orderCount?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Sum of total amount to be paid.
+     */
     readonly orderTotalAmount?: number;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Number of reviews the customer has given.
+     */
     readonly reviewCount?: number;
+    /** Unique identity of sales channel. */
     salesChannelId: string;
     /** Customer salutation (e.g., Mr., Mrs., Ms.) */
     salutation?: components["schemas"]["Salutation"];
+    /** Unique identity of salutation. */
     salutationId?: string;
     readonly tagIds?: string[];
     /** Tags assigned to the customer for organization and segmentation */
     tags?: components["schemas"]["Tag"][];
+    /** Titles or honorifics like Mr, Mrs, etc. */
     title?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -1286,31 +1471,50 @@ export type Schemas = {
       }
   );
   CustomerAddress: {
+    /** Additional customer's address information. */
     additionalAddressLine1?: string;
+    /** Additional customer's address information. */
     additionalAddressLine2?: string;
+    /** Name of customer's city. */
     city: string;
+    /** Name of customer's company. */
     company?: string;
     country?: components["schemas"]["Country"];
+    /** Unique identity of country. */
     countryId: string;
     countryState?: components["schemas"]["CountryState"];
+    /** Unique identity of country's state. */
     countryStateId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
+    /** Unique identity of customer. */
     customerId: string;
     customFields?: GenericRecord;
+    /** Name of customer's department. */
     department?: string;
+    /** First name of the customer. */
     firstName: string;
     /** Runtime field, cannot be used as part of the criteria. */
     hash?: string;
     id: string;
+    /** Added since version: 6.7.7.0. Runtime field, cannot be used as part of the criteria. */
+    isDefaultBillingAddress?: boolean;
+    /** Added since version: 6.7.7.0. Runtime field, cannot be used as part of the criteria. */
+    isDefaultShippingAddress?: boolean;
+    /** Last name of the customer. */
     lastName: string;
+    /** Customer's phone number. */
     phoneNumber?: string;
     salutation?: components["schemas"]["Salutation"];
+    /** Unique identity of salutation. */
     salutationId?: string;
+    /** Name of customer's street. */
     street: string;
+    /** Titles given to customer like Dr. , Prof., etc */
     title?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
+    /** Postal or zip code of customer's address. */
     zipcode?: string;
   };
   CustomerAddressBody: {
@@ -1333,6 +1537,97 @@ export type Schemas = {
     title?: string;
     zipcode?: string;
   };
+  CustomerAddressJsonApi: components["schemas"]["resource"] & {
+    /** Additional customer's address information. */
+    additionalAddressLine1?: string;
+    /** Additional customer's address information. */
+    additionalAddressLine2?: string;
+    /** Name of customer's city. */
+    city: string;
+    /** Name of customer's company. */
+    company?: string;
+    /** Unique identity of country. */
+    countryId: string;
+    /** Unique identity of country's state. */
+    countryStateId?: string;
+    /** Format: date-time */
+    readonly createdAt?: string;
+    /** Unique identity of customer. */
+    customerId: string;
+    customFields?: GenericRecord;
+    /** Name of customer's department. */
+    department?: string;
+    /** First name of the customer. */
+    firstName: string;
+    /** Runtime field, cannot be used as part of the criteria. */
+    hash?: string;
+    id: string;
+    /** Added since version: 6.7.7.0. Runtime field, cannot be used as part of the criteria. */
+    isDefaultBillingAddress?: boolean;
+    /** Added since version: 6.7.7.0. Runtime field, cannot be used as part of the criteria. */
+    isDefaultShippingAddress?: boolean;
+    /** Last name of the customer. */
+    lastName: string;
+    /** Customer's phone number. */
+    phoneNumber?: string;
+    relationships?: {
+      country?: {
+        data?: {
+          /** @example e909c2d7067ea37437cf97fe11d91bd0 */
+          id?: string;
+          /** @example country */
+          type?: string;
+        };
+        links?: {
+          /**
+           * Format: uri-reference
+           * @example /customer-address/1b4b031005f93d02d887e7d66efb653b/country
+           */
+          related?: string;
+        };
+      };
+      countryState?: {
+        data?: {
+          /** @example cb6a9764567191fb74fe28d8d6a4819d */
+          id?: string;
+          /** @example country_state */
+          type?: string;
+        };
+        links?: {
+          /**
+           * Format: uri-reference
+           * @example /customer-address/1b4b031005f93d02d887e7d66efb653b/countryState
+           */
+          related?: string;
+        };
+      };
+      salutation?: {
+        data?: {
+          /** @example 7a6efb02514153b5aa9a8f40c6f8bcc3 */
+          id?: string;
+          /** @example salutation */
+          type?: string;
+        };
+        links?: {
+          /**
+           * Format: uri-reference
+           * @example /customer-address/1b4b031005f93d02d887e7d66efb653b/salutation
+           */
+          related?: string;
+        };
+      };
+    };
+    /** Unique identity of salutation. */
+    salutationId?: string;
+    /** Name of customer's street. */
+    street: string;
+    /** Titles given to customer like Dr. , Prof., etc */
+    title?: string;
+    /** Format: date-time */
+    readonly updatedAt?: string;
+    /** Postal or zip code of customer's address. */
+    zipcode?: string;
+  };
   CustomerAddressRead: {
     country: components["schemas"]["Country"];
     countryState?: components["schemas"]["CountryState"] | null;
@@ -1347,9 +1642,11 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** If boolean value is `true` gross value is displayed else, net value will be displayed to the customer. */
     displayGross?: boolean;
     id: string;
     name: string;
+    /** To enable the registration of partner customer group. */
     registrationActive?: boolean;
     registrationIntroduction?: string;
     registrationOnlyCompanyRegistration?: boolean;
@@ -1380,6 +1677,7 @@ export type Schemas = {
   CustomerWishlist: {
     /** Format: date-time */
     readonly createdAt?: string;
+    /** Unique identity of the customer. */
     customerId: string;
     customFields?: GenericRecord;
     id: string;
@@ -1391,6 +1689,7 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     id: string;
+    /** Unique identity of the product. */
     productId: string;
     productVersionId?: string;
     /** Format: date-time */
@@ -1401,15 +1700,22 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Maximum delivery time taken.
+     */
     max: number;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Minimum delivery time taken.
+     */
     min: number;
     name: string;
     translated: {
       name: string;
       unit: string;
     };
+    /** Unit in which the delivery time is defined. For example, days or hours. */
     unit: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -1448,14 +1754,22 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** Unique number associated with every document. */
     documentNumber?: string;
+    /** Unique identity of the document type. */
     documentTypeId: string;
+    /** A prefix name added to the file name separated by an underscore. */
     filenamePrefix?: string;
+    /** A suffix name added to the file name separated by an underscore. */
     filenameSuffix?: string;
+    /** When set to `true`, the document can be used across all sales channels. */
     global?: boolean;
     id: string;
+    /** Logo in the document at the top-right corner. */
     logo?: components["schemas"]["Media"];
+    /** Unique identity of the company logo. */
     logoId?: string;
+    /** Name of the document. */
     name: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -1463,9 +1777,12 @@ export type Schemas = {
   DocumentBaseConfigSalesChannel: {
     /** Format: date-time */
     readonly createdAt?: string;
+    /** Unique identity of document's base config. */
     documentBaseConfigId: string;
+    /** Unique identity of document type. */
     documentTypeId?: string;
     id: string;
+    /** Unique identity of sales channel. */
     salesChannelId?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -1476,6 +1793,7 @@ export type Schemas = {
     customFields?: GenericRecord;
     id: string;
     name: string;
+    /** Technical name of document type. */
     technicalName: string;
     translated: {
       name: string;
@@ -1483,6 +1801,23 @@ export type Schemas = {
     };
     /** Format: date-time */
     readonly updatedAt?: string;
+  };
+  Domain: {
+    apiAlias?: string;
+    /** Format: date-time */
+    createdAt?: string;
+    /** Format: uuid */
+    currencyId?: string;
+    /** Format: uuid */
+    id?: string;
+    /** Format: uuid */
+    languageId?: string;
+    /** Format: uuid */
+    snippetSetId?: string | null;
+    translated: [];
+    /** Format: date-time */
+    updatedAt?: string | null;
+    url?: string;
   };
   EntitySearchResult: {
     /** Contains aggregated data. A simple example is the determination of the average price from a product search query. */
@@ -1693,12 +2028,16 @@ export type Schemas = {
     id: string;
     /** Locale defining regional settings (date, time, number formats) */
     locale?: components["schemas"]["Locale"];
+    /** Unique identity of locale. */
     localeId: string;
+    /** Name of the language. */
     name: string;
+    /** Unique identity of language. */
     parent?: components["schemas"]["Language"];
     parentId?: string;
     /** Locale used for translating content */
     translationCode?: components["schemas"]["Locale"];
+    /** Unique identity of translation code. */
     translationCodeId?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -1709,7 +2048,9 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
+    /** Unique identity of locale. */
     localeId: string;
+    /** Name of the language. */
     name: string;
     parentId?: string;
     relationships?: {
@@ -1745,6 +2086,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Unique identity of language. */
       parent?: {
         data?: {
           /** @example d0e45878043844ffc41aac437e86b602 */
@@ -1777,6 +2119,7 @@ export type Schemas = {
         };
       };
     };
+    /** Unique identity of translation code. */
     translationCodeId?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -1831,6 +2174,7 @@ export type Schemas = {
     referencedId?: string;
     removable?: boolean;
     stackable?: boolean;
+    /** @deprecated */
     states: ("is-physical" | "is-download")[];
     type: components["schemas"]["LineItemType"];
     uniqueIdentifier?: string;
@@ -1851,6 +2195,7 @@ export type Schemas = {
     price?: number;
   };
   Locale: {
+    /** Code given to the locale. For example: en-CA. */
     code: string;
     /** Format: date-time */
     readonly createdAt?: string;
@@ -1929,6 +2274,7 @@ export type Schemas = {
     customFields?: GenericRecord;
     id: string;
     name: string;
+    /** Technical name of mail template. */
     technicalName: string;
     translated: {
       name: string;
@@ -1938,25 +2284,31 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   MainCategory: {
+    /** Unique identity of the category. */
     categoryId: string;
     categoryVersionId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     id: string;
+    /** Unique identity of the product. */
     productId: string;
     productVersionId?: string;
+    /** Unique identity of the sales channel. */
     salesChannelId: string;
     /** Format: date-time */
     readonly updatedAt?: string;
   };
   MainCategoryJsonApi: components["schemas"]["resource"] & {
+    /** Unique identity of the category. */
     categoryId: string;
     categoryVersionId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     id: string;
+    /** Unique identity of the product. */
     productId: string;
     productVersionId?: string;
+    /** Unique identity of the sales channel. */
     salesChannelId: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -2025,9 +2377,14 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** Type of file indication. For example: jpeg, png. */
     fileExtension: string;
+    /** Name of the media file uploaded. */
     fileName: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Size of the file media file uploaded.
+     */
     readonly fileSize?: number;
     /** Runtime field, cannot be used as part of the criteria. */
     hasFile: boolean;
@@ -2038,8 +2395,10 @@ export type Schemas = {
       /** Format: int64 */
       width?: number;
     };
+    /** A string sent along with a file indicating the type of the file. For example: image/jpeg. */
     mimeType?: string;
     path: string;
+    /** When `true`, the media display is kept private. */
     private: boolean;
     /** Generated thumbnail images in various sizes */
     thumbnails?: components["schemas"]["MediaThumbnail"][];
@@ -2056,7 +2415,10 @@ export type Schemas = {
     };
     /** Format: date-time */
     readonly updatedAt?: string;
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * Date and time at which media was added.
+     */
     readonly uploadedAt?: string;
     /** Runtime field, cannot be used as part of the criteria. */
     url: string;
@@ -2093,30 +2455,58 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Height of the thumbnail.
+     */
     readonly height: number;
     id: string;
+    /** Unique identity of media. */
     mediaId: string;
     mediaThumbnailSizeId?: string;
     path?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
-    /** Runtime field, cannot be used as part of the criteria. */
+    /** Public url of media thumbnail. Runtime field, cannot be used as part of the criteria. */
     url: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Width of the thumbnail.
+     */
     readonly width: number;
   };
   MediaThumbnailSize: {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Height of the thumbnail.
+     */
     height: number;
     id: string;
     /** Format: date-time */
     readonly updatedAt?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Width of the thumbnail.
+     */
     width: number;
+  };
+  MultiChannelGroup: {
+    apiAlias?: string;
+    /** Format: date-time */
+    createdAt?: string;
+    /** Format: uuid */
+    id?: string;
+    name?: string;
+    salesChannels?: components["schemas"]["SalesChannel"][];
+    translated: [];
+    /** Format: date-time */
+    updatedAt?: string | null;
+  };
+  MultiChannelGroupStruct: {
+    multiChannelGroup?: components["schemas"]["MultiChannelGroup"][];
   };
   MultiNotFilter: {
     /** @enum {string} */
@@ -2217,26 +2607,42 @@ export type Schemas = {
   Order: {
     /** All addresses associated with the order (billing and shipping) */
     addresses?: components["schemas"]["OrderAddress"][];
+    /** An affiliate code is an identification option with which website operators can mark outgoing links. */
     affiliateCode?: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * Net price of the order.
+     */
     readonly amountNet?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Gross price of the order.
+     */
     readonly amountTotal?: number;
     /** Billing address for the order */
     billingAddress?: components["schemas"]["OrderAddress"];
+    /** Unique identity of the billing address. */
     billingAddressId: string;
     billingAddressVersionId?: string;
+    /** A campaign code is the globally unique identifier for a campaign. */
     campaignCode?: string;
     /** Format: date-time */
     readonly createdAt?: string;
+    /** Unique identity of createdBy. */
     createdById?: string;
     /** Currency used for the order */
     currency?: components["schemas"]["Currency"];
-    /** Format: float */
+    /**
+     * Format: float
+     * Rate at which currency is exchanged.
+     */
     currencyFactor: number;
+    /** Unique identity of the currency. */
     currencyId: string;
+    /** Comments given by comments. */
     customerComment?: string;
     customFields?: GenericRecord;
+    /** It is a generated special code linked to email. It is used to access orders placed by guest customers. */
     deepLinkCode?: string;
     /** Delivery information including shipping address and tracking */
     deliveries?: components["schemas"]["OrderDelivery"][];
@@ -2245,16 +2651,25 @@ export type Schemas = {
     id: string;
     /** Language used when placing the order */
     language?: components["schemas"]["Language"];
+    /** Unique identity of the language. */
     languageId: string;
     /** Order line items (products, discounts, fees) */
     lineItems?: components["schemas"]["OrderLineItem"][];
     /** Customer information associated with the order */
     orderCustomer?: components["schemas"]["OrderCustomer"];
+    /** Date when the order was placed. */
     readonly orderDate: string;
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * Timestamp when the order was placed.
+     */
     orderDateTime: string;
+    /** Unique number associated with every order. */
     orderNumber?: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * Price of each line item in the cart multiplied by its quantity excluding charges like shipping cost, rules, taxes etc.
+     */
     readonly positionPrice?: number;
     price: components["schemas"]["CalculatedPrice"];
     /** Primary delivery information for the order */
@@ -2265,6 +2680,7 @@ export type Schemas = {
     primaryOrderTransaction?: components["schemas"]["OrderTransaction"];
     primaryOrderTransactionId?: string;
     primaryOrderTransactionVersionId?: string;
+    /** Unique identity of the sales channel. */
     salesChannelId: string;
     shippingCosts?: {
       calculatedTaxes?: GenericRecord;
@@ -2289,62 +2705,89 @@ export type Schemas = {
       /** Format: float */
       unitPrice: number;
     };
-    /** Format: float */
+    /**
+     * Format: float
+     * Total shipping cost of the ordered product.
+     */
     readonly shippingTotal?: number;
+    /** Source of orders either via normal order placement or subscriptions. */
     source?: string;
     /** Current order state (e.g., open, in_progress, completed, cancelled) */
     stateMachineState: components["schemas"]["StateMachineState"];
     /** Tags assigned to the order for organization and filtering */
     tags?: components["schemas"]["Tag"][];
     taxCalculationType?: string;
+    /** TaxStatus takes `Free`, `Net` or `Gross` as values. */
     readonly taxStatus?: string;
     /** Payment transactions for the order */
     transactions?: components["schemas"]["OrderTransaction"][];
     /** Format: date-time */
     readonly updatedAt?: string;
+    /** Unique identity of updatedBy. */
     updatedById?: string;
     versionId?: string;
   };
   OrderAddress: {
+    /** Additional address input if necessary. */
     additionalAddressLine1?: string;
+    /** Additional address input if necessary. */
     additionalAddressLine2?: string;
+    /** Name of the city. */
     city: string;
+    /** Name of the company. */
     company?: string;
     country?: components["schemas"]["Country"];
+    /** Unique identity of country. */
     countryId: string;
     countryState?: components["schemas"]["CountryState"];
+    /** Unique identity of state. */
     countryStateId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** Name of the department. */
     department?: string;
+    /** First name of the customer. */
     firstName: string;
     /** Runtime field, cannot be used as part of the criteria. */
     hash?: string;
     id: string;
+    /** Last name of the customer. */
     lastName: string;
+    /** Phone number of the customer. */
     phoneNumber?: string;
     salutation?: components["schemas"]["Salutation"];
+    /** Street address */
     street: string;
+    /** Title name given to customer like DR. , Prof., etc. */
     title?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
+    /** Unique identity of VAT. */
     vatId?: string;
     versionId?: string;
+    /** Zip code of the country. */
     zipcode?: string;
   };
   OrderCustomer: {
+    /** Name of the company. */
     company?: string;
     /** Format: date-time */
     readonly createdAt?: string;
+    /** Unique number assigned to the customer. */
     customerNumber?: string;
     customFields?: GenericRecord;
+    /** Email address of the customer. */
     email: string;
+    /** First name of the customer. */
     firstName: string;
     id: string;
+    /** Last name of the customer. */
     lastName: string;
     salutation?: components["schemas"]["Salutation"];
+    /** Unique identity of salutation. */
     salutationId?: string;
+    /** Title name given to the customer like Dr, prof. etc. */
     title?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -2356,6 +2799,7 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
+    /** Unique identity of order. */
     orderId: string;
     orderVersionId?: string;
     /** Line items included in this delivery */
@@ -2383,17 +2827,26 @@ export type Schemas = {
       /** Format: float */
       unitPrice: number;
     };
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * Date and time of earliest delivery of products.
+     */
     shippingDateEarliest: string;
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * Date and time of latest delivery of products.
+     */
     shippingDateLatest: string;
     /** Shipping method used for this delivery */
     shippingMethod?: components["schemas"]["ShippingMethod"];
+    /** Unique identity of shipping method. */
     shippingMethodId: string;
     /** Shipping address for this delivery */
     shippingOrderAddress?: components["schemas"]["OrderAddress"];
+    /** Unique identity of order's shipping address. */
     shippingOrderAddressId: string;
     shippingOrderAddressVersionId?: string;
+    /** Unique identity of state. */
     stateId: string;
     /** Current delivery state (e.g., open, shipped, delivered, cancelled) */
     stateMachineState?: components["schemas"]["StateMachineState"];
@@ -2407,8 +2860,10 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
+    /** Unique identity of order delivery. */
     orderDeliveryId: string;
     orderDeliveryVersionId?: string;
+    /** Unique identity of line items in an order. */
     orderLineItemId: string;
     orderLineItemVersionId?: string;
     price?: {
@@ -2434,11 +2889,20 @@ export type Schemas = {
       /** Format: float */
       unitPrice: number;
     };
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Number of items of each product.
+     */
     quantity?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Cost of product based on quantity.
+     */
     totalPrice?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Price of product per item (where, quantity=1).
+     */
     unitPrice?: number;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -2450,20 +2914,26 @@ export type Schemas = {
     children: components["schemas"]["OrderLineItem"][];
     /** Line item image or thumbnail */
     cover?: components["schemas"]["Media"];
+    /** Unique identity of cover image. */
     coverId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** Description of line items in an order. */
     description?: string;
     /** Digital downloads associated with this line item */
     downloads?: components["schemas"]["OrderLineItemDownload"][];
     extensions?: GenericRecord;
+    /** When set to true, it indicates the line item is physical else it is virtual. */
     good?: boolean;
     id: string;
+    /** It is a unique identity of an item in cart before its converted to an order. */
     identifier: string;
+    /** It is a typical product name given to the line item. */
     label: string;
     /** Delivery positions for this line item */
     orderDeliveryPositions?: components["schemas"]["OrderDeliveryPosition"][];
+    /** Unique identity of order. */
     orderId: string;
     orderVersionId?: string;
     parent?: components["schemas"]["OrderLineItem"];
@@ -2483,6 +2953,7 @@ export type Schemas = {
       options?: components["schemas"]["PropertyGroupOption"][];
       parentId?: string;
       productNumber?: string;
+      productType?: components["schemas"]["Product"]["type"];
       readonly propertyIds?: string[];
       purchasePrices?: string;
       /** Format: date-time */
@@ -2493,21 +2964,36 @@ export type Schemas = {
       readonly tagIds?: string[];
       taxId?: string;
     };
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Position of line items placed in an order.
+     */
     position?: number;
     priceDefinition?: components["schemas"]["CartPriceQuantity"];
     /** Referenced product if this is a product line item */
     product?: components["schemas"]["Product"];
+    /** Unique identity of product. */
     productId?: string;
     productVersionId?: string;
+    /** Unique identity of product. */
     promotionId?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Number of items of product.
+     */
     quantity: number;
+    /** Unique identity of type of entity. */
     referencedId?: string;
+    /** Allows the line item to be removable from the cart when set to true. */
     removable?: boolean;
+    /** Allows to change the quantity of the line item when set to true. */
     stackable?: boolean;
+    /** @deprecated */
     states: string[];
-    /** Format: float */
+    /**
+     * Format: float
+     * Cost of product based on quantity.
+     */
     totalPrice?: number;
     translated: {
       coverId: string;
@@ -2525,25 +3011,35 @@ export type Schemas = {
       type: string;
       versionId: string;
     };
+    /** Type refers to the entity type of an item whether it is product or promotion for instance. */
     type?: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * Price of product per item (where, quantity=1).
+     */
     unitPrice?: number;
     /** Format: date-time */
     readonly updatedAt?: string;
     versionId?: string;
   };
   OrderLineItemDownload: {
+    /** When boolean value is `true`, the digital product is allowed to download. */
     accessGranted: boolean;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
     media: components["schemas"]["Media"];
+    /** Unique identity of media. */
     mediaId: string;
     orderLineItem?: components["schemas"]["OrderLineItem"];
+    /** Unique identity of Order line item. */
     orderLineItemId: string;
     orderLineItemVersionId?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of downloaded digital products displayed in the storefront by mentioning numerical values like 1,2,3, etc.
+     */
     position: number;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -2596,11 +3092,14 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
+    /** Unique identity of an order. */
     orderId: string;
     orderVersionId?: string;
     /** Payment method used for this transaction */
     paymentMethod?: components["schemas"]["PaymentMethod"];
+    /** Unique identity of payment method. */
     paymentMethodId: string;
+    /** Unique identity of state. */
     stateId: string;
     /** Current payment transaction state (e.g., open, paid, cancelled) */
     stateMachineState?: components["schemas"]["StateMachineState"];
@@ -2636,11 +3135,14 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** External payment provider token. */
     externalReference?: string;
     id: string;
+    /** Unique identity of order transaction. */
     orderTransactionId: string;
     orderTransactionVersionId?: string;
     refunds?: components["schemas"]["OrderTransactionCaptureRefund"][];
+    /** Unique identity of order state. */
     stateId: string;
     stateMachineState?: components["schemas"]["StateMachineState"];
     transaction?: components["schemas"]["OrderTransaction"];
@@ -2672,15 +3174,19 @@ export type Schemas = {
       /** Format: float */
       unitPrice: number;
     };
+    /** Unique identity of order transaction capture. */
     captureId: string;
     captureVersionId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** External payment provider token. */
     externalReference?: string;
     id: string;
     positions?: components["schemas"]["OrderTransactionCaptureRefundPosition"][];
+    /** Reason for refunding the amount for an order. */
     reason?: string;
+    /** Unique identity of order state. */
     stateId: string;
     stateMachineState?: components["schemas"]["StateMachineState"];
     transactionCapture?: components["schemas"]["OrderTransactionCapture"];
@@ -2715,15 +3221,22 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** External payment provider token. */
     externalReference?: string;
     id: string;
     orderLineItem?: components["schemas"]["OrderLineItem"];
+    /** Unique identity of order line item. */
     orderLineItemId: string;
     orderLineItemVersionId?: string;
     orderTransactionCaptureRefund?: components["schemas"]["OrderTransactionCaptureRefund"];
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Quantity of line item to be refunded.
+     */
     quantity?: number;
+    /** Reason for refunding the amount for an order. */
     reason?: string;
+    /** Unique identity of order transaction capture refund. */
     refundId: string;
     refundVersionId?: string;
     /** Format: date-time */
@@ -2731,7 +3244,9 @@ export type Schemas = {
     versionId?: string;
   };
   PaymentMethod: {
+    /** When boolean value is `true`, the payment methods are available for selection in the storefront. */
     active?: boolean;
+    /** When set to true, customers are redirected to the payment options page to choose a new payment method on order failure. */
     afterOrderEnabled?: boolean;
     /** Format: date-time */
     readonly createdAt?: string;
@@ -2741,9 +3256,13 @@ export type Schemas = {
     id: string;
     /** Payment method logo or icon image */
     media?: components["schemas"]["Media"];
+    /** Unique identity of media. */
     mediaId?: string;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of the tabs of your defined payment methods in the storefront by entering numerical values like 1,2,3, etc.
+     */
     position?: number;
     /** Runtime field, cannot be used as part of the criteria. */
     shortName?: string;
@@ -2760,7 +3279,9 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   PaymentMethodJsonApi: components["schemas"]["resource"] & {
+    /** When boolean value is `true`, the payment methods are available for selection in the storefront. */
     active?: boolean;
+    /** When set to true, customers are redirected to the payment options page to choose a new payment method on order failure. */
     afterOrderEnabled?: boolean;
     /** Format: date-time */
     readonly createdAt?: string;
@@ -2768,9 +3289,13 @@ export type Schemas = {
     description?: string;
     readonly distinguishableName?: string;
     id: string;
+    /** Unique identity of media. */
     mediaId?: string;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of the tabs of your defined payment methods in the storefront by entering numerical values like 1,2,3, etc.
+     */
     position?: number;
     relationships?: {
       /** Payment method logo or icon image */
@@ -2830,11 +3355,16 @@ export type Schemas = {
     };
   };
   Product: {
+    /** When boolean value is `true`, the products are available for selection in the storefront for purchase. */
     active?: boolean;
     /** @enum {string} */
     apiAlias: "product";
+    /** Indicates weather the product is available or not. */
     readonly available?: boolean;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Indicates the number of products still available. This value results from the stock minus the open orders.
+     */
     readonly availableStock?: number;
     calculatedCheapestPrice?: {
       /** @enum {string} */
@@ -2859,6 +3389,7 @@ export type Schemas = {
     calculatedPrices: components["schemas"]["CalculatedPrice"][];
     /** Canonical product reference for variant consolidation and SEO purposes */
     canonicalProduct?: components["schemas"]["Product"];
+    /** Unique identity of canonical product. */
     canonicalProductId?: string;
     canonicalProductVersionId?: string;
     /** Categories this product is assigned to */
@@ -2873,12 +3404,14 @@ export type Schemas = {
     children?: components["schemas"]["Product"][];
     /** Custom CMS page layout for the product detail page */
     cmsPage?: components["schemas"]["CmsPage"];
+    /** Unique identity of CMS page. */
     cmsPageId?: string;
     cmsPageVersionId?: string;
     /** Variant configurator settings defining available options for product variants */
     configuratorSettings?: components["schemas"]["ProductConfiguratorSetting"][];
     /** Main product image displayed in listings and detail pages */
     cover?: components["schemas"]["ProductMedia"];
+    /** Unique identity of a ProductMedia item used as product cover. */
     coverId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
@@ -2887,36 +3420,55 @@ export type Schemas = {
     customFields?: GenericRecord;
     /** Estimated delivery time for the product */
     deliveryTime?: components["schemas"]["DeliveryTime"];
+    /** Unique identity of delivery time. */
     deliveryTimeId?: string;
     description?: string;
+    /** Runtime field, cannot be used as part of the criteria. */
     readonly displayGroup?: string;
     /** Downloadable files associated with the product (e.g., manuals, digital content) */
     downloads?: components["schemas"]["ProductDownload"][];
+    /** Indicates EAN of the product. */
     ean?: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * The height of the product.
+     */
     height?: number;
     id: string;
+    /** When the value is set to true, the product is hidden when sold out. */
     isCloseout?: boolean;
     /** Runtime field, cannot be used as part of the criteria. */
     isNew?: boolean;
     keywords?: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * The length of the product.
+     */
     length?: number;
     /** Primary category assignments per sales channel for SEO and navigation */
     mainCategories?: components["schemas"]["MainCategory"][];
     /** Product manufacturer or brand information */
     manufacturer?: components["schemas"]["ProductManufacturer"];
+    /** Unique identity of the manufacturer. */
     manufacturerId?: string;
+    /** Unique number that describes the manufacturer. */
     manufacturerNumber?: string;
+    /** Indicates weather the product is top seller or not. */
     markAsTopseller?: boolean;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Maximum number of items that can be purchased.
+     */
     maxPurchase?: number;
     measurements?: components["schemas"]["ProductMeasurements"];
     /** Product images and media gallery */
     media?: components["schemas"]["ProductMedia"][];
     metaDescription?: string;
     metaTitle?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Minimum number of items that can be purchased.
+     */
     minPurchase?: number;
     name: string;
     readonly optionIds?: string[];
@@ -2924,39 +3476,67 @@ export type Schemas = {
     options?: components["schemas"]["PropertyGroupOption"][];
     packUnit?: string;
     packUnitPlural?: string;
+    /** Unique identity of the product. */
     parent?: components["schemas"]["Product"];
     parentId?: string;
     parentVersionId?: string;
     productManufacturerVersionId?: string;
     productMediaVersionId?: string;
+    /** Unique number assigned to individual products. Define rules for automatic assignment of every product creation as per your number range. */
     productNumber: string;
     /** Customer reviews and ratings for the product */
     productReviews?: components["schemas"]["ProductReview"][];
     /** Product properties and characteristics for filtering */
     properties?: components["schemas"]["PropertyGroupOption"][];
     readonly propertyIds?: string[];
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Specifies the scales in which the item is to be offered. For example, a scale of 2 means that your customers can purchase 2, 4, 6 products, etc., but not 1, 3 or 5.
+     */
     purchaseSteps?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Quantity of the item purchased. For example, 500ml, 2kg, etc.
+     */
     purchaseUnit?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Average of all the ratings.
+     */
     readonly ratingAverage?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Price of purchased item calculated as per the reference unit. Say, you bought 500ml of milk and the price is calculated in reference to 1000ml.
+     */
     referenceUnit?: number;
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * The release date of a product or product model. This can be used to distinguish the exact variant of a product.
+     */
     releaseDate?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The restock time in days indicates how long it will take until a sold out item is back in stock.
+     */
     restockTime?: number;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Frequency of the product sales.
+     */
     readonly sales?: number;
     /** Main category used for SEO URL generation in the current sales channel */
     seoCategory: components["schemas"]["Category"];
     /** SEO-friendly URLs for the product across different sales channels */
     seoUrls?: components["schemas"]["SeoUrl"][];
+    /** Indicates weather the shipping price is free or not. */
     shippingFree?: boolean;
     sortedProperties?: GenericRecord;
+    /** @deprecated */
     readonly states?: string[];
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Indicates the number of products available.
+     */
     stock: number;
     readonly streamIds?: string[];
     /** Dynamic product streams this product belongs to based on defined filters */
@@ -2966,6 +3546,7 @@ export type Schemas = {
     tags?: components["schemas"]["Tag"][];
     /** Tax configuration (rate and calculation rules) */
     tax?: components["schemas"]["Tax"];
+    /** Unique identity of tax. */
     taxId: string;
     translated: {
       canonicalProductId: string;
@@ -2992,11 +3573,18 @@ export type Schemas = {
       productNumber: string;
       releaseDate: string;
       taxId: string;
+      type: string;
       unitId: string;
       versionId: string;
     };
+    /**
+     * The type of the product, e.g., physical or digital.
+     * @enum {string}
+     */
+    type: "physical" | "digital";
     /** Product unit of measure (e.g., piece, liter, kg) */
     unit?: components["schemas"]["Unit"];
+    /** Unique identity of the unit. */
     unitId?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -3004,9 +3592,15 @@ export type Schemas = {
       displayParent?: boolean;
     } | null;
     versionId?: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * The weight of the product.
+     */
     weight?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * The width of the product.
+     */
     width?: number;
   };
   ProductConfiguratorSetting: {
@@ -3015,11 +3609,17 @@ export type Schemas = {
     customFields?: GenericRecord;
     id: string;
     media?: components["schemas"]["Media"];
+    /** Unique identity of media. */
     mediaId?: string;
     option?: components["schemas"]["PropertyGroupOption"];
+    /** Unique identity of option. */
     optionId: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of the tabs of your defined product configuration settings in the storefront by entering numerical values like 1,2,3, etc.
+     */
     position?: number;
+    /** Unique identity of product. */
     productId: string;
     productVersionId?: string;
     /** Format: date-time */
@@ -3027,16 +3627,25 @@ export type Schemas = {
     versionId?: string;
   };
   ProductCrossSelling: {
+    /** When set to active, the cross-selling feature is enabled. */
     active?: boolean;
     /** Format: date-time */
     readonly createdAt?: string;
     id: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The maximum number of products to be displayed in cross-selling on the item detail page of your item.
+     */
     limit?: number;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of the tabs of your defined cross-selling actions in the storefront by entering numerical values like 1,2,3, etc.
+     */
     position?: number;
+    /** To sort the display of products by name, price or publication (descending, ascending) date. */
     sortBy?: string;
+    /** To sort the display of products by ascending or descending order. */
     sortDirection?: string;
     translated: {
       name: string;
@@ -3044,6 +3653,7 @@ export type Schemas = {
       sortDirection: string;
       type: string;
     };
+    /** Type of product assignment for cross-selling. It can either be Dynamic product group or Manual assignment. */
     type?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -3066,10 +3676,15 @@ export type Schemas = {
     customFields?: GenericRecord;
     id: string;
     media?: components["schemas"]["Media"];
+    /** Unique identity of media. */
     mediaId: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order in which the digital products are downloaded, like 1,2,3, etc.to adjust their order of display.
+     */
     position?: number;
     product?: components["schemas"]["Product"];
+    /** Unique identity of Product. */
     productId: string;
     productVersionId?: string;
     /** Format: date-time */
@@ -3091,9 +3706,14 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   ProductJsonApi: components["schemas"]["resource"] & {
+    /** When boolean value is `true`, the products are available for selection in the storefront for purchase. */
     active?: boolean;
+    /** Indicates weather the product is available or not. */
     readonly available?: boolean;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Indicates the number of products still available. This value results from the stock minus the open orders.
+     */
     readonly availableStock?: number;
     calculatedCheapestPrice?: GenericRecord;
     /**
@@ -3103,40 +3723,62 @@ export type Schemas = {
     calculatedMaxPurchase?: number;
     calculatedPrice?: GenericRecord;
     calculatedPrices?: GenericRecord[];
+    /** Unique identity of canonical product. */
     canonicalProductId?: string;
     canonicalProductVersionId?: string;
     readonly categoryIds?: string[];
     readonly categoryTree?: string[];
     /** Format: int64 */
     readonly childCount?: number;
+    /** Unique identity of CMS page. */
     cmsPageId?: string;
     cmsPageVersionId?: string;
+    /** Unique identity of a ProductMedia item used as product cover. */
     coverId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** Unique identity of delivery time. */
     deliveryTimeId?: string;
     description?: string;
+    /** Runtime field, cannot be used as part of the criteria. */
     readonly displayGroup?: string;
+    /** Indicates EAN of the product. */
     ean?: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * The height of the product.
+     */
     height?: number;
     id: string;
+    /** When the value is set to true, the product is hidden when sold out. */
     isCloseout?: boolean;
     /** Runtime field, cannot be used as part of the criteria. */
     isNew?: boolean;
     keywords?: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * The length of the product.
+     */
     length?: number;
+    /** Unique identity of the manufacturer. */
     manufacturerId?: string;
+    /** Unique number that describes the manufacturer. */
     manufacturerNumber?: string;
+    /** Indicates weather the product is top seller or not. */
     markAsTopseller?: boolean;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Maximum number of items that can be purchased.
+     */
     maxPurchase?: number;
     measurements?: GenericRecord;
     metaDescription?: string;
     metaTitle?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Minimum number of items that can be purchased.
+     */
     minPurchase?: number;
     name: string;
     readonly optionIds?: string[];
@@ -3146,15 +3788,28 @@ export type Schemas = {
     parentVersionId?: string;
     productManufacturerVersionId?: string;
     productMediaVersionId?: string;
+    /** Unique number assigned to individual products. Define rules for automatic assignment of every product creation as per your number range. */
     productNumber: string;
     readonly propertyIds?: string[];
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Specifies the scales in which the item is to be offered. For example, a scale of 2 means that your customers can purchase 2, 4, 6 products, etc., but not 1, 3 or 5.
+     */
     purchaseSteps?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Quantity of the item purchased. For example, 500ml, 2kg, etc.
+     */
     purchaseUnit?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Average of all the ratings.
+     */
     readonly ratingAverage?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Price of purchased item calculated as per the reference unit. Say, you bought 500ml of milk and the price is calculated in reference to 1000ml.
+     */
     referenceUnit?: number;
     relationships?: {
       /** Canonical product reference for variant consolidation and SEO purposes */
@@ -3381,6 +4036,7 @@ export type Schemas = {
           related?: string;
         };
       };
+      /** Unique identity of the product. */
       parent?: {
         data?: {
           /** @example d0e45878043844ffc41aac437e86b602 */
@@ -3525,19 +4181,34 @@ export type Schemas = {
         };
       };
     };
-    /** Format: date-time */
+    /**
+     * Format: date-time
+     * The release date of a product or product model. This can be used to distinguish the exact variant of a product.
+     */
     releaseDate?: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The restock time in days indicates how long it will take until a sold out item is back in stock.
+     */
     restockTime?: number;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Frequency of the product sales.
+     */
     readonly sales?: number;
+    /** Indicates weather the shipping price is free or not. */
     shippingFree?: boolean;
     sortedProperties?: GenericRecord;
+    /** @deprecated */
     readonly states?: string[];
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Indicates the number of products available.
+     */
     stock: number;
     readonly streamIds?: string[];
     readonly tagIds?: string[];
+    /** Unique identity of tax. */
     taxId: string;
     translated: {
       canonicalProductId: string;
@@ -3564,16 +4235,26 @@ export type Schemas = {
       productNumber: string;
       releaseDate: string;
       taxId: string;
+      type: string;
       unitId: string;
       versionId: string;
     };
+    /** The type of the product, e.g., physical or digital. */
+    type?: string;
+    /** Unique identity of the unit. */
     unitId?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
     versionId?: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * The weight of the product.
+     */
     weight?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * The width of the product.
+     */
     width?: number;
   } & {
     options: {
@@ -3587,7 +4268,9 @@ export type Schemas = {
   };
   ProductKeywordDictionary: {
     id?: string;
+    /** The keywords that help to search the product. */
     keyword: string;
+    /** Unique identity of the language. */
     languageId: string;
   };
   ProductListingCriteria: components["schemas"]["Criteria"] & {
@@ -3701,6 +4384,7 @@ export type Schemas = {
     id: string;
     link?: string;
     media?: components["schemas"]["Media"];
+    /** Unique identity of the media. */
     mediaId?: string;
     name: string;
     translated: {
@@ -3754,9 +4438,14 @@ export type Schemas = {
     customFields?: GenericRecord;
     id: string;
     media: components["schemas"]["Media"];
+    /** Unique identity of the media. */
     mediaId: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of the images to be displayed for a product.
+     */
     position?: number;
+    /** Unique identity of the product. */
     productId: string;
     productVersionId?: string;
     /** Format: date-time */
@@ -3771,20 +4460,31 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   ProductReview: {
+    /** Detailed review about the product. */
     comment?: string;
+    /** Short description or subject of the project review. */
     content: string;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** External user name. */
     externalUser?: string;
     id: string;
+    /** Unique identity of the language. */
     languageId: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * A floating point number given to rate a product.
+     */
     points?: number;
+    /** Unique identity of the product. */
     productId: string;
     productVersionId?: string;
+    /** Unique identity of the sales channel. */
     salesChannelId: string;
+    /** When status is set, the rating is made visible. */
     status?: boolean;
+    /** Title of product review. */
     title: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -3901,13 +4601,16 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     description?: string;
+    /** Property groups can be displayed in the form of text, image, dropdown or color. */
     displayType?: string;
+    /** When set to true, the property will be displayed in the product filter of product lists. */
     filterable?: boolean;
     id: string;
     name: string;
     options?: components["schemas"]["PropertyGroupOption"][];
     /** Format: int64 */
     position?: number;
+    /** Sorting the property group by name or position. */
     sortingType?: string;
     translated: {
       description: string;
@@ -3917,9 +4620,11 @@ export type Schemas = {
     };
     /** Format: date-time */
     readonly updatedAt?: string;
+    /** When set to true, the property groups are displayed on product detail page. */
     visibleOnProductDetailPage?: boolean;
   };
   PropertyGroupOption: {
+    /** Property group options can be displayed in the form of color. For example: #98e3f5ff. */
     colorHexCode?: string;
     /** Runtime field, cannot be used as part of the criteria. */
     combinable?: boolean;
@@ -3927,9 +4632,11 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     group: components["schemas"]["PropertyGroup"];
+    /** Unique identity of property group. */
     groupId: string;
     id: string;
     media?: components["schemas"]["Media"];
+    /** Unique identity of media. */
     mediaId?: string;
     name: string;
     option: string;
@@ -3986,8 +4693,10 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** Description of the rule. */
     description?: string;
     id?: string;
+    /** Name of the rule defined. */
     name: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -4000,74 +4709,77 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   SalesChannel: {
+    /** When boolean value is `true`, the sales channel is enabled. */
     active?: boolean;
+    apiAlias?: string;
     configuration?: GenericRecord;
     /** Default country for the sales channel */
     country?: components["schemas"]["Country"];
+    /** Unique identity of country. */
     countryId: string;
     /** Format: date-time */
     readonly createdAt?: string;
     /** Default currency for the sales channel */
     currency?: components["schemas"]["Currency"];
+    /** Unique identity of currency used. */
     currencyId: string;
+    /** Unique identity of customer group. */
     customerGroupId: string;
     customFields?: GenericRecord;
     /** Domain URLs configured for the sales channel */
-    domains?: components["schemas"]["SalesChannelDomain"][];
+    domains?: components["schemas"]["Domain"][];
     /** Root category for footer navigation */
     footerCategory?: components["schemas"]["Category"];
+    /** Unique identity of footer category. */
     footerCategoryId?: string;
     footerCategoryVersionId?: string;
+    /** When set to true, the sales channel pages are available in different languages. */
     hreflangActive?: boolean;
     hreflangDefaultDomain?: components["schemas"]["SalesChannelDomain"];
+    /** Unique identity of hreflangDefaultDomain. */
     hreflangDefaultDomainId?: string;
+    /** Format: uuid */
     id: string;
     /** Default language for the sales channel */
     language?: components["schemas"]["Language"];
+    /** Unique identity of language used. */
     languageId: string;
+    /** Unique identity of mail header and footer. */
     mailHeaderFooterId?: string;
+    /** When `true`, it indicates that the sales channel is undergoing maintenance, and shopping is temporarily unavailable during this period. */
     maintenance?: boolean;
     measurementUnits?: components["schemas"]["MeasurementUnits"];
     name: string;
     /** Root category for navigation menu */
     navigationCategory?: components["schemas"]["Category"];
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * It determines the number of levels of subcategories in the storefront category menu.
+     */
     navigationCategoryDepth?: number;
+    /** Unique identity of navigation category. */
     navigationCategoryId: string;
     navigationCategoryVersionId?: string;
     /** Default payment method for the sales channel */
     paymentMethod?: components["schemas"]["PaymentMethod"];
+    /** Unique identity of payment method used. */
     paymentMethodId: string;
     /** Root category for service pages */
     serviceCategory?: components["schemas"]["Category"];
+    /** Unique identity of service category. */
     serviceCategoryId?: string;
     serviceCategoryVersionId?: string;
     /** Default shipping method for the sales channel */
     shippingMethod?: components["schemas"]["ShippingMethod"];
+    /** Unique identity of shipping method. */
     shippingMethodId: string;
+    /** A short name for sales channel. */
     shortName?: string;
+    /** Tax calculation types are `horizontal` and `vertical`. */
     taxCalculationType?: string;
-    translated: {
-      countryId: string;
-      currencyId: string;
-      customerGroupId: string;
-      footerCategoryId: string;
-      footerCategoryVersionId: string;
-      hreflangDefaultDomainId: string;
-      languageId: string;
-      mailHeaderFooterId: string;
-      name: string;
-      navigationCategoryId: string;
-      navigationCategoryVersionId: string;
-      paymentMethodId: string;
-      serviceCategoryId: string;
-      serviceCategoryVersionId: string;
-      shippingMethodId: string;
-      shortName: string;
-      taxCalculationType: string;
-    };
+    translated: [];
     /** Format: date-time */
-    readonly updatedAt?: string;
+    readonly updatedAt?: string | null;
   };
   SalesChannelAnalytics: {
     /** Format: date-time */
@@ -4153,18 +4865,24 @@ export type Schemas = {
     /** Format: date-time */
     readonly createdAt?: string;
     currency?: components["schemas"]["Currency"];
+    /** Unique identity of currency. */
     currencyId: string;
     customFields?: GenericRecord;
+    /** This is used to toggle the language configurations, say between DE and DE-DE for instance. */
     hreflangUseOnlyLocale?: boolean;
     id: string;
     language?: components["schemas"]["Language"];
+    /** Unique identity of language used. */
     languageId: string;
     measurementUnits?: components["schemas"]["MeasurementUnits"];
     salesChannelDefaultHreflang?: components["schemas"]["SalesChannel"];
+    /** Unique identity of sales channel. */
     salesChannelId: string;
+    /** Unique identity of snippet set. */
     snippetSetId: string;
     /** Format: date-time */
     readonly updatedAt?: string;
+    /** URL of the sales channel domain. */
     url: string;
   };
   SalesChannelType: {
@@ -4181,6 +4899,7 @@ export type Schemas = {
     displayName: string;
     id: string;
     letterName: string;
+    /** Technical name given to salutation. For example: mr */
     salutationKey: string;
     translated: {
       displayName: string;
@@ -4197,6 +4916,7 @@ export type Schemas = {
     displayName: string;
     id: string;
     letterName: string;
+    /** Technical name given to salutation. For example: mr */
     salutationKey: string;
     translated: {
       displayName: string;
@@ -4226,19 +4946,30 @@ export type Schemas = {
     customFields?: GenericRecord;
     /** Runtime field, cannot be used as part of the criteria. */
     error?: string;
+    /** The key that references to product or category entity ID. */
     foreignKey: string;
     id: string;
+    /** When set to true, search redirects to the main URL. */
     isCanonical?: boolean;
+    /** When set to true, the URL is deleted and cannot be used any more but it is still available on table and can be restored later. */
     isDeleted?: boolean;
+    /** When boolean value is `true`, the seo url is changed. */
     isModified?: boolean;
+    /** Unique identity of language. */
     languageId: string;
+    /** Path to product URL. For example: \\"/detail/bbf36734504741c79a3bbe3795b91564\\" */
     pathInfo: string;
-    /** @enum {string} */
+    /**
+     * A destination routeName that has been registered somewhere in the app's router. For example: \\"frontend.detail.page\\"
+     * @enum {string}
+     */
     routeName:
       | "frontend.navigation.page"
       | "frontend.landing.page"
       | "frontend.detail.page";
+    /** Unique identity of sales channel. */
     salesChannelId?: string;
+    /** Seo path to product. For example: \\"Pepper-white-ground-pearl/SW10098\\" */
     seoPathInfo: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -4251,15 +4982,24 @@ export type Schemas = {
     customFields?: GenericRecord;
     /** Runtime field, cannot be used as part of the criteria. */
     error?: string;
+    /** The key that references to product or category entity ID. */
     foreignKey: string;
     id: string;
+    /** When set to true, search redirects to the main URL. */
     isCanonical?: boolean;
+    /** When set to true, the URL is deleted and cannot be used any more but it is still available on table and can be restored later. */
     isDeleted?: boolean;
+    /** When boolean value is `true`, the seo url is changed. */
     isModified?: boolean;
+    /** Unique identity of language. */
     languageId: string;
+    /** Path to product URL. For example: \\"/detail/bbf36734504741c79a3bbe3795b91564\\" */
     pathInfo: string;
+    /** A destination routeName that has been registered somewhere in the app's router. For example: \\"frontend.detail.page\\" */
     routeName: string;
+    /** Unique identity of sales channel. */
     salesChannelId?: string;
+    /** Seo path to product. For example: \\"Pepper-white-ground-pearl/SW10098\\" */
     seoPathInfo: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -4271,12 +5011,15 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id?: string;
+    /** Created SEO URL template can be made usable by setting `isValid` to true. */
     isValid?: boolean;
+    /** Unique identity of sales channel. */
     salesChannelId?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
   };
   ShippingMethod: {
+    /** When boolean value is `true`, the shipping methods are available for selection in the storefront. */
     active?: boolean;
     /** Rule defining when this shipping method is available */
     availabilityRule?: components["schemas"]["Rule"];
@@ -4285,14 +5028,19 @@ export type Schemas = {
     customFields?: GenericRecord;
     /** Estimated delivery time information */
     deliveryTime?: components["schemas"]["DeliveryTime"];
+    /** Unique identity of deliveryTime. */
     deliveryTimeId: string;
     description?: string;
     id: string;
     /** Shipping method logo or carrier image */
     media?: components["schemas"]["Media"];
+    /** Unique identity of media. */
     mediaId?: string;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of the tabs of your defined shipping methods in the storefront by entering numerical values like 1,2,3, etc.
+     */
     position?: number;
     /** Shipping prices based on weight, volume, or cart value */
     prices?: components["schemas"]["ShippingMethodPrice"][];
@@ -4300,6 +5048,7 @@ export type Schemas = {
     tags?: components["schemas"]["Tag"][];
     /** Tax configuration for shipping costs */
     tax?: components["schemas"]["Tax"];
+    /** Refers `Free`, `Net` or `Gross` type of taxes. */
     taxType?: string;
     technicalName: string;
     trackingUrl?: string;
@@ -4316,16 +5065,22 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   ShippingMethodJsonApi: components["schemas"]["resource"] & {
+    /** When boolean value is `true`, the shipping methods are available for selection in the storefront. */
     active?: boolean;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
+    /** Unique identity of deliveryTime. */
     deliveryTimeId: string;
     description?: string;
     id: string;
+    /** Unique identity of media. */
     mediaId?: string;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * The order of the tabs of your defined shipping methods in the storefront by entering numerical values like 1,2,3, etc.
+     */
     position?: number;
     relationships?: {
       /** Rule defining when this shipping method is available */
@@ -4425,6 +5180,7 @@ export type Schemas = {
         };
       };
     };
+    /** Refers `Free`, `Net` or `Gross` type of taxes. */
     taxType?: string;
     technicalName: string;
     trackingUrl?: string;
@@ -4560,19 +5316,31 @@ export type Schemas = {
     }[];
   }[];
   ShippingMethodPrice: {
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * Shipping price calculated based on quantity, price, weight or volume of items.
+     */
     calculation?: number;
+    /** Unique identity of rule calculation. */
     calculationRuleId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     currencyPrice?: components["schemas"]["Price"][];
     customFields?: GenericRecord;
     id: string;
-    /** Format: float */
+    /**
+     * Format: float
+     * Ending range of quantity of an item.
+     */
     quantityEnd?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Starting range of quantity of an item.
+     */
     quantityStart?: number;
+    /** Unique identity of rule. */
     ruleId?: string;
+    /** Unique identity of shipping method. */
     shippingMethodId: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -4607,6 +5375,14 @@ export type Schemas = {
     /** Format: date-time */
     readonly updatedAt?: string;
   };
+  ShopbiteMultiChannelGroup: {
+    /** Format: date-time */
+    readonly createdAt?: string;
+    id: string;
+    name: string;
+    /** Format: date-time */
+    readonly updatedAt?: string;
+  };
   SimpleFilter: {
     field: string;
     /** @enum {string} */
@@ -4623,10 +5399,13 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id?: string;
+    /** Unique identity od snippet set. */
     setId: string;
+    /** Reference to the snippet in the template. */
     translationKey: string;
     /** Format: date-time */
     readonly updatedAt?: string;
+    /** Value of the key. */
     value: string;
   };
   SnippetSet: {
@@ -4634,7 +5413,9 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id?: string;
+    /** ISO nomenclature used to classify languages. */
     iso: string;
+    /** Name of snippet set. */
     name: string;
     snippets?: components["schemas"]["Snippet"][];
     /** Format: date-time */
@@ -4671,6 +5452,7 @@ export type Schemas = {
     customFields?: GenericRecord;
     id?: string;
     name: string;
+    /** Technical name of StateMachineState. */
     technicalName: string;
     translated: {
       name: string;
@@ -4703,6 +5485,7 @@ export type Schemas = {
     identifier?: string;
   };
   SystemConfig: {
+    /** Config key for shop configurations. */
     configurationKey: string;
     configurationValue: {
       _value?: GenericRecord;
@@ -4711,6 +5494,7 @@ export type Schemas = {
     readonly createdAt?: string;
     id: string;
     salesChannel?: components["schemas"]["SalesChannel"];
+    /** Unique identity of sales channel. */
     salesChannelId?: string;
     /** Format: date-time */
     readonly updatedAt?: string;
@@ -4728,27 +5512,37 @@ export type Schemas = {
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
+    /** Name defined for a Tax. */
     name: string;
     /**
      * Format: int64
-     * Added since version: 6.4.0.0.
+     * The order of the tabs of your defined taxes in the storefront by entering numerical values like 1,2,3, etc. Added since version: 6.4.0.0.
      */
     position?: number;
-    /** Format: float */
+    /**
+     * Format: float
+     * Rate of tax.
+     */
     taxRate: number;
     /** Format: date-time */
     readonly updatedAt?: string;
   };
   TaxProvider: {
+    /** When boolean value is `true`, the tax providers are available for selection in the storefront. */
     active?: boolean;
+    /** Unique identity of app. */
     appId?: string;
     /** Format: date-time */
     readonly createdAt?: string;
     customFields?: GenericRecord;
     id: string;
     name: string;
-    /** Format: int64 */
+    /**
+     * Format: int64
+     * A numerical value to prioritize one of the tax providers from the list.
+     */
     priority: number;
+    /** External URL makes request to get tax info. */
     processUrl?: string;
     translated: {
       appId: string;
@@ -5443,6 +6237,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -5519,8 +6315,6 @@ export type operations = {
       limit?: number;
       /** Filter by manufacturers. List of manufacturer identifiers separated by a `|`. */
       manufacturer?: string;
-      /** Enables/disabled filtering by manufacturer. If set to false, the `manufacturer` filter will be ignored. Also the `aggregations[manufacturer]` key will be removed from the response. */
-      "manufacturer-filter"?: boolean;
       /** Filters by a maximum product price. Has to be higher than the `min-price` filter. */
       "max-price"?: number;
       /** Filters by a minimum product price. Has to be lower than the `max-price` filter. */
@@ -5533,26 +6327,16 @@ export type operations = {
       page?: components["parameters"]["criteriaPage"];
       /** Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter) */
       "post-filter[]"?: components["parameters"]["criteriaPostFilter"];
-      /** Enables/disabled filtering by price. If set to false, the `min-price` and `max-price` filter will be ignored. Also the `aggregations[price]` key will be removed from the response. */
-      "price-filter"?: boolean;
       /** Filters products by their properties. List of property identifiers separated by a `|`. */
       properties?: string;
-      /** Enables/disabled filtering by properties products. If set to false, the `properties` filter will be ignored. Also the `aggregations[properties]` key will be removed from the response. */
-      "property-filter"?: boolean;
-      /** A whitelist of property identifiers which can be used for filtering. List of property identifiers separated by a `|`. The `property-filter` must be `true`, otherwise the whitelist has no effect. */
-      "property-whitelist"?: string;
       /** The query string to search for */
       query?: components["parameters"]["criteriaQuery"];
       /** Filter products with a minimum average rating. */
       rating?: number;
-      /** Enables/disabled filtering by rating. If set to false, the `rating` filter will be ignored. Also the `aggregations[rating]` key will be removed from the response. */
-      "rating-filter"?: boolean;
       /** By sending the parameter `reduce-aggregations` , the post-filters that were applied by the customer, are also applied to the aggregations. This has the consequence that only values are returned in the aggregations that would lead to further filter results. This parameter is a flag, the value has no effect. */
       "reduce-aggregations"?: string | null;
       /** Filters products that are marked as shipping-free. */
       "shipping-free"?: boolean;
-      /** Enables/disabled filtering by shipping-free products. If set to false, the `shipping-free` filter will be ignored. Also the `aggregations[shipping-free]` key will be removed from the response. */
-      "shipping-free-filter"?: boolean;
       /** Resolves only the given slot identifiers. The identifiers have to be seperated by a '|' character */
       slots?: string;
       /** Sorting in the search result. */
@@ -5758,8 +6542,6 @@ export type operations = {
       limit?: number;
       /** Filter by manufacturers. List of manufacturer identifiers separated by a `|`. */
       manufacturer?: string;
-      /** Enables/disabled filtering by manufacturer. If set to false, the `manufacturer` filter will be ignored. Also the `aggregations[manufacturer]` key will be removed from the response. */
-      "manufacturer-filter"?: boolean;
       /** Filters by a maximum product price. Has to be higher than the `min-price` filter. */
       "max-price"?: number;
       /** Filters by a minimum product price. Has to be lower than the `max-price` filter. */
@@ -5772,26 +6554,16 @@ export type operations = {
       page?: components["parameters"]["criteriaPage"];
       /** Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter) */
       "post-filter[]"?: components["parameters"]["criteriaPostFilter"];
-      /** Enables/disabled filtering by price. If set to false, the `min-price` and `max-price` filter will be ignored. Also the `aggregations[price]` key will be removed from the response. */
-      "price-filter"?: boolean;
       /** Filters products by their properties. List of property identifiers separated by a `|`. */
       properties?: string;
-      /** Enables/disabled filtering by properties products. If set to false, the `properties` filter will be ignored. Also the `aggregations[properties]` key will be removed from the response. */
-      "property-filter"?: boolean;
-      /** A whitelist of property identifiers which can be used for filtering. List of property identifiers separated by a `|`. The `property-filter` must be `true`, otherwise the whitelist has no effect. */
-      "property-whitelist"?: string;
       /** The query string to search for */
       query?: components["parameters"]["criteriaQuery"];
       /** Filter products with a minimum average rating. */
       rating?: number;
-      /** Enables/disabled filtering by rating. If set to false, the `rating` filter will be ignored. Also the `aggregations[rating]` key will be removed from the response. */
-      "rating-filter"?: boolean;
       /** By sending the parameter `reduce-aggregations` , the post-filters that were applied by the customer, are also applied to the aggregations. This has the consequence that only values are returned in the aggregations that would lead to further filter results. This parameter is a flag, the value has no effect. */
       "reduce-aggregations"?: string | null;
       /** Filters products that are marked as shipping-free. */
       "shipping-free"?: boolean;
-      /** Enables/disabled filtering by shipping-free products. If set to false, the `shipping-free` filter will be ignored. Also the `aggregations[shipping-free]` key will be removed from the response. */
-      "shipping-free-filter"?: boolean;
       /** Resolves only the given slot identifiers. The identifiers have to be seperated by a `|` character. */
       slots?: string;
       /** Sorting in the search result. */
@@ -5935,6 +6707,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -5991,6 +6765,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -6053,6 +6829,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the NoneFieldsCriteria schema (see #/components/schemas/NoneFieldsCriteria). */
+      _criteria?: components["parameters"]["CompressedNoneFieldsCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -6152,23 +6930,160 @@ export type operations = {
     response: components["schemas"]["SuccessResponse"];
     responseCode: 200;
   };
-  "download post /document/download/{documentId}/{deepLinkCode}": {
-    contentType?: "application/json";
-    accept?: "application/json";
-    headers?: {
-      /** Controls whether API search information is included in the response. Default is 1 (enabled), will be 0 (disabled) in the next major version. */
-      "sw-include-search-info"?: "0" | "1";
-      /** Instructs Shopware to return the response in the given language. */
-      "sw-language-id"?: string;
-    };
-    pathParams: {
-      deepLinkCode: string;
-      documentId: string;
-    };
-    body?: components["schemas"]["Criteria"];
-    response: components["schemas"]["Document"];
-    responseCode: 200;
-  };
+  "downloadGet get /document/download/{documentId}/{deepLinkCode}":
+    | {
+        contentType?: "application/json";
+        accept: "application/pdf";
+        headers?: {
+          /** If a document is rendered on the fly the provided language id is added to fallback languages while the order language has priority. It does not change already generated documents. */
+          "sw-language-id"?: string;
+        };
+        query?: {
+          /** Required for guest orders to verify the user; ignored for orders with logged-in user. */
+          email?: string;
+          /** Required for guest orders to verify the user; ignored for orders with logged-in user. */
+          zipcode?: string;
+        };
+        pathParams: {
+          deepLinkCode: string;
+          documentId: string;
+        };
+        response: Blob;
+        responseCode: 200;
+      }
+    | {
+        contentType?: "application/json";
+        accept: "application/xml";
+        headers?: {
+          /** If a document is rendered on the fly the provided language id is added to fallback languages while the order language has priority. It does not change already generated documents. */
+          "sw-language-id"?: string;
+        };
+        query?: {
+          /** Required for guest orders to verify the user; ignored for orders with logged-in user. */
+          email?: string;
+          /** Required for guest orders to verify the user; ignored for orders with logged-in user. */
+          zipcode?: string;
+        };
+        pathParams: {
+          deepLinkCode: string;
+          documentId: string;
+        };
+        response: string;
+        responseCode: 200;
+      }
+    | {
+        contentType?: "application/json";
+        accept: "text/html";
+        headers?: {
+          /** If a document is rendered on the fly the provided language id is added to fallback languages while the order language has priority. It does not change already generated documents. */
+          "sw-language-id"?: string;
+        };
+        query?: {
+          /** Required for guest orders to verify the user; ignored for orders with logged-in user. */
+          email?: string;
+          /** Required for guest orders to verify the user; ignored for orders with logged-in user. */
+          zipcode?: string;
+        };
+        pathParams: {
+          deepLinkCode: string;
+          documentId: string;
+        };
+        response: string;
+        responseCode: 200;
+      }
+    | {
+        contentType?: "application/json";
+        accept?: "application/json";
+        headers?: {
+          /** If a document is rendered on the fly the provided language id is added to fallback languages while the order language has priority. It does not change already generated documents. */
+          "sw-language-id"?: string;
+        };
+        query?: {
+          /** Required for guest orders to verify the user; ignored for orders with logged-in user. */
+          email?: string;
+          /** Required for guest orders to verify the user; ignored for orders with logged-in user. */
+          zipcode?: string;
+        };
+        pathParams: {
+          deepLinkCode: string;
+          documentId: string;
+        };
+        response: never;
+        responseCode: 204;
+      };
+  "download post /document/download/{documentId}/{deepLinkCode}":
+    | {
+        contentType?: "application/json";
+        accept: "application/pdf";
+        headers?: {
+          /** If a document is rendered on the fly the provided language id is added to fallback languages while the order language has priority. It does not change already generated documents. */
+          "sw-language-id"?: string;
+        };
+        pathParams: {
+          deepLinkCode: string;
+          documentId: string;
+        };
+        body?: {
+          email?: string;
+          zipcode?: string;
+        };
+        response: Blob;
+        responseCode: 200;
+      }
+    | {
+        contentType?: "application/json";
+        accept: "application/xml";
+        headers?: {
+          /** If a document is rendered on the fly the provided language id is added to fallback languages while the order language has priority. It does not change already generated documents. */
+          "sw-language-id"?: string;
+        };
+        pathParams: {
+          deepLinkCode: string;
+          documentId: string;
+        };
+        body?: {
+          email?: string;
+          zipcode?: string;
+        };
+        response: string;
+        responseCode: 200;
+      }
+    | {
+        contentType?: "application/json";
+        accept: "text/html";
+        headers?: {
+          /** If a document is rendered on the fly the provided language id is added to fallback languages while the order language has priority. It does not change already generated documents. */
+          "sw-language-id"?: string;
+        };
+        pathParams: {
+          deepLinkCode: string;
+          documentId: string;
+        };
+        body?: {
+          email?: string;
+          zipcode?: string;
+        };
+        response: string;
+        responseCode: 200;
+      }
+    | {
+        contentType?: "application/json";
+        accept?: "application/json";
+        headers?: {
+          /** If a document is rendered on the fly the provided language id is added to fallback languages while the order language has priority. It does not change already generated documents. */
+          "sw-language-id"?: string;
+        };
+        pathParams: {
+          deepLinkCode: string;
+          documentId: string;
+        };
+        body?: {
+          email?: string;
+          zipcode?: string;
+        };
+        response: never;
+        responseCode: 204;
+      };
   "handlePaymentMethodGet get /handle-payment": {
     contentType?: "application/json";
     accept?: "application/json";
@@ -6201,6 +7116,69 @@ export type operations = {
     };
     responseCode: 200;
   };
+  "readLandingPageGet get /landing-page/{landingPageId}": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    headers?: {
+      /** Controls whether API search information is included in the response. Default is 1 (enabled), will be 0 (disabled) in the next major version. */
+      "sw-include-search-info"?: "0" | "1";
+      /** Instructs Shopware to return the response in the given language. */
+      "sw-language-id"?: string;
+    };
+    query?: {
+      "aggregations[]"?: components["parameters"]["criteriaAggregations"];
+      associations?: components["parameters"]["criteriaAssociations"];
+      /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      excludes?: components["parameters"]["criteriaExcludes"];
+      /** Fields which should be returned in the search result. */
+      "fields[]"?: components["parameters"]["criteriaFields"];
+      /** List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter) */
+      "filter[]"?: components["parameters"]["criteriaFilter"];
+      /** Perform groupings over certain fields */
+      "grouping[]"?: components["parameters"]["criteriaGrouping"];
+      /** List of ids to search for */
+      "ids[]"?: components["parameters"]["criteriaIds"];
+      /** Specify the fields that should be returned for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Fields will not be included, if they are also specified in the excludes. Note that the include fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      includes?: components["parameters"]["criteriaIncludes"];
+      /** Number of items per result page. If not set, the limit will be set according to the default products per page, defined in the system settings. */
+      limit?: number;
+      /** Filter by manufacturers. List of manufacturer identifiers separated by a `|`. */
+      manufacturer?: string;
+      /** Filters by a maximum product price. Has to be higher than the `min-price` filter. */
+      "max-price"?: number;
+      /** Filters by a minimum product price. Has to be lower than the `max-price` filter. */
+      "min-price"?: number;
+      /** Specifies the sorting of the products by `availableSortings`. If not set, the default sorting will be set according to the shop settings. The available sorting options are sent within the response under the `availableSortings` key. In order to sort by a field, consider using the `sort` parameter from the listing criteria. Do not use both parameters together, as it might lead to unexpected results. */
+      order?: string;
+      /** Search result page */
+      p?: number;
+      /** Search result page */
+      page?: components["parameters"]["criteriaPage"];
+      /** Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter) */
+      "post-filter[]"?: components["parameters"]["criteriaPostFilter"];
+      /** Filters products by their properties. List of property identifiers separated by a `|`. */
+      properties?: string;
+      /** The query string to search for */
+      query?: components["parameters"]["criteriaQuery"];
+      /** Filter products with a minimum average rating. */
+      rating?: number;
+      /** By sending the parameter `reduce-aggregations` , the post-filters that were applied by the customer, are also applied to the aggregations. This has the consequence that only values are returned in the aggregations that would lead to further filter results. This parameter is a flag, the value has no effect. */
+      "reduce-aggregations"?: string | null;
+      /** Filters products that are marked as shipping-free. */
+      "shipping-free"?: boolean;
+      /** Sorting in the search result. */
+      "sort[]"?: components["parameters"]["criteriaSort"];
+      /** Search term */
+      term?: components["parameters"]["criteriaTerm"];
+      "total-count-mode"?: components["parameters"]["criteriaTotalCountMode"];
+    };
+    pathParams: {
+      /** Identifier of the landing page. */
+      landingPageId: string;
+    };
+    response: components["schemas"]["LandingPage"];
+    responseCode: 200;
+  };
   "readLandingPage post /landing-page/{landingPageId}": {
     contentType?: "application/json";
     accept?: "application/json";
@@ -6230,6 +7208,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -6278,6 +7258,16 @@ export type operations = {
     } & components["schemas"]["EntitySearchResult"];
     responseCode: 200;
   };
+  "readMediaGet get /media": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    query: {
+      /** Identifier (UUID) of the media entity to be fetched. */
+      "ids[]": string[];
+    };
+    response: components["schemas"]["Media"][];
+    responseCode: 200;
+  };
   "readMedia post /media": {
     contentType?: "application/json";
     accept?: "application/json";
@@ -6298,6 +7288,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the NoneFieldsCriteria schema (see #/components/schemas/NoneFieldsCriteria). */
+      _criteria?: components["parameters"]["CompressedNoneFieldsCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Return the categories as a tree or as a flat list. */
@@ -6505,6 +7497,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -6575,6 +7569,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -6635,6 +7631,73 @@ export type operations = {
     response: never;
     responseCode: 200;
   };
+  "readProductListingGet get /product-listing/{categoryId}": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    headers?: {
+      /** Determines if the response must contain a SeoUrl entity for a product entity */
+      "sw-include-seo-urls"?: boolean;
+      /** Instructs Shopware to return the response in the given language. */
+      "sw-language-id"?: string;
+    };
+    query?: {
+      "aggregations[]"?: components["parameters"]["criteriaAggregations"];
+      associations?: components["parameters"]["criteriaAssociations"];
+      /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      excludes?: components["parameters"]["criteriaExcludes"];
+      /** Fields which should be returned in the search result. */
+      "fields[]"?: components["parameters"]["criteriaFields"];
+      /** List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter) */
+      "filter[]"?: components["parameters"]["criteriaFilter"];
+      /** Perform groupings over certain fields */
+      "grouping[]"?: components["parameters"]["criteriaGrouping"];
+      /** List of ids to search for */
+      "ids[]"?: components["parameters"]["criteriaIds"];
+      /** Specify the fields that should be returned for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Fields will not be included, if they are also specified in the excludes. Note that the include fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      includes?: components["parameters"]["criteriaIncludes"];
+      /** Number of items per result page. If not set, the limit will be set according to the default products per page, defined in the system settings. */
+      limit?: number;
+      /** Filter by manufacturers. List of manufacturer identifiers separated by a `|`. */
+      manufacturer?: string;
+      /** Filters by a maximum product price. Has to be higher than the `min-price` filter. */
+      "max-price"?: number;
+      /** Filters by a minimum product price. Has to be lower than the `max-price` filter. */
+      "min-price"?: number;
+      /** Resets all aggregations in the criteria. This parameter is a flag, the value has no effect. */
+      "no-aggregations"?: components["parameters"]["noAggregations"];
+      /** If this flag is set, no products are fetched. Sorting and associations are also ignored. This parameter is a flag, the value has no effect. */
+      "only-aggregations"?: components["parameters"]["onlyAggregations"];
+      /** Specifies the sorting of the products by `availableSortings`. If not set, the default sorting will be set according to the shop settings. The available sorting options are sent within the response under the `availableSortings` key. In order to sort by a field, consider using the `sort` parameter from the listing criteria. Do not use both parameters together, as it might lead to unexpected results. */
+      order?: string;
+      /** Search result page */
+      p?: number;
+      /** Search result page */
+      page?: components["parameters"]["criteriaPage"];
+      /** Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter) */
+      "post-filter[]"?: components["parameters"]["criteriaPostFilter"];
+      /** Filters products by their properties. List of property identifiers separated by a `|`. */
+      properties?: string;
+      /** The query string to search for */
+      query?: components["parameters"]["criteriaQuery"];
+      /** Filter products with a minimum average rating. */
+      rating?: number;
+      /** By sending the parameter `reduce-aggregations` , the post-filters that were applied by the customer, are also applied to the aggregations. This has the consequence that only values are returned in the aggregations that would lead to further filter results. This parameter is a flag, the value has no effect. */
+      "reduce-aggregations"?: string | null;
+      /** Filters products that are marked as shipping-free. */
+      "shipping-free"?: boolean;
+      /** Sorting in the search result. */
+      "sort[]"?: components["parameters"]["criteriaSort"];
+      /** Search term */
+      term?: components["parameters"]["criteriaTerm"];
+      "total-count-mode"?: components["parameters"]["criteriaTotalCountMode"];
+    };
+    pathParams: {
+      /** Identifier of a category. */
+      categoryId: string;
+    };
+    response: components["schemas"]["ProductListingResult"];
+    responseCode: 200;
+  };
   "readProductListing post /product-listing/{categoryId}": {
     contentType?: "application/json";
     accept?: "application/json";
@@ -6657,6 +7720,55 @@ export type operations = {
     body: components["schemas"]["ProductListingCriteria"] &
       components["schemas"]["ProductListingFlags"];
     response: components["schemas"]["ProductListingResult"];
+    responseCode: 200;
+  };
+  "readProductDetailGet get /product/{productId}": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    headers?: {
+      /** Instructs Shopware to try and resolve SEO URLs for the given navigation item */
+      "sw-include-seo-urls"?: boolean;
+      /** Instructs Shopware to return the response in the given language. */
+      "sw-language-id"?: string;
+    };
+    query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the NoneFieldsCriteria schema (see #/components/schemas/NoneFieldsCriteria). */
+      _criteria?: components["parameters"]["CompressedNoneFieldsCriteria"];
+      "aggregations[]"?: components["parameters"]["criteriaAggregations"];
+      associations?: components["parameters"]["criteriaAssociations"];
+      /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      excludes?: components["parameters"]["criteriaExcludes"];
+      /** List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter) */
+      "filter[]"?: components["parameters"]["criteriaFilter"];
+      /** Perform groupings over certain fields */
+      "grouping[]"?: components["parameters"]["criteriaGrouping"];
+      /** List of ids to search for */
+      "ids[]"?: components["parameters"]["criteriaIds"];
+      /** Specify the fields that should be returned for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Fields will not be included, if they are also specified in the excludes. Note that the include fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      includes?: components["parameters"]["criteriaIncludes"];
+      /** Number of items per result page */
+      limit?: components["parameters"]["criteriaLimit"];
+      /** Search result page */
+      page?: components["parameters"]["criteriaPage"];
+      /** Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter) */
+      "post-filter[]"?: components["parameters"]["criteriaPostFilter"];
+      /** The query string to search for */
+      query?: components["parameters"]["criteriaQuery"];
+      /** Instructs Shopware to skip loading the CMS page data */
+      skipCmsPage?: boolean;
+      /** Instructs Shopware to skip loading the configurator data */
+      skipConfigurator?: boolean;
+      /** Sorting in the search result. */
+      "sort[]"?: components["parameters"]["criteriaSort"];
+      /** Search term */
+      term?: components["parameters"]["criteriaTerm"];
+      "total-count-mode"?: components["parameters"]["criteriaTotalCountMode"];
+    };
+    pathParams: {
+      /** Product ID */
+      productId: string;
+    };
+    response: components["schemas"]["ProductDetailResponse"];
     responseCode: 200;
   };
   "readProductDetail post /product/{productId}": {
@@ -6684,6 +7796,22 @@ export type operations = {
     response: components["schemas"]["ProductDetailResponse"];
     responseCode: 200;
   };
+  "readProductCrossSellingsGet get /product/{productId}/cross-selling": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    headers?: {
+      /** Instructs Shopware to try and resolve SEO URLs for the given navigation item */
+      "sw-include-seo-urls"?: boolean;
+      /** Instructs Shopware to return the response in the given language. */
+      "sw-language-id"?: string;
+    };
+    pathParams: {
+      /** Product ID */
+      productId: string;
+    };
+    response: components["schemas"]["CrossSellingElementCollection"];
+    responseCode: 200;
+  };
   "readProductCrossSellings post /product/{productId}/cross-selling": {
     contentType?: "application/json";
     accept?: "application/json";
@@ -6698,6 +7826,26 @@ export type operations = {
       productId: string;
     };
     response: components["schemas"]["CrossSellingElementCollection"];
+    responseCode: 200;
+  };
+  "searchProductVariantIdsGet get /product/{productId}/find-variant": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    headers?: {
+      /** Instructs Shopware to return the response in the given language. */
+      "sw-language-id"?: string;
+    };
+    query: {
+      /** The options parameter for the variant to find. Array of option IDs. */
+      "options[]": string[];
+      /** The id of the option group that has been switched. */
+      switchedGroup?: string;
+    };
+    pathParams: {
+      /** Product ID */
+      productId: string;
+    };
+    response: components["schemas"]["FindProductVariantRouteResponse"];
     responseCode: 200;
   };
   "searchProductVariantIds post /product/{productId}/find-variant": {
@@ -6752,6 +7900,53 @@ export type operations = {
     response: never;
     responseCode: 200;
   };
+  "readProductReviewsGet get /product/{productId}/reviews": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    headers?: {
+      /** Instructs Shopware to return the response in the given language. */
+      "sw-language-id"?: string;
+    };
+    query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
+      "aggregations[]"?: components["parameters"]["criteriaAggregations"];
+      associations?: components["parameters"]["criteriaAssociations"];
+      /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      excludes?: components["parameters"]["criteriaExcludes"];
+      /** Fields which should be returned in the search result. */
+      "fields[]"?: components["parameters"]["criteriaFields"];
+      /** List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter) */
+      "filter[]"?: components["parameters"]["criteriaFilter"];
+      /** Perform groupings over certain fields */
+      "grouping[]"?: components["parameters"]["criteriaGrouping"];
+      /** List of ids to search for */
+      "ids[]"?: components["parameters"]["criteriaIds"];
+      /** Specify the fields that should be returned for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Fields will not be included, if they are also specified in the excludes. Note that the include fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      includes?: components["parameters"]["criteriaIncludes"];
+      /** Number of items per result page */
+      limit?: components["parameters"]["criteriaLimit"];
+      /** Search result page */
+      page?: components["parameters"]["criteriaPage"];
+      /** Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter) */
+      "post-filter[]"?: components["parameters"]["criteriaPostFilter"];
+      /** The query string to search for */
+      query?: components["parameters"]["criteriaQuery"];
+      /** Sorting in the search result. */
+      "sort[]"?: components["parameters"]["criteriaSort"];
+      /** Search term */
+      term?: components["parameters"]["criteriaTerm"];
+      "total-count-mode"?: components["parameters"]["criteriaTotalCountMode"];
+    };
+    pathParams: {
+      /** Identifier of the product. */
+      productId: string;
+    };
+    response: {
+      elements?: components["schemas"]["ProductReview"][];
+    } & components["schemas"]["EntitySearchResult"];
+    responseCode: 200;
+  };
   "readProductReviews post /product/{productId}/reviews": {
     contentType?: "application/json";
     accept?: "application/json";
@@ -6779,6 +7974,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -6897,6 +8094,71 @@ export type operations = {
         response: never;
         responseCode: 204;
       };
+  "searchPageGet get /search": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    headers?: {
+      /** Instructs Shopware to try and resolve SEO URLs for the given navigation item */
+      "sw-include-seo-urls"?: boolean;
+      /** Instructs Shopware to return the response in the given language. */
+      "sw-language-id"?: string;
+    };
+    query?: {
+      "aggregations[]"?: components["parameters"]["criteriaAggregations"];
+      associations?: components["parameters"]["criteriaAssociations"];
+      /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      excludes?: components["parameters"]["criteriaExcludes"];
+      /** Fields which should be returned in the search result. */
+      "fields[]"?: components["parameters"]["criteriaFields"];
+      /** List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter) */
+      "filter[]"?: components["parameters"]["criteriaFilter"];
+      /** Perform groupings over certain fields */
+      "grouping[]"?: components["parameters"]["criteriaGrouping"];
+      /** List of ids to search for */
+      "ids[]"?: components["parameters"]["criteriaIds"];
+      /** Specify the fields that should be returned for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Fields will not be included, if they are also specified in the excludes. Note that the include fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      includes?: components["parameters"]["criteriaIncludes"];
+      /** Number of items per result page. If not set, the limit will be set according to the default products per page, defined in the system settings. */
+      limit?: number;
+      /** Filter by manufacturers. List of manufacturer identifiers separated by a `|`. */
+      manufacturer?: string;
+      /** Filters by a maximum product price. Has to be higher than the `min-price` filter. */
+      "max-price"?: number;
+      /** Filters by a minimum product price. Has to be lower than the `max-price` filter. */
+      "min-price"?: number;
+      /** Resets all aggregations in the criteria. This parameter is a flag, the value has no effect. */
+      "no-aggregations"?: components["parameters"]["noAggregations"];
+      /** If this flag is set, no products are fetched. Sorting and associations are also ignored. This parameter is a flag, the value has no effect. */
+      "only-aggregations"?: components["parameters"]["onlyAggregations"];
+      /** Specifies the sorting of the products by `availableSortings`. If not set, the default sorting will be set according to the shop settings. The available sorting options are sent within the response under the `availableSortings` key. In order to sort by a field, consider using the `sort` parameter from the listing criteria. Do not use both parameters together, as it might lead to unexpected results. */
+      order?: string;
+      /** Search result page */
+      p?: number;
+      /** Search result page */
+      page?: components["parameters"]["criteriaPage"];
+      /** Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter) */
+      "post-filter[]"?: components["parameters"]["criteriaPostFilter"];
+      /** Filters products by their properties. List of property identifiers separated by a `|`. */
+      properties?: string;
+      /** The query string to search for */
+      query?: components["parameters"]["criteriaQuery"];
+      /** Filter products with a minimum average rating. */
+      rating?: number;
+      /** By sending the parameter `reduce-aggregations` , the post-filters that were applied by the customer, are also applied to the aggregations. This has the consequence that only values are returned in the aggregations that would lead to further filter results. This parameter is a flag, the value has no effect. */
+      "reduce-aggregations"?: string | null;
+      /** Using the search parameter, the server performs a text search on all records based on their data model and weighting as defined in the entity definition using the SearchRanking flag. */
+      search?: string;
+      /** Filters products that are marked as shipping-free. */
+      "shipping-free"?: boolean;
+      /** Sorting in the search result. */
+      "sort[]"?: components["parameters"]["criteriaSort"];
+      /** Search term */
+      term?: components["parameters"]["criteriaTerm"];
+      "total-count-mode"?: components["parameters"]["criteriaTotalCountMode"];
+    };
+    response: components["schemas"]["ProductListingResult"];
+    responseCode: 200;
+  };
   "searchPage post /search": {
     contentType?: "application/json";
     accept?: "application/json";
@@ -6917,6 +8179,69 @@ export type operations = {
       search?: string;
     } & components["schemas"]["ProductListingCriteria"] &
       components["schemas"]["ProductListingFlags"];
+    response: components["schemas"]["ProductListingResult"];
+    responseCode: 200;
+  };
+  "searchSuggestGet get /search-suggest": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    headers?: {
+      /** Instructs Shopware to return the response in the given language. */
+      "sw-language-id"?: string;
+    };
+    query: {
+      "aggregations[]"?: components["parameters"]["criteriaAggregations"];
+      associations?: components["parameters"]["criteriaAssociations"];
+      /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      excludes?: components["parameters"]["criteriaExcludes"];
+      /** Fields which should be returned in the search result. */
+      "fields[]"?: components["parameters"]["criteriaFields"];
+      /** List of filters to restrict the search result. For more information, see [Search Queries > Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#filter) */
+      "filter[]"?: components["parameters"]["criteriaFilter"];
+      /** Perform groupings over certain fields */
+      "grouping[]"?: components["parameters"]["criteriaGrouping"];
+      /** List of ids to search for */
+      "ids[]"?: components["parameters"]["criteriaIds"];
+      /** Specify the fields that should be returned for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Fields will not be included, if they are also specified in the excludes. Note that the include fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
+      includes?: components["parameters"]["criteriaIncludes"];
+      /** Number of items per result page. If not set, the limit will be set according to the default products per page, defined in the system settings. */
+      limit?: number;
+      /** Filter by manufacturers. List of manufacturer identifiers separated by a `|`. */
+      manufacturer?: string;
+      /** Filters by a maximum product price. Has to be higher than the `min-price` filter. */
+      "max-price"?: number;
+      /** Filters by a minimum product price. Has to be lower than the `max-price` filter. */
+      "min-price"?: number;
+      /** Resets all aggregations in the criteria. This parameter is a flag, the value has no effect. */
+      "no-aggregations"?: components["parameters"]["noAggregations"];
+      /** If this flag is set, no products are fetched. Sorting and associations are also ignored. This parameter is a flag, the value has no effect. */
+      "only-aggregations"?: components["parameters"]["onlyAggregations"];
+      /** Specifies the sorting of the products by `availableSortings`. If not set, the default sorting will be set according to the shop settings. The available sorting options are sent within the response under the `availableSortings` key. In order to sort by a field, consider using the `sort` parameter from the listing criteria. Do not use both parameters together, as it might lead to unexpected results. */
+      order?: string;
+      /** Search result page */
+      p?: number;
+      /** Search result page */
+      page?: components["parameters"]["criteriaPage"];
+      /** Filters that applied without affecting aggregations. For more information, see [Search Queries > Post Filter](https://shopware.stoplight.io/docs/store-api/docs/concepts/search-queries.md#post-filter) */
+      "post-filter[]"?: components["parameters"]["criteriaPostFilter"];
+      /** Filters products by their properties. List of property identifiers separated by a `|`. */
+      properties?: string;
+      /** The query string to search for */
+      query?: components["parameters"]["criteriaQuery"];
+      /** Filter products with a minimum average rating. */
+      rating?: number;
+      /** By sending the parameter `reduce-aggregations` , the post-filters that were applied by the customer, are also applied to the aggregations. This has the consequence that only values are returned in the aggregations that would lead to further filter results. This parameter is a flag, the value has no effect. */
+      "reduce-aggregations"?: string | null;
+      /** Using the search parameter, the server performs a text search on all records based on their data model and weighting as defined in the entity definition using the SearchRanking flag. */
+      search: string;
+      /** Filters products that are marked as shipping-free. */
+      "shipping-free"?: boolean;
+      /** Sorting in the search result. */
+      "sort[]"?: components["parameters"]["criteriaSort"];
+      /** Search term */
+      term?: components["parameters"]["criteriaTerm"];
+      "total-count-mode"?: components["parameters"]["criteriaTotalCountMode"];
+    };
     response: components["schemas"]["ProductListingResult"];
     responseCode: 200;
   };
@@ -6949,6 +8274,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -7005,6 +8332,8 @@ export type operations = {
       "sw-language-id"?: string;
     };
     query?: {
+      /** Compressed and encoded criteria object. Format: base64url(gzip(json_encode(criteria))). This parameter allows passing complex criteria as a single encoded string instead of multiple query parameters. The criteria object should be JSON-encoded, then gzipped, and finally base64url-encoded. The criteria object structure is defined in the Criteria schema (see #/components/schemas/Criteria). */
+      _criteria?: components["parameters"]["CompressedCriteria"];
       "aggregations[]"?: components["parameters"]["criteriaAggregations"];
       associations?: components["parameters"]["criteriaAssociations"];
       /** Specify the fields that should be excluded from the response for the given entities. Object key needs to be the entity name, and the list of fields needs to be the value. Note that the exclude fields will only be stripped on the API-Level, consider using the `fields` parameter for performance reasons. */
@@ -7081,6 +8410,12 @@ export type operations = {
     contentType?: "application/json";
     accept?: "application/json";
     response: components["schemas"]["HolidayStruct"];
+    responseCode: 200;
+  };
+  "shopbite.multi-channel-group.get get /shopbite/multi-channel-group": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    response: components["schemas"]["MultiChannelGroupStruct"];
     responseCode: 200;
   };
   "readSitemap get /sitemap": {

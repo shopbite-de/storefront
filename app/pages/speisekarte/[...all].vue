@@ -48,5 +48,5 @@ onBeforeRouteLeave(() => {
 </script>
 
 <template>
-  <CategoryListing :id="foreignKey" :key="foreignKey" />
+  <CategoryListing v-if="foreignKey" :id="foreignKey" :key="foreignKey" />
 </template>
