@@ -40,7 +40,7 @@ const { data } = await useAsyncData(cacheKey, async () => {
 });
 
 const items = computed<BreadcrumbItem[]>(() => {
-  if (!data.value) return [];
+  if (!data.value) return [{ label: "Kategorie", to: "#" }];
   return data.value?.map((item: Schemas["Breadcrumb"]) => {
     return {
       label: item.name,

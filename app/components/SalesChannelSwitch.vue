@@ -58,9 +58,7 @@ function transform(
 const selectedStore = ref<SelectMenuItem>();
 
 watchEffect(() => {
-  const scValue = (salesChannels as any)?.value as
-    | SelectMenuItem[]
-    | undefined;
+  const scValue = salesChannels?.value as SelectMenuItem[] | undefined;
   if (Array.isArray(scValue) && storeUrl.value && !selectedStore.value) {
     const matchingChannel = scValue.find(
       (channel) => channel?.value === storeUrl.value,

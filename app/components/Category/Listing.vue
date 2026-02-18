@@ -58,13 +58,7 @@ const {
   defaultSearchCriteria: searchCriteria,
 });
 
-const { search: categorySearch } = useCategorySearch();
-
-const categoryCacheKey = computed(() => `category-${categoryId.value}`);
-
-const { data: category } = await useAsyncData(categoryCacheKey, async () => {
-  return await categorySearch(categoryId.value);
-});
+const { category } = useCategory(categoryId);
 
 useCategorySeo(category);
 

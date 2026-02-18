@@ -1,26 +1,7 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from "@nuxt/ui";
+import { useNavigation } from "~/composables/useNavigation";
 
-const route = useRoute();
-
-const { data: navigationData } = await useAsyncData("navigation", () =>
-  queryCollection("navigation").first(),
-);
-
-const navi = computed<NavigationMenuItem[]>(() => {
-  if (!navigationData.value?.main) return [];
-
-  return navigationData.value.main.map((item) => ({
-    label: item.label,
-    icon: item.icon,
-    to: item.to,
-    target: item.target,
-    active:
-      item.to === "/"
-        ? route.path.length === 1
-        : route.path.startsWith(item.to),
-  }));
-});
+const { mainMenu } = useNavigation();
 
 const loginSlide = ref(false);
 </script>
@@ -31,7 +12,7 @@ const loginSlide = ref(false);
       <HeaderTitle />
     </template>
 
-    <UNavigationMenu color="primary" variant="pill" :items="navi" />
+    <UNavigationMenu color="primary" variant="pill" :items="mainMenu" />
 
     <template #right>
       <HeaderRight />

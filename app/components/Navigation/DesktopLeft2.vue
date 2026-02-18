@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
+import { useNavigation } from "~/composables/useNavigation";
 
-const { loadNavigationElements } = useNavigation();
-
-const { data: navigationElements } = await useAsyncData(
-  `menu-navigation`,
-  async () => {
-    return await loadNavigationElements({ depth: 3 });
-  },
-);
+const { mainNavigation } = useNavigation();
 
 const mapCategoryToNavItem = (
   category: Schemas["Category"],
@@ -21,12 +15,13 @@ const mapCategoryToNavItem = (
     description: `${label} Kategorie`,
     to: category.seoUrl,
     defaultOpen: true,
+    icon: category.customFields?.shopbite_category_icon,
     children: (category.children ?? []).map(mapCategoryToNavItem),
   };
 };
 
 const navItems = computed<NavigationMenuItem[]>(() => {
-  return (navigationElements.value ?? []).map(mapCategoryToNavItem);
+  return (mainNavigation.value ?? []).map(mapCategoryToNavItem);
 });
 </script>
 

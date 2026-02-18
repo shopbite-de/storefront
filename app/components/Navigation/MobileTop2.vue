@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useNavigation } from "~/composables/useNavigation";
 import type { NavigationMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
 
@@ -13,12 +14,10 @@ const props = withDefaults(
   },
 );
 
-const { loadNavigationElements, navigationElements } = useNavigation();
-
-loadNavigationElements({ depth: 3 });
+const { mainNavigation } = useNavigation();
 
 const navItems = computed<NavigationMenuItem[]>(() => {
-  const elements = navigationElements.value ?? [];
+  const elements = mainNavigation.value ?? [];
 
   const mapCategoryRecursively = (category: Category): NavigationMenuItem => {
     const hasChildren = (category.children?.length ?? 0) > 0;
