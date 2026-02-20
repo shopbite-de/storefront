@@ -68,18 +68,16 @@ async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
   const registrationData = { ...event.data };
 
   // Check for address corrections
-  // Only check if correction is not already shown (user might have ignored it)
-  let billingCorrectionFound = false;
-  if (!billingAddressFields.value?.showCorrection) {
-    billingCorrectionFound = await billingAddressFields.value?.checkAddress();
-  }
+  // If a correction is already shown, treat it as found to prevent submission
+  const billingCorrectionFound =
+    Boolean(billingAddressFields.value?.showCorrection || false) ||
+    (await billingAddressFields.value?.checkAddress());
 
   let shippingCorrectionFound = false;
-  if (
-    state.isShippingAddressDifferent &&
-    !shippingAddressFields.value?.showCorrection
-  ) {
-    shippingCorrectionFound = await shippingAddressFields.value?.checkAddress();
+  if (state.isShippingAddressDifferent) {
+    shippingCorrectionFound =
+      Boolean(shippingAddressFields.value?.showCorrection || false) ||
+      (await shippingAddressFields.value?.checkAddress());
   }
 
   if (billingCorrectionFound || shippingCorrectionFound) {
@@ -177,7 +175,7 @@ const emit = defineEmits<{
     <UFormField name="guest">
       <USwitch
         v-model="state.guest"
-        label="Als Gast bestellen"
+        label="Kein Kundenkonto erstellen"
         class="w-full"
       />
     </UFormField>

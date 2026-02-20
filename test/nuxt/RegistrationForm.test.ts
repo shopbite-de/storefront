@@ -6,8 +6,8 @@ import { ApiClientError } from "@shopware/api-client";
 
 vi.mock("@shopware/api-client", () => ({
   ApiClientError: class extends Error {
-    details: any;
-    constructor(details: any) {
+    details: unknown;
+    constructor(details: unknown) {
       super("ApiClientError");
       this.details = details;
     }
@@ -68,9 +68,10 @@ describe("RegistrationForm", () => {
       false,
     );
 
-    // Switch to business
-    // @ts-ignore
-    wrapper.vm.state.accountType = "business";
+    // Switch to business (without using ts-ignore)
+    (
+      wrapper.vm as unknown as { state: { accountType: string } }
+    ).state.accountType = "business";
     await nextTick();
     await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -88,8 +89,11 @@ describe("RegistrationForm", () => {
       'input[name="billingAddress.street"]',
     ).length;
 
-    // @ts-ignore
-    wrapper.vm.state.isShippingAddressDifferent = true;
+    (
+      wrapper.vm as unknown as {
+        state: { isShippingAddressDifferent: boolean };
+      }
+    ).state.isShippingAddressDifferent = true;
     await nextTick();
     await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -102,20 +106,37 @@ describe("RegistrationForm", () => {
   it("submits the form with correct data", async () => {
     const wrapper = await mountSuspended(RegistrationForm);
 
+    // Register as guest to avoid password requirements
+    (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest = true;
+    await nextTick();
+
     // Fill required fields
     await wrapper.find('input[name="firstName"]').setValue("John");
     await wrapper.find('input[name="lastName"]').setValue("Doe");
     await wrapper.find('input[name="email"]').setValue("john@example.com");
 
-    // Billing address fields (AddressFields component)
-    // Manually update state since USelectMenu is hard to interact with in simple tests
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.street = "Musterstr 1";
-    // Set zipcode and city directly since fields are removed
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.zipcode = "12345";
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.city = "Musterstadt";
+    // Billing address fields (AddressFields component): set values directly on state
+    (
+      wrapper.vm as unknown as {
+        state: {
+          billingAddress: { street: string; zipcode: string; city: string };
+        };
+      }
+    ).state.billingAddress.street = "Musterstr 1";
+    (
+      wrapper.vm as unknown as {
+        state: {
+          billingAddress: { street: string; zipcode: string; city: string };
+        };
+      }
+    ).state.billingAddress.zipcode = "12345";
+    (
+      wrapper.vm as unknown as {
+        state: {
+          billingAddress: { street: string; zipcode: string; city: string };
+        };
+      }
+    ).state.billingAddress.city = "Musterstadt";
 
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
@@ -152,14 +173,24 @@ describe("RegistrationForm", () => {
     mockRegister.mockRejectedValueOnce(apiClientError);
     const wrapper = await mountSuspended(RegistrationForm);
 
+    // Register as guest to avoid password requirements
+    (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest = true;
+    await nextTick();
+
     // Fill minimum required fields to trigger onSubmit
     await wrapper.find('input[name="firstName"]').setValue("John");
     await wrapper.find('input[name="lastName"]').setValue("Doe");
     await wrapper.find('input[name="email"]').setValue("lirim@veliu.net");
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.street = "Musterstr 1";
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.city = "Musterstadt";
+    (
+      wrapper.vm as unknown as {
+        state: { billingAddress: { street: string; city: string } };
+      }
+    ).state.billingAddress.street = "Musterstr 1";
+    (
+      wrapper.vm as unknown as {
+        state: { billingAddress: { street: string; city: string } };
+      }
+    ).state.billingAddress.city = "Musterstadt";
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
       .setValue("12345678");
@@ -182,14 +213,24 @@ describe("RegistrationForm", () => {
     mockRegister.mockRejectedValueOnce(apiClientError);
     const wrapper = await mountSuspended(RegistrationForm);
 
+    // Register as guest to avoid password requirements
+    (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest = true;
+    await nextTick();
+
     // Fill minimum required fields to trigger onSubmit
     await wrapper.find('input[name="firstName"]').setValue("John");
     await wrapper.find('input[name="lastName"]').setValue("Doe");
     await wrapper.find('input[name="email"]').setValue("lirim@veliu.net");
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.street = "Musterstr 1";
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.city = "Musterstadt";
+    (
+      wrapper.vm as unknown as {
+        state: { billingAddress: { street: string; city: string } };
+      }
+    ).state.billingAddress.street = "Musterstr 1";
+    (
+      wrapper.vm as unknown as {
+        state: { billingAddress: { street: string; city: string } };
+      }
+    ).state.billingAddress.city = "Musterstadt";
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
       .setValue("12345678");
@@ -219,16 +260,35 @@ describe("RegistrationForm", () => {
 
     const wrapper = await mountSuspended(RegistrationForm);
 
+    // Register as guest to avoid password requirements
+    (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest = true;
+    await nextTick();
+
     // Fill required fields
     await wrapper.find('input[name="firstName"]').setValue("John");
     await wrapper.find('input[name="lastName"]').setValue("Doe");
     await wrapper.find('input[name="email"]').setValue("john@example.com");
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.street = "Musterstr 1";
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.zipcode = "12345";
-    // @ts-ignore
-    wrapper.vm.state.billingAddress.city = "Musterstadt";
+    (
+      wrapper.vm as unknown as {
+        state: {
+          billingAddress: { street: string; zipcode: string; city: string };
+        };
+      }
+    ).state.billingAddress.street = "Musterstr 1";
+    (
+      wrapper.vm as unknown as {
+        state: {
+          billingAddress: { street: string; zipcode: string; city: string };
+        };
+      }
+    ).state.billingAddress.zipcode = "12345";
+    (
+      wrapper.vm as unknown as {
+        state: {
+          billingAddress: { street: string; zipcode: string; city: string };
+        };
+      }
+    ).state.billingAddress.city = "Musterstadt";
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
       .setValue("12345678");

@@ -15,15 +15,22 @@ const {
   setDefaultCustomerShippingAddress,
 } = useAddress();
 
-onMounted(async () => {
-  await loadCustomerAddresses();
+onMounted(() => {
+  reloadCustomerData();
 });
 
 const reloadCustomerData = async () => {
   openEditModal.value = false;
   openNewModal.value = false;
   await loadCustomerAddresses();
-  await refreshUser();
+  await refreshUser({
+    associations: {
+      defaultShippingAddress: {},
+      defaultBillingAddress: {},
+      activeShippingAddress: {},
+      activeBillingAddress: {},
+    },
+  });
 };
 
 async function makeDefaultShippingAddress(addressId: string) {

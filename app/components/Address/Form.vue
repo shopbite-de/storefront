@@ -10,23 +10,21 @@ const props = defineProps<{
   address?: Schemas["CustomerAddress"] | undefined;
 }>();
 
-const { address } = toRefs(props);
-
+const config = useRuntimeConfig();
 const { updateCustomerAddress, createCustomerAddress } = useAddress();
 
 const state = reactive({
-  id: address.value.id,
-  accountType: "privat",
-  firstName: address.value.firstName ?? undefined,
-  lastName: address.value.lastName ?? undefined,
-  company: address.value.company ?? undefined,
-  department: address.value.department ?? undefined,
-  additionalAddressLine1: address.value.additionalAddressLine1 ?? undefined,
-  phoneNumber: address.value.phoneNumber ?? undefined,
-  street: address.value.street ?? undefined,
-  zipcode: address.value.zipcode ?? undefined,
-  city: address.value.city ?? undefined,
-  countryId: "018d9f162ade709b9ccc92929b44d236",
+  id: props.address?.id,
+  firstName: props.address?.firstName ?? undefined,
+  lastName: props.address?.lastName ?? undefined,
+  company: props.address?.company ?? undefined,
+  department: props.address?.department ?? undefined,
+  additionalAddressLine1: props.address?.additionalAddressLine1 ?? undefined,
+  phoneNumber: props.address?.phoneNumber ?? undefined,
+  street: props.address?.street ?? undefined,
+  zipcode: props.address?.zipcode ?? undefined,
+  city: props.address?.city ?? undefined,
+  countryId: config.public.site.countryId,
 });
 
 const schema = computed(() => createAddressSchema(state));
@@ -34,23 +32,33 @@ const schema = computed(() => createAddressSchema(state));
 const toast = useToast();
 
 async function onSubmit(event: FormSubmitEvent<AddressSchema>) {
-  if (event.data.id) {
-    await updateCustomerAddress(event.data);
-  } else {
-    await createCustomerAddress(event.data);
-  }
+  try {
+    let response: undefined | Schemas["CustomerAddress"] = undefined;
+    if (event.data.id) {
+      response = await updateCustomerAddress(event.data);
+    } else {
+      response = await createCustomerAddress(event.data);
+    }
 
-  toast.add({
-    title: "Erfolgreich gespeichert",
-    color: "success",
-  });
-  emit("submit-success", event.data);
+    toast.add({
+      title: "Erfolgreich gespeichert",
+      color: "success",
+    });
+    emit("submit-success", response);
+  } catch (error) {
+    console.error("Address save failed:", error);
+    toast.add({
+      title: "Speichern fehlgeschlagen",
+      description: "Bitte versuchen Sie es erneut.",
+      color: "error",
+    });
+  }
 }
 
 const accountType = ref("privat");
 
 const emit = defineEmits<{
-  "submit-success": [data: AddressSchema];
+  "submit-success": [data: Schemas["CustomerAddress"]];
 }>();
 </script>
 

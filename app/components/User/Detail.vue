@@ -1,6 +1,14 @@
 <script setup lang="ts">
-const { user, userDefaultBillingAddress, userDefaultShippingAddress } =
-  useUser();
+defineProps<{
+  withEditButton?: boolean;
+}>();
+
+const {
+  user,
+  userDefaultBillingAddress,
+  userDefaultShippingAddress,
+  refreshUser,
+} = useUser();
 
 const fullName = computed(
   () => user.value?.firstName + " " + user.value?.lastName,
@@ -8,14 +16,33 @@ const fullName = computed(
 
 const areAddressesDifferent = computed(() => {
   if (!userDefaultBillingAddress.value || !userDefaultShippingAddress.value) {
-    return false; // Or true depending on your requirements
+    return false;
   }
 
-  // Deep compare the address objects
   return (
     JSON.stringify(userDefaultBillingAddress.value) !==
     JSON.stringify(userDefaultShippingAddress.value)
   );
+});
+
+async function refreshUserAddresses() {
+  await refreshUser({
+    associations: {
+      defaultShippingAddress: {},
+      defaultBillingAddress: {},
+      activeShippingAddress: {},
+      activeBillingAddress: {},
+    },
+  });
+}
+
+async function handleAddressUpdate() {
+  // Refresh user data from the API to get the latest addresses
+  await refreshUserAddresses();
+}
+
+onMounted(() => {
+  refreshUserAddresses();
 });
 </script>
 
@@ -31,7 +58,11 @@ const areAddressesDifferent = computed(() => {
         areAddressesDifferent ? 'Lieferadresse' : 'Liefer- und Rechnungsadresse'
       "
     />
-    <AddressDetail :address="userDefaultShippingAddress" />
+    <AddressDetail
+      :address="userDefaultShippingAddress"
+      :with-edit-button="withEditButton"
+      @update:address="handleAddressUpdate"
+    />
     <USeparator
       v-if="areAddressesDifferent"
       class="my-6"
@@ -42,6 +73,8 @@ const areAddressesDifferent = computed(() => {
     <AddressDetail
       v-if="areAddressesDifferent"
       :address="userDefaultBillingAddress"
+      :with-edit-button="withEditButton"
+      @update:address="handleAddressUpdate"
     />
   </div>
 </template>
