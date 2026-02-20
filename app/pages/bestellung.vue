@@ -42,15 +42,7 @@ const isCustomerAvailable = computed<boolean>(() => {
               class="basis-1/2"
             />
             <div v-else class="basis-1/2">
-              <UserDetail />
-              <UButton
-                label="Daten überarbeiten"
-                variant="subtle"
-                block
-                icon="i-lucide-pen"
-                class="my-4"
-                to="/konto"
-              />
+              <UserDetail :with-edit-button="true" />
             </div>
             <div class="basis-1/2">
               <h3 class="text-2xl mb-6 font-semibold">Warenkorb</h3>

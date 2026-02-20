@@ -51,7 +51,7 @@ const links = ref<ButtonProps[]>([
     <UPageHeader
       headline="BESTELLUNG"
       :title="order?.orderNumber"
-      :description="formatDate(order?.createdAt)"
+      :description="order.createdAt ? formatDate(order?.createdAt) : ''"
     />
     <UPageBody>
       <OrderDetail :order="order" :status="status ?? 'laden...'" />

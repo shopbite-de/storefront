@@ -26,18 +26,17 @@ const { isClosedHoliday, refresh: refreshHolidays } = useHolidays();
 
 await Promise.all([refreshBusinessHours(), refreshHolidays()]);
 
-// Initialize session context
-const { data: sessionContextData } = await useAsyncData(
-  "session-context",
-  async () => {
-    const response = await apiClient.invoke("readContext get /context");
-    return response.data as Schemas["SalesChannelContext"];
-  },
-);
+const sessionContextData = ref<Schemas["SalesChannelContext"]>();
 
-if (sessionContextData.value) {
-  useSessionContext(sessionContextData.value);
-}
+const contextResponse = await apiClient
+  .invoke("readContext get /context")
+  .catch((error) => {
+    console.error("Error fetching session context data:", error);
+    return { data: undefined };
+  });
+
+sessionContextData.value = contextResponse.data;
+useSessionContext(sessionContextData.value);
 
 // Toast configuration
 const TOAST_CONFIG = {

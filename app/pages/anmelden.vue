@@ -14,7 +14,7 @@ watch(isLoggedIn, (newValue) => {
 });
 
 function handleLoginSuccess() {
-  navigateTo("/speisekarte");
+  navigateTo("/");
 }
 </script>
 

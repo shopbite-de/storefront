@@ -1,11 +1,27 @@
 <script setup lang="ts">
-const { data: navigationData } = await useAsyncData("navigation:footer", () =>
-  queryCollection("navigation").first(),
-);
+import { useNavigation } from "~/composables/useNavigation";
+import type { Schemas } from "#shopware";
+import type { NavigationMenuItem } from "@nuxt/ui";
 
-const columns = computed(() => {
-  if (!navigationData.value?.footer.columns) return [];
-  return navigationData.value.footer.columns;
+const { footerNavigation } = useNavigation();
+
+const mapCategoryToNavItem = (
+  category: Schemas["Category"],
+): NavigationMenuItem => {
+  const label = category.translated?.name ?? "";
+
+  return {
+    label,
+    description: `${label} Kategorie`,
+    to: category.seoUrl,
+    defaultOpen: true,
+    icon: category.customFields?.shopbite_category_icon,
+    children: (category.children ?? []).map(mapCategoryToNavItem),
+  };
+};
+
+const navItems = computed<NavigationMenuItem[]>(() => {
+  return (footerNavigation.value ?? []).map(mapCategoryToNavItem);
 });
 </script>
 
@@ -15,7 +31,7 @@ const columns = computed(() => {
   <UFooter :ui="{ top: 'border-b border-default' }">
     <template #top>
       <UContainer>
-        <UFooterColumns :columns="columns" />
+        <UFooterColumns :columns="navItems" />
       </UContainer>
     </template>
 
@@ -29,15 +45,15 @@ const columns = computed(() => {
       </NuxtLink>
     </template>
 
-    <p v-if="navigationData?.footer.text" class="text-muted text-sm">
-      {{ navigationData.footer.text }}
+    <p class="text-muted text-sm">
+      Alle Preise inkl. gesetzlicher Mehrwertsteuer zzgl. Versandkosten, wenn
+      nicht anders beschrieben
     </p>
 
     <template #right>
-      <UColorModeButton v-if="navigationData?.footer.withColorModeSwitch" />
+      <UColorModeButton />
 
       <UButton
-        v-if="navigationData?.footer.withGithubLink"
         to="https://github.com/shopbite-de/storefront"
         target="_blank"
         icon="i-simple-icons-github"

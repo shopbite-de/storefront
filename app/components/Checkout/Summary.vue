@@ -2,10 +2,10 @@
 import QuickView from "~/components/Cart/QuickView.vue";
 import { useIntervalFn } from "@vueuse/core";
 
-const { selectedPaymentMethod, selectedShippingMethod } = useCheckout();
-const { createOrder } = useCheckout();
+const { createOrder, selectedPaymentMethod, selectedShippingMethod } =
+  useCheckout();
 const { refreshCart } = useCart();
-const { isLoggedIn, isGuestSession } = useUser();
+const { isLoggedIn, isGuestSession, refreshUser } = useUser();
 const { isCheckoutEnabled, refresh } = useShopBiteConfig();
 const { trackOrder } = useTrackEvent();
 
@@ -13,6 +13,14 @@ const toast = useToast();
 
 onMounted(() => {
   refresh();
+  refreshUser({
+    associations: {
+      defaultShippingAddress: {},
+      defaultBillingAddress: {},
+      activeShippingAddress: {},
+      activeBillingAddress: {},
+    },
+  });
 });
 
 watch(isCheckoutEnabled, () => console.log(isCheckoutEnabled.value));
@@ -40,9 +48,16 @@ const customerDataAvailable = computed<boolean>(
   () => isLoggedIn.value || isGuestSession.value,
 );
 
+const shippingAndPaymentSet = computed(
+  () => selectedPaymentMethod.value && selectedShippingMethod.value,
+);
+
 const isValidToProceed = computed(
   () =>
-    customerDataAvailable.value && isCheckoutEnabled.value && isValidTime.value,
+    customerDataAvailable.value &&
+    isCheckoutEnabled.value &&
+    isValidTime.value &&
+    shippingAndPaymentSet.value,
 );
 
 const selectedDeliveryTime = ref("");

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TabsItem } from "@nuxt/ui";
 
-const { refreshUser } = useUser();
 const items = [
   {
     label: "Daten erfassen",
@@ -18,7 +17,6 @@ const toast = useToast();
 const { mergeWishlistProducts } = useWishlist();
 
 async function handleLoginSuccess() {
-  await refreshUser();
   mergeWishlistProducts();
   toast.add({
     title: "Wilkommen!",
