@@ -14,7 +14,7 @@ const props = withDefaults(
   },
 );
 
-const { mainNavigation } = useNavigation();
+const { mainNavigation } = useNavigation(true);
 
 const navItems = computed<NavigationMenuItem[]>(() => {
   const elements = mainNavigation.value ?? [];

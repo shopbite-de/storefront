@@ -6,7 +6,7 @@ import type {
   NavigationMenuItem,
 } from "@nuxt/ui";
 
-const { footerMenu } = useNavigation();
+const { footerMenu } = useNavigation(true);
 
 const menuItemToFooterColumnLink = (
   item: NavigationMenuItem,

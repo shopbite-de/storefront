@@ -3,7 +3,7 @@ import type { NavigationMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
 import { useNavigation } from "~/composables/useNavigation";
 
-const { mainNavigation } = useNavigation();
+const { mainNavigation } = useNavigation(false);
 
 const mapCategoryToNavItem = (
   category: Schemas["Category"],

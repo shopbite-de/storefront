@@ -2,7 +2,7 @@ import type { NavigationMenuItem } from "@nuxt/ui";
 import { encodeForQuery } from "@shopware/api-client/helpers";
 import type { Schemas } from "#shopware";
 
-export function useNavigation() {
+export function useNavigation(withChildren: boolean | undefined) {
   const { apiClient } = useShopwareContext();
 
   const criteria = encodeForQuery({
@@ -41,9 +41,10 @@ export function useNavigation() {
     target: category.linkNewTab ? "_blank" : undefined,
     icon: (category.customFields as Record<string, string> | null)
       ?.shopbite_category_icon,
-    children: category.children?.length
-      ? category.children.map(mapCategoryToMenuItem)
-      : undefined,
+    children:
+      category.children?.length && withChildren
+        ? category.children.map(mapCategoryToMenuItem)
+        : undefined,
   });
 
   const mainMenu = computed<NavigationMenuItem[]>(() => {

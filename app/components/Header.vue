@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useNavigation } from "~/composables/useNavigation";
 
-const { mainMenu } = useNavigation();
+const { mainMenu } = useNavigation(false);
 
 const loginSlide = ref(false);
 </script>

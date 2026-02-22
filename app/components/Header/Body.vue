@@ -8,7 +8,7 @@ const multiChannelEnabled = computed(
 );
 
 console.log(multiChannelEnabled.value);
-const { mainMenu } = useNavigation();
+const { mainMenu } = useNavigation(false);
 </script>
 
 <template>
