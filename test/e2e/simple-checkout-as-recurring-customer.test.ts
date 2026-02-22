@@ -28,7 +28,7 @@ test("Simple Checkout As Recurring Customer", async ({ page }) => {
 
 async function clearCart(page: Page) {
   const cartButton = page
-    .locator("button .i-lucide\\:shopping-cart")
+    .locator("button .i-lucide\\:shopping-bag")
     .locator("..");
 
   await expect(cartButton).toBeVisible({ timeout: 5000 });
