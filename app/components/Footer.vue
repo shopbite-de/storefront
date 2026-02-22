@@ -1,28 +1,33 @@
 <script setup lang="ts">
 import { useNavigation } from "~/composables/useNavigation";
-import type { Schemas } from "#shopware";
-import type { NavigationMenuItem } from "@nuxt/ui";
+import type {
+  FooterColumn,
+  FooterColumnLink,
+  NavigationMenuItem,
+} from "@nuxt/ui";
 
-const { footerNavigation } = useNavigation();
+const { footerMenu } = useNavigation();
 
-const mapCategoryToNavItem = (
-  category: Schemas["Category"],
-): NavigationMenuItem => {
-  const label = category.translated?.name ?? "";
-
-  return {
-    label,
-    description: `${label} Kategorie`,
-    to: category.seoUrl,
-    defaultOpen: true,
-    icon: category.customFields?.shopbite_category_icon,
-    children: (category.children ?? []).map(mapCategoryToNavItem),
-  };
-};
-
-const navItems = computed<NavigationMenuItem[]>(() => {
-  return (footerNavigation.value ?? []).map(mapCategoryToNavItem);
+const menuItemToFooterColumnLink = (
+  item: NavigationMenuItem,
+): FooterColumnLink => ({
+  label: item.label ?? "",
+  to: item.to as string | undefined,
+  target: item.target as string | undefined,
+  icon: item.icon,
 });
+
+const menuItemsToFooterColumns = (
+  items: NavigationMenuItem[],
+): FooterColumn[] =>
+  items.map((item) => ({
+    label: item.label ?? "",
+    children: item.children?.map(menuItemToFooterColumnLink) ?? [],
+  }));
+
+const footerColumns = computed<FooterColumn[]>(() =>
+  menuItemsToFooterColumns(footerMenu.value),
+);
 </script>
 
 <template>
@@ -31,7 +36,7 @@ const navItems = computed<NavigationMenuItem[]>(() => {
   <UFooter :ui="{ top: 'border-b border-default' }">
     <template #top>
       <UContainer>
-        <UFooterColumns :columns="navItems" />
+        <UFooterColumns :columns="footerColumns" />
       </UContainer>
     </template>
 

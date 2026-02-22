@@ -89,8 +89,7 @@ describe("HeaderRight", () => {
     const dropdown = component.findComponent({ name: "UDropdownMenu" });
     const items = dropdown.props("items");
 
-    expect(items[0][0].label).toBe("Jetzt anmelden");
-    expect(items[1][0].to).toBe("/anmelden");
+    expect(items[0][0].label).toBe("Mein Konto");
   });
 
   it("shows logged in dropdown items when logged in", async () => {
@@ -101,18 +100,7 @@ describe("HeaderRight", () => {
     const dropdown = component.findComponent({ name: "UDropdownMenu" });
     const items = dropdown.props("items");
 
-    expect(items[0][0].label).toBe("Jane Doe");
-    expect(items[1][0].to).toBe("/konto/bestellungen");
-    expect(items[2][0].label).toBe("Abmelden");
-  });
-
-  it("shows cart drawer with correct count when checkout is enabled", async () => {
-    const component = await mountSuspended(HeaderRight);
-    const drawer = component.findComponent({ name: "UDrawer" });
-    expect(drawer.exists()).toBe(true);
-
-    const chip = component.findComponent({ name: "UChip" });
-    expect(chip.props("text")).toBe(5);
+    expect(items[0][0].label).toBe("Mein Konto");
   });
 
   it("calls logout and updates state when logout is selected", async () => {

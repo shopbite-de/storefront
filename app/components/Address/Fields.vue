@@ -109,7 +109,7 @@ defineExpose({
     >
       <template #title>
         An diese Adresse können wir leider nicht liefern.
-        <ULink to="/unternehmen/zahlung-und-versand">Weitere Infos.</ULink>
+        <ULink to="/zahlung-und-versand">Weitere Infos.</ULink>
       </template>
     </UAlert>
 

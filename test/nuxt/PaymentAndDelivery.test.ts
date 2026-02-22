@@ -71,7 +71,7 @@ describe("PaymentAndDelivery", () => {
   it("renders help buttons with correct links", async () => {
     const wrapper = await mountSuspended(PaymentAndDelivery);
     const helpButtons = wrapper.findAll(
-      'a[href="/unternehmen/zahlung-und-versand"]',
+      'a[href="/zahlung-und-versand"]',
     );
     expect(helpButtons.length).toBe(2);
   });

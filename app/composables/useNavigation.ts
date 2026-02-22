@@ -1,5 +1,6 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 import { encodeForQuery } from "@shopware/api-client/helpers";
+import type { Schemas } from "#shopware";
 
 export function useNavigation() {
   const { apiClient } = useShopwareContext();
@@ -32,15 +33,23 @@ export function useNavigation() {
     return response.data;
   });
 
+  const mapCategoryToMenuItem = (
+    category: Schemas["Category"],
+  ): NavigationMenuItem => ({
+    label: category.translated?.name ?? category.name,
+    to: category.translated?.seoUrl ?? category.seoUrl,
+    target: category.linkNewTab ? "_blank" : undefined,
+    icon: (category.customFields as Record<string, string> | null)
+      ?.shopbite_category_icon,
+    children: category.children?.length
+      ? category.children.map(mapCategoryToMenuItem)
+      : undefined,
+  });
+
   const mainMenu = computed<NavigationMenuItem[]>(() => {
     if (!mainNavigation.value) return [];
 
-    return mainNavigation.value?.map((item) => ({
-      label: item.translated.name,
-      to: item.seoUrl,
-      target: item.linkNewTab ? "_blank" : undefined,
-      icon: item.customFields?.shopbite_category_icon,
-    }));
+    return mainNavigation.value?.map(mapCategoryToMenuItem);
   });
 
   const { data: footerNavigation } = useAsyncData(
@@ -64,12 +73,7 @@ export function useNavigation() {
   const footerMenu = computed<NavigationMenuItem[]>(() => {
     if (!footerNavigation.value) return [];
 
-    return footerNavigation.value?.map((item) => ({
-      label: item.translated.name,
-      to: item.seoUrl,
-      target: item.linkNewTab ? "_blank" : undefined,
-      icon: item.customFields?.shopbite_category_icon,
-    }));
+    return footerNavigation.value?.map(mapCategoryToMenuItem);
   });
 
   return {

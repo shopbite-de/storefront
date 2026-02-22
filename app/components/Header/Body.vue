@@ -1,36 +1,24 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from "@nuxt/ui";
+import { useNavigation } from "~/composables/useNavigation";
 
-const route = useRoute();
+const config = useRuntimeConfig();
 
-const { data: navigationData } = useAsyncData("navigation", () =>
-  queryCollection("navigation").first(),
+const multiChannelEnabled = computed(
+  () => config.public.shopBite.feature.multiChannel === "true",
 );
 
-const navi = computed<NavigationMenuItem[]>(() => {
-  if (!navigationData.value?.main) return [];
-
-  return navigationData.value.main.map((item) => ({
-    label: item.label,
-    icon: item.icon,
-    to: item.to,
-    target: item.target,
-    active:
-      item.to === "/"
-        ? route.path.length === 1
-        : route.path.startsWith(item.to),
-  }));
-});
+console.log(multiChannelEnabled.value);
+const { mainMenu } = useNavigation();
 </script>
 
 <template>
   <UNavigationMenu
     color="primary"
-    :items="navi"
+    :items="mainMenu"
     orientation="vertical"
     class="-mx-2.5"
   />
-  <div class="my-4">
+  <div v-if="multiChannelEnabled" class="my-4">
     <SalesChannelSwitch />
   </div>
 </template>

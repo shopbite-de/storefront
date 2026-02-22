@@ -89,7 +89,7 @@ watch(
           <UIcon name="i-lucide-badge-euro" class="size-8" />
           <h2 class="text-2xl text-blackish my-8">Zahlungsarten</h2>
           <UButton
-            to="/unternehmen/zahlung-und-versand"
+            to="/zahlung-und-versand"
             size="md"
             variant="ghost"
             icon="i-lucide-circle-question-mark"
@@ -106,7 +106,7 @@ watch(
           <UIcon name="i-lucide-car" class="size-8" />
           <h2 class="text-2xl text-blackish my-8">Versandarten</h2>
           <UButton
-            to="/unternehmen/zahlung-und-versand"
+            to="/zahlung-und-versand"
             size="md"
             variant="ghost"
             icon="i-lucide-circle-question-mark"
