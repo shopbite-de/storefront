@@ -66,9 +66,6 @@ export default defineNuxtConfig({
         countryId: "",
       },
       storeUrl: "",
-      sentry: {
-        dsn: process.env.NUXT_PUBLIC_SENTRY_DSN,
-      },
     },
   },
 
@@ -184,6 +181,9 @@ export default defineNuxtConfig({
     ],
   },
   $production: {
+    sentry: {
+      dsn: process.env.NUXT_PUBLIC_SENTRY_DSN,
+    },
     scripts: {
       registry: {
         matomoAnalytics: {

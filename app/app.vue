@@ -1,21 +1,14 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
-import * as Sentry from "@sentry/nuxt";
 import type { Toast } from "#ui/composables/useToast";
 
 // Composables
 const toast = useToast();
 const appConfig = useAppConfig();
-const runtimeConfig = useRuntimeConfig();
 const { apiClient } = useShopwareContext();
 const { refresh: refreshToppings } = useShopBiteConfig();
 const { refreshCart } = useCart();
 const { getWishlistProducts } = useWishlist();
-
-// Initialize Sentry
-Sentry.init({
-  dsn: runtimeConfig.public.sentry.dsn,
-});
 
 const {
   getNextOpeningTime,
