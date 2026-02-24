@@ -58,7 +58,7 @@ const {
   defaultSearchCriteria: searchCriteria,
 });
 
-const { category } = useCategory(categoryId);
+const { category } = await useCategory(categoryId);
 
 useCategorySeo(category);
 

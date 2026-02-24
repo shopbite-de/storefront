@@ -1,6 +1,6 @@
 import { encodeForQuery } from "@shopware/api-client/helpers";
 
-export function useCategory(categoryId: Ref<string>) {
+export async function useCategory(categoryId: Ref<string>) {
   const { apiClient } = useShopwareContext();
 
   const criteria = encodeForQuery({
@@ -17,7 +17,7 @@ export function useCategory(categoryId: Ref<string>) {
 
   const cacheKey = computed(() => `category-${categoryId.value}`);
 
-  const { data } = useAsyncData(cacheKey, async () => {
+  const { data } = await useAsyncData(cacheKey, async () => {
     const response = await apiClient.invoke(
       "readCategoryGet get /category/{navigationId}",
       {
