@@ -58,6 +58,7 @@ export default defineNuxtConfig({
         feature: {
           multiChannel: "",
           secureKey: "",
+          contactForm: false,
         },
       },
       site: {
