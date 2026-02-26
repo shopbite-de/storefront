@@ -2,8 +2,9 @@
 import type { Schemas } from "#shopware";
 
 definePageMeta({
-  layout: "listing2",
+  layout: "listing",
 });
+
 const { clearBreadcrumbs } = useBreadcrumbs();
 const { resolvePath } = useNavigationSearch();
 const route = useRoute();

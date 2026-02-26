@@ -3,7 +3,7 @@ import type { NavigationMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
 import { useNavigation } from "~/composables/useNavigation";
 
-const { mainNavigation } = useNavigation(false);
+const { menuCardNavigation } = useNavigation(true);
 
 const mapCategoryToNavItem = (
   category: Schemas["Category"],
@@ -21,13 +21,13 @@ const mapCategoryToNavItem = (
 };
 
 const navItems = computed<NavigationMenuItem[]>(() => {
-  return (mainNavigation.value ?? []).map(mapCategoryToNavItem);
+  return (menuCardNavigation.value ?? []).map(mapCategoryToNavItem);
 });
 </script>
 
 <template>
   <div>
-    <h2 class="text-3xl md:text-4xl mt-8 mb-3 pb-2">Speisekarte</h2>
+    <h2 class="text-3xl md:text-4xl mb-3 pb-2">Speisekarte</h2>
     <UNavigationMenu
       variant="link"
       orientation="vertical"
