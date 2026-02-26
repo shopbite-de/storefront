@@ -4,6 +4,10 @@ import type { Schemas } from "#shopware";
 
 export function useNavigation(withChildren: boolean | undefined) {
   const { apiClient } = useShopwareContext();
+  const config = useRuntimeConfig();
+  const menuCategoryId = computed(
+    () => config.public.shopBite.menuCategoryId ?? "main-navigation",
+  );
 
   const criteria = encodeForQuery({
     includes: {
@@ -77,10 +81,36 @@ export function useNavigation(withChildren: boolean | undefined) {
     return footerNavigation.value?.map(mapCategoryToMenuItem);
   });
 
+  const { data: menuCardNavigation } = useAsyncData(
+    "menu-category",
+    async () => {
+      const response = await apiClient.invoke(
+        "readNavigationGet get /navigation/{activeId}/{rootId}",
+        {
+          query: { _criteria: criteria },
+          pathParams: {
+            activeId: "main-navigation",
+            rootId: menuCategoryId.value,
+          },
+        },
+      );
+
+      return response.data;
+    },
+  );
+
+  const menuCardMenu = computed<NavigationMenuItem[]>(() => {
+    if (!menuCardNavigation.value) return [];
+
+    return menuCardNavigation.value?.map(mapCategoryToMenuItem);
+  });
+
   return {
     mainNavigation,
     mainMenu,
     footerNavigation,
     footerMenu,
+    menuCardNavigation,
+    menuCardMenu,
   };
 }

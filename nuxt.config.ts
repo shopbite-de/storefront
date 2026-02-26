@@ -55,6 +55,7 @@ export default defineNuxtConfig({
     geoapifyApiKey: "",
     public: {
       shopBite: {
+        menuCategoryId: "",
         feature: {
           multiChannel: "",
           secureKey: "",

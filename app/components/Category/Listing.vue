@@ -118,7 +118,7 @@ const moreThanOneFilterAndOption = computed<boolean>(
     <UPage>
       <template #left>
         <UPageAside>
-          <NavigationDesktopLeft2 />
+          <NavigationDesktopLeft />
         </UPageAside>
       </template>
 
@@ -212,7 +212,7 @@ const moreThanOneFilterAndOption = computed<boolean>(
       <template #right>
         <UPageAside>
           <div v-if="moreThanOneFilterAndOption" class="flex flex-col gap-4">
-            <h2 class="text-3xl md:text-4xl mt-8 mb-3 pb-2">Filter</h2>
+            <h2 class="text-3xl md:text-4xl mb-3 pb-2">Filter</h2>
             <div
               v-for="filter in propertyFilters"
               :key="filter.id"
