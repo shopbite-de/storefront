@@ -86,6 +86,7 @@ export default defineNuxtConfig({
     endpoint: "",
     accessToken: "",
     devStorefrontUrl: "",
+    useUserContextInSSR: true,
   },
 
   modules: [

@@ -1,19 +1,23 @@
 <script setup lang="ts">
-const { isLoggedIn } = useUser();
+import { useWishlist } from "@shopware/composables";
 
-onMounted(() => {
-  if (isLoggedIn.value) {
-    navigateTo("/konto");
+const { isLoggedIn } = useUser();
+const { mergeWishlistProducts } = useWishlist();
+
+onBeforeMount(async () => {
+  if (import.meta.client && isLoggedIn.value) {
+    navigateTo({ path: "/konto" });
   }
 });
 
 watch(isLoggedIn, (newValue) => {
   if (newValue) {
-    navigateTo("/konto");
+    navigateTo({ path: "/konto" });
   }
 });
 
 function handleLoginSuccess() {
+  mergeWishlistProducts();
   navigateTo("/");
 }
 </script>
