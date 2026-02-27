@@ -68,7 +68,6 @@ const items = ref<NavigationMenuItem[][]>([
         />
       </template>
       <slot />
-      <BottomNavi />
     </UPage>
   </UContainer>
 </template>

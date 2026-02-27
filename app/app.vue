@@ -1,37 +1,6 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
 import type { Toast } from "#ui/composables/useToast";
 
-// Composables
-const toast = useToast();
-const appConfig = useAppConfig();
-const { apiClient } = useShopwareContext();
-const { refresh: refreshToppings } = useShopBiteConfig();
-const { refreshCart } = useCart();
-const { getWishlistProducts } = useWishlist();
-
-const {
-  getNextOpeningTime,
-  isStoreOpen,
-  refresh: refreshBusinessHours,
-} = useBusinessHours();
-const { isClosedHoliday, refresh: refreshHolidays } = useHolidays();
-
-await Promise.all([refreshBusinessHours(), refreshHolidays()]);
-
-const sessionContextData = ref<Schemas["SalesChannelContext"]>();
-
-const contextResponse = await apiClient
-  .invoke("readContext get /context")
-  .catch((error) => {
-    console.error("Error fetching session context data:", error);
-    return { data: undefined };
-  });
-
-sessionContextData.value = contextResponse.data;
-useSessionContext(sessionContextData.value);
-
-// Toast configuration
 const TOAST_CONFIG = {
   open: {
     id: "currently-open",
@@ -59,6 +28,41 @@ const TOAST_CONFIG = {
   } as Partial<Toast>,
 } as const;
 
+const { apiClient } = useShopwareContext();
+const appConfig = useAppConfig();
+const router = useRouter();
+const toast = useToast();
+
+const { data: sessionContextData } = await useAsyncData(
+  "sessionContext",
+  async () => {
+    try {
+      const { data } = await apiClient.invoke("readContext get /context");
+      return data;
+    } catch (error) {
+      console.error("Failed to load session context", error);
+      return null;
+    }
+  },
+  {
+    default: () => null,
+  },
+);
+
+if (sessionContextData.value) {
+  usePrice({
+    currencyCode: sessionContextData.value.currency?.isoCode || "",
+  });
+  useSessionContext(sessionContextData.value);
+}
+
+const {
+  getNextOpeningTime,
+  isStoreOpen,
+  refresh: refreshBusinessHours,
+} = useBusinessHours();
+const { isClosedHoliday, refresh: refreshHolidays } = useHolidays();
+
 function displayStoreStatus() {
   const isOpen = isStoreOpen(undefined, isClosedHoliday);
 
@@ -75,10 +79,25 @@ function displayStoreStatus() {
   }
 }
 
-// Lifecycle
+const { refreshCart } = useCart();
+const { getWishlistProducts } = useWishlist();
+
+if (import.meta.client) {
+  // getting the wishlist products should not block SSR
+  if (!(router.currentRoute.value.name as string).includes("wishlist")) {
+    getWishlistProducts(); // initial page loading
+  }
+}
+
+const { refresh: refreshToppings } = useShopBiteConfig();
+
 onMounted(async () => {
-  await refreshToppings();
-  await Promise.all([refreshCart(), getWishlistProducts()]);
+  await Promise.all([
+    refreshHolidays(),
+    refreshBusinessHours(),
+    refreshToppings(),
+  ]);
+  refreshCart();
   displayStoreStatus();
 });
 

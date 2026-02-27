@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { ref } from "vue";
 import LoginForm from "@/components/User/LoginForm.vue";
-import { useUser } from "@shopware/composables";
 import { ApiClientError } from "@shopware/api-client";
 
 vi.mock("@shopware/api-client", () => ({
@@ -16,9 +16,7 @@ vi.mock("@shopware/api-client", () => ({
 
 vi.mock("@shopware/composables", () => ({
   useUser: vi.fn(),
-  useWishlist: vi.fn(() => ({
-    mergeWishlistProducts: vi.fn(),
-  })),
+  useWishlist: vi.fn(),
 }));
 
 const mockToastAdd = vi.fn();
@@ -28,19 +26,30 @@ mockNuxtImport("useToast", () => {
   });
 });
 
-describe("LoginForm", () => {
-  let loginMock: any;
-  let userMock: any;
+const loginMock = vi.fn();
+const userMock = ref({ firstName: "John", lastName: "Doe" });
+const isLoggedInMock = ref(false);
 
+mockNuxtImport("useUser", () => {
+  return () => ({
+    isLoggedIn: isLoggedInMock,
+    login: loginMock,
+    user: userMock,
+  });
+});
+
+mockNuxtImport("useWishlist", () => {
+  return () => ({
+    mergeWishlistProducts: vi.fn(),
+  });
+});
+
+describe("LoginForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    loginMock = vi.fn();
-    userMock = { value: { firstName: "John", lastName: "Doe" } };
-    (useUser as any).mockReturnValue({
-      isLoggedIn: { value: false },
-      login: loginMock,
-      user: userMock,
-    });
+    loginMock.mockReset();
+    isLoggedInMock.value = false;
+    userMock.value = { firstName: "John", lastName: "Doe" };
   });
 
   it("should show success toast on successful login", async () => {
@@ -63,6 +72,7 @@ describe("LoginForm", () => {
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Hallo John Doe!",
+        description: "Erfolgreich angemeldet.",
         color: "success",
       }),
     );

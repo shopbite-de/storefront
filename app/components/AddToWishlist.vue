@@ -8,17 +8,14 @@ const props = defineProps<{
 const { addToWishlist, isInWishlist, removeFromWishlist } = useProductWishlist(
   props.product.id,
 );
-const { getWishlistProducts } = useWishlist();
 const { trackAddToWishlist } = useTrackEvent();
 
 const toggleWishlistProduct = async () => {
   try {
     if (isInWishlist.value) {
       await removeFromWishlist();
-      await getWishlistProducts();
     } else {
       await addToWishlist();
-      await getWishlistProducts();
       trackAddToWishlist(props.product);
     }
   } catch (error) {

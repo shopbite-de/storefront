@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import * as z from "zod";
-import { useWishlist, useUser } from "@shopware/composables";
 import { ApiClientError } from "@shopware/api-client";
 import type { FormSubmitEvent } from "@nuxt/ui";
 
 const { isLoggedIn, login, user } = useUser();
-const { mergeWishlistProducts } = useWishlist();
 const toast = useToast();
 
 const props = withDefaults(
@@ -64,10 +62,9 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     toast.add({
       title:
         "Hallo " + user.value?.firstName + " " + user.value?.lastName + "!",
-      description: "Erfolreich angemeldet.",
+      description: "Erfolgreich angemeldet.",
       color: "success",
     });
-    mergeWishlistProducts();
     emit("login-success", payload.data.email);
   } catch (error) {
     console.error("Login failed:", error);
