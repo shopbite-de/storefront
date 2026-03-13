@@ -154,7 +154,7 @@ describe("RegistrationForm", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(mockRegister).toHaveBeenCalled();
-    const calledData = mockRegister.mock.calls[0][0];
+    const calledData = mockRegister.mock.calls[0]![0];
     expect(calledData.email).toBe("john@example.com");
     expect(calledData.billingAddress.street).toBe("Musterstr 1");
     // Check if firstName/lastName were copied to billing address as per logic in onSubmit
@@ -169,7 +169,7 @@ describe("RegistrationForm", () => {
           detail: 'The email address "lirim@veliu.net" is already in use',
         },
       ],
-    });
+    } as unknown as ConstructorParameters<typeof ApiClientError>[0]);
     mockRegister.mockRejectedValueOnce(apiClientError);
     const wrapper = await mountSuspended(RegistrationForm);
 
@@ -209,7 +209,9 @@ describe("RegistrationForm", () => {
   });
 
   it("handles ApiClientError with missing errors gracefully", async () => {
-    const apiClientError = new ApiClientError({});
+    const apiClientError = new ApiClientError(
+      {} as unknown as ConstructorParameters<typeof ApiClientError>[0],
+    );
     mockRegister.mockRejectedValueOnce(apiClientError);
     const wrapper = await mountSuspended(RegistrationForm);
 

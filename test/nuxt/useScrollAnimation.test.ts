@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useScrollAnimation } from "../../app/composables/useScrollAnimation";
+import { useScrollAnimation } from "~/composables/useScrollAnimation";
 import { mount } from "@vue/test-utils";
 import { defineComponent, nextTick } from "vue";
 
 describe("useScrollAnimation", () => {
-  let observeMock: any;
-  let unobserveMock: any;
-  let disconnectMock: any;
-  let intersectionCallback: any;
+  let observeMock: ReturnType<typeof vi.fn>;
+  let unobserveMock: ReturnType<typeof vi.fn>;
+  let disconnectMock: ReturnType<typeof vi.fn>;
+  let intersectionCallback: IntersectionObserverCallback;
 
   beforeEach(() => {
     observeMock = vi.fn();
@@ -15,14 +15,17 @@ describe("useScrollAnimation", () => {
     disconnectMock = vi.fn();
 
     // Mock IntersectionObserver
-    global.IntersectionObserver = vi
-      .fn()
-      .mockImplementation(function (callback) {
-        intersectionCallback = callback;
-        this.observe = observeMock;
-        this.unobserve = unobserveMock;
-        this.disconnect = disconnectMock;
-      }) as any;
+    global.IntersectionObserver = vi.fn().mockImplementation(function (
+      this: IntersectionObserver,
+      callback: IntersectionObserverCallback,
+    ) {
+      intersectionCallback = callback;
+      this.observe = observeMock as unknown as IntersectionObserver["observe"];
+      this.unobserve =
+        unobserveMock as unknown as IntersectionObserver["unobserve"];
+      this.disconnect =
+        disconnectMock as unknown as IntersectionObserver["disconnect"];
+    }) as unknown as typeof IntersectionObserver;
   });
 
   it("should initialize with isVisible false", () => {

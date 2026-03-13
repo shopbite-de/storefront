@@ -31,7 +31,7 @@ describe("useProductConfigurator", () => {
       id: "p1",
       optionIds: [],
       options: [],
-    } as any;
+    } as unknown as typeof mockProduct.value;
   });
 
   it("should initialize with selected options from product", () => {
@@ -41,20 +41,22 @@ describe("useProductConfigurator", () => {
         name: "Size",
         options: [{ id: "o1", name: "Small" }],
       },
-    ] as any;
+    ] as unknown as typeof mockConfigurator.value;
     mockProduct.value = {
       id: "p1-v1",
       parentId: "p1",
       optionIds: ["o1"],
       options: [{ id: "o1" }],
-    } as any;
+    } as unknown as typeof mockProduct.value;
 
     const { isLoadingOptions } = useProductConfigurator();
     expect(isLoadingOptions.value).toBe(true);
   });
 
   it("should find variant for selected options", async () => {
-    mockProduct.value = { parentId: "parent-1" } as any;
+    mockProduct.value = {
+      parentId: "parent-1",
+    } as unknown as typeof mockProduct.value;
     mockInvoke.mockResolvedValue({
       data: {
         elements: [{ id: "variant-1" }],

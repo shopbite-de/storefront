@@ -15,7 +15,8 @@ const mapCategoryToNavItem = (
     description: `${label} Kategorie`,
     to: category.seoUrl,
     defaultOpen: true,
-    icon: category.customFields?.shopbite_category_icon,
+    icon: (category.customFields as Record<string, unknown> | undefined)
+      ?.shopbite_category_icon as string | undefined,
     children: (category.children ?? []).map(mapCategoryToNavItem),
   };
 };

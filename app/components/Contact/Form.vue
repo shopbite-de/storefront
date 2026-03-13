@@ -69,9 +69,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       },
     );
 
+    const resultData = result?.data as Record<string, unknown> | undefined;
     const msg =
-      typeof result?.data?.individualSuccessMessage === "string"
-        ? result.data.individualSuccessMessage.trim()
+      typeof resultData?.individualSuccessMessage === "string"
+        ? (resultData.individualSuccessMessage as string).trim()
         : "";
     successMessage.value =
       msg && msg.length > 0

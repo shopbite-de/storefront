@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 
-import { useAddToCart } from "../../app/composables/useAddToCart";
+import { useAddToCart } from "~/composables/useAddToCart";
+import type { Schemas } from "#shopware";
 import { nextTick } from "vue";
 
 // Use vi.hoisted for variables used in mocks
@@ -66,7 +67,7 @@ describe("useAddToCart", () => {
     translated: {
       name: "Test Pizza",
     },
-  } as any;
+  } as unknown as Schemas["Product"];
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -109,7 +110,7 @@ describe("useAddToCart", () => {
       cartItemLabel,
     } = useAddToCart();
     setSelectedProduct(mockProduct);
-    setSelectedExtras([{ label: "Extra Cheese", value: "cheese" }] as any);
+    setSelectedExtras([{ label: "Extra Cheese", value: "cheese", price: "" }]);
     setDeselectedIngredients(["Onions"]);
     await nextTick();
     expect(cartItemLabel.value).toBe("Test Pizza +Extra Cheese -Onions");
@@ -141,7 +142,7 @@ describe("useAddToCart", () => {
   it("should add product with extras to cart as container", async () => {
     const { setSelectedProduct, setSelectedExtras, addToCart } = useAddToCart();
     setSelectedProduct(mockProduct);
-    setSelectedExtras([{ label: "Extra Cheese", value: "cheese" }] as any);
+    setSelectedExtras([{ label: "Extra Cheese", value: "cheese", price: "" }]);
 
     mockAddProducts.mockResolvedValue({ id: "cart-123" });
 

@@ -4,10 +4,16 @@ import { ref } from "vue";
 import LoginForm from "@/components/User/LoginForm.vue";
 import { ApiClientError } from "@shopware/api-client";
 
+type LoginFormVm = {
+  onSubmit: (arg: {
+    data: { email: string; password: string };
+  }) => Promise<void>;
+};
+
 vi.mock("@shopware/api-client", () => ({
   ApiClientError: class extends Error {
-    details: any;
-    constructor(details: any) {
+    details: unknown;
+    constructor(details: unknown) {
       super("ApiClientError");
       this.details = details;
     }
@@ -57,7 +63,7 @@ describe("LoginForm", () => {
     const wrapper = await mountSuspended(LoginForm);
 
     // Call onSubmit directly if form trigger is not working in test
-    await (wrapper.vm as any).onSubmit({
+    await (wrapper.vm as unknown as LoginFormVm).onSubmit({
       data: {
         email: "test@example.com",
         password: "password123",
@@ -83,7 +89,7 @@ describe("LoginForm", () => {
     const wrapper = await mountSuspended(LoginForm);
 
     // Call onSubmit directly if form trigger is not working in test
-    await (wrapper.vm as any).onSubmit({
+    await (wrapper.vm as unknown as LoginFormVm).onSubmit({
       data: {
         email: "test@example.com",
         password: "wrongpassword",
@@ -108,11 +114,11 @@ describe("LoginForm", () => {
           detail: 'The email address "test@example.com" is already in use',
         },
       ],
-    });
+    } as unknown as ConstructorParameters<typeof ApiClientError>[0]);
     loginMock.mockRejectedValueOnce(apiClientError);
     const wrapper = await mountSuspended(LoginForm);
 
-    await (wrapper.vm as any).onSubmit({
+    await (wrapper.vm as unknown as LoginFormVm).onSubmit({
       data: {
         email: "test@example.com",
         password: "password123",
@@ -129,11 +135,13 @@ describe("LoginForm", () => {
   });
 
   it("should handle ApiClientError with missing errors gracefully", async () => {
-    const apiClientError = new ApiClientError({});
+    const apiClientError = new ApiClientError(
+      {} as unknown as ConstructorParameters<typeof ApiClientError>[0],
+    );
     loginMock.mockRejectedValueOnce(apiClientError);
     const wrapper = await mountSuspended(LoginForm);
 
-    await (wrapper.vm as any).onSubmit({
+    await (wrapper.vm as unknown as LoginFormVm).onSubmit({
       data: {
         email: "test@example.com",
         password: "password123",

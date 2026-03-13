@@ -166,6 +166,21 @@ export default defineNuxtConfig({
   },
   compatibilityDate: "2025-07-15",
 
+  vite: {
+    optimizeDeps: {
+      include: [
+        "@vue/devtools-core",
+        "@vue/devtools-kit",
+        "zod",
+        "@shopware/api-client",
+        "@shopware/api-client/helpers",
+        "uuid",
+        "@shopware/helpers",
+        "@vueuse/core",
+      ],
+    },
+  },
+
   experimental: {
     asyncContext: true,
     payloadExtraction: true,
@@ -185,9 +200,6 @@ export default defineNuxtConfig({
     ],
   },
   $production: {
-    sentry: {
-      dsn: process.env.NUXT_PUBLIC_SENTRY_DSN,
-    },
     scripts: {
       registry: {
         matomoAnalytics: {

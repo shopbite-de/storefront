@@ -22,7 +22,9 @@ describe("useProductVariantsZwei", () => {
       },
     ]);
 
-    const { variants } = useProductVariantsZwei(settings);
+    const { variants } = useProductVariantsZwei(
+      settings as unknown as Parameters<typeof useProductVariantsZwei>[0],
+    );
 
     expect(variants.value["group-size"]).toBeDefined();
     expect(variants.value["group-size"]?.name).toBe("Größe");
@@ -42,7 +44,9 @@ describe("useProductVariantsZwei", () => {
       },
     ]);
 
-    const { variants } = useProductVariantsZwei(settings);
+    const { variants } = useProductVariantsZwei(
+      settings as unknown as Parameters<typeof useProductVariantsZwei>[0],
+    );
     expect(variants.value["group-size"]?.options).toHaveLength(1);
   });
 });

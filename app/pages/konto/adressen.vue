@@ -133,7 +133,10 @@ const openNewModal = ref(false);
 
         <template #body>
           <div class="p-8">
-            <AddressForm :address="{}" @submit-success="reloadCustomerData" />
+            <AddressForm
+              :address="undefined"
+              @submit-success="reloadCustomerData"
+            />
           </div>
         </template>
       </UModal>

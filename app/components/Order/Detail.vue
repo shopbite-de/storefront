@@ -52,7 +52,7 @@ onMounted(() => {
 });
 
 const columnRows = computed(() => {
-  return order.value?.lineItems.filter(
+  return order.value?.lineItems?.filter(
     (lineItem: Schemas["OrderLineItem"]) => lineItem.parentId === null,
   );
 });
@@ -65,7 +65,7 @@ const columnRows = computed(() => {
         >Status: {{ status }}</UBadge
       >
       <UBadge variant="outline" color="neutral" size="xl"
-        >Versandart: {{ order?.deliveries[0].shippingMethod.name }}</UBadge
+        >Versandart: {{ order?.deliveries?.[0]?.shippingMethod?.name }}</UBadge
       >
     </div>
     <UTable

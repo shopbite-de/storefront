@@ -2,6 +2,8 @@
 import type { SelectMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
 
+type StoreSelectItem = SelectMenuItem & { value: string };
+
 const { apiClient } = useShopwareContext();
 
 const config = useRuntimeConfig();
@@ -29,7 +31,7 @@ const { data: salesChannels, pending: status } = useAsyncData(
 
 function transform(
   multiChannelGroups: Schemas["MultiChannelGroupStruct"],
-): SelectMenuItem[] {
+): StoreSelectItem[] {
   const group = multiChannelGroups.multiChannelGroup?.[0];
   if (!group) return [];
 
@@ -55,10 +57,10 @@ function transform(
   }));
 }
 
-const selectedStore = ref<SelectMenuItem>();
+const selectedStore = ref<StoreSelectItem>();
 
 watchEffect(() => {
-  const scValue = salesChannels?.value as SelectMenuItem[] | undefined;
+  const scValue = salesChannels?.value as StoreSelectItem[] | undefined;
   if (Array.isArray(scValue) && storeUrl.value && !selectedStore.value) {
     const matchingChannel = scValue.find(
       (channel) => channel?.value === storeUrl.value,

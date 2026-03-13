@@ -26,13 +26,17 @@ const isVegi = computed<boolean>(() => {
     return false;
   }
 
-  return product.value?.sortedProperties?.some(
-    (propertyGroup: Schemas["PropertyGroup"]) =>
-      propertyGroup.translated.name === "Vegetarisch" &&
-      propertyGroup.options?.some(
-        (option: Schemas["PropertyGroupOption"]) =>
-          option.translated.name === "Ja",
-      ),
+  return (
+    (
+      product.value?.sortedProperties as Schemas["PropertyGroup"][] | undefined
+    )?.some(
+      (propertyGroup: Schemas["PropertyGroup"]) =>
+        propertyGroup.translated.name === "Vegetarisch" &&
+        propertyGroup.options?.some(
+          (option: Schemas["PropertyGroupOption"]) =>
+            option.translated.name === "Ja",
+        ),
+    ) ?? false
   );
 });
 const openDetails = ref(false);
@@ -45,7 +49,9 @@ const MAIN_INGREDIENTS_PROPERTY_LABEL = "Hauptzutaten";
 
 const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
   const sortedProps =
-    product.value?.sortedProperties ?? ([] as Schemas["PropertyGroup"][]);
+    (product.value?.sortedProperties as
+      | Schemas["PropertyGroup"][]
+      | undefined) ?? ([] as Schemas["PropertyGroup"][]);
   const mainIngredientsProperty = sortedProps.find(
     (propertyGroup: Schemas["PropertyGroup"]) =>
       propertyGroup.translated.name === MAIN_INGREDIENTS_PROPERTY_LABEL,

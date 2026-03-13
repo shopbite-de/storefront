@@ -21,7 +21,7 @@ const { mockDeliveryTime, mockBusinessHours, mockHolidays } = vi.hoisted(
         { dayOfWeek: 0, openingTime: "17:30", closingTime: "23:00" },
       ],
     },
-    mockHolidays: { value: [] },
+    mockHolidays: { value: [] as { start: string; end: string }[] | null },
   }),
 );
 
@@ -36,8 +36,12 @@ mockNuxtImport("useBusinessHours", () => () => ({
     return mockBusinessHours.value
       .filter((bh) => bh.dayOfWeek === dayOfWeek)
       .map((bh) => {
-        const [startH, startM] = bh.openingTime.split(":").map(Number);
-        const [endH, endM] = bh.closingTime.split(":").map(Number);
+        const startParts = bh.openingTime.split(":").map(Number);
+        const endParts = bh.closingTime.split(":").map(Number);
+        const startH = startParts[0] ?? 0;
+        const startM = startParts[1] ?? 0;
+        const endH = endParts[0] ?? 0;
+        const endM = endParts[1] ?? 0;
         const start = new Date(date);
         start.setHours(startH, startM, 0, 0);
         const end = new Date(date);
@@ -73,8 +77,12 @@ mockNuxtImport("useBusinessHours", () => () => ({
     ]
       .filter((bh) => bh.dayOfWeek === currentTime.getDay())
       .map((bh) => {
-        const [startH, startM] = bh.openingTime.split(":").map(Number);
-        const [endH, endM] = bh.closingTime.split(":").map(Number);
+        const startParts = bh.openingTime.split(":").map(Number);
+        const endParts = bh.closingTime.split(":").map(Number);
+        const startH = startParts[0] ?? 0;
+        const startM = startParts[1] ?? 0;
+        const endH = endParts[0] ?? 0;
+        const endM = endParts[1] ?? 0;
         const start = new Date(currentTime);
         start.setHours(startH, startM, 0, 0);
         const end = new Date(currentTime);
@@ -98,10 +106,10 @@ mockNuxtImport("useBusinessHours", () => () => ({
 mockNuxtImport("useHolidays", () => () => ({
   isClosedHoliday: (date: Date) => {
     if (!mockHolidays.value) return undefined;
-    const formattedDate = date.toISOString().split("T")[0];
-    return mockHolidays.value.some((h: any) => {
-      const start = h.start.split("T")[0];
-      const end = h.end.split("T")[0];
+    const formattedDate = date.toISOString().split("T")[0]!;
+    return mockHolidays.value.some((h: { start: string; end: string }) => {
+      const start = h.start.split("T")[0] as string;
+      const end = h.end.split("T")[0] as string;
       return formattedDate >= start && formattedDate <= end;
     });
   },
