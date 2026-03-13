@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   state: {
     isLoggedIn: false,
     isGuestSession: false,
-    user: null as any,
+    user: null as { firstName: string; lastName: string } | null,
   },
   toastAddCalled: { value: false },
 }));
@@ -25,9 +25,13 @@ mockNuxtImport("useUser", () => () => ({
 }));
 
 mockNuxtImport("useToast", () => () => ({
-  add: (payload: any) => {
-    if (typeof global !== "undefined" && (global as any).toastAddCalled) {
-      (global as any).toastAddCalled.value = true;
+  add: (_payload: unknown) => {
+    if (
+      typeof global !== "undefined" &&
+      (global as Record<string, { value: boolean }>).toastAddCalled
+    ) {
+      (global as Record<string, { value: boolean }>).toastAddCalled!.value =
+        true;
     }
   },
 }));
@@ -45,7 +49,7 @@ mockNuxtImport("useRuntimeConfig", () => () => ({
 }));
 
 // Mock Nuxt Content queryCollection
-mockNuxtImport("queryCollection", () => (collection: string) => ({
+mockNuxtImport("queryCollection", () => (_collection: string) => ({
   first: () =>
     Promise.resolve({
       account: {
@@ -74,7 +78,7 @@ describe("HeaderRight", () => {
     reactiveState.isGuestSession = false;
     reactiveState.user = null;
     mocks.toastAddCalled.value = false;
-    (global as any).toastAddCalled = mocks.toastAddCalled;
+    (global as Record<string, unknown>).toastAddCalled = mocks.toastAddCalled;
     vi.clearAllMocks();
   });
 

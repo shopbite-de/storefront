@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { reactive, ref } from "vue";
+import { reactive } from "vue";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import Fields from "~/components/Address/Fields.vue";
 
@@ -20,6 +20,7 @@ describe("AddressFields", () => {
       zipcode: "",
       city: "",
       phoneNumber: "",
+      countryId: "",
     },
     prefix: "billingAddress",
   };
@@ -99,12 +100,14 @@ describe("AddressFields", () => {
       zipcode: "",
       city: "",
       phoneNumber: "",
+      countryId: "",
     });
     const wrapper = await mountSuspended(Fields, {
       props: {
         ...defaultProps,
         modelValue,
-        "onUpdate:modelValue": (val: any) => Object.assign(modelValue, val),
+        "onUpdate:modelValue": (val: typeof modelValue) =>
+          Object.assign(modelValue, val),
       },
     });
 
@@ -122,6 +125,7 @@ describe("AddressFields", () => {
       zipcode: "12345",
       city: "InvalidCity",
       phoneNumber: "12345678",
+      countryId: "",
     });
 
     const wrapper = await mountSuspended(Fields, {
@@ -145,6 +149,7 @@ describe("AddressFields", () => {
       zipcode: "63179",
       city: "Obertshausen",
       phoneNumber: "12345678",
+      countryId: "",
     });
 
     const wrapper = await mountSuspended(Fields, {
@@ -168,6 +173,7 @@ describe("AddressFields", () => {
       zipcode: "12345",
       city: "InvalidCity",
       phoneNumber: "12345678",
+      countryId: "",
     });
 
     const wrapper = await mountSuspended(Fields, {
@@ -200,6 +206,7 @@ describe("AddressFields", () => {
       zipcode: "12345",
       city: "Musterstadt",
       phoneNumber: "12345678",
+      countryId: "",
     });
 
     const wrapper = await mountSuspended(Fields, {
@@ -230,9 +237,10 @@ describe("AddressFields", () => {
       zipcode: "12345",
       city: "Musterstadt",
       phoneNumber: "12345678",
+      countryId: "",
     });
 
-    const wrapper = await mountSuspended(Fields, {
+    const _wrapper = await mountSuspended(Fields, {
       props: {
         ...defaultProps,
         modelValue,
@@ -264,6 +272,7 @@ describe("AddressFields", () => {
       zipcode: "10115",
       city: "Berlin",
       phoneNumber: "12345678",
+      countryId: "",
     });
 
     const wrapper = await mountSuspended(Fields, {

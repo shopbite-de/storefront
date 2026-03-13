@@ -33,7 +33,11 @@ const state = initializeFormState();
 
 async function handleEmailUpdate(newEmail: string) {
   if (newEmail !== user.value?.email) {
-    await updateEmail(newEmail);
+    await updateEmail({
+      email: newEmail,
+      emailConfirmation: newEmail,
+      password: "",
+    });
   }
 }
 

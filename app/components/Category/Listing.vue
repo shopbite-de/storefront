@@ -64,10 +64,11 @@ useCategorySeo(category);
 
 const currentSorting = ref(getCurrentSortingOrder.value ?? "Sortieren");
 
-const propertyFilters = computed<Schemas["PropertyGroup"][]>(() =>
-  getAvailableFilters.value?.filter(
-    (availableFilter) => availableFilter.code === "properties",
-  ),
+const propertyFilters = computed<Schemas["PropertyGroup"][]>(
+  () =>
+    (getAvailableFilters.value?.filter(
+      (availableFilter) => availableFilter.code === "properties",
+    ) ?? []) as unknown as Schemas["PropertyGroup"][],
 );
 
 const selectedPropertyFilters = ref(getCurrentFilters.value?.properties ?? []);

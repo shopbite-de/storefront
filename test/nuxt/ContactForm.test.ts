@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import ContactForm from "~/components/Contact/Form.vue";
 
+type ContactFormVm = {
+  submitted: boolean;
+  successMessage: string;
+  onSubmit: (arg: {
+    data: Record<string, string | undefined>;
+  }) => Promise<void>;
+};
+
 const { mockInvoke } = vi.hoisted(() => {
   return {
     mockInvoke: vi.fn(),
@@ -52,7 +60,9 @@ describe("ContactForm", () => {
       comment: "Ich habe eine Frage zu Ihrem Produkt.",
     };
 
-    await (wrapper.vm as any).onSubmit({ data: validData });
+    await (wrapper.vm as unknown as ContactFormVm).onSubmit({
+      data: validData,
+    });
 
     expect(mockInvoke).toHaveBeenCalled();
     expect(mockToastAdd).toHaveBeenCalledWith(
@@ -63,8 +73,10 @@ describe("ContactForm", () => {
     );
 
     // Verify submitted state
-    expect((wrapper.vm as any).submitted).toBe(true);
-    expect((wrapper.vm as any).successMessage).toBe(customMessage);
+    expect((wrapper.vm as unknown as ContactFormVm).submitted).toBe(true);
+    expect((wrapper.vm as unknown as ContactFormVm).successMessage).toBe(
+      customMessage,
+    );
 
     // Wait for DOM update
     await nextTick();
@@ -76,7 +88,7 @@ describe("ContactForm", () => {
 
     // Click on "Weiteres Formular senden"
     await wrapper.find("button").trigger("click");
-    expect((wrapper.vm as any).submitted).toBe(false);
+    expect((wrapper.vm as unknown as ContactFormVm).submitted).toBe(false);
 
     await nextTick();
     expect(wrapper.find("form").exists()).toBe(true);
@@ -102,10 +114,14 @@ describe("ContactForm", () => {
       comment: "Ich habe eine Frage zu Ihrem Produkt.",
     };
 
-    await (wrapper.vm as any).onSubmit({ data: validData });
+    await (wrapper.vm as unknown as ContactFormVm).onSubmit({
+      data: validData,
+    });
 
     const defaultMessage = "Deine Nachricht wurde erfolgreich versendet.";
-    expect((wrapper.vm as any).successMessage).toBe(defaultMessage);
+    expect((wrapper.vm as unknown as ContactFormVm).successMessage).toBe(
+      defaultMessage,
+    );
 
     await nextTick();
     expect(wrapper.text()).toContain(defaultMessage);
@@ -127,7 +143,9 @@ describe("ContactForm", () => {
       comment: "Dies ist ein Test mit nur Pflichtfeldern.",
     };
 
-    await (wrapper.vm as any).onSubmit({ data: mandatoryDataOnly });
+    await (wrapper.vm as unknown as ContactFormVm).onSubmit({
+      data: mandatoryDataOnly,
+    });
 
     expect(mockInvoke).toHaveBeenCalledWith(
       "sendContactMail post /contact-form",
@@ -140,7 +158,7 @@ describe("ContactForm", () => {
       },
     );
 
-    expect((wrapper.vm as any).submitted).toBe(true);
+    expect((wrapper.vm as unknown as ContactFormVm).submitted).toBe(true);
   });
 
   it("shows error toast when submission fails", async () => {
@@ -158,7 +176,9 @@ describe("ContactForm", () => {
       comment: "Bitte um Unterstützung.",
     };
 
-    await (wrapper.vm as any).onSubmit({ data: validData });
+    await (wrapper.vm as unknown as ContactFormVm).onSubmit({
+      data: validData,
+    });
 
     expect(mockInvoke).toHaveBeenCalled();
 
@@ -180,8 +200,8 @@ describe("ContactForm", () => {
       comment: "This is spam.",
       hp: "I am a bot",
     };
-    await (wrapper.vm as any).onSubmit({ data: botData });
+    await (wrapper.vm as unknown as ContactFormVm).onSubmit({ data: botData });
     expect(mockInvoke).not.toHaveBeenCalled();
-    expect((wrapper.vm as any).submitted).toBe(true);
+    expect((wrapper.vm as unknown as ContactFormVm).submitted).toBe(true);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { useWishlistActions } from "../../app/composables/useWishlistActions";
+import type { Schemas } from "#shopware";
 
 const {
   mockAddProducts,
@@ -44,7 +45,7 @@ describe("useWishlistActions", () => {
     id: "prod-1",
     translated: { name: "Test Product" },
     productNumber: "SW123",
-  } as any;
+  } as unknown as Schemas["Product"];
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -93,7 +94,7 @@ describe("useWishlistActions", () => {
     const products = [
       { id: "p1", translated: { name: "P1" } },
       { id: "p2", translated: { name: "P2" } },
-    ] as any[];
+    ] as unknown as Schemas["Product"][];
     const { addAllItemsToCart, isAddingToCart } = useWishlistActions();
     mockAddProducts.mockResolvedValue({ id: "cart-1" });
 
@@ -119,7 +120,7 @@ describe("useWishlistActions", () => {
     const products = [
       { id: "p1", translated: { name: "P1" } },
       { id: "p2", childCount: 1, translated: { name: "P2" } },
-    ] as any[];
+    ] as unknown as Schemas["Product"][];
     const { addAllItemsToCart } = useWishlistActions();
     mockAddProducts.mockResolvedValue({ id: "cart-1" });
 

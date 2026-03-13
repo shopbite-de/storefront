@@ -46,11 +46,11 @@ describe("registrationSchema", () => {
     const result = schema.safeParse(businessData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe(
+      expect(result.error.issues[0]!.message).toBe(
         "Als Geschäftskunde ist der Firmenname ein Pflichtfeld.",
       );
-      expect(result.error.issues[0].path).toContain("billingAddress");
-      expect(result.error.issues[0].path).toContain("company");
+      expect(result.error.issues[0]!.path).toContain("billingAddress");
+      expect(result.error.issues[0]!.path).toContain("company");
     }
   });
 
@@ -189,10 +189,10 @@ describe("registrationSchema", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe(
+      expect(result.error.issues[0]!.message).toBe(
         "Bitte akzeptieren Sie die Datenschutzbestimmungen.",
       );
-      expect(result.error.issues[0].path).toContain("acceptedDataProtection");
+      expect(result.error.issues[0]!.path).toContain("acceptedDataProtection");
     }
   });
 
@@ -207,11 +207,11 @@ describe("registrationSchema", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe(
+      expect(result.error.issues[0]!.message).toBe(
         "Bitte geben Sie Ihre Straße und Hausnummer an.",
       );
-      expect(result.error.issues[0].path).toContain("billingAddress");
-      expect(result.error.issues[0].path).toContain("street");
+      expect(result.error.issues[0]!.path).toContain("billingAddress");
+      expect(result.error.issues[0]!.path).toContain("street");
     }
   });
 

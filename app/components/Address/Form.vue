@@ -34,10 +34,13 @@ const toast = useToast();
 async function onSubmit(event: FormSubmitEvent<AddressSchema>) {
   try {
     let response: undefined | Schemas["CustomerAddress"] = undefined;
+    const addressData = event.data as unknown as Parameters<
+      typeof updateCustomerAddress
+    >[0];
     if (event.data.id) {
-      response = await updateCustomerAddress(event.data);
+      response = await updateCustomerAddress(addressData);
     } else {
-      response = await createCustomerAddress(event.data);
+      response = await createCustomerAddress(addressData);
     }
 
     toast.add({

@@ -30,15 +30,22 @@ export function useBusinessHours() {
     return dayBusinessHours
       .map((bh) => {
         if (!bh.openingTime || !bh.closingTime) return null;
-        const [startH, startM] = bh.openingTime.split(":").map(Number);
-        const [endH, endM] = bh.closingTime.split(":").map(Number);
+        const startParts = bh.openingTime.split(":").map(Number);
+        const endParts = bh.closingTime.split(":").map(Number);
+        const startH = startParts[0] ?? 0;
+        const startM = startParts[1] ?? 0;
+        const endH = endParts[0] ?? 0;
+        const endM = endParts[1] ?? 0;
 
         return {
           start: setTime(date, startH, startM),
           end: setTime(date, endH, endM),
         };
       })
-      .sort((a, b) => a.start.getTime() - b.start.getTime())
+      .sort((a, b) => {
+        if (!a || !b) return 0;
+        return a.start.getTime() - b.start.getTime();
+      })
       .filter((interval): interval is ServiceInterval => interval !== null);
   };
 
@@ -109,7 +116,7 @@ export function useBusinessHours() {
         continue; // Today's openings have passed, check next days
       }
 
-      const nextOpen = intervals[0].start;
+      const nextOpen = intervals[0]!.start;
       const day = nextOpen.getDate().toString().padStart(2, "0");
       const month = (nextOpen.getMonth() + 1).toString().padStart(2, "0");
       const dayName = [

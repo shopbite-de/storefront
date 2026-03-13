@@ -1,11 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { useProductVariants } from "../../app/composables/useProductVariants";
+import { useProductVariants } from "~/composables/useProductVariants";
 import { ref } from "vue";
 
 describe("useProductVariants", () => {
   it("should return empty object when no settings provided", () => {
     const settings = ref([]);
-    const { variants } = useProductVariants(settings as any);
+    const { variants } = useProductVariants(
+      settings as unknown as Parameters<typeof useProductVariants>[0],
+    );
     expect(variants.value).toEqual({});
   });
 
@@ -49,20 +51,22 @@ describe("useProductVariants", () => {
       },
     ]);
 
-    const { variants } = useProductVariants(settings as any);
+    const { variants } = useProductVariants(
+      settings as unknown as Parameters<typeof useProductVariants>[0],
+    );
 
     expect(variants.value["group-size"]).toBeDefined();
-    expect(variants.value["group-size"].name).toBe("Größe");
-    expect(variants.value["group-size"].options).toHaveLength(2);
-    expect(variants.value["group-size"].options[0]).toEqual({
+    expect(variants.value["group-size"]!.name).toBe("Größe");
+    expect(variants.value["group-size"]!.options).toHaveLength(2);
+    expect(variants.value["group-size"]!.options[0]).toEqual({
       label: "Klein",
       value: "opt-1",
       productId: "opt-1",
     });
 
     expect(variants.value["group-color"]).toBeDefined();
-    expect(variants.value["group-color"].name).toBe("Farbe");
-    expect(variants.value["group-color"].options).toHaveLength(1);
+    expect(variants.value["group-color"]!.name).toBe("Farbe");
+    expect(variants.value["group-color"]!.options).toHaveLength(1);
   });
 
   it("should avoid duplicate options", () => {
@@ -83,7 +87,9 @@ describe("useProductVariants", () => {
       },
     ]);
 
-    const { variants } = useProductVariants(settings as any);
-    expect(variants.value["group-size"].options).toHaveLength(1);
+    const { variants } = useProductVariants(
+      settings as unknown as Parameters<typeof useProductVariants>[0],
+    );
+    expect(variants.value["group-size"]!.options).toHaveLength(1);
   });
 });

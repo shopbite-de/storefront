@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
-import { useTopSellers } from "../../app/composables/useTopSellers";
+import { useTopSellers } from "~/composables/useTopSellers";
 
 const { mockInvoke } = vi.hoisted(() => ({
   mockInvoke: vi.fn(),
@@ -31,7 +31,7 @@ describe("useTopSellers", () => {
     const result = await loadTopSellers();
 
     expect(mockInvoke).toHaveBeenCalledWith(
-      "getTopSellers post /product",
+      "readProduct post /product",
       expect.any(Object),
     );
     expect(result).toEqual(mockElements);

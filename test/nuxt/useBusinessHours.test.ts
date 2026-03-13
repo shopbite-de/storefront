@@ -5,7 +5,7 @@ import { useBusinessHours } from "~/composables/useBusinessHours";
 
 // Mock useAsyncData
 mockNuxtImport("useAsyncData", () => {
-  return (key: string, handler: () => Promise<any>) => {
+  return (key: string, handler: () => Promise<unknown>) => {
     const data = ref(null);
     const pending = ref(false);
     const refresh = vi.fn(async () => {
@@ -97,10 +97,10 @@ describe("useBusinessHours", () => {
     const intervals = getServiceIntervals(monday);
 
     expect(intervals).toHaveLength(2);
-    expect(intervals[0].start.getHours()).toBe(11);
-    expect(intervals[1].start.getHours()).toBe(17);
-    expect(intervals[0].start.getTime()).toBeLessThan(
-      intervals[1].start.getTime(),
+    expect(intervals[0]!.start.getHours()).toBe(11);
+    expect(intervals[1]!.start.getHours()).toBe(17);
+    expect(intervals[0]!.start.getTime()).toBeLessThan(
+      intervals[1]!.start.getTime(),
     );
   });
 });

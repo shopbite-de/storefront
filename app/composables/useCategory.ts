@@ -21,6 +21,7 @@ export async function useCategory(categoryId: Ref<string>) {
     const response = await apiClient.invoke(
       "readCategoryGet get /category/{navigationId}",
       {
+        // @ts-expect-error: _criteria is not in the type definition
         query: { _criteria: criteria },
         pathParams: {
           navigationId: categoryId.value,

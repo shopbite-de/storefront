@@ -79,7 +79,9 @@ watch(
 
 function roundToNext5MinInterval(timeString: string | null): string {
   if (!timeString) return "";
-  const [hours, minutes] = timeString.split(":").map(Number);
+  const parts = timeString.split(":").map(Number);
+  const hours = parts[0] ?? 0;
+  const minutes = parts[1] ?? 0;
   const totalMinutes = hours * 60 + minutes;
   const roundedMinutes = Math.ceil(totalMinutes / 5) * 5;
   const newHours = Math.floor(roundedMinutes / 60) % 24;

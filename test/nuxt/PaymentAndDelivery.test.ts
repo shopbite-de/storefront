@@ -50,7 +50,7 @@ describe("PaymentAndDelivery", () => {
   it("updates payment method when changed", async () => {
     const wrapper = await mountSuspended(PaymentAndDelivery);
 
-    // @ts-ignore - access internal state
+    // @ts-expect-error - access internal state
     wrapper.vm.selectedPaymentMethodId = "pm2";
     await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -60,7 +60,7 @@ describe("PaymentAndDelivery", () => {
   it("updates shipping method and refreshes cart when changed", async () => {
     const wrapper = await mountSuspended(PaymentAndDelivery);
 
-    // @ts-ignore - access internal state
+    // @ts-expect-error - access internal state
     wrapper.vm.selectedShippingMethodId = "sm2";
     await new Promise((resolve) => setTimeout(resolve, 50));
 

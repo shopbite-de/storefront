@@ -18,7 +18,7 @@ watch(isLoggedIn, (isLoggedIn) => {
 });
 
 const state = reactive({
-  accountType: "private",
+  accountType: "private" as "private" | "business",
   salutationId: "",
   firstName: "",
   lastName: "",
@@ -118,7 +118,10 @@ async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
       title: "Erfolgreich Kundendaten erfasst",
       color: "success",
     });
-    emit("registration-success", registrationData);
+    emit(
+      "registration-success",
+      registrationData as unknown as RegistrationSchema,
+    );
   } catch (error) {
     console.error("Registration failed:", error);
     let description = "Bitte versuchen Sie es erneut.";

@@ -25,9 +25,10 @@ export default defineEventHandler(async (event) => {
   try {
     return await $fetch(geoapifyUrl.toString());
   } catch (error) {
+    const err = error as { response?: { status?: number }; message?: string };
     throw createError({
-      statusCode: error.response?.status || 500,
-      statusMessage: error.message || "Error fetching address suggestions",
+      statusCode: err.response?.status || 500,
+      statusMessage: err.message || "Error fetching address suggestions",
     });
   }
 });

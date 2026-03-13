@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref } from "vue";
 
+// Re-import the mocks for assertions
+import { useHead, useSeoMeta } from "#imports";
+
 // Create shared mocks to be exported by both '#imports' and '#app' in a hoisted-safe way
 const shared = vi.hoisted(() => ({
   useHead: vi.fn(),
@@ -41,24 +44,25 @@ vi.mock("#app", async () => {
   };
 });
 
-// Re-import the mocks for assertions
-import { useHead, useSeoMeta } from "#imports";
-
 // Target under test will be dynamically imported after setting up globals
-let useCategorySeo: (arg: any) => any;
+let useCategorySeo: (
+  arg: unknown,
+) => ReturnType<
+  (typeof import("../../app/composables/useCategorySeo"))["useCategorySeo"]
+>;
 
 describe("useCategorySeo", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     // Provide globals for auto-imported functions (when not transformed in unit env)
     const vue = await import("vue");
-    (globalThis as any).computed = vue.computed;
-    (globalThis as any).ref = vue.ref;
-    (globalThis as any).useRuntimeConfig = () => ({
+    (globalThis as Record<string, unknown>).computed = vue.computed;
+    (globalThis as Record<string, unknown>).ref = vue.ref;
+    (globalThis as Record<string, unknown>).useRuntimeConfig = () => ({
       public: { site: { name: "My Store" }, storeUrl: "https://example.com" },
     });
-    (globalThis as any).useHead = useHead;
-    (globalThis as any).useSeoMeta = useSeoMeta;
+    (globalThis as Record<string, unknown>).useHead = useHead;
+    (globalThis as Record<string, unknown>).useSeoMeta = useSeoMeta;
 
     // Dynamic import after globals are ready
     useCategorySeo = (await import("../../app/composables/useCategorySeo"))
@@ -66,7 +70,17 @@ describe("useCategorySeo", () => {
   });
 
   it("computes core SEO refs and injects head tags", () => {
-    const category = ref<any>({
+    const category = ref<{
+      translated?: {
+        metaTitle?: string;
+        metaDescription?: string;
+        breadcrumb?: string[];
+        name?: string;
+      };
+      seoUrl?: string;
+      active?: boolean;
+      media?: { url?: string };
+    }>({
       translated: {
         metaTitle: "Pizza & Pasta",
         metaDescription: "Leckere Pizza und Pasta bestellen",
@@ -96,7 +110,7 @@ describe("useCategorySeo", () => {
       useHead as unknown as ReturnType<typeof vi.fn>,
     ).toHaveBeenCalledTimes(1);
     const headArg = (useHead as unknown as ReturnType<typeof vi.fn>).mock
-      .calls[0][0];
+      .calls[0]![0]!;
 
     // Canonical link
     const link = headArg.link?.[0];
@@ -116,7 +130,7 @@ describe("useCategorySeo", () => {
   });
 
   it("sets robots to noindex when category is inactive", () => {
-    const category = ref<any>({
+    const category = ref({
       translated: { name: "Salate" },
       active: false,
       seoUrl: "/c/salate",
