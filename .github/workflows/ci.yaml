@@ -4,21 +4,56 @@ on:
     branches: ["main", "dev"]
   pull_request:
     types: [opened, synchronize]
+
+env:
+  NUXT_PUBLIC_APP_ENV: 'test'
+  NUXT_PUBLIC_STORE_URL: 'http://localhost:3005'
+  NUXT_PUBLIC_SHOPWARE_DEV_STORE_FRONT_URL: 'http://localhost:3005'
+  PORT: '3005'
+  NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
+  NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
+  NUXT_PUBLIC_SITE_COUNTRY_ID: ${{ secrets.NUXT_PUBLIC_SITE_COUNTRY_ID }}
+  GEOPIFY: ${{ secrets.GEOPIFY }}
+
 jobs:
-  test:
-    name: Run unit and e2e tests
+  unit-test:
+    name: Unit tests
     environment: test
-    env:
-      NUXT_PUBLIC_APP_ENV: 'test'
-      NUXT_PUBLIC_STORE_URL: 'http://localhost:3005'
-      NUXT_PUBLIC_SHOPWARE_DEV_STORE_FRONT_URL: 'http://localhost:3005'
-      PORT: '3005'
-      NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
-      NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
-      NUXT_PUBLIC_SITE_COUNTRY_ID: ${{ secrets.NUXT_PUBLIC_SITE_COUNTRY_ID }}
-      GEOPIFY: ${{ secrets.GEOPIFY }}
-      TEST_USER: ${{ secrets.TEST_USER }}
-      TEST_USER_PASS: ${{ secrets.TEST_USER_PASS }}
+    if: github.event.pull_request.draft == false
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Rebuild native modules
+        run: pnpm rebuild better-sqlite3
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+  e2e-test:
+    name: E2E tests
+    environment: test
     if: github.event.pull_request.draft == false
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -61,9 +96,6 @@ jobs:
         env:
           NODE_OPTIONS: "--max_old_space_size=4096"
         run: pnpm run build
-
-      - name: Unit tests
-        run: pnpm test:unit
 
       - name: E2E tests
         env:
