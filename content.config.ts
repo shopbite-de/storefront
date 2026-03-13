@@ -1,5 +1,4 @@
-import { defineCollection, defineContentConfig } from "@nuxt/content";
-import { z } from "zod";
+import { defineCollection, defineContentConfig, z } from "@nuxt/content";
 
 const createEnum = (options: [string, ...string[]]) => z.enum(options);
 
