@@ -43,26 +43,25 @@ jobs:
       - name: Rebuild native modules
         run: pnpm rebuild better-sqlite3
 
-      - name: Save node_modules to cache
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.local/share/pnpm/store
-            node_modules
-          key: deps-${{ runner.os }}-${{ github.sha }}
-
       - name: Build
         env:
           NODE_OPTIONS: "--max_old_space_size=4096"
         run: pnpm run build
 
-      - name: Upload build artifacts
+      - name: Save node_modules and nuxt to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules
+            .nuxt
+          key: deps-${{ runner.os }}-${{ github.sha }}
+
+      - name: Upload build output
         uses: actions/upload-artifact@v4
         with:
           name: build-output
-          path: |
-            .output
-            .nuxt
+          path: .output
           retention-days: 1
 
   unit-test:
@@ -82,18 +81,14 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Restore node_modules from cache
+      - name: Restore node_modules and nuxt from cache
         uses: actions/cache/restore@v4
         with:
           path: |
             ~/.local/share/pnpm/store
             node_modules
+            .nuxt
           key: deps-${{ runner.os }}-${{ github.sha }}
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
 
       - name: Unit tests
         run: pnpm test:unit
@@ -115,12 +110,13 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Restore node_modules from cache
+      - name: Restore node_modules and nuxt from cache
         uses: actions/cache/restore@v4
         with:
           path: |
             ~/.local/share/pnpm/store
             node_modules
+            .nuxt
           key: deps-${{ runner.os }}-${{ github.sha }}
 
       - name: Download build artifacts
