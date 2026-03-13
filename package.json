@@ -28,7 +28,8 @@
     "prettier:fix": "prettier --check \"**/*.{ts,tsx,md,vue}\" --write",
     "generate-types": "shopware-api-gen generate --apiType=store",
     "load-schema": "pnpx @shopware/api-gen loadSchema --apiType=store",
-    "lint:fix": "npm run prettier:fix && npm run eslint:fix"
+    "lint:fix": "npm run prettier:fix && npm run eslint:fix",
+    "typecheck": "nuxi typecheck"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",

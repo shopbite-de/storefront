@@ -48,21 +48,48 @@ jobs:
           NODE_OPTIONS: "--max_old_space_size=4096"
         run: pnpm run build
 
-      - name: Save node_modules and nuxt to cache
+      - name: Save workspace to cache
         uses: actions/cache/save@v4
         with:
           path: |
             ~/.local/share/pnpm/store
             node_modules
             .nuxt
-          key: deps-${{ runner.os }}-${{ github.sha }}
+            .output
+          key: workspace-${{ runner.os }}-${{ github.sha }}
 
-      - name: Upload build output
-        uses: actions/upload-artifact@v4
+  lint:
+    name: Lint & format
+    environment: test
+    needs: [setup]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
         with:
-          name: build-output
-          path: .output
-          retention-days: 1
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Restore workspace from cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules
+            .nuxt
+            .output
+          key: workspace-${{ runner.os }}-${{ github.sha }}
+
+      - name: Prettier
+        run: pnpm prettier
+
+      - name: ESLint
+        run: pnpm eslint
 
   unit-test:
     name: Unit tests
@@ -81,14 +108,15 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Restore node_modules and nuxt from cache
+      - name: Restore workspace from cache
         uses: actions/cache/restore@v4
         with:
           path: |
             ~/.local/share/pnpm/store
             node_modules
             .nuxt
-          key: deps-${{ runner.os }}-${{ github.sha }}
+            .output
+          key: workspace-${{ runner.os }}-${{ github.sha }}
 
       - name: Unit tests
         run: pnpm test:unit
@@ -110,19 +138,15 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Restore node_modules and nuxt from cache
+      - name: Restore workspace from cache
         uses: actions/cache/restore@v4
         with:
           path: |
             ~/.local/share/pnpm/store
             node_modules
             .nuxt
-          key: deps-${{ runner.os }}-${{ github.sha }}
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
+            .output
+          key: workspace-${{ runner.os }}-${{ github.sha }}
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
