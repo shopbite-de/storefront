@@ -37,7 +37,7 @@ defineProps<{
           :alt="item.alt"
           :fetchpriority="index === 0 ? 'high' : 'auto'"
           class="rounded-lg"
-        >
+        />
       </UCarousel>
     </template>
   </UPageSection>

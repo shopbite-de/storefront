@@ -145,7 +145,7 @@ function handleTimeInput(event: Event): void {
           step="300"
           class="border rounded px-2 py-1"
           @input="handleTimeInput"
-        >
+        />
       </client-only>
     </div>
     <p v-if="validationError" class="text-sm text-red-600">

@@ -99,6 +99,7 @@ export default defineNuxtConfig({
     "@nuxt/ui",
     "@nuxt/scripts",
     "nuxt-vitalizer",
+    "@nuxt/eslint",
   ],
 
   content: {
