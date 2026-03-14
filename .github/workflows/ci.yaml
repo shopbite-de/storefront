@@ -49,7 +49,7 @@ jobs:
         run: pnpm run build
 
       - name: Save workspace to cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: |
             ~/.local/share/pnpm/store
@@ -76,7 +76,7 @@ jobs:
           node-version: '24'
 
       - name: Restore workspace from cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.local/share/pnpm/store
@@ -109,7 +109,7 @@ jobs:
           node-version: '24'
 
       - name: Restore workspace from cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.local/share/pnpm/store
@@ -139,7 +139,7 @@ jobs:
           node-version: '24'
 
       - name: Restore workspace from cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.local/share/pnpm/store
@@ -149,7 +149,7 @@ jobs:
           key: workspace-${{ runner.os }}-${{ github.sha }}
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
