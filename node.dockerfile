@@ -15,7 +15,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 # Copy manifests first so dependency layer is cached independently from source changes
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile --prefer-offline
 
 COPY . .
