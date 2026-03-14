@@ -11,6 +11,8 @@ mockNuxtImport("useFetch", () => mockUseFetch);
 
 // Mock useRuntimeConfig
 mockNuxtImport("useRuntimeConfig", () => () => ({
+  app: { baseURL: "/" },
+  public: { shopware: {} },
   geoapifyApiKey: "test-api-key",
 }));
 

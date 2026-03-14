@@ -46,6 +46,11 @@ mockNuxtImport("useCart", () => () => ({
 
 mockNuxtImport("useRuntimeConfig", () => () => ({
   app: { baseURL: "/" },
+  public: { shopware: {} },
+}));
+
+mockNuxtImport("useWishlist", () => () => ({
+  count: ref(0),
 }));
 
 // Mock Nuxt Content queryCollection

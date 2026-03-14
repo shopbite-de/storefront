@@ -38,6 +38,7 @@ mockNuxtImport("useToast", () => () => ({
 
 // Mock useRuntimeConfig
 mockNuxtImport("useRuntimeConfig", () => () => ({
+  app: { baseURL: "/" },
   public: {
     shopware: {
       devStorefrontUrl: "http://localhost:3000",
