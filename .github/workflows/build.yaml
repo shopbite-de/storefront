@@ -77,6 +77,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Set version from release tag
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          pnpm version "${VERSION#v}" --no-git-tag-version
+
       - name: Publish to npm
         run: pnpm publish --no-git-checks --access public
         env:
