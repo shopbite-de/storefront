@@ -10,6 +10,10 @@
     "vue",
     "food delivery"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shopbite-de/storefront"
+  },
   "author": "@veliu",
   "license": "MIT",
   "type": "module",
