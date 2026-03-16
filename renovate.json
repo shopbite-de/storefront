@@ -6,7 +6,8 @@
       "matchUpdateTypes": ["minor", "patch", "lockfileUpdate"],
       "automerge": true,
       "automergeType": "pr",
-      "automergeStrategy": "rebase"
+      "automergeStrategy": "rebase",
+      "platformAutomerge": true
     }
   ]
 }
