@@ -13,7 +13,7 @@ if (config.public.shopBite.feature.contactForm !== true) {
 
 <template>
   <UPageSection
-    title="Sie haben eine Frage oder Anregung?Wir freuen uns auf Ihre Nachricht."
+    title="Sie haben eine Frage oder Anregung? Wir freuen uns auf Ihre Nachricht."
     description="Bitte beachten Sie, dass wir Tischreservierung oder Tischstornierung nur telefonisch entgegennehmen können."
     icon="i-lucide-mail"
     orientation="horizontal"

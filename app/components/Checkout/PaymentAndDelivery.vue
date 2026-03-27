@@ -82,42 +82,40 @@ watch(
 </script>
 
 <template>
-  <UContainer>
-    <div class="flex flex-col md:flex-row justify-between gap-4">
-      <div class="basis-1/2">
-        <div class="flex flex-row items-center gap-4">
-          <UIcon name="i-lucide-badge-euro" class="size-8" />
-          <h2 class="text-2xl text-blackish my-8">Zahlungsarten</h2>
-          <UButton
-            to="/zahlung-und-versand"
-            size="md"
-            variant="ghost"
-            icon="i-lucide-circle-question-mark"
-          />
-        </div>
-        <URadioGroup
-          v-model="selectedPaymentMethodId"
-          :items="selectablePaymentMethods"
-          variant="card"
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-2">
+        <UIcon name="i-lucide-badge-euro" class="size-5 text-muted" />
+        <h2 class="text-lg font-semibold">Zahlungsarten</h2>
+        <UButton
+          to="/zahlung-und-versand"
+          size="sm"
+          variant="ghost"
+          icon="i-lucide-circle-help"
         />
       </div>
-      <div class="basis-1/2">
-        <div class="flex flex-row items-center gap-4">
-          <UIcon name="i-lucide-car" class="size-8" />
-          <h2 class="text-2xl text-blackish my-8">Versandarten</h2>
-          <UButton
-            to="/zahlung-und-versand"
-            size="md"
-            variant="ghost"
-            icon="i-lucide-circle-question-mark"
-          />
-        </div>
-        <URadioGroup
-          v-model="selectedShippingMethodId"
-          :items="selectableShippingMethods"
-          variant="card"
-        />
-      </div>
+      <URadioGroup
+        v-model="selectedPaymentMethodId"
+        :items="selectablePaymentMethods"
+        variant="card"
+      />
     </div>
-  </UContainer>
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-2">
+        <UIcon name="i-lucide-car" class="size-5 text-muted" />
+        <h2 class="text-lg font-semibold">Versandarten</h2>
+        <UButton
+          to="/zahlung-und-versand"
+          size="sm"
+          variant="ghost"
+          icon="i-lucide-circle-help"
+        />
+      </div>
+      <URadioGroup
+        v-model="selectedShippingMethodId"
+        :items="selectableShippingMethods"
+        variant="card"
+      />
+    </div>
+  </div>
 </template>

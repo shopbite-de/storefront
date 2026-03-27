@@ -17,7 +17,7 @@ const loginSlide = ref(false);
     </template>
 
     <template #body>
-      <HeaderBody />
+      <LazyHeaderBody />
     </template>
   </UHeader>
 
@@ -28,7 +28,7 @@ const loginSlide = ref(false);
   >
     <template #body>
       <div class="h-full m-4">
-        <UserLoginForm />
+        <LazyUserLoginForm />
       </div>
     </template>
   </USlideover>

@@ -47,7 +47,7 @@ useSeoMeta({
 
     <USeparator :ui="{ border: 'border-primary/30' }" />
 
-    <FoodMarquee
+    <LazyFoodMarquee
       v-if="page.marquee.items?.length > 0"
       :title="page.marquee.title"
       :description="page.marquee.description"

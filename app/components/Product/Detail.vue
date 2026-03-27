@@ -142,7 +142,7 @@ watch(productDetails, () => {
 <template>
   <div v-if="!pending">
     <div v-if="productDetails?.configurator">
-      <ProductConfigurator2
+      <ProductConfigurator
         v-if="productDetails?.configurator"
         :p="productDetails.product"
         :c="productDetails.configurator"
