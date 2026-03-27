@@ -81,7 +81,7 @@ function onVariantSelected(variant: Schemas["Product"]) {
       :ui="{ footer: 'w-full', root: 'shadow-lg' }"
     >
       <template #header>
-        <UBadge
+        <LazyUBadge
           v-if="isVegi"
           icon="i-lucide-leaf"
           color="success"
@@ -92,7 +92,7 @@ function onVariantSelected(variant: Schemas["Product"]) {
       </template>
 
       <div v-if="product.cover?.media?.url">
-        <NuxtImg
+        <LazyNuxtImg
           :src="product.cover.media.url"
           class="rounded-md h-auto max-w-full object-contain ransition-opacity duration-700"
           sizes="(min-width: 1024px) 50vw, 100vw"
@@ -138,15 +138,17 @@ function onVariantSelected(variant: Schemas["Product"]) {
             />
           </div>
         </div>
-        <UCollapsible v-model:open="openDetails" class="flex flex-col gap-2">
-          <template #content>
-            <ProductDetail2
-              :product-id="product.id"
-              @product-added="toggleDetails"
-              @variant-selected="onVariantSelected"
-            />
-          </template>
-        </UCollapsible>
+        <ClientOnly>
+          <UCollapsible v-model:open="openDetails" class="flex flex-col gap-2">
+            <template #content>
+              <LazyProductDetail
+                :product-id="product.id"
+                @product-added="toggleDetails"
+                @variant-selected="onVariantSelected"
+              />
+            </template>
+          </UCollapsible>
+        </ClientOnly>
       </template>
     </UPageCard>
   </AnimatedSection>

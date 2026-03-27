@@ -7,11 +7,11 @@ const TOAST_CONFIG = {
     title: "Wir haben geöffnet!",
     color: "primary" as const,
     progress: false,
-    duration: 0,
+    duration: 5000,
     icon: "i-lucide-party-popper",
     actions: [
       {
-        icon: "i-lucide-pizza",
+        icon: "i-lucide-utensils-crossed",
         label: "Zur Speisekarte",
         color: "neutral" as const,
         variant: "outline" as const,

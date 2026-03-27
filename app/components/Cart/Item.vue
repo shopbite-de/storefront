@@ -64,7 +64,7 @@ const handleRemoveItem = () => {
                 ? cartItem?.children?.[0]?.payload?.options
                 : cartItem?.payload?.options"
               :key="option.group + option.option"
-              class="text-sm text-pretty text-toned mt-1"
+              class="text-sm text-pretty text-muted mt-1"
             >
               {{ option.group }}: {{ option.option }}
             </p>
@@ -84,14 +84,14 @@ const handleRemoveItem = () => {
           :min="1"
           :max="100"
           class="max-w-46"
-          aria-label="Item quantity"
+          aria-label="Menge"
         />
         <UButton
           v-if="withDeleteButton"
           icon="i-lucide-trash"
           variant="soft"
           color="neutral"
-          aria-label="Remove item from cart"
+          aria-label="Artikel entfernen"
           @click="handleRemoveItem"
         />
       </div>
@@ -101,14 +101,14 @@ const handleRemoveItem = () => {
         icon="i-lucide-trash"
         variant="outline"
         color="error"
-        aria-label="Remove item from cart"
+        aria-label="Artikel entfernen"
         @click="handleRemoveItem"
       />
     </div>
 
     <!-- Empty state -->
     <div v-else class="text-center py-4">
-      <p class="text-toned">Warenkorb ist leer...</p>
+      <p class="text-muted">Warenkorb ist leer...</p>
     </div>
   </div>
 </template>

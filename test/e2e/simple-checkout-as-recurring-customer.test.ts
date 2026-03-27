@@ -39,7 +39,7 @@ async function clearCart(page: Page) {
   await expect(page.getByRole("heading", { name: /warenkorb/i })).toBeVisible();
 
   const deleteButtons = page.getByRole("button", {
-    name: "Remove item from cart",
+    name: "Artikel entfernen",
   });
   const itemCount = await deleteButtons.count();
 
@@ -92,7 +92,7 @@ async function selectProductAndAddToCart(
 }
 
 async function proceedToCheckoutAndLogin(page: Page) {
-  await page.goto("/bestellung", { waitUntil: "load" });
+  await page.goto("/bestellung/warenkorb", { waitUntil: "load" });
 
   const loginTab = page.getByRole("tab", { name: "Einloggen" });
   await expect(loginTab).toBeVisible();
@@ -129,7 +129,7 @@ async function proceedToCheckoutAndLogin(page: Page) {
 
     // Wait for login to complete and navigate back to checkout
     await page.waitForTimeout(2000);
-    await page.goto("/bestellung", { waitUntil: "load" });
+    await page.goto("/bestellung/zahlung-versand", { waitUntil: "load" });
     await page.waitForTimeout(1000);
 
     // Skip the rest of this function since we already logged in
@@ -159,15 +159,15 @@ async function proceedToCheckoutAndLogin(page: Page) {
 
 async function verifyCheckoutQuantity(page: Page) {
   // Ensure we're on the checkout page
-  if (!page.url().includes("/bestellung")) {
-    await page.goto("/bestellung", { waitUntil: "load" });
+  if (!page.url().includes("/bestellung/warenkorb")) {
+    await page.goto("/bestellung/warenkorb", { waitUntil: "load" });
     await page.waitForTimeout(1000);
   }
 
   // Try to find the quantity input with multiple strategies
   const checkoutQuantityInput = page
     .getByRole("spinbutton", {
-      name: /item quantity/i,
+      name: /menge/i,
     })
     .or(page.getByRole("spinbutton"))
     .or(page.locator("input[type='number']"));
@@ -178,7 +178,7 @@ async function verifyCheckoutQuantity(page: Page) {
 }
 
 async function selectPaymentAndShipping(page: Page) {
-  const nextStepButton = page.getByRole("button", {
+  const nextStepButton = page.getByRole("link", {
     name: "Zahlungs- und Versandart auswählen",
   });
   await expect(nextStepButton).toBeVisible({ timeout: 10000 });
@@ -197,7 +197,7 @@ async function selectPaymentAndShipping(page: Page) {
 }
 
 async function proceedToOrderReview(page: Page) {
-  const lastStepButton = page.getByRole("button", {
+  const lastStepButton = page.getByRole("link", {
     name: "Weiter zu Prüfen & Bestellen",
   });
   await expect(lastStepButton).toBeVisible({ timeout: 10000 });

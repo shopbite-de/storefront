@@ -46,12 +46,14 @@ const {
   loading,
   search,
   getElements,
+  getCurrentListing,
   getCurrentSortingOrder,
   getSortingOrders,
   changeCurrentSortingOrder,
   getAvailableFilters,
   getCurrentFilters,
   setCurrentFilters,
+  setInitialListing,
 } = useListing({
   listingType: "categoryListing",
   categoryId: props.id,
@@ -85,9 +87,27 @@ const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
   ];
 });
 
-await useAsyncData(`listing${categoryId.value}`, async () => {
-  await search(searchCriteria);
-});
+const nuxtApp = useNuxtApp();
+const { data: listingPayload, pending } = await useAsyncData(
+  `listing${categoryId.value}`,
+  async () => {
+    await search(searchCriteria);
+    // Return the result so it gets serialized into the SSR payload.
+    // On the client, useAsyncData will restore this without re-running search().
+    return getCurrentListing.value;
+  },
+);
+
+// Populate useListing state from the SSR payload on the client.
+// useListing uses plain refs (not useState), so its state is not automatically
+// hydrated — we restore it via setInitialListing.
+if (listingPayload.value) {
+  await setInitialListing(listingPayload.value);
+}
+
+// During SSR hydration, pending may briefly be true before the payload cache is applied.
+// Suppress the skeleton in that window to prevent a hydration mismatch.
+const showSkeleton = computed(() => pending.value && !nuxtApp.isHydrating);
 
 watch(selectedListingFilters, (newFilters, oldFilters) => {
   if (newFilters[0]?.value === oldFilters?.[0]?.value) {
@@ -196,9 +216,20 @@ const moreThanOneFilterAndOption = computed<boolean>(
             </UDrawer>
           </div>
 
-          <Loading v-if="loading" text="Produkte werden geladen..." size="lg" />
+          <div
+            v-if="showSkeleton"
+            class="flex flex-col gap-4"
+            aria-busy="true"
+            aria-label="Produkte werden geladen"
+          >
+            <LazyProductCardSkeleton v-for="i in 6" :key="i" />
+          </div>
 
-          <div v-else class="flex flex-col gap-4">
+          <div
+            v-else
+            class="flex flex-col gap-4 transition-opacity duration-200"
+            :class="{ 'opacity-40 pointer-events-none': loading }"
+          >
             <ProductCard
               v-for="product in getElements"
               :key="product.id"

@@ -136,24 +136,26 @@ function handleTimeInput(event: Event): void {
 <template>
   <div v-if="isClosedHoliday(now) === false" class="flex flex-col gap-2 mt-4">
     <div class="flex flex-row items-center justify-between gap-4">
-      <div>Wunschlieferung- oder Abholzeit ab:</div>
+      <label for="delivery-time" class="flex-1">
+        Wunschlieferung- oder Abholzeit ab:
+      </label>
       <client-only>
-        <input
+        <UInput
+          id="delivery-time"
           type="time"
           :min="minTime ?? undefined"
           :max="maxTime ?? undefined"
           :disabled="isClosedToday || isClosedHoliday(now) === true"
-          :value="selected"
+          :model-value="selected"
           step="300"
-          class="border rounded px-2 py-1"
           @input="handleTimeInput"
         />
       </client-only>
     </div>
-    <p v-if="validationError" class="text-sm text-red-600">
+    <p v-if="validationError" class="text-sm text-error">
       {{ validationError }}
     </p>
-    <p v-else class="text-sm text-gray-500">{{ helperText }}</p>
+    <p v-else class="text-sm text-muted">{{ helperText }}</p>
     <UBadge
       :label="deliveryTimeInfo"
       icon="i-lucide-clock"

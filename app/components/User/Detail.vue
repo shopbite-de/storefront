@@ -47,7 +47,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="shadow-md rounded-md mb-4 p-6 bg-elevated">
+  <UCard class="mb-4">
     <div>{{ fullName }}</div>
     <div>{{ user?.email }}</div>
     <USeparator
@@ -76,5 +76,5 @@ onMounted(() => {
       :with-edit-button="withEditButton"
       @update:address="handleAddressUpdate"
     />
-  </div>
+  </UCard>
 </template>

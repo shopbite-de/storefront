@@ -22,7 +22,7 @@ const { paymentMethod } = toRefs(props);
       <h3 class="text-base text-pretty font-semibold text-highlighted">
         Zahlart
       </h3>
-      <p class="text-[15px] text-pretty text-toned mt-1">
+      <p class="text-[15px] text-pretty text-muted mt-1">
         {{ paymentMethod.distinguishableName }}
       </p>
     </div>

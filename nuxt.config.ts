@@ -78,6 +78,9 @@ export default defineNuxtConfig({
     "/registrierung/bestaetigen": {
       ssr: false,
     },
+    "/bestellung": {
+      redirect: "/bestellung/warenkorb",
+    },
   },
 
   css: ["~/assets/css/main.css"],
@@ -100,6 +103,8 @@ export default defineNuxtConfig({
     "@nuxt/scripts",
     "nuxt-vitalizer",
     "@nuxt/eslint",
+    "@pinia/nuxt",
+    "@nuxt/hints",
   ],
 
   content: {

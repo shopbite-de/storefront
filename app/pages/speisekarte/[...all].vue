@@ -1,3 +1,4 @@
+H
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 
