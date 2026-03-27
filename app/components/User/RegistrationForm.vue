@@ -65,30 +65,12 @@ const billingAddressFields = ref();
 const shippingAddressFields = ref();
 
 async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
-  const registrationData = { ...event.data };
-
-  // Check for address corrections
-  // If a correction is already shown, treat it as found to prevent submission
-  const billingCorrectionFound =
-    Boolean(billingAddressFields.value?.showCorrection || false) ||
-    (await billingAddressFields.value?.checkAddress());
-
-  let shippingCorrectionFound = false;
+  billingAddressFields.value?.flushPendingCheck();
   if (state.isShippingAddressDifferent) {
-    shippingCorrectionFound =
-      Boolean(shippingAddressFields.value?.showCorrection || false) ||
-      (await shippingAddressFields.value?.checkAddress());
+    shippingAddressFields.value?.flushPendingCheck();
   }
 
-  if (billingCorrectionFound || shippingCorrectionFound) {
-    toast.add({
-      title: "Adresskorrektur vorgeschlagen",
-      description:
-        "Bitte überprüfen Sie die vorgeschlagene Adresskorrektur, bevor Sie fortfahren.",
-      color: "info",
-    });
-    return;
-  }
+  const registrationData = { ...event.data };
 
   if (
     !registrationData.billingAddress.firstName &&

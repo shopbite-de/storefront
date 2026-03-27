@@ -64,6 +64,7 @@ export function useAddressValidation(
 
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
+        debounceTimer = null;
         if (model.value.street) {
           checkAddress();
         }
@@ -71,6 +72,16 @@ export function useAddressValidation(
     },
     { deep: true },
   );
+
+  function flushPendingCheck() {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+      if (model.value.street) {
+        checkAddress();
+      }
+    }
+  }
 
   onUnmounted(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
@@ -90,6 +101,7 @@ export function useAddressValidation(
     correction,
     isInvalidCity,
     checkAddress,
+    flushPendingCheck,
     applyCorrection,
   };
 }

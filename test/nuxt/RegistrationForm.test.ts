@@ -53,6 +53,7 @@ describe("RegistrationForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsLoggedIn.value = false;
+    mockGetSuggestions.mockResolvedValue([]);
   });
 
   it("renders correctly", async () => {
@@ -251,8 +252,8 @@ describe("RegistrationForm", () => {
     );
   });
 
-  it("shows correction suggestion and stops submission when address needs correction", async () => {
-    mockGetSuggestions.mockResolvedValueOnce([
+  it("proceeds with registration even when getSuggestions returns a correction", async () => {
+    mockGetSuggestions.mockResolvedValue([
       {
         street: "Corrected Street 123",
         city: "Corrected City",
@@ -263,11 +264,9 @@ describe("RegistrationForm", () => {
 
     const wrapper = await mountSuspended(RegistrationForm);
 
-    // Register as guest to avoid password requirements
     (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest = true;
     await nextTick();
 
-    // Fill required fields
     await wrapper.find('input[name="firstName"]').setValue("John");
     await wrapper.find('input[name="lastName"]').setValue("Doe");
     await wrapper.find('input[name="email"]').setValue("john@example.com");
@@ -300,17 +299,10 @@ describe("RegistrationForm", () => {
     await wrapper.find("form").trigger("submit");
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Should NOT have called register
-    expect(mockRegister).not.toHaveBeenCalled();
+    // Registration must not be blocked by the correction suggestion
+    expect(mockRegister).toHaveBeenCalled();
 
-    // Should have shown a toast
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Adresskorrektur vorgeschlagen",
-      }),
-    );
-
-    // Should show the correction alert in the form
+    // Correction UI surfaces non-blocking (flushPendingCheck triggers the async check)
     expect(wrapper.text()).toContain(
       "Meinten Sie: Corrected Street 123, 54321 Corrected City?",
     );
