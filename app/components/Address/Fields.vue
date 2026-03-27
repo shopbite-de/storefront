@@ -18,6 +18,7 @@ const {
   correction,
   isInvalidCity,
   checkAddress,
+  flushPendingCheck,
   applyCorrection,
 } = useAddressValidation(model, {
   isShipping: props.isShipping,
@@ -27,6 +28,7 @@ const {
 
 defineExpose({
   checkAddress,
+  flushPendingCheck,
   showCorrection,
 });
 </script>
