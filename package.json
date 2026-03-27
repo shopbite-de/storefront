@@ -44,7 +44,7 @@
     "@nuxt/image": "^2.0.0",
     "@nuxt/scripts": "0.13.2",
     "@nuxt/ui": "^4.5.1",
-    "@nuxtjs/robots": "^5.7.1",
+    "@nuxtjs/robots": "^6.0.0",
     "@sentry/nuxt": "^10.43.0",
     "@shopware/api-client": "^1.4.0",
     "@shopware/api-gen": "^1.4.0",
