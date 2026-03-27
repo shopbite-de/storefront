@@ -109,6 +109,7 @@ const checkoutButtonLabel = computed<string>(() => {
             :with-delete-button="false"
             class="p-6 bg-elevated"
           />
+          <CheckoutVoucherInput />
           <UButton
             :icon="
               isValidToProceed ? 'i-lucide-shopping-cart' : 'i-lucide-lock'
