@@ -8,9 +8,7 @@ const { apiClient } = useShopwareContext();
 
 const config = useRuntimeConfig();
 
-const isMultiChannel = computed(
-  () => config.public.shopBite.feature.multiChannel === "true",
-);
+const isMultiChannel = useRuntimeConfig().public.shopBite.feature.multiChannel;
 
 const storeUrl = computed(() => config.public.storeUrl);
 
