@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import { useNavigation } from "~/composables/useNavigation";
-
 const { mainMenu } = useNavigation(false);
-
 const loginSlide = ref(false);
 </script>
 
@@ -13,6 +10,7 @@ const loginSlide = ref(false);
     </template>
 
     <UNavigationMenu color="primary" variant="pill" :items="mainMenu" />
+    <SalesChannelSwitch />
 
     <template #right>
       <HeaderRight />

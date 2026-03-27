@@ -57,7 +57,7 @@ export default defineNuxtConfig({
       shopBite: {
         menuCategoryId: "",
         feature: {
-          multiChannel: "",
+          multiChannel: false,
           secureKey: "",
           contactForm: false,
         },
