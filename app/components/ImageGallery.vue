@@ -26,19 +26,32 @@ defineProps<{
     :links="links"
   >
     <template #body>
-      <UCarousel
-        v-slot="{ item, index }"
-        arrows
-        :items="images"
-        class="w-full max-w-2xl mx-auto"
-      >
-        <img
-          :src="item.image"
-          :alt="item.alt"
-          :fetchpriority="index === 0 ? 'high' : 'auto'"
-          class="rounded-lg"
-        />
-      </UCarousel>
+      <ClientOnly>
+        <UCarousel
+          v-slot="{ item, index }"
+          arrows
+          :items="images"
+          class="w-full max-w-2xl mx-auto"
+        >
+          <img
+            :src="item.image"
+            :alt="item.alt"
+            :fetchpriority="index === 0 ? 'high' : 'auto'"
+            class="rounded-lg"
+          />
+        </UCarousel>
+        <template #fallback>
+          <div class="w-full max-w-2xl mx-auto">
+            <img
+              v-if="images?.[0]"
+              :src="images[0].image"
+              :alt="images[0].alt"
+              fetchpriority="high"
+              class="rounded-lg"
+            />
+          </div>
+        </template>
+      </ClientOnly>
     </template>
   </UPageSection>
 </template>

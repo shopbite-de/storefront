@@ -159,61 +159,61 @@ const moreThanOneFilterAndOption = computed<boolean>(
               :items="getSortingOrders"
               placeholder="Sortierung"
             />
-            <UDrawer
-              v-if="moreThanOneFilterAndOption"
-              class="lg:hidden"
-              title="Filter"
-              direction="right"
-            >
-              <UButton
-                label="Filter"
-                icon="i-lucide-sliders-horizontal"
-                color="neutral"
-                variant="subtle"
-              />
+            <ClientOnly v-if="moreThanOneFilterAndOption">
+              <UDrawer class="lg:hidden" title="Filter" direction="right">
+                <UButton
+                  label="Filter"
+                  icon="i-lucide-sliders-horizontal"
+                  color="neutral"
+                  variant="subtle"
+                />
 
-              <template #body>
-                <div class="flex flex-col gap-4">
-                  <div
-                    v-for="filter in propertyFilters"
-                    :key="filter.id"
-                    class="flex flex-col gap-4"
-                  >
-                    <UCollapsible
-                      class="flex flex-col gap-2 w-48"
-                      :default-open="true"
+                <template #body>
+                  <div class="flex flex-col gap-4">
+                    <div
+                      v-for="filter in propertyFilters"
+                      :key="filter.id"
+                      class="flex flex-col gap-4"
                     >
-                      <UButton
-                        :label="filter.translated.name"
-                        color="neutral"
-                        variant="subtle"
-                        trailing-icon="i-lucide-chevron-down"
-                        block
-                        :ui="{
-                          trailingIcon:
-                            'group-data-[state=open]:rotate-180 transition-transform duration-200',
-                        }"
-                      />
-
-                      <template #content>
-                        <UCheckboxGroup
-                          v-model="selectedPropertyFilters"
-                          :items="filter.options"
-                          value-key="id"
-                          label-key="translated.name"
+                      <UCollapsible
+                        class="flex flex-col gap-2 w-48"
+                        :default-open="true"
+                      >
+                        <UButton
+                          :label="filter.translated.name"
+                          color="neutral"
+                          variant="subtle"
+                          trailing-icon="i-lucide-chevron-down"
+                          block
+                          :ui="{
+                            trailingIcon:
+                              'group-data-[state=open]:rotate-180 transition-transform duration-200',
+                          }"
                         />
-                      </template>
-                    </UCollapsible>
+
+                        <template #content>
+                          <UCheckboxGroup
+                            v-model="selectedPropertyFilters"
+                            :items="filter.options"
+                            value-key="id"
+                            label-key="translated.name"
+                          />
+                        </template>
+                      </UCollapsible>
+                    </div>
+                    <UButton
+                      label="Zurücksetzen"
+                      variant="outline"
+                      block
+                      @click="handleFilterRest"
+                    />
                   </div>
-                  <UButton
-                    label="Zurücksetzten"
-                    variant="outline"
-                    block
-                    @click="handleFilterRest"
-                  />
-                </div>
+                </template>
+              </UDrawer>
+              <template #fallback>
+                <USkeleton class="h-8 w-20 lg:hidden" />
               </template>
-            </UDrawer>
+            </ClientOnly>
           </div>
 
           <div
@@ -243,46 +243,64 @@ const moreThanOneFilterAndOption = computed<boolean>(
 
       <template #right>
         <UPageAside>
-          <div v-if="moreThanOneFilterAndOption" class="flex flex-col gap-4">
-            <h2 class="text-3xl md:text-4xl mb-3 pb-2">Filter</h2>
-            <div
-              v-for="filter in propertyFilters"
-              :key="filter.id"
-              class="flex flex-col gap-4"
-            >
-              <UCollapsible
-                class="flex flex-col gap-2 w-48"
-                :default-open="true"
+          <ClientOnly v-if="moreThanOneFilterAndOption">
+            <div class="flex flex-col gap-4">
+              <h2 class="text-3xl md:text-4xl mb-3 pb-2">Filter</h2>
+              <div
+                v-for="filter in propertyFilters"
+                :key="filter.id"
+                class="flex flex-col gap-4"
               >
-                <UButton
-                  :label="filter.translated.name"
-                  color="neutral"
-                  variant="subtle"
-                  trailing-icon="i-lucide-chevron-down"
-                  block
-                  :ui="{
-                    trailingIcon:
-                      'group-data-[state=open]:rotate-180 transition-transform duration-200',
-                  }"
-                />
-
-                <template #content>
-                  <UCheckboxGroup
-                    v-model="selectedPropertyFilters"
-                    :items="filter.options"
-                    value-key="id"
-                    label-key="translated.name"
+                <UCollapsible
+                  class="flex flex-col gap-2 w-48"
+                  :default-open="true"
+                >
+                  <UButton
+                    :label="filter.translated.name"
+                    color="neutral"
+                    variant="subtle"
+                    trailing-icon="i-lucide-chevron-down"
+                    block
+                    :ui="{
+                      trailingIcon:
+                        'group-data-[state=open]:rotate-180 transition-transform duration-200',
+                    }"
                   />
-                </template>
-              </UCollapsible>
+
+                  <template #content>
+                    <UCheckboxGroup
+                      v-model="selectedPropertyFilters"
+                      :items="filter.options"
+                      value-key="id"
+                      label-key="translated.name"
+                    />
+                  </template>
+                </UCollapsible>
+              </div>
+              <UButton
+                label="Zurücksetzen"
+                variant="outline"
+                block
+                @click="handleFilterRest"
+              />
             </div>
-            <UButton
-              label="Zurücksetzten"
-              variant="outline"
-              block
-              @click="handleFilterRest"
-            />
-          </div>
+            <template #fallback>
+              <div class="flex flex-col gap-4">
+                <USkeleton class="h-9 w-20" />
+                <div class="flex flex-col gap-2">
+                  <USkeleton class="h-8 w-48" />
+                  <USkeleton class="h-4 w-36" />
+                  <USkeleton class="h-4 w-32" />
+                  <USkeleton class="h-4 w-40" />
+                </div>
+                <div class="flex flex-col gap-2">
+                  <USkeleton class="h-8 w-48" />
+                  <USkeleton class="h-4 w-36" />
+                  <USkeleton class="h-4 w-32" />
+                </div>
+              </div>
+            </template>
+          </ClientOnly>
         </UPageAside>
       </template>
     </UPage>

@@ -1,14 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { ref } from "vue";
 import { useShopBiteConfig } from "~/composables/useShopBiteConfig";
 
-const { mockInvoke, mockDeliveryTime, mockIsCheckoutEnabled } = vi.hoisted(
-  () => ({
-    mockInvoke: vi.fn(),
-    mockDeliveryTime: { value: 0 },
-    mockIsCheckoutEnabled: { value: false },
-  }),
-);
+const { mockInvoke } = vi.hoisted(() => ({
+  mockInvoke: vi.fn(),
+}));
 
 mockNuxtImport("useShopwareContext", () => () => ({
   apiClient: {
@@ -16,25 +13,26 @@ mockNuxtImport("useShopwareContext", () => () => ({
   },
 }));
 
-mockNuxtImport("useContext", () => (key: string) => {
-  if (key === "deliveryTime") return mockDeliveryTime;
-  if (key === "isCheckoutActive") return mockIsCheckoutEnabled;
-  return { value: null };
-});
+mockNuxtImport(
+  "useAsyncData",
+  () => (_key: string, fetcher: () => Promise<unknown>) => {
+    const data = ref<unknown>(null);
+    const refresh = async () => {
+      data.value = await fetcher();
+    };
+    return { data, refresh };
+  },
+);
 
 describe("useShopBiteConfig", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockDeliveryTime.value = 0;
-    mockIsCheckoutEnabled.value = false;
   });
 
-  it("should initialize with values from context", () => {
-    mockDeliveryTime.value = 30;
-    mockIsCheckoutEnabled.value = true;
+  it("should return default values when no data is loaded", () => {
     const { deliveryTime, isCheckoutEnabled } = useShopBiteConfig();
     expect(deliveryTime.value).toBe(30);
-    expect(isCheckoutEnabled.value).toBe(true);
+    expect(isCheckoutEnabled.value).toBe(false);
   });
 
   it("should refresh values from API", async () => {
@@ -53,7 +51,5 @@ describe("useShopBiteConfig", () => {
     );
     expect(deliveryTime.value).toBe(45);
     expect(isCheckoutEnabled.value).toBe(true);
-    expect(mockDeliveryTime.value).toBe(45);
-    expect(mockIsCheckoutEnabled.value).toBe(true);
   });
 });

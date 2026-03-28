@@ -1,31 +1,16 @@
-import { useContext, useShopwareContext } from "#imports";
-import type { Schemas } from "#shopware";
-
-type useShopBiteConfigReturn = {
-  deliveryTime: ComputedRef<number>;
-  isCheckoutEnabled: ComputedRef<boolean>;
-  refresh(): Promise<Schemas["ShopBiteConfig"]>;
-};
-
-export function useShopBiteConfig(): useShopBiteConfigReturn {
+export function useShopBiteConfig() {
   const { apiClient } = useShopwareContext();
 
-  const _deliveryTime = useContext<number>("deliveryTime");
-  const _isCheckoutEnabled = useContext<boolean>("isCheckoutActive");
-
-  async function refresh(): Promise<Schemas["ShopBiteConfig"]> {
+  const { data, refresh } = useAsyncData("shopbite-config", async () => {
     const { data } = await apiClient.invoke(
       "shopbite.config.get get /shopbite/config",
     );
-    _deliveryTime.value = data.deliveryTime;
-    _isCheckoutEnabled.value = data.isCheckoutEnabled;
-
     return data;
-  }
+  });
 
   return {
-    deliveryTime: computed(() => _deliveryTime.value),
-    isCheckoutEnabled: computed(() => _isCheckoutEnabled.value),
+    deliveryTime: computed(() => data.value?.deliveryTime ?? 30),
+    isCheckoutEnabled: computed(() => data.value?.isCheckoutEnabled ?? false),
     refresh,
   };
 }
