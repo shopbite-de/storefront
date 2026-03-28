@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import LoginOrRegister from "~/components/Checkout/LoginOrRegister.vue";
+import { useCheckoutStore } from "~/stores/checkout";
 
 const { isLoggedIn, isGuestSession } = useUser();
 const { isEmpty } = useCart();
@@ -18,7 +18,7 @@ const isCustomerAvailable = computed<boolean>(() => {
       <h2 class="text-lg font-semibold">
         {{ isCustomerAvailable ? "Deine Daten" : "Anmelden oder registrieren" }}
       </h2>
-      <LoginOrRegister v-if="!isLoggedIn && !isGuestSession" />
+      <CheckoutLoginOrRegister v-if="!isLoggedIn && !isGuestSession" />
       <UserDetail v-else :with-edit-button="true" />
     </div>
 
