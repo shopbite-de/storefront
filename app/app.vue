@@ -89,14 +89,8 @@ if (import.meta.client) {
   }
 }
 
-const { refresh: refreshToppings } = useShopBiteConfig();
-
 onMounted(async () => {
-  await Promise.all([
-    refreshHolidays(),
-    refreshBusinessHours(),
-    refreshToppings(),
-  ]);
+  await Promise.all([refreshHolidays(), refreshBusinessHours()]);
   refreshCart();
   displayStoreStatus();
 });

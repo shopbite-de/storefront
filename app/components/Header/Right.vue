@@ -110,7 +110,7 @@ const dropDownMenu = computed<DropdownMenuItem[][]>(() => {
       />
     </UChip>
   </div>
-  <UDrawer
+  <LazyUDrawer
     v-if="isCheckoutEnabled"
     v-model:open="cartQuickViewOpen"
     title="Warenkorb"
@@ -140,5 +140,5 @@ const dropDownMenu = computed<DropdownMenuItem[][]>(() => {
         @go-to-cart="cartQuickViewOpen = false"
       />
     </template>
-  </UDrawer>
+  </LazyUDrawer>
 </template>

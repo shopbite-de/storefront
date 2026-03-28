@@ -104,7 +104,6 @@ export default defineNuxtConfig({
     "nuxt-vitalizer",
     "@nuxt/eslint",
     "@pinia/nuxt",
-    "@nuxt/hints",
   ],
 
   content: {
@@ -202,6 +201,7 @@ export default defineNuxtConfig({
       "@nuxt/scripts",
       "@nuxt/test-utils/module",
       "@nuxt/eslint",
+      "@nuxt/hints",
     ],
   },
   $production: {
