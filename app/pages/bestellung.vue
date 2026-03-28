@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { StepperItem } from "@nuxt/ui";
+import { useCheckoutStore } from "~/stores/checkout";
 
 const checkoutStore = useCheckoutStore();
 const { step } = storeToRefs(checkoutStore);
