@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useCheckoutStore } from "~/stores/checkout";
-
 const { isLoggedIn, isGuestSession } = useUser();
 const { isEmpty } = useCart();
 const { setStep } = useCheckoutStore();
