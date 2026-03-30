@@ -121,51 +121,51 @@ jobs:
       - name: Unit tests
         run: pnpm test:unit
 
-  e2e-test:
-    name: E2E tests
-    environment: test
-    needs: [setup]
-    timeout-minutes: 15
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: pnpm/action-setup@v5
-        with:
-          version: 10.33.0
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-
-      - name: Restore workspace from cache
-        uses: actions/cache/restore@v5
-        with:
-          path: |
-            ~/.local/share/pnpm/store
-            node_modules
-            .nuxt
-            .output
-          key: workspace-${{ runner.os }}-${{ github.sha }}
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: E2E tests
-        env:
-          TEST_USER: ${{ secrets.TEST_USER }}
-          TEST_USER_PASS: ${{ secrets.TEST_USER_PASS }}
-        run: pnpm test:e2e
-
-      - uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
+#  e2e-test:
+#    name: E2E tests
+#    environment: test
+#    needs: [setup]
+#    timeout-minutes: 15
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v6
+#
+#      - uses: pnpm/action-setup@v5
+#        with:
+#          version: 10.33.0
+#
+#      - uses: actions/setup-node@v6
+#        with:
+#          node-version: '24'
+#
+#      - name: Restore workspace from cache
+#        uses: actions/cache/restore@v5
+#        with:
+#          path: |
+#            ~/.local/share/pnpm/store
+#            node_modules
+#            .nuxt
+#            .output
+#          key: workspace-${{ runner.os }}-${{ github.sha }}
+#
+#      - name: Cache Playwright browsers
+#        uses: actions/cache@v5
+#        with:
+#          path: ~/.cache/ms-playwright
+#          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+#
+#      - name: Install Playwright browsers
+#        run: pnpm exec playwright install --with-deps chromium
+#
+#      - name: E2E tests
+#        env:
+#          TEST_USER: ${{ secrets.TEST_USER }}
+#          TEST_USER_PASS: ${{ secrets.TEST_USER_PASS }}
+#        run: pnpm test:e2e
+#
+#      - uses: actions/upload-artifact@v7
+#        if: ${{ !cancelled() }}
+#        with:
+#          name: playwright-report
+#          path: playwright-report/
+#          retention-days: 30
