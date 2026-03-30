@@ -1,4 +1,13 @@
 <script setup lang="ts">
+const {
+  public: { site },
+} = useRuntimeConfig();
+
+useSeoMeta({
+  title: `Warenkorb | ${site.name}`,
+  robots: "noindex, nofollow",
+});
+
 const { isLoggedIn, isGuestSession } = useUser();
 const { isEmpty } = useCart();
 const { setStep } = useCheckoutStore();

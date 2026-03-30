@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { operations, Schemas } from "#shopware";
+import type { Schemas } from "#shopware";
 import Breadcrumb from "~/components/Category/Breadcrumb.vue";
 
 const props = defineProps<{
@@ -8,72 +8,43 @@ const props = defineProps<{
 
 const { id: categoryId } = toRefs(props);
 
-const searchCriteria = {
-  includes: {
-    product: [
-      "id",
-      "productNumber",
-      "name",
-      "description",
-      "calculatedPrice",
-      "translated",
-      "properties",
-      "propertyIds",
-      "sortedProperties",
-      "cover",
-    ],
-    property: ["id", "name", "translated", "options"],
-    property_group_option: ["id", "name", "translated", "group"],
-    product_option: ["id", "groupId", "name", "translated", "group"],
-  },
-  associations: {
-    cover: {
-      associations: {
-        media: {},
-      },
-    },
-    properties: {
-      associations: {
-        group: {},
-      },
-    },
-  },
-  limit: 100,
-} as operations["searchPage post /search"]["body"];
+const { category } = await useCategory(categoryId);
 
 const {
-  resetFilters,
+  showSkeleton,
   loading,
-  search,
-  getElements,
-  getCurrentListing,
-  getCurrentSortingOrder,
-  getSortingOrders,
-  changeCurrentSortingOrder,
-  getAvailableFilters,
-  getCurrentFilters,
-  setCurrentFilters,
-  setInitialListing,
-} = useListing({
-  listingType: "categoryListing",
-  categoryId: props.id,
-  defaultSearchCriteria: searchCriteria,
-});
-
-const { category } = await useCategory(categoryId);
+  elements,
+  sortingOrders,
+  currentSortingOrder,
+  availableFilters,
+  currentFilters,
+  changeSorting,
+  setFilters,
+  resetFilters,
+} = useCategoryListing(props.id);
 
 useCategorySeo(category);
 
-const currentSorting = ref(getCurrentSortingOrder.value ?? "Sortieren");
+const currentSorting = ref(currentSortingOrder.value ?? "Sortieren");
+
+// Sync currentSorting when listing data arrives during client-side navigation
+// (currentSortingOrder.value is null at setup time in that case).
+watch(
+  currentSortingOrder,
+  (val) => {
+    if (val) currentSorting.value = val;
+  },
+  { once: true },
+);
 
 const propertyFilters = computed<Schemas["PropertyGroup"][]>(
   () =>
-    (getAvailableFilters.value?.filter(
+    (availableFilters.value?.filter(
       (availableFilter) => availableFilter.code === "properties",
     ) ?? []) as unknown as Schemas["PropertyGroup"][],
 );
 
-const selectedPropertyFilters = ref(getCurrentFilters.value?.properties ?? []);
+const selectedPropertyFilters = ref(currentFilters.value?.properties ?? []);
 const selectedPropertyFiltersString = computed(() =>
   selectedPropertyFilters.value?.join("|"),
 );
@@ -87,47 +58,25 @@ const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
   ];
 });
 
-const nuxtApp = useNuxtApp();
-const { data: listingPayload, pending } = await useAsyncData(
-  `listing${categoryId.value}`,
-  async () => {
-    await search(searchCriteria);
-    // Return the result so it gets serialized into the SSR payload.
-    // On the client, useAsyncData will restore this without re-running search().
-    return getCurrentListing.value;
-  },
-);
-
-// Populate useListing state from the SSR payload on the client.
-// useListing uses plain refs (not useState), so its state is not automatically
-// hydrated — we restore it via setInitialListing.
-if (listingPayload.value) {
-  await setInitialListing(listingPayload.value);
-}
-
-// During SSR hydration, pending may briefly be true before the payload cache is applied.
-// Suppress the skeleton in that window to prevent a hydration mismatch.
-const showSkeleton = computed(() => pending.value && !nuxtApp.isHydrating);
+let filterChain = Promise.resolve();
 
 watch(selectedListingFilters, (newFilters, oldFilters) => {
-  if (newFilters[0]?.value === oldFilters?.[0]?.value) {
-    return;
-  }
-  setCurrentFilters(newFilters);
+  if (newFilters[0]?.value === oldFilters?.[0]?.value) return;
   currentSorting.value = "Sortieren";
+  filterChain = filterChain
+    .catch(() => {})
+    .then(() => setFilters(newFilters))
+    .catch(() => {});
 });
 
-watch(currentSorting, async () => {
+watch(currentSorting, async (val) => {
+  if (val === currentSortingOrder.value) return;
   const sortingQuery = {
-    query: getCurrentFilters.value?.search,
-    properties: getCurrentFilters.value?.properties?.join("|"),
+    query: currentFilters.value?.search,
+    properties: currentFilters.value?.properties?.join("|"),
   };
-  await changeCurrentSortingOrder(currentSorting.value as string, sortingQuery);
+  await changeSorting(val as string, sortingQuery);
 });
-
-async function handleFilterRest() {
-  await resetFilters();
-}
 
 const moreThanOneFilterAndOption = computed<boolean>(
   () => propertyFilters.value.length > 0,
@@ -148,15 +97,12 @@ const moreThanOneFilterAndOption = computed<boolean>(
           <Breadcrumb :category-id="category?.id" />
           <CategoryHeader v-if="category" :category="category" />
           <div class="flex flex-row justify-between gap-4 mb-4">
-            <UBadge
-              variant="subtle"
-              :label="`${getElements.length} Produkte`"
-            />
+            <UBadge variant="subtle" :label="`${elements.length} Produkte`" />
             <USelect
               v-model="currentSorting"
               icon="i-lucide-arrow-down-wide-narrow"
               value-key="key"
-              :items="getSortingOrders"
+              :items="sortingOrders"
               placeholder="Sortierung"
             />
             <ClientOnly v-if="moreThanOneFilterAndOption">
@@ -205,7 +151,7 @@ const moreThanOneFilterAndOption = computed<boolean>(
                       label="Zurücksetzen"
                       variant="outline"
                       block
-                      @click="handleFilterRest"
+                      @click="resetFilters"
                     />
                   </div>
                 </template>
@@ -231,7 +177,7 @@ const moreThanOneFilterAndOption = computed<boolean>(
             :class="{ 'opacity-40 pointer-events-none': loading }"
           >
             <ProductCard
-              v-for="product in getElements"
+              v-for="product in elements"
               :key="product.id"
               :product="product"
               :with-favorite-button="true"
@@ -281,7 +227,7 @@ const moreThanOneFilterAndOption = computed<boolean>(
                 label="Zurücksetzen"
                 variant="outline"
                 block
-                @click="handleFilterRest"
+                @click="resetFilters"
               />
             </div>
             <template #fallback>

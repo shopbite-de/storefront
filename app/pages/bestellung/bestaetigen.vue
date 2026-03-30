@@ -1,4 +1,13 @@
 <script setup lang="ts">
+const {
+  public: { site },
+} = useRuntimeConfig();
+
+useSeoMeta({
+  title: `Prüfen & Bestellen | ${site.name}`,
+  robots: "noindex, nofollow",
+});
+
 const { isLoggedIn, isGuestSession } = useUser();
 const { setStep } = useCheckoutStore();
 
