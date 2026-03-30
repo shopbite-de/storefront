@@ -72,6 +72,9 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
+    "/": {
+      prerender: true,
+    },
     "/merkliste": {
       ssr: false,
     },
@@ -110,9 +113,7 @@ export default defineNuxtConfig({
     experimental: { sqliteConnector: "native" },
   },
 
-  vitalizer: {
-    disablePrefetchLinks: true,
-  },
+  vitalizer: {},
 
   pwa: {
     strategies: sw ? "injectManifest" : "generateSW",
@@ -123,6 +124,8 @@ export default defineNuxtConfig({
       name: storeName,
       short_name: storeName,
       theme_color: "#ff5b00",
+      display: "standalone",
+      start_url: "/",
       icons: [
         {
           src: "logo-192.png",
