@@ -14,17 +14,12 @@ const { variants: selectableOptions } = useProductVariantsZwei(configurator);
 
 const selectedOptions = ref<Record<string, string>>({});
 
-function initialOptions(variant: Ref<Schemas["Product"]>) {
-  const options = variant.value.options as Schemas["PropertyGroupOption"][];
-  for (const option of options) {
-    if (option.group && option.id) {
-      selectedOptions.value[option.group.id] = option.id;
-    }
+const options = product.value.options as Schemas["PropertyGroupOption"][];
+for (const option of options ?? []) {
+  if (option.group && option.id) {
+    selectedOptions.value[option.group.id] = option.id;
   }
 }
-onMounted(() => {
-  initialOptions(product);
-});
 
 watch(
   selectedOptions.value,

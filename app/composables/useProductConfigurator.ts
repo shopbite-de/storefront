@@ -1,15 +1,12 @@
 import { computed, ref } from "vue";
 import type { Schemas } from "#shopware";
 import {
-  useShopwareContext,
   useProductConfigurator as useProductConfiguratorOriginal,
   useProduct,
 } from "@shopware/composables";
 import { getTranslatedProperty } from "@shopware/helpers";
 
 export function useProductConfigurator() {
-  const { apiClient } = useShopwareContext();
-
   const original = useProductConfiguratorOriginal();
 
   const { configurator, product } = useProduct();
@@ -18,7 +15,9 @@ export function useProductConfigurator() {
     [key: string]: string;
   }>({});
   const isLoadingOptions = ref(!!product.value.options?.length);
-  const parentProductId = computed(() => product.value?.parentId);
+  const parentProductId = computed(
+    () => product.value?.parentId ?? product.value?.id,
+  );
   const getOptionGroups = computed<Schemas["PropertyGroup"][]>(() => {
     return configurator.value || [];
   });
@@ -45,57 +44,18 @@ export function useProductConfigurator() {
   async function findVariantForSelectedOptions(options?: {
     [code: string]: string;
   }): Promise<Schemas["Product"] | undefined> {
-    const filter: Schemas["Filters"] = [
-      {
-        type: "equals",
-        field: "parentId",
-        value: parentProductId.value as string,
-      },
-      ...Object.values(options || selected.value).map(
-        (id) =>
-          ({
-            type: "equals",
-            field: "optionIds",
-            value: id,
-          }) as Schemas["EqualsFilter"],
-      ),
-    ];
+    if (!parentProductId.value) return undefined;
     try {
-      const response = await apiClient.invoke("readProduct post /product", {
-        body: {
-          filter,
-          limit: 1,
-          includes: {
-            product: [
-              "id",
-              "name",
-              "description",
-              "translated",
-              "productNumber",
-              "options",
-              "properties",
-              "calculatedPrice",
-              "translated",
-            ],
-            product_option: ["id", "groupId", "name", "translated", "group"],
-            property: ["id", "name", "translated", "options"],
-            property_group_option: ["id", "name", "translated", "group"],
-          },
-          associations: {
-            options: {
-              associations: {
-                group: {},
-              },
-            },
-            properties: {
-              associations: {
-                group: {},
-              },
-            },
+      const result = await $fetch<Schemas["Product"] | null>(
+        "/api/product/variant",
+        {
+          query: {
+            parentId: parentProductId.value,
+            optionIds: Object.values(options || selected.value),
           },
         },
-      });
-      return response.data.elements?.[0]; // return first matching product
+      );
+      return result ?? undefined;
     } catch (e) {
       console.error("SwProductDetails:findVariantForSelectedOptions", e);
       return undefined;

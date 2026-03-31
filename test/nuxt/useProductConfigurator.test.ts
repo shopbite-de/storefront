@@ -1,19 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useProductConfigurator } from "../../app/composables/useProductConfigurator";
 
-const { mockInvoke, mockConfigurator, mockProduct } = vi.hoisted(() => ({
-  mockInvoke: vi.fn(),
+const { mockFetch, mockConfigurator, mockProduct } = vi.hoisted(() => ({
+  mockFetch: vi.fn(),
   mockConfigurator: { value: [] },
   mockProduct: { value: { id: "p1", optionIds: [], options: [] } },
 }));
 
-// Use vi.mock for explicit imports
+vi.stubGlobal("$fetch", mockFetch);
+
 vi.mock("@shopware/composables", () => ({
-  useShopwareContext: () => ({
-    apiClient: {
-      invoke: mockInvoke,
-    },
-  }),
   useProductConfigurator: () => ({
     handleChange: vi.fn(),
   }),
@@ -57,24 +53,25 @@ describe("useProductConfigurator", () => {
     mockProduct.value = {
       parentId: "parent-1",
     } as unknown as typeof mockProduct.value;
-    mockInvoke.mockResolvedValue({
-      data: {
-        elements: [{ id: "variant-1" }],
-      },
-    });
+    mockFetch.mockResolvedValue({ id: "variant-1" });
 
     const { findVariantForSelectedOptions } = useProductConfigurator();
     const result = await findVariantForSelectedOptions({ Size: "o1" });
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "readProduct post /product",
-      expect.any(Object),
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/product/variant",
+      expect.objectContaining({
+        query: {
+          parentId: "parent-1",
+          optionIds: ["o1"],
+        },
+      }),
     );
     expect(result).toEqual({ id: "variant-1" });
   });
 
   it("should return undefined on error in findVariantForSelectedOptions", async () => {
-    mockInvoke.mockRejectedValue(new Error("API Error"));
+    mockFetch.mockRejectedValue(new Error("API Error"));
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const { findVariantForSelectedOptions } = useProductConfigurator();
