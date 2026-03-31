@@ -72,9 +72,6 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    "/": {
-      prerender: true,
-    },
     "/merkliste": {
       ssr: false,
     },
@@ -112,8 +109,6 @@ export default defineNuxtConfig({
   content: {
     experimental: { sqliteConnector: "native" },
   },
-
-  vitalizer: {},
 
   pwa: {
     strategies: sw ? "injectManifest" : "generateSW",
