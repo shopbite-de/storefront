@@ -1,5 +1,6 @@
 import { encodeForQuery } from "@shopware/api-client/helpers";
-import type { Schemas } from "#shopware";
+import type { components } from "~~/api-types/storeApiTypes";
+type Schemas = components["schemas"];
 
 const criteria = encodeForQuery({
   includes: {
