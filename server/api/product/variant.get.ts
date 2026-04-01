@@ -88,7 +88,7 @@ export default defineCachedEventHandler(
     return response.elements?.[0] ?? null;
   },
   {
-    maxAge: 3600,
+    maxAge: useRuntimeConfig().public.shopBite.cacheTtl.variant,
     name: "variant",
     getKey: (event) => {
       const { parentId, optionIds } = getQuery(event);

@@ -87,7 +87,7 @@ export default defineCachedEventHandler(
     });
   },
   {
-    maxAge: 86400,
+    maxAge: useRuntimeConfig().public.shopBite.cacheTtl.listing,
     name: "listing",
     getKey: (event) => {
       const categoryId = getRouterParam(event, "categoryId") ?? "";
