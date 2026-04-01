@@ -24,7 +24,7 @@ export default defineCachedEventHandler(
     });
   },
   {
-    maxAge: 86400,
+    maxAge: useRuntimeConfig().public.shopBite.cacheTtl.crossSelling,
     name: "cross-selling",
     getKey: (event) => `cross-selling-${getRouterParam(event, "productId")}`,
   },

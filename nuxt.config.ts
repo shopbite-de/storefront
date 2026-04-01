@@ -55,6 +55,13 @@ export default defineNuxtConfig({
     geoapifyApiKey: "",
     public: {
       shopBite: {
+        cacheTtl: {
+          product: 86400,
+          crossSelling: 86400,
+          listing: 86400,
+          variant: 3600,
+          category: 86400,
+        },
         menuCategoryId: "",
         feature: {
           multiChannel: false,
