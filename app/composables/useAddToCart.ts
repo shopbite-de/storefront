@@ -128,6 +128,12 @@ export function useAddToCart() {
       color: "primary",
       progress: true,
       duration: 2000,
+      actions: [
+        {
+          label: "Zum Warenkorb",
+          to: "/bestellung/warenkorb",
+        },
+      ],
     });
   }
 

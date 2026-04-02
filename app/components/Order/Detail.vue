@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
-import type { TableColumn } from "#ui/components/Table.vue";
 
 const props = defineProps<{
   order: Schemas["Order"];
@@ -14,89 +13,118 @@ const { getFormattedPrice } = usePrice({
   localeCode: "de-DE",
 });
 
-const isLoadingData = ref(true);
+const lineItems = computed(() =>
+  order.value?.lineItems?.filter(
+    (item: Schemas["OrderLineItem"]) => item.parentId === null,
+  ),
+);
 
-const columns: TableColumn<Schemas["OrderLineItem"]>[] = [
-  {
-    accessorKey: "payload.productNumber",
-    header: "#",
-  },
-  {
-    accessorKey: "label",
-    header: "Name",
-  },
-  {
-    accessorKey: "unitPrice",
-    header: "Preis",
-    cell: ({ row }) => {
-      return getFormattedPrice(row.getValue("unitPrice"));
-    },
-  },
-  {
-    accessorKey: "quantity",
-    header: "Anzahl",
-  },
-  {
-    accessorKey: "totalPrice",
-    header: () => h("div", { class: "text-right" }, "Gesamt"),
-    cell: ({ row }) => {
-      const formatted = getFormattedPrice(row.getValue("totalPrice"));
+const paymentState = computed(
+  () => order.value?.transactions?.at(-1)?.stateMachineState,
+);
 
-      return h("div", { class: "text-right" }, formatted);
-    },
-  },
-];
+type BadgeColor =
+  | "success"
+  | "error"
+  | "warning"
+  | "info"
+  | "neutral"
+  | "primary";
 
-onMounted(() => {
-  isLoadingData.value = false;
-});
-
-const columnRows = computed(() => {
-  return order.value?.lineItems?.filter(
-    (lineItem: Schemas["OrderLineItem"]) => lineItem.parentId === null,
-  );
+const paymentStateColor = computed((): BadgeColor => {
+  switch (paymentState.value?.technicalName) {
+    case "paid":
+    case "authorized":
+      return "success";
+    case "failed":
+    case "cancelled":
+    case "chargeback":
+      return "error";
+    case "open":
+    case "reminded":
+    case "unconfirmed":
+      return "warning";
+    case "in_progress":
+      return "info";
+    default:
+      return "neutral";
+  }
 });
 </script>
 
 <template>
-  <div>
-    <div class="flex flex-row justify-between">
-      <UBadge variant="outline" color="neutral" size="xl"
-        >Status: {{ status }}</UBadge
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-wrap gap-2">
+      <UBadge variant="subtle" color="neutral" icon="i-lucide-package">
+        {{ status }}
+      </UBadge>
+      <UBadge
+        v-if="order?.deliveries?.[0]?.shippingMethod?.name"
+        variant="subtle"
+        color="neutral"
+        icon="i-lucide-truck"
       >
-      <UBadge variant="outline" color="neutral" size="xl"
-        >Versandart: {{ order?.deliveries?.[0]?.shippingMethod?.name }}</UBadge
+        {{ order.deliveries[0].shippingMethod.name }}
+      </UBadge>
+      <UBadge
+        v-if="paymentState"
+        variant="subtle"
+        :color="paymentStateColor"
+        icon="i-lucide-credit-card"
       >
+        {{ paymentState.translated?.name ?? paymentState.name }}
+      </UBadge>
     </div>
-    <UTable
-      :columns="columns"
-      :loading="isLoadingData"
-      loading-color="primary"
-      loading-animation="carousel"
-      :data="columnRows"
-      class="flex-1"
-    />
-    <div class="flex flex-col items-end w-full pr-4">
-      <div>Lieferkosten: {{ getFormattedPrice(order?.shippingTotal) }}</div>
-      <div>Gesamtkosten Netto: {{ getFormattedPrice(order?.amountNet) }}</div>
-      <div v-for="tax in order?.price.calculatedTaxes" :key="tax.taxRate">
-        inkl. {{ tax.taxRate }}% MwSt. {{ getFormattedPrice(tax.tax) }}
+
+    <ul class="flex flex-col divide-y divide-default">
+      <li
+        v-for="item in lineItems"
+        :key="item.id"
+        class="flex items-start gap-4 py-4 first:pt-0 last:pb-0"
+      >
+        <div
+          class="size-10 rounded-md bg-elevated flex items-center justify-center shrink-0 text-sm font-semibold text-muted"
+        >
+          {{ item.quantity }}×
+        </div>
+        <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+          <p class="font-medium truncate">{{ item.label }}</p>
+          <p
+            v-if="item.payload?.productNumber"
+            class="text-xs text-muted truncate"
+          >
+            #{{ item.payload.productNumber }}
+          </p>
+        </div>
+        <p class="font-semibold shrink-0">
+          {{ getFormattedPrice(item.totalPrice) }}
+        </p>
+      </li>
+    </ul>
+
+    <USeparator />
+
+    <div class="flex flex-col gap-2 text-sm">
+      <div class="flex justify-between text-muted">
+        <span>Lieferkosten</span>
+        <span>{{ getFormattedPrice(order?.shippingTotal) }}</span>
       </div>
-      <div class="font-bold">
-        Gesamtkosten Brutto: {{ getFormattedPrice(order?.amountTotal) }}
+      <div class="flex justify-between text-muted">
+        <span>Netto</span>
+        <span>{{ getFormattedPrice(order?.amountNet) }}</span>
       </div>
-    </div>
-    <div class="p-2 text-balance mt-4">
-      <div class="text-sm text-muted">
-        Bei Fragen oder Problemen wenden Sie sich bitte telefonisch an uns.
+      <div
+        v-for="tax in order?.price?.calculatedTaxes"
+        :key="tax.taxRate"
+        class="flex justify-between text-muted"
+      >
+        <span>MwSt. {{ tax.taxRate }}%</span>
+        <span>{{ getFormattedPrice(tax.tax) }}</span>
       </div>
-      <UButton
-        label="Anrufen"
-        variant="outline"
-        color="primary"
-        to="tel:+4917623456789"
-        icon="i-heroicons-phone"
-      />
+      <div class="flex justify-between font-semibold text-base pt-1">
+        <span>Gesamt</span>
+        <span>{{ getFormattedPrice(order?.amountTotal) }}</span>
+      </div>
     </div>
   </div>
 </template>
