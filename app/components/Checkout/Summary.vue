@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import QuickView from "~/components/Cart/QuickView.vue";
 import { useIntervalFn } from "@vueuse/core";
+import { useOrderPayment } from "@shopware/composables";
 
 const { createOrder, selectedPaymentMethod, selectedShippingMethod } =
   useCheckout();
@@ -8,6 +9,10 @@ const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
 const { isCheckoutEnabled, refresh } = useShopBiteConfig();
 const { trackOrder } = useTrackEvent();
+
+const {
+  public: { storeUrl },
+} = useRuntimeConfig();
 
 const toast = useToast();
 
@@ -25,21 +30,42 @@ onMounted(() => {
 
 useIntervalFn(refresh, 10000);
 
+const createdOrder = ref<Awaited<ReturnType<typeof createOrder>> | null>(null);
+const { handlePayment, paymentUrl } = useOrderPayment(
+  computed(() => createdOrder.value),
+);
+
 async function handleCreateOrder() {
-  const order = await createOrder({
-    customerComment: "Wunschlieferzeit: " + selectedDeliveryTime.value,
-  });
+  isPlacingOrder.value = true;
+  try {
+    const order = await createOrder({
+      customerComment: "Wunschlieferzeit: " + selectedDeliveryTime.value,
+    });
 
-  trackOrder(order);
+    trackOrder(order);
+    createdOrder.value = order;
 
-  await refreshCart();
-  toast.add({
-    title: "Bestellung aufgegeben!",
-    icon: "i-lucide-shopping-cart",
-    color: "success",
-    progress: false,
-  });
-  navigateTo("/order/" + order.id);
+    await handlePayment(
+      `${storeUrl}/bestellung/${order.id}/erfolg`,
+      `${storeUrl}/bestellung/${order.id}/fehler`,
+    );
+
+    if (paymentUrl.value) {
+      await navigateTo(paymentUrl.value, { external: true });
+      return;
+    }
+
+    await refreshCart();
+    toast.add({
+      title: "Bestellung aufgegeben!",
+      icon: "i-lucide-shopping-cart",
+      color: "success",
+      progress: false,
+    });
+    navigateTo(`/bestellung/${order.id}/erfolg`);
+  } finally {
+    isPlacingOrder.value = false;
+  }
 }
 
 const customerDataAvailable = computed<boolean>(
@@ -58,6 +84,7 @@ const isValidToProceed = computed(
     shippingAndPaymentSet.value,
 );
 
+const isPlacingOrder = ref(false);
 const selectedDeliveryTime = ref("");
 const isValidTime = ref(true);
 
@@ -106,7 +133,8 @@ const checkoutButtonLabel = computed<string>(() => {
       <CheckoutVoucherInput />
       <UButton
         :icon="isValidToProceed ? 'i-lucide-shopping-cart' : 'i-lucide-lock'"
-        :disabled="!isValidToProceed"
+        :disabled="!isValidToProceed || isPlacingOrder"
+        :loading="isPlacingOrder"
         :label="checkoutButtonLabel"
         size="xl"
         block

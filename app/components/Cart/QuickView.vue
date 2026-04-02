@@ -34,8 +34,15 @@ const emit = defineEmits(["go-to-cart"]);
     </div>
     <div class="flex flex-col gap-4">
       <div class="flex flex-row justify-between">
-        <div>Versandkosten:</div>
-        <div>{{ getFormattedPrice(shippingTotal) }}</div>
+        <template v-if="shippingTotal === 0">
+          <div class="text-success font-medium">
+            Versandkostenfreie Lieferung
+          </div>
+        </template>
+        <template v-else>
+          <div>Versandkosten:</div>
+          <div>{{ getFormattedPrice(shippingTotal) }}</div>
+        </template>
       </div>
       <div class="flex flex-row justify-between font-bold">
         <div>Summe:</div>

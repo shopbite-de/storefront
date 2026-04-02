@@ -31,14 +31,24 @@ const items = computed(
     ] satisfies StepperItem[],
 );
 
+const route = useRoute();
+const isPaymentReturnRoute = computed(() =>
+  /^\/bestellung\/[0-9a-f]{32}(\/erfolg|\/fehler)?$/.test(route.path),
+);
 watch(step, (newStep) => {
+  if (isPaymentReturnRoute.value) {
+    return;
+  }
   navigateTo(stepRoutes[newStep]);
 });
 </script>
 
 <template>
   <UPageSection>
-    <UStepper ref="stepper" v-model="step" :items="items" size="lg">
+    <template v-if="isPaymentReturnRoute">
+      <NuxtPage />
+    </template>
+    <UStepper v-else ref="stepper" v-model="step" :items="items" size="lg">
       <template #content>
         <NuxtPage />
       </template>

@@ -55,6 +55,26 @@ const links = ref<ButtonProps[]>([
     />
     <UPageBody>
       <OrderDetail :order="order" :status="status ?? 'laden...'" />
+      <UCard class="mt-6">
+        <div
+          class="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+        >
+          <div class="flex-1">
+            <p class="font-semibold">Stimmt etwas nicht?</p>
+            <p class="text-sm text-muted mt-0.5">
+              Ruf uns sofort an, damit wir deine Bestellung noch rechtzeitig
+              korrigieren können.
+            </p>
+          </div>
+          <UButton
+            label="Jetzt anrufen"
+            color="primary"
+            to="tel:+4917623456789"
+            icon="i-lucide-phone"
+            shrink-0
+          />
+        </div>
+      </UCard>
     </UPageBody>
   </UContainer>
 
