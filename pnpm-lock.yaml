@@ -46,7 +46,7 @@ importers:
         version: 1.5.0
       '@shopware/api-gen':
         specifier: ^1.4.0
-        version: 1.4.0
+        version: 1.5.0
       '@shopware/composables':
         specifier: ^1.10.0
         version: 1.11.0(vue@3.5.30(typescript@6.0.2))
@@ -2611,8 +2611,8 @@ packages:
   '@redocly/config@0.22.0':
     resolution: {integrity: sha512-gAy93Ddo01Z3bHuVdPWfCwzgfaYgMdaZPcfL7JZ7hWJoK9V0lXDbigTWkhiPFAaLWzbOJ+kbUQG1+XwIm0KRGQ==}
 
-  '@redocly/openapi-core@1.34.10':
-    resolution: {integrity: sha512-XCBR/9WHJ0cpezuunHMZjuFMl4KqUo7eiFwzrQrvm7lTXt0EBd3No8UY+9OyzXpDfreGEMMtxmaLZ+ksVw378g==}
+  '@redocly/openapi-core@1.34.11':
+    resolution: {integrity: sha512-V09ayfnb5GyysmvARbt+voFZAjGcf7hSYxOYxSkCc4fbH/DTfq5YWoec8cflvmHHqyIFbqvmGKmYFzqhr9zxDg==}
     engines: {node: '>=18.17.0', npm: '>=9.5.0'}
 
   '@remirror/core-constants@3.0.0':
@@ -3237,8 +3237,8 @@ packages:
   '@shopware/api-client@1.5.0':
     resolution: {integrity: sha512-34a5CLU3b9KSPZla6sPcay020YS4ivSzXT3mlP6MfzuY8Y0cgQvRJfLQBi7UNPEPdl0LTEPZY5q6zX6aXLvtwQ==}
 
-  '@shopware/api-gen@1.4.0':
-    resolution: {integrity: sha512-+Opn4K0bu/XohsxcUCKBnf3je+CJW7OOBGbaNIg95z93VZgneDyAoYTf9UehqYBubrKtSoRPIr+c9Fctc3csSA==}
+  '@shopware/api-gen@1.5.0':
+    resolution: {integrity: sha512-mGYk9IcZKOz9+vzW7gWvZMkxer/Wx2V9/ZSYQVjmRQ5hBVZtzHf3omn0AnL3ZsFuTWwja78QN1p1HyGXCGYpig==}
     hasBin: true
 
   '@shopware/composables@1.11.0':
@@ -3640,8 +3640,8 @@ packages:
       y-protocols: ^1.0.1
       yjs: ^13.5.38
 
-  '@ts-morph/common@0.27.0':
-    resolution: {integrity: sha512-Wf29UqxWDpc+i61k3oIOzcUfQt79PIT9y/MWfAGlrkjg6lBC1hwDECLXPVJAhWjiGbfBCxZd65F/LIZF3+jeJQ==}
+  '@ts-morph/common@0.28.1':
+    resolution: {integrity: sha512-W74iWf7ILp1ZKNYXY5qbddNaml7e9Sedv5lvU1V8lftlitkc9Pq1A+jlH23ltDgWYeZFFEqGCD1Ies9hqu3O+g==}
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -6512,6 +6512,10 @@ packages:
     resolution: {integrity: sha512-oRjTw/97aTBN0RHbYCdtF1MQfvusSIBQM0IZEgzl6426+8jSC0nF1a/GmnVLpfB9yyr6g6FTqWqiZVbxrtaCIg==}
     engines: {node: 18 || 20 || >=22}
 
+  minimatch@10.2.5:
+    resolution: {integrity: sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg==}
+    engines: {node: 18 || 20 || >=22}
+
   minimatch@3.1.5:
     resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
 
@@ -8053,8 +8057,8 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
-  ts-morph@26.0.0:
-    resolution: {integrity: sha512-ztMO++owQnz8c/gIENcM9XfCEzgoGphTv+nKpYNM1bgsdOVC/jRZuEBf6N+mLLDNg68Kl+GgUZfOySaRiG1/Ug==}
+  ts-morph@27.0.2:
+    resolution: {integrity: sha512-fhUhgeljcrdZ+9DZND1De1029PrE+cMkIP7ooqkLRTrRLTqcki2AstsyJm0vRNbTbVCNJ0idGlbBrfqc7/nA8w==}
 
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
@@ -11858,7 +11862,7 @@ snapshots:
 
   '@redocly/config@0.22.0': {}
 
-  '@redocly/openapi-core@1.34.10(supports-color@10.2.2)':
+  '@redocly/openapi-core@1.34.11(supports-color@10.2.2)':
     dependencies:
       '@redocly/ajv': 8.11.2
       '@redocly/config': 0.22.0
@@ -12501,13 +12505,13 @@ snapshots:
       hookable: 5.5.3
       ofetch: 1.5.1
 
-  '@shopware/api-gen@1.4.0':
+  '@shopware/api-gen@1.5.0':
     dependencies:
-      '@shopware/api-client': 1.4.0
-      ofetch: 1.4.1
+      '@shopware/api-client': 1.5.0
+      ofetch: 1.5.1
       openapi-typescript: 7.8.0(typescript@5.9.3)
       prettier: 3.7.4
-      ts-morph: 26.0.0
+      ts-morph: 27.0.2
       typescript: 5.9.3
       yargs: 18.0.0
 
@@ -12907,11 +12911,11 @@ snapshots:
       y-protocols: 1.0.7(yjs@13.6.28)
       yjs: 13.6.28
 
-  '@ts-morph/common@0.27.0':
+  '@ts-morph/common@0.28.1':
     dependencies:
-      fast-glob: 3.3.3
-      minimatch: 10.2.4
+      minimatch: 10.2.5
       path-browserify: 1.0.1
+      tinyglobby: 0.2.15
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
@@ -16369,6 +16373,10 @@ snapshots:
     dependencies:
       brace-expansion: 5.0.5
 
+  minimatch@10.2.5:
+    dependencies:
+      brace-expansion: 5.0.5
+
   minimatch@3.1.5:
     dependencies:
       brace-expansion: 1.1.13
@@ -17067,7 +17075,7 @@ snapshots:
 
   openapi-typescript@7.8.0(typescript@5.9.3):
     dependencies:
-      '@redocly/openapi-core': 1.34.10(supports-color@10.2.2)
+      '@redocly/openapi-core': 1.34.11(supports-color@10.2.2)
       ansi-colors: 4.1.3
       change-case: 5.4.4
       parse-json: 8.3.0
@@ -18653,9 +18661,9 @@ snapshots:
     dependencies:
       typescript: 6.0.2
 
-  ts-morph@26.0.0:
+  ts-morph@27.0.2:
     dependencies:
-      '@ts-morph/common': 0.27.0
+      '@ts-morph/common': 0.28.1
       code-block-writer: 13.0.3
 
   tslib@2.8.1: {}
