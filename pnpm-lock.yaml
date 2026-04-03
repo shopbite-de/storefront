@@ -52,7 +52,7 @@ importers:
         version: 1.10.0(vue@3.5.30(typescript@6.0.2))
       '@shopware/helpers':
         specifier: ^1.6.0
-        version: 1.6.0
+        version: 1.7.0
       '@shopware/nuxt-module':
         specifier: ^1.4.2
         version: 1.4.3(magicast@0.5.2)(vue@3.5.30(typescript@6.0.2))
