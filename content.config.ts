@@ -107,6 +107,14 @@ export default defineContentConfig({
           ),
           links: z.array(createLinkSchema()),
         }),
+        mittagstisch: createBaseSchema().extend({
+          reverse: z.boolean().optional(),
+          orientation: createEnum(["horizontal", "vertical"]).optional(),
+          image: z.string().optional(),
+          imageAlt: z.string().optional(),
+          features: z.array(createFeatureSchema()),
+          links: z.array(createLinkSchema()),
+        }),
         cta: createBaseSchema().extend({
           links: z.array(createLinkSchema()),
           backgroundImage: z.string().optional(),

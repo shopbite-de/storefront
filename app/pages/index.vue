@@ -55,6 +55,25 @@ useSeoMeta({
       :items="page.marquee.items"
     />
 
+    <UPageSection
+      v-if="page.mittagstisch"
+      :reverse="page.mittagstisch.reverse"
+      :headline="page.mittagstisch.headline"
+      :title="page.mittagstisch.title"
+      :description="page.mittagstisch.description"
+      :orientation="page.mittagstisch.orientation"
+      :features="page.mittagstisch.features"
+      :links="page.mittagstisch.links"
+    >
+      <img
+        :src="page.mittagstisch.image"
+        width="352"
+        height="647"
+        :alt="page.mittagstisch.imageAlt"
+        class="w-full rounded-lg"
+      />
+    </UPageSection>
+
     <ImageGallery
       :title="page.gallery.title"
       :description="page.gallery.description"

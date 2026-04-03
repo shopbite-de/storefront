@@ -81,6 +81,30 @@ gallery:
     - image: https://shopware.shopbite.de/media/80/76/d0/1762465670/restaurant6.webp
       alt: La Fattoria Restaurant Innenbereich 6
 
+mittagstisch:
+  headline: SHOPBITE
+  title: Mittagstisch
+  description: Jetzt auch Samstags!
+  reverse: true
+  orientation: horizontal
+  image: https://shopware.shopbite.de/media/1f/c3/c8/1771943544/lm2.webp
+  imageAlt: Illustration
+  features:
+    - title: Montag bis Samstag
+      description: 11:30 bis 15:00 Uhr
+      icon: i-lucide-clock
+    - title: Täglich wechselndes Angebot
+      description: 3 verschieden Speisen ab 9,90 €
+      icon: i-lucide-utensils-crossed
+    - title: Wichtiger Hinweis
+      description: An Feiertagen bieten wir keinen Mittagstisch an. Wir bitten um Ihr Verständnis und freuen uns, Sie an regulären Werktagen zur Mittagszeit begrüßen zu dürfen.
+      icon: i-lucide-info
+  links:
+    - label: Reservieren
+      to: 'tel:+49610471427'
+      color: neutral
+      variant: subtle
+      trailingIcon: i-lucide-phone
 cta:
   title: Jetzt bestellen!
   description: Genieße die italienische Küche, frisch zubereitet und direkt zu dir geliefert oder vor Ort genießen.
