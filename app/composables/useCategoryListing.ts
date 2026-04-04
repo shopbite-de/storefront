@@ -11,42 +11,9 @@ export type ShortcutFilterParam = {
   value: string | string[] | undefined;
 };
 
-const DEFAULT_CRITERIA: CategoryListingCriteria = {
-  includes: {
-    product: [
-      "id",
-      "productNumber",
-      "name",
-      "description",
-      "calculatedPrice",
-      "translated",
-      "properties",
-      "propertyIds",
-      "sortedProperties",
-      "cover",
-    ],
-    property: ["id", "name", "translated", "options"],
-    property_group_option: ["id", "name", "translated", "group"],
-    product_option: ["id", "groupId", "name", "translated", "group"],
-  },
-  associations: {
-    cover: {
-      associations: {
-        media: {},
-      },
-    },
-    properties: {
-      associations: {
-        group: {},
-      },
-    },
-  },
-  limit: 100,
-};
-
 export function useCategoryListing(
   categoryId: string,
-  _defaultCriteria: CategoryListingCriteria = DEFAULT_CRITERIA,
+  initialProperties: string[] = [],
 ) {
   const nuxtApp = useNuxtApp();
 
@@ -71,7 +38,12 @@ export function useCategoryListing(
 
   const { data: listing, pending } = useLazyAsyncData(
     `listing-${categoryId}`,
-    () => fetchListing({}),
+    () =>
+      fetchListing(
+        initialProperties.length > 0
+          ? { properties: initialProperties.join("|") }
+          : {},
+      ),
   );
 
   // Suppress skeleton during SSR hydration to prevent hydration mismatch.

@@ -18,8 +18,15 @@ const BASE_CRITERIA = {
       "sortedProperties",
       "cover",
     ],
-    property: ["id", "name", "translated", "options"],
-    property_group_option: ["id", "name", "translated", "group"],
+    property: ["id", "name", "translated", "displayType", "options"],
+    property_group_option: [
+      "id",
+      "name",
+      "translated",
+      "group",
+      "media",
+      "mediaId",
+    ],
     product_option: ["id", "groupId", "name", "translated", "group"],
   },
   associations: {
@@ -31,6 +38,7 @@ const BASE_CRITERIA = {
     properties: {
       associations: {
         group: {},
+        media: {},
       },
     },
   },
