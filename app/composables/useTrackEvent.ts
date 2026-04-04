@@ -53,10 +53,21 @@ export function useTrackEvent() {
     ]);
   }
 
+  function trackSearch(term: string, productNumbers: string[]) {
+    proxy._paq.push([
+      "trackEvent",
+      "Search",
+      term,
+      productNumbers.join(","),
+      productNumbers.length,
+    ]);
+  }
+
   return {
     trackProductView,
     trackOrder,
     trackAddToWishlist,
     trackAddToCart,
+    trackSearch,
   };
 }

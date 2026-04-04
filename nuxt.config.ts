@@ -63,6 +63,7 @@ export default defineNuxtConfig({
           category: 86400,
         },
         menuCategoryId: "",
+        searchFallbackCategoryId: "",
         feature: {
           multiChannel: false,
           secureKey: "",

@@ -125,6 +125,7 @@ const moreThanOneFilterAndOption = computed<boolean>(
         <div>
           <Breadcrumb :category-id="category?.id" />
           <CategoryHeader v-if="category" :category="category" />
+          <CategorySearchInput class="mb-4 grow flex" />
           <div class="flex flex-row justify-between gap-4 mb-4">
             <UBadge variant="subtle" :label="`${elements.length} Produkte`" />
             <USelect
