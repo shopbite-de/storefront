@@ -10,6 +10,11 @@ const { id: categoryId } = toRefs(props);
 
 const { category } = await useCategory(categoryId);
 
+const selectedPropertyFilters = useState<string[]>(
+  "listing-property-filters",
+  () => [],
+);
+
 const {
   showSkeleton,
   loading,
@@ -20,8 +25,13 @@ const {
   currentFilters,
   changeSorting,
   setFilters,
-  resetFilters,
-} = useCategoryListing(props.id);
+  resetFilters: resetListingFilters,
+} = useCategoryListing(props.id, selectedPropertyFilters.value);
+
+async function resetFilters() {
+  selectedPropertyFilters.value = [];
+  await resetListingFilters();
+}
 
 useCategorySeo(category);
 
@@ -43,8 +53,6 @@ const propertyFilters = computed<Schemas["PropertyGroup"][]>(
       (availableFilter) => availableFilter.code === "properties",
     ) ?? []) as unknown as Schemas["PropertyGroup"][],
 );
-
-const selectedPropertyFilters = ref(currentFilters.value?.properties ?? []);
 const selectedPropertyFiltersString = computed(() =>
   selectedPropertyFilters.value?.join("|"),
 );
@@ -57,6 +65,27 @@ const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
     },
   ];
 });
+
+// When the listing loads for a new category, drop any persisted filters whose
+// option IDs don't exist in this category's available options.
+watch(
+  propertyFilters,
+  (filters) => {
+    if (selectedPropertyFilters.value.length === 0) return;
+
+    const availableOptionIds = new Set(
+      filters.flatMap((f) => f.options?.map((o) => o.id) ?? []),
+    );
+    const valid = selectedPropertyFilters.value.filter((id) =>
+      availableOptionIds.has(id),
+    );
+
+    if (valid.length !== selectedPropertyFilters.value.length) {
+      selectedPropertyFilters.value = valid;
+    }
+  },
+  { once: true },
+);
 
 let filterChain = Promise.resolve();
 
@@ -116,37 +145,12 @@ const moreThanOneFilterAndOption = computed<boolean>(
 
                 <template #body>
                   <div class="flex flex-col gap-4">
-                    <div
+                    <CategoryFilterGroup
                       v-for="filter in propertyFilters"
                       :key="filter.id"
-                      class="flex flex-col gap-4"
-                    >
-                      <UCollapsible
-                        class="flex flex-col gap-2 w-48"
-                        :default-open="true"
-                      >
-                        <UButton
-                          :label="filter.translated.name"
-                          color="neutral"
-                          variant="subtle"
-                          trailing-icon="i-lucide-chevron-down"
-                          block
-                          :ui="{
-                            trailingIcon:
-                              'group-data-[state=open]:rotate-180 transition-transform duration-200',
-                          }"
-                        />
-
-                        <template #content>
-                          <UCheckboxGroup
-                            v-model="selectedPropertyFilters"
-                            :items="filter.options"
-                            value-key="id"
-                            label-key="translated.name"
-                          />
-                        </template>
-                      </UCollapsible>
-                    </div>
+                      v-model="selectedPropertyFilters"
+                      :filter="filter"
+                    />
                     <UButton
                       label="Zurücksetzen"
                       variant="outline"
@@ -192,37 +196,12 @@ const moreThanOneFilterAndOption = computed<boolean>(
           <ClientOnly v-if="moreThanOneFilterAndOption">
             <div class="flex flex-col gap-4">
               <h2 class="text-3xl md:text-4xl mb-3 pb-2">Filter</h2>
-              <div
+              <CategoryFilterGroup
                 v-for="filter in propertyFilters"
                 :key="filter.id"
-                class="flex flex-col gap-4"
-              >
-                <UCollapsible
-                  class="flex flex-col gap-2 w-48"
-                  :default-open="true"
-                >
-                  <UButton
-                    :label="filter.translated.name"
-                    color="neutral"
-                    variant="subtle"
-                    trailing-icon="i-lucide-chevron-down"
-                    block
-                    :ui="{
-                      trailingIcon:
-                        'group-data-[state=open]:rotate-180 transition-transform duration-200',
-                    }"
-                  />
-
-                  <template #content>
-                    <UCheckboxGroup
-                      v-model="selectedPropertyFilters"
-                      :items="filter.options"
-                      value-key="id"
-                      label-key="translated.name"
-                    />
-                  </template>
-                </UCollapsible>
-              </div>
+                v-model="selectedPropertyFilters"
+                :filter="filter"
+              />
               <UButton
                 label="Zurücksetzen"
                 variant="outline"

@@ -7,57 +7,17 @@ const props = defineProps<{
   withAddToCartButton: boolean;
 }>();
 
-const { isCheckoutEnabled } = useShopBiteConfig();
+const { product } = toRefs(props);
 
-const { product, withFavoriteButton, withAddToCartButton } = toRefs(props);
-
-const { getFormattedPrice } = usePrice({
-  currencyCode: "EUR",
-  localeCode: "de-DE",
-});
+const sortedProperties = computed(
+  () =>
+    product.value.sortedProperties as Schemas["PropertyGroup"][] | undefined,
+);
 
 const price = ref(product.value.calculatedPrice.totalPrice);
 const label = ref(product.value.translated.name ?? product.value.name);
 const description = ref(product.value.description);
 const number = ref(product.value.productNumber);
-
-const isVegi = computed<boolean>(() => {
-  if (!product.value?.properties) {
-    return false;
-  }
-
-  return (
-    (
-      product.value?.sortedProperties as Schemas["PropertyGroup"][] | undefined
-    )?.some(
-      (propertyGroup: Schemas["PropertyGroup"]) =>
-        propertyGroup.translated.name === "Vegetarisch" &&
-        propertyGroup.options?.some(
-          (option: Schemas["PropertyGroupOption"]) =>
-            option.translated.name === "Ja",
-        ),
-    ) ?? false
-  );
-});
-const openDetails = ref(false);
-
-function toggleDetails() {
-  openDetails.value = !openDetails.value;
-}
-
-const MAIN_INGREDIENTS_PROPERTY_LABEL = "Hauptzutaten";
-
-const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
-  const sortedProps =
-    (product.value?.sortedProperties as
-      | Schemas["PropertyGroup"][]
-      | undefined) ?? ([] as Schemas["PropertyGroup"][]);
-  const mainIngredientsProperty = sortedProps.find(
-    (propertyGroup: Schemas["PropertyGroup"]) =>
-      propertyGroup.translated.name === MAIN_INGREDIENTS_PROPERTY_LABEL,
-  );
-  return mainIngredientsProperty?.options ?? [];
-});
 
 function onVariantSelected(variant: Schemas["Product"]) {
   price.value = variant.calculatedPrice.totalPrice;
@@ -81,28 +41,21 @@ function onVariantSelected(variant: Schemas["Product"]) {
       :ui="{ footer: 'w-full', root: 'shadow-lg' }"
     >
       <template #header>
-        <LazyUBadge
-          v-if="isVegi"
-          icon="i-lucide-leaf"
-          color="success"
-          variant="outline"
-          size="sm"
-          label="Vegetarisch"
-        />
+        <ProductCardDietBadges :sorted-properties="sortedProperties" />
       </template>
 
       <div v-if="product.cover?.media?.url">
         <LazyNuxtImg
           :src="product.cover.media.url"
-          class="rounded-md h-auto max-w-full object-contain ransition-opacity duration-700"
+          class="rounded-md h-auto max-w-full object-contain transition-opacity duration-700"
           sizes="(min-width: 1024px) 50vw, 100vw"
         />
       </div>
 
       <template #title>
-        <div class="flex flex-row items-baseline gap-1">
+        <div class="flex flex-row items-center gap-1">
           <span class="text-sm text-brand-500">#{{ number }}</span>
-
+          <ProductCardKitchen :sorted-properties="sortedProperties" />
           <p class="text-base text-pretty font-semibold text-highlighted">
             {{ label }}
           </p>
@@ -110,45 +63,20 @@ function onVariantSelected(variant: Schemas["Product"]) {
       </template>
 
       <template #description>
-        <div class="flex flex-col gap-2">
-          <div>{{ description }}</div>
-          <div
-            v-if="mainIngredients.length > 0"
-            class="font-extralight text-sm text-pretty"
-          >
-            {{
-              mainIngredients
-                .map((ingredient) => ingredient.translated.name)
-                .join(", ")
-            }}
-          </div>
-        </div>
+        <ProductCardDescription
+          :description="description"
+          :sorted-properties="sortedProperties"
+        />
       </template>
 
       <template #footer>
-        <div class="flex flex-row justify-between content-center w-full">
-          <p>{{ getFormattedPrice(price) }}</p>
-          <div class="flex flex-row gap-2">
-            <AddToWishlist v-if="withFavoriteButton" :product="product" />
-            <UButton
-              v-if="withAddToCartButton && isCheckoutEnabled"
-              icon="i-lucide-shopping-cart"
-              variant="subtle"
-              @click="toggleDetails"
-            />
-          </div>
-        </div>
-        <ClientOnly>
-          <UCollapsible v-model:open="openDetails" class="flex flex-col gap-2">
-            <template #content>
-              <LazyProductDetail
-                :product-id="product.id"
-                @product-added="toggleDetails"
-                @variant-selected="onVariantSelected"
-              />
-            </template>
-          </UCollapsible>
-        </ClientOnly>
+        <ProductCardFooter
+          :price="price"
+          :product="product"
+          :with-favorite-button="withFavoriteButton"
+          :with-add-to-cart-button="withAddToCartButton"
+          @variant-selected="onVariantSelected"
+        />
       </template>
     </UPageCard>
   </AnimatedSection>
