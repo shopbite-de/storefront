@@ -16,7 +16,7 @@ const criteria = encodeForQuery({
       "propertyIds",
       "options",
       "optionIds",
-      "seoCategory",
+      "categories",
       "configuratorSettings",
       "children",
       "parentId",
@@ -31,6 +31,7 @@ const criteria = encodeForQuery({
   },
   associations: {
     cover: { associations: { media: {} } },
+    categories: {},
     properties: { associations: { group: {} } },
     options: { associations: { group: {} } },
     configuratorSettings: {
