@@ -47,27 +47,6 @@ const createFeatureSchema = () =>
       .editor({ hidden: true }),
   });
 
-const createNavigationItemSchema = () =>
-  z.object({
-    label: z.string().nonempty(),
-    icon: z.string().optional().editor({ input: "icon" }),
-    to: z.string().nonempty(),
-    target: createEnum(["_blank", "_self"]),
-    type: createEnum(["label", "item"]).optional(),
-    action: z.string().optional(),
-  });
-
-const createFooterColumnSchema = () =>
-  z.object({
-    label: z.string().nonempty(),
-    children: z.array(
-      z.object({
-        label: z.string().nonempty(),
-        to: z.string().optional(),
-      }),
-    ),
-  });
-
 export default defineContentConfig({
   collections: {
     home: defineCollection({
@@ -118,23 +97,6 @@ export default defineContentConfig({
         cta: createBaseSchema().extend({
           links: z.array(createLinkSchema()),
           backgroundImage: z.string().optional(),
-        }),
-      }),
-    }),
-    navigation: defineCollection({
-      source: "navigation.yml",
-      type: "page",
-      schema: z.object({
-        main: z.array(createNavigationItemSchema()),
-        account: z.object({
-          loggedIn: z.array(z.array(createNavigationItemSchema())),
-          loggedOut: z.array(z.array(createNavigationItemSchema())),
-        }),
-        footer: z.object({
-          withGithubLink: z.boolean(),
-          withColorModeSwitch: z.boolean(),
-          text: z.string().optional(),
-          columns: z.array(createFooterColumnSchema()),
         }),
       }),
     }),
