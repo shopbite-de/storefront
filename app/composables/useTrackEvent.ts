@@ -8,7 +8,7 @@ export function useTrackEvent() {
       "setEcommerceView",
       product.productNumber,
       product.translated.name ?? product.name,
-      product.seoCategory.name,
+      product.seoCategory?.name ?? false,
       product.calculatedPrice.unitPrice,
     ]);
     proxy._paq.push(["trackPageView", product.productNumber]);
@@ -21,7 +21,7 @@ export function useTrackEvent() {
         "addEcommerceItem",
         item.product?.productNumber ?? item.id,
         item.label,
-        item.product?.seoCategory.name ?? "Default",
+        item.product?.seoCategory?.name ?? false,
         item.unitPrice,
         item.quantity,
       ]);
@@ -54,13 +54,7 @@ export function useTrackEvent() {
   }
 
   function trackSearch(term: string, productNumbers: string[]) {
-    proxy._paq.push([
-      "trackEvent",
-      "Search",
-      term,
-      productNumbers.join(","),
-      productNumbers.length,
-    ]);
+    proxy._paq.push(["trackSiteSearch", term, false, productNumbers.length]);
   }
 
   return {
