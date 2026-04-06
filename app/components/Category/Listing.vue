@@ -138,11 +138,22 @@ const moreThanOneFilterAndOption = computed<boolean>(
             <ClientOnly v-if="moreThanOneFilterAndOption">
               <UDrawer class="lg:hidden" title="Filter" direction="right">
                 <UButton
-                  label="Filter"
                   icon="i-lucide-sliders-horizontal"
-                  color="neutral"
-                  variant="subtle"
-                />
+                  :color="
+                    selectedPropertyFilters.length ? 'primary' : 'neutral'
+                  "
+                  :variant="selectedPropertyFilters.length ? 'solid' : 'subtle'"
+                >
+                  Filter
+                  <UBadge
+                    v-if="selectedPropertyFilters.length"
+                    :label="String(selectedPropertyFilters.length)"
+                    size="sm"
+                    color="neutral"
+                    variant="solid"
+                    class="ml-1"
+                  />
+                </UButton>
 
                 <template #body>
                   <div class="flex flex-col gap-4">

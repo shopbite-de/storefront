@@ -1,8 +1,7 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
-const sw = process.env.SW === "true";
-const storeName = process.env.STORE_NAME || "ShopBite";
+const storeName = process.env.NUXT_STORE_NAME || "ShopBite";
 const storeDescription =
-  process.env.STORE_DESCRIPTION ||
+  process.env.NUXT_STORE_DESCRIPTION ||
   "Reduziere deine Kosten und steigere deinen Umsatz";
 
 export default defineNuxtConfig({
@@ -17,18 +16,15 @@ export default defineNuxtConfig({
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         {
           name: "description",
-          content:
-            "Dein eigenes Bestellsystem ohne Provisionen, ohne monatliche Kosten – 100% Open Source und individuell anpassbar. Perfekt für Pizzerien, Imbisse und Lieferdienste.",
+          content: storeDescription,
         },
         {
           property: "og:title",
-          content:
-            "Dein eigenes Bestellsystem ohne Provisionen, ohne monatliche Kosten – 100% Open Source und individuell anpassbar. Perfekt für Pizzerien, Imbisse und Lieferdienste.",
+          content: storeDescription,
         },
         {
           property: "og:description",
-          content:
-            "Dein eigenes Bestellsystem ohne Provisionen, ohne monatliche Kosten – 100% Open Source und individuell anpassbar. Perfekt für Pizzerien, Imbisse und Lieferdienste.",
+          content: storeDescription,
         },
       ],
       link: [{ rel: "icon", href: "/favicon.ico", type: "image/png" }],
@@ -119,10 +115,6 @@ export default defineNuxtConfig({
   },
 
   pwa: {
-    strategies: sw ? "injectManifest" : "generateSW",
-    srcDir: sw ? "service-worker" : undefined,
-    filename: sw ? "sw.ts" : undefined,
-    registerType: "autoUpdate",
     manifest: {
       name: storeName,
       short_name: storeName,
@@ -155,9 +147,6 @@ export default defineNuxtConfig({
     injectManifest: {
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
       globIgnores: ["**/_payload.json"],
-    },
-    client: {
-      installPrompt: true,
     },
   },
 
