@@ -166,6 +166,13 @@ export default defineNuxtConfig({
     workbox: {
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
       globIgnores: ["**/_payload.json"],
+      navigateFallback: null,
+      runtimeCaching: [
+        {
+          urlPattern: "/",
+          handler: "NetworkFirst",
+        },
+      ],
     },
     devOptions: {
       enabled: true,
