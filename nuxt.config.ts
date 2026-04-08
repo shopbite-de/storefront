@@ -166,6 +166,7 @@ export default defineNuxtConfig({
     workbox: {
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
       globIgnores: ["**/_payload.json"],
+      maximumFileSizeToCacheInBytes: 7340032,
       navigateFallback: null,
       runtimeCaching: [
         {
