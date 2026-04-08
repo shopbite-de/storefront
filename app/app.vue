@@ -110,7 +110,7 @@ useHead({
 </script>
 
 <template>
-  <NuxtPwaManifest />
+  <VitePwaManifest />
   <NuxtLoadingIndicator />
 
   <UApp :toaster="appConfig.toaster">

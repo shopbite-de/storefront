@@ -116,8 +116,9 @@ export default defineNuxtConfig({
 
   pwa: {
     registerType: "autoUpdate",
-    injectRegister: "auto",
     manifest: {
+      id: "/",
+      scope: "/",
       name: storeName,
       short_name: storeName,
       description: storeDescription,
@@ -125,6 +126,22 @@ export default defineNuxtConfig({
       background_color: "#ffffff",
       display: "standalone",
       start_url: "/",
+      screenshots: [
+        {
+          src: "screenshot-mobile.png",
+          sizes: "390x844",
+          type: "image/png",
+          form_factor: "narrow",
+          label: storeName,
+        },
+        {
+          src: "screenshot-desktop.png",
+          sizes: "1280x800",
+          type: "image/png",
+          form_factor: "wide",
+          label: storeName,
+        },
+      ],
       icons: [
         {
           src: "logo-192.png",
@@ -149,6 +166,10 @@ export default defineNuxtConfig({
     workbox: {
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
       globIgnores: ["**/_payload.json"],
+    },
+    devOptions: {
+      enabled: true,
+      type: "module",
     },
   },
 
@@ -193,7 +214,6 @@ export default defineNuxtConfig({
       "@nuxt/image",
       "@nuxt/content",
       "@nuxtjs/robots",
-      "@vite-pwa/nuxt",
       "@nuxt/ui",
       "@nuxt/scripts",
       "@nuxt/test-utils/module",
