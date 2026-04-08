@@ -118,7 +118,9 @@ export default defineNuxtConfig({
     manifest: {
       name: storeName,
       short_name: storeName,
+      description: storeDescription,
       theme_color: "#ff5b00",
+      background_color: "#ffffff",
       display: "standalone",
       start_url: "/",
       icons: [
@@ -126,17 +128,19 @@ export default defineNuxtConfig({
           src: "logo-192.png",
           sizes: "192x192",
           type: "image/png",
+          purpose: "any",
         },
         {
           src: "logo-512.png",
           sizes: "512x512",
           type: "image/png",
+          purpose: "any",
         },
         {
           src: "logo-512.png",
           sizes: "512x512",
           type: "image/png",
-          purpose: "any maskable",
+          purpose: "maskable",
         },
       ],
     },
