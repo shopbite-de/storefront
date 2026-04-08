@@ -115,6 +115,8 @@ export default defineNuxtConfig({
   },
 
   pwa: {
+    registerType: "autoUpdate",
+    injectRegister: "auto",
     manifest: {
       name: storeName,
       short_name: storeName,
@@ -145,10 +147,6 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
-      globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
-      globIgnores: ["**/_payload.json"],
-    },
-    injectManifest: {
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
       globIgnores: ["**/_payload.json"],
     },
