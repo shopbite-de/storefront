@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useOrderPayment, useOrderDetails } from "@shopware/composables";
-import type { Schemas } from "#shopware";
+import type { PaymentMethod } from "~/types/commerce/checkout";
 
 const {
   public: { site, storeUrl },
@@ -14,8 +13,8 @@ useSeoMeta({
 const route = useRoute();
 const orderId = route.params.id as string;
 
-const { order, loadOrderDetails, status } = useOrderDetails(orderId);
-const { paymentMethods, getPaymentMethods } = useCheckout();
+const { order, loadOrderDetails, status } = useCommerceOrderDetails(orderId);
+const { paymentMethods, getPaymentMethods } = useCommerceCheckout();
 
 onMounted(async () => {
   await Promise.all([loadOrderDetails(), getPaymentMethods()]);
@@ -23,7 +22,7 @@ onMounted(async () => {
 
 const orderRef = computed(() => order.value);
 const { handlePayment, paymentUrl, changePaymentMethod } =
-  useOrderPayment(orderRef);
+  useCommerceOrderPayment(orderRef);
 
 const currentPaymentMethodId = computed(
   () => order.value?.transactions?.at(-1)?.paymentMethodId ?? "",
@@ -41,7 +40,7 @@ watch(
 );
 
 const selectablePaymentMethods = computed(() =>
-  paymentMethods.value?.map((m: Schemas["PaymentMethod"]) => ({
+  paymentMethods.value?.map((m: PaymentMethod) => ({
     label: m.distinguishableName ?? m.name,
     value: m.id,
   })),

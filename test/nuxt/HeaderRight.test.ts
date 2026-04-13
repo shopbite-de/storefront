@@ -13,26 +13,27 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const reactiveState = reactive(mocks.state);
+const mockLogout = vi.fn();
 
-mockNuxtImport("useUser", () => () => ({
+mockNuxtImport("useCommerceUser", () => () => ({
   isLoggedIn: computed(() => reactiveState.isLoggedIn),
   isGuestSession: computed(() => reactiveState.isGuestSession),
   user: computed(() => reactiveState.user),
-  logout: () => {
-    reactiveState.isLoggedIn = false;
-    reactiveState.user = null;
-  },
+  logout: mockLogout,
 }));
 
+const mockToastAdd = vi.fn();
 mockNuxtImport("useToast", () => () => ({
   add: (_payload: unknown) => {
     if (
       typeof global !== "undefined" &&
-      (global as Record<string, { value: boolean }>).toastAddCalled
+      (global as unknown as Record<string, { value: boolean }>).toastAddCalled
     ) {
-      (global as Record<string, { value: boolean }>).toastAddCalled!.value =
-        true;
+      (
+        global as unknown as Record<string, { value: boolean }>
+      ).toastAddCalled!.value = true;
     }
+    mockToastAdd(_payload);
   },
 }));
 
@@ -40,7 +41,7 @@ mockNuxtImport("useShopBiteConfig", () => () => ({
   isCheckoutEnabled: ref(true),
 }));
 
-mockNuxtImport("useCart", () => () => ({
+mockNuxtImport("useCommerceCart", () => () => ({
   count: ref(5),
 }));
 
@@ -49,7 +50,7 @@ mockNuxtImport("useRuntimeConfig", () => () => ({
   public: { shopware: {} },
 }));
 
-mockNuxtImport("useWishlist", () => () => ({
+mockNuxtImport("useCommerceWishlist", () => () => ({
   count: ref(0),
 }));
 
@@ -112,8 +113,9 @@ describe("HeaderRight", () => {
     expect(items[0][0].label).toBe("Mein Konto");
   });
 
-  it("calls logout and updates state when logout is selected", async () => {
+  it("calls logout and shows toast when logout is selected", async () => {
     reactiveState.isLoggedIn = true;
+    mockLogout.mockResolvedValue(undefined);
     const component = await mountSuspended(HeaderRight);
     const dropdown = component.findComponent({ name: "UDropdownMenu" });
     const items = dropdown.props("items");
@@ -130,9 +132,11 @@ describe("HeaderRight", () => {
     }
 
     expect(logoutItem).toBeDefined();
-    logoutItem.onSelect();
+    await logoutItem.onSelect();
 
-    expect(reactiveState.isLoggedIn).toBe(false);
-    expect(mocks.toastAddCalled.value).toBe(true);
+    expect(mockLogout).toHaveBeenCalled();
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Tschüss!" }),
+    );
   });
 });

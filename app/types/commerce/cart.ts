@@ -32,6 +32,7 @@ export interface CartLineItem {
 }
 
 export interface CartPromotion {
+  id: string;
   code: string;
   label: string;
 }

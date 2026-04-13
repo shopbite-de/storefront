@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import type { SelectMenuItem } from "@nuxt/ui";
-import type { Schemas } from "#shopware";
 
 type StoreSelectItem = SelectMenuItem & { value: string };
 
-const { apiClient } = useShopwareContext();
+type SalesChannelDomain = { url?: string };
+type SalesChannel = { name: string; domains?: SalesChannelDomain[] };
+type MultiChannelGroupStruct = {
+  multiChannelGroup?: Array<{ salesChannels?: SalesChannel[] }>;
+};
 
 const config = useRuntimeConfig();
 
@@ -14,21 +17,14 @@ const storeUrl = computed(() => config.public.storeUrl);
 
 const { data: salesChannels, pending: status } = useAsyncData(
   "multi-channel-group",
-  async () => {
-    const response = await apiClient.invoke(
-      "shopbite.multi-channel-group.get get /shopbite/multi-channel-group",
-    );
-
-    return response.data;
-  },
+  () => $fetch<MultiChannelGroupStruct>("/api/shopbite/multi-channel-group"),
   {
-    transform: (response: Schemas["MultiChannelGroupStruct"]) =>
-      transform(response),
+    transform: (response: MultiChannelGroupStruct) => transform(response),
   },
 );
 
 function transform(
-  multiChannelGroups: Schemas["MultiChannelGroupStruct"],
+  multiChannelGroups: MultiChannelGroupStruct,
 ): StoreSelectItem[] {
   const group = multiChannelGroups.multiChannelGroup?.[0];
   if (!group) return [];
@@ -36,7 +32,7 @@ function transform(
   const storeUrlValue = storeUrl.value;
 
   const getBestDomainUrl = (
-    domains: Schemas["Domain"][] | undefined,
+    domains: SalesChannelDomain[] | undefined,
     preferredUrl: string | null | undefined,
   ): string => {
     const safeDomains = domains ?? [];
@@ -77,7 +73,7 @@ watch(selectedStore, (newStore, oldStore) => {
 </script>
 
 <template>
-  <USelectMenu
+  <LazyUSelectMenu
     v-if="isMultiChannel"
     v-model="selectedStore"
     :items="salesChannels"

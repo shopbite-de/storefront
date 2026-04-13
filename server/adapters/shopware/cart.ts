@@ -1,4 +1,4 @@
-import type { components } from "~~/api-types/storeApiTypes";
+import type { components } from "~~/server/adapters/shopware/api-types/storeApiTypes";
 import type {
   Cart,
   CartLineItem,
@@ -54,6 +54,7 @@ function toPromotionCodes(lineItems: SwLineItem[]): CartPromotion[] {
     .map((i) => {
       const payload = i.payload as Record<string, unknown> | null | undefined;
       return {
+        id: i.id ?? "",
         code: typeof payload?.code === "string" ? payload.code : "",
         label: i.label ?? "",
       };
@@ -73,10 +74,7 @@ export function toCart(sw: SwCart): Cart {
     ? (sw.lineItems as SwLineItem[])
     : [];
 
-  const errors = (sw.errors ?? {}) as Record<
-    string,
-    Record<string, unknown>
-  >;
+  const errors = (sw.errors ?? {}) as Record<string, Record<string, unknown>>;
 
   return {
     lineItems: lineItems.map(toLineItem),

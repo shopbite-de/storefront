@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
-
 definePageMeta({
   layout: "listing",
 });
 
-const { clearBreadcrumbs } = useBreadcrumbs();
 const { resolvePath } = useNavigationSearch();
 const route = useRoute();
 const routePath = route.path;
@@ -39,13 +36,7 @@ if (error.value) {
   throw error.value;
 }
 
-const { foreignKey } = useNavigationContext(
-  seoResult as Ref<Schemas["SeoUrl"]>,
-);
-
-onBeforeRouteLeave(() => {
-  clearBreadcrumbs();
-});
+const foreignKey = computed(() => seoResult.value?.foreignKey ?? "");
 </script>
 
 <template>

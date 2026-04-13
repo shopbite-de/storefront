@@ -1,45 +1,18 @@
+import type { Category } from "~/types/commerce/category";
 import type { NavigationMenuItem } from "@nuxt/ui";
-import { encodeForQuery } from "@shopware/api-client/helpers";
-import type { Schemas } from "#shopware";
 
 export function useNavigation(withChildren: boolean | undefined) {
-  const { apiClient } = useShopwareContext();
   const config = useRuntimeConfig();
   const menuCategoryId = computed(
     () => config.public.shopBite.menuCategoryId ?? "main-navigation",
   );
 
-  const criteria = encodeForQuery({
-    includes: {
-      category: [
-        "name",
-        "translated",
-        "seoUrl",
-        "customFields",
-        "children",
-        "linkNewTab",
-      ],
-    },
-  });
+  const fetchNavigation = (activeId: string, rootId: string) =>
+    $fetch<Category[]>("/api/navigation", {
+      query: { activeId, rootId },
+    });
 
-  const { data: mainNavigation } = useAsyncData("main-navigation", async () => {
-    const response = await apiClient.invoke(
-      "readNavigationGet get /navigation/{activeId}/{rootId}",
-      {
-        query: { _criteria: criteria },
-        pathParams: {
-          activeId: "main-navigation",
-          rootId: "main-navigation",
-        },
-      },
-    );
-
-    return response.data;
-  });
-
-  const mapCategoryToMenuItem = (
-    category: Schemas["Category"],
-  ): NavigationMenuItem => ({
+  const mapCategoryToMenuItem = (category: Category): NavigationMenuItem => ({
     label: category.translated?.name ?? category.name,
     to: category.translated?.seoUrl ?? category.seoUrl,
     target: category.linkNewTab ? "_blank" : undefined,
@@ -51,59 +24,29 @@ export function useNavigation(withChildren: boolean | undefined) {
         : undefined,
   });
 
-  const mainMenu = computed<NavigationMenuItem[]>(() => {
-    if (!mainNavigation.value) return [];
-
-    return mainNavigation.value?.map(mapCategoryToMenuItem);
-  });
-
-  const { data: footerNavigation } = useAsyncData(
-    "footer-navigation",
-    async () => {
-      const response = await apiClient.invoke(
-        "readNavigationGet get /navigation/{activeId}/{rootId}",
-        {
-          query: { _criteria: criteria },
-          pathParams: {
-            activeId: "footer-navigation",
-            rootId: "footer-navigation",
-          },
-        },
-      );
-
-      return response.data;
-    },
+  const { data: mainNavigation } = useAsyncData("main-navigation", () =>
+    fetchNavigation("main-navigation", "main-navigation"),
   );
 
-  const footerMenu = computed<NavigationMenuItem[]>(() => {
-    if (!footerNavigation.value) return [];
-
-    return footerNavigation.value?.map(mapCategoryToMenuItem);
-  });
-
-  const { data: menuCardNavigation } = useAsyncData(
-    "menu-category",
-    async () => {
-      const response = await apiClient.invoke(
-        "readNavigationGet get /navigation/{activeId}/{rootId}",
-        {
-          query: { _criteria: criteria },
-          pathParams: {
-            activeId: "main-navigation",
-            rootId: menuCategoryId.value,
-          },
-        },
-      );
-
-      return response.data;
-    },
+  const mainMenu = computed<NavigationMenuItem[]>(() =>
+    (mainNavigation.value ?? []).map(mapCategoryToMenuItem),
   );
 
-  const menuCardMenu = computed<NavigationMenuItem[]>(() => {
-    if (!menuCardNavigation.value) return [];
+  const { data: footerNavigation } = useAsyncData("footer-navigation", () =>
+    fetchNavigation("footer-navigation", "footer-navigation"),
+  );
 
-    return menuCardNavigation.value?.map(mapCategoryToMenuItem);
-  });
+  const footerMenu = computed<NavigationMenuItem[]>(() =>
+    (footerNavigation.value ?? []).map(mapCategoryToMenuItem),
+  );
+
+  const { data: menuCardNavigation } = useAsyncData("menu-category", () =>
+    fetchNavigation("main-navigation", menuCategoryId.value),
+  );
+
+  const menuCardMenu = computed<NavigationMenuItem[]>(() =>
+    (menuCardNavigation.value ?? []).map(mapCategoryToMenuItem),
+  );
 
   return {
     mainNavigation,

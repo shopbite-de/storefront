@@ -1,6 +1,6 @@
-import type { Schemas } from "#shopware";
+import type { Category } from "~/types/commerce/category";
 
-export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
+export function useCategorySeo(category: Ref<Category | undefined>) {
   const config = useRuntimeConfig();
   const storeName = config.public.site?.name || "";
 

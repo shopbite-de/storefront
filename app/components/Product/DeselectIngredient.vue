@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Product, PropertyGroupOption } from "~/types/commerce/product";
 import { toRefs, watch } from "vue";
 
 const props = defineProps<{
-  product: Schemas["Product"];
+  product: Product;
 }>();
 const { product } = toRefs(props);
 
@@ -13,11 +13,11 @@ const list = computed(() => {
   const propsList = product.value?.properties ?? [];
   return propsList
     .filter(
-      (propertyGroupOption: Schemas["PropertyGroupOption"]) =>
+      (propertyGroupOption: PropertyGroupOption) =>
         propertyGroupOption.group.name === "Hauptzutaten",
     )
     .map(
-      (propertyGroupOption: Schemas["PropertyGroupOption"]) =>
+      (propertyGroupOption: PropertyGroupOption) =>
         propertyGroupOption.translated.name,
     );
 });

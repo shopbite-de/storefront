@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Product, PropertyGroup } from "~/types/commerce/product";
 
 const props = defineProps<{
-  product: Schemas["Product"];
+  product: Product;
   withFavoriteButton: boolean;
   withAddToCartButton: boolean;
 }>();
@@ -10,8 +10,7 @@ const props = defineProps<{
 const { product } = toRefs(props);
 
 const sortedProperties = computed(
-  () =>
-    product.value.sortedProperties as Schemas["PropertyGroup"][] | undefined,
+  () => product.value.sortedProperties as PropertyGroup[] | undefined,
 );
 
 const price = ref(product.value.calculatedPrice.totalPrice);
@@ -19,7 +18,7 @@ const label = ref(product.value.translated.name ?? product.value.name);
 const description = ref(product.value.description);
 const number = ref(product.value.productNumber);
 
-function onVariantSelected(variant: Schemas["Product"]) {
+function onVariantSelected(variant: Product) {
   price.value = variant.calculatedPrice.totalPrice;
   label.value = variant.translated.name ?? variant.name;
   description.value = variant.translated.description ?? variant.description;

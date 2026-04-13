@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { nextTick } from "vue";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import ContactForm from "~/components/Contact/Form.vue";
 
@@ -10,43 +11,44 @@ type ContactFormVm = {
   }) => Promise<void>;
 };
 
-const { mockInvoke } = vi.hoisted(() => {
-  return {
-    mockInvoke: vi.fn(),
-  };
-});
-
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: {
-    invoke: mockInvoke,
-  },
+const { mockFetch } = vi.hoisted(() => ({
+  mockFetch: vi.fn(),
 }));
 
-mockNuxtImport("useSalutations", () => () => ({
-  getSalutations: ref([
-    { id: "1", displayName: "Herr" },
-    { id: "2", displayName: "Frau" },
-  ]),
-}));
+vi.stubGlobal("$fetch", mockFetch);
 
 const mockToastAdd = vi.fn();
 mockNuxtImport("useToast", () => () => ({
   add: mockToastAdd,
 }));
 
+// Default: salutations call returns empty array, contact call succeeds
+function setupFetchMocks(
+  contactResponse: unknown = { individualSuccessMessage: "" },
+) {
+  mockFetch.mockImplementation(async (url: string) => {
+    if (url === "/api/salutations") {
+      return [
+        { id: "1", displayName: "Herr" },
+        { id: "2", displayName: "Frau" },
+      ];
+    }
+    if (url === "/api/contact") {
+      return contactResponse;
+    }
+    return null;
+  });
+}
+
 describe("ContactForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setupFetchMocks();
   });
 
   it("submits the form and shows success message component with custom individualSuccessMessage", async () => {
     const customMessage = "Vielen Dank für deine Nachricht!";
-    mockInvoke.mockResolvedValueOnce({
-      data: {
-        individualSuccessMessage: customMessage,
-        apiAlias: "contact_form_result",
-      },
-    });
+    setupFetchMocks({ individualSuccessMessage: customMessage });
 
     const wrapper = await mountSuspended(ContactForm);
 
@@ -64,7 +66,10 @@ describe("ContactForm", () => {
       data: validData,
     });
 
-    expect(mockInvoke).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/contact",
+      expect.objectContaining({ method: "POST" }),
+    );
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         description: customMessage,
@@ -95,12 +100,7 @@ describe("ContactForm", () => {
   });
 
   it("submits the form and shows default success message if individualSuccessMessage is empty", async () => {
-    mockInvoke.mockResolvedValueOnce({
-      data: {
-        individualSuccessMessage: "",
-        apiAlias: "contact_form_result",
-      },
-    });
+    setupFetchMocks({ individualSuccessMessage: "" });
 
     const wrapper = await mountSuspended(ContactForm);
 
@@ -128,12 +128,7 @@ describe("ContactForm", () => {
   });
 
   it("submits the form with only mandatory fields", async () => {
-    mockInvoke.mockResolvedValueOnce({
-      data: {
-        individualSuccessMessage: "",
-        apiAlias: "contact_form_result",
-      },
-    });
+    setupFetchMocks({ individualSuccessMessage: "" });
 
     const wrapper = await mountSuspended(ContactForm);
 
@@ -147,22 +142,26 @@ describe("ContactForm", () => {
       data: mandatoryDataOnly,
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "sendContactMail post /contact-form",
-      {
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/contact",
+      expect.objectContaining({
+        method: "POST",
         body: expect.objectContaining({
           email: "test@example.com",
           subject: "Nur Betreff",
           comment: "Dies ist ein Test mit nur Pflichtfeldern.",
         }),
-      },
+      }),
     );
 
     expect((wrapper.vm as unknown as ContactFormVm).submitted).toBe(true);
   });
 
   it("shows error toast when submission fails", async () => {
-    mockInvoke.mockRejectedValueOnce(new Error("Network error"));
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url === "/api/salutations") return [];
+      throw new Error("Network error");
+    });
 
     const wrapper = await mountSuspended(ContactForm);
 
@@ -180,8 +179,6 @@ describe("ContactForm", () => {
       data: validData,
     });
 
-    expect(mockInvoke).toHaveBeenCalled();
-
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Fehler!",
@@ -191,9 +188,9 @@ describe("ContactForm", () => {
   });
 
   it("does not call API but marks form as submitted when honeypot is filled", async () => {
-    mockInvoke.mockClear();
-    mockToastAdd.mockClear();
     const wrapper = await mountSuspended(ContactForm);
+    const fetchCallsBefore = mockFetch.mock.calls.length;
+
     const botData = {
       email: "bot@example.com",
       subject: "Bot request",
@@ -201,7 +198,12 @@ describe("ContactForm", () => {
       hp: "I am a bot",
     };
     await (wrapper.vm as unknown as ContactFormVm).onSubmit({ data: botData });
-    expect(mockInvoke).not.toHaveBeenCalled();
+
+    // No additional $fetch calls for /api/contact
+    const contactCalls = mockFetch.mock.calls
+      .slice(fetchCallsBefore)
+      .filter((call) => call[0] === "/api/contact");
+    expect(contactCalls).toHaveLength(0);
     expect((wrapper.vm as unknown as ContactFormVm).submitted).toBe(true);
   });
 });

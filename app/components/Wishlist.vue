@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 
 const props = withDefaults(
   defineProps<{
@@ -12,8 +12,11 @@ const props = withDefaults(
   },
 );
 
-const { getWishlistProducts, items } = useWishlist();
-const { apiClient } = useShopwareContext();
+const { getFormattedPrice } = useCommercePrice({
+  currencyCode: "EUR",
+  localeCode: "de-DE",
+});
+const { getWishlistProducts, items } = useCommerceWishlist();
 const {
   isAddingToCart,
   addingItemId,
@@ -23,24 +26,20 @@ const {
   addAllItemsToCart,
 } = useWishlistActions();
 
-const products = ref<Schemas["Product"][]>([]);
+const products = ref<Product[]>([]);
 
 const loadProductsByItemIds = async (itemIds: string[]): Promise<void> => {
   isLoading.value = true;
-
   try {
-    const { data } = await apiClient.invoke("readProduct post /product", {
-      body: { ids: itemIds || items.value },
+    products.value = await $fetch<Product[]>("/api/products", {
+      method: "POST",
+      body: { ids: itemIds.length ? itemIds : items.value },
     });
-
-    if (data?.elements) {
-      products.value = data.elements;
-    }
   } catch (error) {
     console.error("[wishlist][loadProductsByItemIds]", error);
+  } finally {
+    isLoading.value = false;
   }
-
-  isLoading.value = false;
 };
 
 watch(
@@ -138,7 +137,7 @@ onMounted(async () => {
                   <div class="flex flex-row gap-3 items-start flex-1 min-w-0">
                     <div
                       v-if="product.cover?.media?.url"
-                      class="flex-shrink-0 w-16 h-16"
+                      class="shrink-0 w-16 h-16"
                     >
                       <NuxtImg
                         :src="product.cover.media.url"
@@ -158,10 +157,7 @@ onMounted(async () => {
                         </h3>
                         <p class="text-base font-bold text-primary-600">
                           {{
-                            usePrice({
-                              currencyCode: "EUR",
-                              localeCode: "de-DE",
-                            }).getFormattedPrice(
+                            getFormattedPrice(
                               product.calculatedPrice.totalPrice,
                             )
                           }}

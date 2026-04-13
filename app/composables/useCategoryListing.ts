@@ -1,10 +1,58 @@
-import { getListingFilters } from "@shopware/helpers";
-import type { Schemas, operations } from "#shopware";
+import type {
+  ProductListingResult,
+  ListingCriteria,
+} from "~/types/commerce/listing";
 import type { NitroFetchRequest } from "nitropack";
 
-export type CategoryListingCriteria = NonNullable<
-  operations["readProductListingGet get /product-listing/{categoryId}"]["query"]
->;
+type ListingFilter = {
+  label: string;
+  code: string;
+  id: string;
+  name: string;
+  options?: Array<{ id: string; translated?: { name?: string } }>;
+  entities?: Array<{ id: string; translated?: { name?: string } }>;
+};
+
+function getTranslatedName(entity: Record<string, unknown>): string {
+  const translated = entity.translated as Record<string, unknown> | undefined;
+  return (translated?.name ?? entity.name ?? "") as string;
+}
+
+function buildFilter(
+  code: string,
+  aggregation: Record<string, unknown>,
+): ListingFilter {
+  return {
+    label: getTranslatedName(aggregation) || code,
+    code,
+    ...aggregation,
+  } as ListingFilter;
+}
+
+function getListingFilters(aggregations: unknown): ListingFilter[] {
+  if (
+    !aggregations ||
+    typeof aggregations !== "object" ||
+    Array.isArray(aggregations)
+  )
+    return [];
+  const filters: ListingFilter[] = [];
+  for (const [code, aggregation] of Object.entries(
+    aggregations as Record<string, unknown>,
+  )) {
+    const agg = aggregation as Record<string, unknown>;
+    if (code === "properties" && Array.isArray(agg.entities)) {
+      for (const entity of agg.entities as Record<string, unknown>[]) {
+        filters.push(buildFilter(code, entity));
+      }
+    } else if (code !== "properties" && code !== "options") {
+      filters.push(buildFilter(code, agg));
+    }
+  }
+  return filters;
+}
+
+export type { ListingCriteria as CategoryListingCriteria };
 
 export type ShortcutFilterParam = {
   code: string;
@@ -18,18 +66,17 @@ export function useCategoryListing(
   const nuxtApp = useNuxtApp();
 
   async function fetchListing(
-    criteria: CategoryListingCriteria,
-  ): Promise<Schemas["ProductListingResult"]> {
+    criteria: ListingCriteria,
+  ): Promise<ProductListingResult> {
     // Send only the allowlisted filter params; the server merges them with the
     // fixed includes/associations/limit so clients cannot influence projections.
-    const c = criteria as Record<string, unknown>;
     return await $fetch(`/api/listing/${categoryId}` as NitroFetchRequest, {
       query: {
-        order: c.order,
-        properties: c.properties,
-        manufacturer: c.manufacturer,
-        query: c.query,
-        p: c.p,
+        order: criteria.order,
+        properties: criteria.properties,
+        manufacturer: criteria.manufacturer,
+        query: criteria.query,
+        p: criteria.p,
       },
     });
   }
@@ -57,7 +104,7 @@ export function useCategoryListing(
   );
   const currentFilters = computed(() => listing.value?.currentFilters);
 
-  async function applySearch(criteria: CategoryListingCriteria) {
+  async function applySearch(criteria: ListingCriteria) {
     loading.value = true;
     try {
       listing.value = await fetchListing(criteria);
@@ -66,8 +113,8 @@ export function useCategoryListing(
     }
   }
 
-  async function changeSorting(order: string, query?: CategoryListingCriteria) {
-    await applySearch({ ...query, order } as CategoryListingCriteria);
+  async function changeSorting(order: string, query?: ListingCriteria) {
+    await applySearch({ ...query, order });
   }
 
   async function setFilters(filters: ShortcutFilterParam[]) {
@@ -75,13 +122,13 @@ export function useCategoryListing(
     for (const f of filters) {
       filterObj[f.code] = f.value;
     }
-    const appliedFilters = {
+    const appliedFilters: ListingCriteria = {
       query: currentFilters.value?.search,
       manufacturer: currentFilters.value?.manufacturer?.join("|"),
       properties: currentFilters.value?.properties?.join("|"),
       ...filterObj,
     };
-    await applySearch(appliedFilters as CategoryListingCriteria);
+    await applySearch(appliedFilters);
   }
 
   async function resetFilters() {

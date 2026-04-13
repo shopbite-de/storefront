@@ -2,17 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, nextTick } from "vue";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import RegistrationForm from "~/components/User/RegistrationForm.vue";
-import { ApiClientError } from "@shopware/api-client";
-
-vi.mock("@shopware/api-client", () => ({
-  ApiClientError: class extends Error {
-    details: unknown;
-    constructor(details: unknown) {
-      super("ApiClientError");
-      this.details = details;
-    }
-  },
-}));
 
 const { mockRegister, mockIsLoggedIn, mockGetSuggestions } = vi.hoisted(() => {
   return {
@@ -22,7 +11,7 @@ const { mockRegister, mockIsLoggedIn, mockGetSuggestions } = vi.hoisted(() => {
   };
 });
 
-mockNuxtImport("useUser", () => () => ({
+mockNuxtImport("useCommerceUser", () => () => ({
   register: mockRegister,
   isLoggedIn: ref(mockIsLoggedIn.value),
 }));
@@ -165,14 +154,13 @@ describe("RegistrationForm", () => {
   });
 
   it("shows detailed error toast on ApiClientError during registration", async () => {
-    const apiClientError = new ApiClientError({
-      errors: [
-        {
-          detail: 'The email address "lirim@veliu.net" is already in use',
-        },
-      ],
-    } as unknown as ConstructorParameters<typeof ApiClientError>[0]);
-    mockRegister.mockRejectedValueOnce(apiClientError);
+    mockRegister.mockRejectedValueOnce({
+      data: {
+        errors: [
+          { detail: 'The email address "lirim@veliu.net" is already in use' },
+        ],
+      },
+    });
     const wrapper = await mountSuspended(RegistrationForm);
 
     // Register as guest to avoid password requirements
@@ -210,11 +198,8 @@ describe("RegistrationForm", () => {
     );
   });
 
-  it("handles ApiClientError with missing errors gracefully", async () => {
-    const apiClientError = new ApiClientError(
-      {} as unknown as ConstructorParameters<typeof ApiClientError>[0],
-    );
-    mockRegister.mockRejectedValueOnce(apiClientError);
+  it("handles fetch error with missing errors gracefully", async () => {
+    mockRegister.mockRejectedValueOnce({ data: {} });
     const wrapper = await mountSuspended(RegistrationForm);
 
     // Register as guest to avoid password requirements

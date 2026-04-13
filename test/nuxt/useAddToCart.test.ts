@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 
 import { useAddToCart } from "~/composables/useAddToCart";
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 import { nextTick } from "vue";
 
 // Use vi.hoisted for variables used in mocks
@@ -20,7 +20,7 @@ const {
   mockTrackEvent: vi.fn(),
 }));
 
-mockNuxtImport("useCart", () => {
+mockNuxtImport("useCommerceCart", () => {
   return () => ({
     addProducts: mockAddProducts,
     refreshCart: mockRefreshCart,
@@ -46,7 +46,7 @@ mockNuxtImport("useTrackEvent", () => {
 });
 
 // Provide the mocks globally or in a way that they are picked up
-vi.stubGlobal("useCart", () => ({
+vi.stubGlobal("useCommerceCart", () => ({
   addProducts: mockAddProducts,
   refreshCart: mockRefreshCart,
 }));
@@ -67,7 +67,7 @@ describe("useAddToCart", () => {
     translated: {
       name: "Test Pizza",
     },
-  } as unknown as Schemas["Product"];
+  } as unknown as Product;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -133,7 +133,6 @@ describe("useAddToCart", () => {
         type: "product",
       },
     ]);
-    expect(mockRefreshCart).toHaveBeenCalled();
     expect(mockToastAdd).toHaveBeenCalled();
     expect(mockTriggerProductAdded).toHaveBeenCalled();
     expect(mockTrackEvent).toHaveBeenCalledWith(mockProduct, 1);

@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { CustomerAddress } from "~/types/commerce/user";
 
 defineProps<{
-  address: Schemas["CustomerAddress"] | undefined | null;
+  address: CustomerAddress | undefined | null;
   withEditButton?: boolean;
 }>();
 
 const emit = defineEmits<{
-  "update:address": [address: Schemas["CustomerAddress"]];
+  "update:address": [address: CustomerAddress];
 }>();
 
 const editMode = ref(false);
 
-function onSubmit(updatedAddress: Schemas["CustomerAddress"] | undefined) {
+function onSubmit(updatedAddress: CustomerAddress | undefined) {
   if (!updatedAddress) return;
 
   emit("update:address", updatedAddress);

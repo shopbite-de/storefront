@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { createRegistrationSchema } from "~/validation/registrationSchema";
 import type { RegistrationSchema } from "~/validation/registrationSchema";
-import { ApiClientError } from "@shopware/api-client";
 import type { FormSubmitEvent } from "@nuxt/ui";
 
 const config = useRuntimeConfig();
-const { register, isLoggedIn } = useUser();
+const { register, isLoggedIn } = useCommerceUser();
 
 if (import.meta.client && isLoggedIn.value) {
   navigateTo({ path: "/konto" });
@@ -28,7 +27,6 @@ const state = reactive({
   passwordConfirm: "",
   acceptedDataProtection: false,
   isShippingAddressDifferent: false,
-  storefrontUrl: config.public.shopware.devStorefrontUrl,
   billingAddress: {
     company: "",
     department: "",
@@ -93,7 +91,6 @@ async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
   }
 
   try {
-    // @ts-expect-error - password is required in the API type but not for guests
     await register(registrationData);
 
     toast.add({
@@ -106,16 +103,17 @@ async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
     );
   } catch (error) {
     console.error("Registration failed:", error);
-    let description = "Bitte versuchen Sie es erneut.";
-    if (error instanceof ApiClientError) {
-      const errors = error.details?.errors;
-      if (Array.isArray(errors) && errors.length > 0) {
-        description = errors
-          .map((e) => e.detail || e.title)
-          .filter(Boolean)
-          .join("\n");
-      }
-    }
+    const fetchErr = error as {
+      data?: { errors?: Array<{ detail?: string; title?: string }> };
+    };
+    const errors = fetchErr.data?.errors;
+    const description =
+      Array.isArray(errors) && errors.length > 0
+        ? errors
+            .map((e) => e.detail || e.title)
+            .filter(Boolean)
+            .join("\n")
+        : "Bitte versuchen Sie es erneut.";
     toast.add({
       title: "Registrierung fehlgeschlagen",
       description,

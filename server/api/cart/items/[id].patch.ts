@@ -1,4 +1,4 @@
-import type { components } from "~~/api-types/storeApiTypes";
+import type { components } from "~~/server/adapters/shopware/api-types/storeApiTypes";
 import { toCart } from "~~/server/adapters/shopware/cart";
 
 type SwCart = components["schemas"]["Cart"];
@@ -12,7 +12,10 @@ export default defineEventHandler(async (event) => {
   }
 
   if (typeof body?.quantity !== "number" || body.quantity < 1) {
-    throw createError({ statusCode: 400, statusMessage: "quantity must be a positive number" });
+    throw createError({
+      statusCode: 400,
+      statusMessage: "quantity must be a positive number",
+    });
   }
 
   // Shopware PATCH endpoint accepts an array of items to update

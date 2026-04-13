@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 import type { NitroFetchRequest } from "nitropack";
 
 definePageMeta({
@@ -32,7 +32,7 @@ watch(elements, (products) => {
   if (!searchQuery.value || showSkeleton.value) return;
   trackSearch(
     searchQuery.value,
-    products.map((p) => p.productNumber),
+    products.map((p) => p.productNumber).filter((n): n is string => n != null),
   );
 });
 
@@ -47,14 +47,14 @@ const showFallback = computed(
 );
 
 const { data: fallbackProducts, refresh: refreshFallback } = useLazyAsyncData<
-  Schemas["Product"][]
+  Product[]
 >(
   "search-fallback-listing",
   async () => {
     const result = await $fetch(
       `/api/listing/${searchFallbackCategoryId}` as NitroFetchRequest,
     );
-    return (result as { elements?: Schemas["Product"][] }).elements ?? [];
+    return (result as { elements?: Product[] }).elements ?? [];
   },
   { immediate: false },
 );

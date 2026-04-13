@@ -1,22 +1,20 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Order } from "~/types/commerce/order";
 
 const props = defineProps<{
-  order: Schemas["Order"];
+  order: Order;
   status: string;
 }>();
 
 const { order } = toRefs(props);
 
-const { getFormattedPrice } = usePrice({
+const { getFormattedPrice } = useCommercePrice({
   currencyCode: "EUR",
   localeCode: "de-DE",
 });
 
 const lineItems = computed(() =>
-  order.value?.lineItems?.filter(
-    (item: Schemas["OrderLineItem"]) => item.parentId === null,
-  ),
+  order.value?.lineItems?.filter((item) => item.parentId === null),
 );
 
 const paymentState = computed(

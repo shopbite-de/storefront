@@ -1,5 +1,5 @@
+import type { ProductConfiguratorSetting } from "~/types/commerce/product";
 import { computed } from "vue";
-import type { Schemas } from "#shopware";
 
 // Define the SelectItem interface to match what USelect expects
 interface SelectItem {
@@ -18,7 +18,7 @@ type useProductVariantsReturn = {
 };
 
 export function useProductVariants(
-  configuratorSettings: Ref<Schemas["ProductConfiguratorSetting"][]>,
+  configuratorSettings: Ref<ProductConfiguratorSetting[]>,
 ): useProductVariantsReturn {
   const variants = computed(() => {
     const configSettings = configuratorSettings.value || [];

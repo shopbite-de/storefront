@@ -31,7 +31,7 @@ export default defineNuxtConfig({
     },
   },
   colorMode: {
-    preference: "light",
+    preference: "dark",
   },
   robots: {
     disallow: [
@@ -50,6 +50,10 @@ export default defineNuxtConfig({
     apiClientConfig: {},
     geoapifyApiKey: "",
     public: {
+      shopware: {
+        endpoint: process.env.SHOPWARE_ENDPOINT ?? "",
+        accessToken: process.env.SHOPWARE_ACCESS_TOKEN ?? "",
+      },
       shopBite: {
         cacheTtl: {
           product: 86400,
@@ -89,15 +93,7 @@ export default defineNuxtConfig({
 
   css: ["~/assets/css/main.css"],
 
-  shopware: {
-    endpoint: "",
-    accessToken: "",
-    devStorefrontUrl: "",
-    useUserContextInSSR: true,
-  },
-
   modules: [
-    "@shopware/nuxt-module",
     "@nuxt/image",
     "@nuxt/content",
     "@nuxtjs/robots",
@@ -189,7 +185,6 @@ export default defineNuxtConfig({
   },
 
   devtools: { enabled: true },
-  extends: ["@shopware/composables/nuxt-layer"],
   future: {
     compatibilityVersion: 4,
   },
@@ -206,6 +201,7 @@ export default defineNuxtConfig({
         "uuid",
         "@shopware/helpers",
         "@vueuse/core",
+        "workbox-window",
       ],
     },
   },
@@ -217,7 +213,6 @@ export default defineNuxtConfig({
   },
   $development: {
     modules: [
-      "@shopware/nuxt-module",
       "@nuxt/image",
       "@nuxt/content",
       "@nuxtjs/robots",

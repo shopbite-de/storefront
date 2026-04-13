@@ -3,15 +3,11 @@ import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref } from "vue";
 import { useShopBiteConfig } from "~/composables/useShopBiteConfig";
 
-const { mockInvoke } = vi.hoisted(() => ({
-  mockInvoke: vi.fn(),
+const { mockFetch } = vi.hoisted(() => ({
+  mockFetch: vi.fn(),
 }));
 
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: {
-    invoke: mockInvoke,
-  },
-}));
+vi.stubGlobal("$fetch", mockFetch);
 
 mockNuxtImport(
   "useAsyncData",
@@ -36,19 +32,15 @@ describe("useShopBiteConfig", () => {
   });
 
   it("should refresh values from API", async () => {
-    mockInvoke.mockResolvedValue({
-      data: {
-        deliveryTime: 45,
-        isCheckoutEnabled: true,
-      },
+    mockFetch.mockResolvedValue({
+      deliveryTime: 45,
+      isCheckoutEnabled: true,
     });
 
     const { refresh, deliveryTime, isCheckoutEnabled } = useShopBiteConfig();
     await refresh();
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "shopbite.config.get get /shopbite/config",
-    );
+    expect(mockFetch).toHaveBeenCalledWith("/api/shopbite/config");
     expect(deliveryTime.value).toBe(45);
     expect(isCheckoutEnabled.value).toBe(true);
   });

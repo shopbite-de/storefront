@@ -46,7 +46,8 @@ vi.mock("#app", async () => {
 
 // Target under test will be dynamically imported after setting up globals
 let useCategorySeo: (
-  arg: unknown,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  arg: any,
 ) => ReturnType<
   (typeof import("../../app/composables/useCategorySeo"))["useCategorySeo"]
 >;

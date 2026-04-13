@@ -1,10 +1,10 @@
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 
 export function useWishlistActions() {
-  const { addProducts, refreshCart } = useCart();
+  const { addProducts } = useCommerceCart();
   const toast = useToast();
   const { triggerProductAdded } = useProductEvents();
-  const { clearWishlist } = useWishlist();
+  const { clearWishlist } = useCommerceWishlist();
   const { trackAddToCart: trackAddToCartEvent } = useTrackEvent();
 
   const isAddingToCart = ref(false);
@@ -26,7 +26,7 @@ export function useWishlistActions() {
     }
   };
 
-  const addSingleItemToCart = async (product: Schemas["Product"]) => {
+  const addSingleItemToCart = async (product: Product) => {
     try {
       addingItemId.value = product.id;
 
@@ -50,8 +50,7 @@ export function useWishlistActions() {
         },
       ];
 
-      const newCart = await addProducts(cartItems);
-      await refreshCart(newCart);
+      await addProducts(cartItems);
 
       triggerProductAdded();
       trackAddToCartEvent(product, 1);
@@ -75,7 +74,7 @@ export function useWishlistActions() {
     }
   };
 
-  const addAllItemsToCart = async (products: Schemas["Product"][]) => {
+  const addAllItemsToCart = async (products: Product[]) => {
     if (products.length === 0) {
       return;
     }
@@ -106,8 +105,7 @@ export function useWishlistActions() {
         type: "product" as const,
       }));
 
-      const newCart = await addProducts(cartItems);
-      await refreshCart(newCart);
+      await addProducts(cartItems);
 
       triggerProductAdded();
 

@@ -1,23 +1,23 @@
 <script setup lang="ts">
+import type { Category } from "~/types/commerce/category";
 import type { NavigationMenuItem } from "@nuxt/ui";
-import type { Schemas } from "#shopware";
 import { useNavigation } from "~/composables/useNavigation";
 
 const { menuCardNavigation } = useNavigation(true);
 
-const mapCategoryToNavItem = (
-  category: Schemas["Category"],
-): NavigationMenuItem => {
-  const label = category.translated?.name ?? "";
+const mapCategoryToNavItem = (category: Category): NavigationMenuItem => {
+  const label = category.translated?.name ?? category.name;
 
   return {
     label,
     description: `${label} Kategorie`,
-    to: category.seoUrl,
+    to: category.translated?.seoUrl ?? category.seoUrl,
     defaultOpen: true,
     icon: (category.customFields as Record<string, unknown> | undefined)
       ?.shopbite_category_icon as string | undefined,
-    children: (category.children ?? []).map(mapCategoryToNavItem),
+    children: category.children?.length
+      ? category.children.map(mapCategoryToNavItem)
+      : undefined,
   };
 };
 

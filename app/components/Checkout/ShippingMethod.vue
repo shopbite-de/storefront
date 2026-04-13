@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { ShippingMethod } from "~/types/commerce/checkout";
 
 const props = defineProps<{
-  shippingMethod: Schemas["ShippingMethod"] | null;
+  shippingMethod: ShippingMethod | null;
 }>();
 
 const { shippingMethod } = toRefs(props);

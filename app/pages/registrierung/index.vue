@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { isLoggedIn } = useUser();
+const { isLoggedIn } = useCommerceUser();
 
 if (import.meta.client && isLoggedIn.value) {
   navigateTo({ path: "/konto" });

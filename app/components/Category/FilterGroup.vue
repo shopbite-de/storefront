@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { PropertyGroup } from "~/types/commerce/product";
 
 defineProps<{
-  filter: Schemas["PropertyGroup"];
+  filter: PropertyGroup;
   modelValue: string[];
 }>();
 

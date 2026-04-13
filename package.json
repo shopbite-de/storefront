@@ -2,7 +2,7 @@
   "name": "@shopbite-de/storefront",
   "version": "1.17.0",
   "main": "nuxt.config.ts",
-  "description": "Shopware storefront for food delivery shops",
+  "description": "Storefront for food delivery shops",
   "keywords": [
     "shopware",
     "storefront",

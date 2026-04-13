@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { CustomerAddress } from "~/types/commerce/user";
 
 const props = withDefaults(
   defineProps<{
-    address?: Schemas["CustomerAddress"] | null;
+    address?: CustomerAddress | null;
     title?: string;
     icon?: string;
   }>(),

@@ -3,10 +3,16 @@ import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref } from "vue";
 import { useBusinessHours } from "~/composables/useBusinessHours";
 
+const { mockFetch } = vi.hoisted(() => ({
+  mockFetch: vi.fn(),
+}));
+
+vi.stubGlobal("$fetch", mockFetch);
+
 // Mock useAsyncData
 mockNuxtImport("useAsyncData", () => {
-  return (key: string, handler: () => Promise<unknown>) => {
-    const data = ref(null);
+  return (_key: string, handler: () => Promise<unknown>) => {
+    const data = ref<unknown>(null);
     const pending = ref(false);
     const refresh = vi.fn(async () => {
       data.value = await handler();
@@ -21,17 +27,10 @@ const mockBusinessHoursData = [
   { dayOfWeek: 7, openingTime: "17:30", closingTime: "23:00" },
 ];
 
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: {
-    invoke: vi.fn().mockResolvedValue({
-      data: { businessHours: mockBusinessHoursData },
-    }),
-  },
-}));
-
 describe("useBusinessHours", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockResolvedValue(mockBusinessHoursData);
   });
 
   it("should identify if store is open", async () => {

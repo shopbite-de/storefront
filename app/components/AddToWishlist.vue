@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 
 const props = defineProps<{
-  product: Schemas["Product"];
+  product: Product;
 }>();
 
-const { addToWishlist, isInWishlist, removeFromWishlist } = useProductWishlist(
-  props.product.id,
-);
+const { addToWishlist, isInWishlist, removeFromWishlist } =
+  useCommerceProductWishlist(props.product.id);
 const { trackAddToWishlist } = useTrackEvent();
 
 const toggleWishlistProduct = async () => {

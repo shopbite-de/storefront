@@ -22,10 +22,7 @@ function buildShopwareHeaders(event: H3Event): Record<string, string> {
  * Forward an updated context token from Shopware's response back to the client
  * as a cookie. Shopware issues a new token when a guest session is created.
  */
-function forwardContextToken(
-  event: H3Event,
-  responseHeaders: Headers,
-): void {
+function forwardContextToken(event: H3Event, responseHeaders: Headers): void {
   const newToken = responseHeaders.get(CONTEXT_TOKEN_COOKIE);
   if (!newToken) return;
 
@@ -51,7 +48,11 @@ function forwardContextToken(
 export async function shopwareFetch<T>(
   event: H3Event,
   path: string,
-  init?: { method?: string; body?: Record<string, unknown> },
+  init?: {
+    method?: string;
+    body?: Record<string, unknown>;
+    query?: Record<string, unknown>;
+  },
 ): Promise<T> {
   const { endpoint } = useRuntimeConfig().public.shopware;
 
@@ -67,6 +68,7 @@ export async function shopwareFetch<T>(
         | "DELETE"
         | "PUT",
       body: init?.body,
+      query: init?.query,
     });
   } catch (err: unknown) {
     // ofetch throws FetchError on non-2xx; unwrap and re-throw as H3 error

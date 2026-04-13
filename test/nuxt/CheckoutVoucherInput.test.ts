@@ -11,7 +11,7 @@ const { mockAddPromotionCode, mockRemoveItem } = vi.hoisted(() => ({
 const mockCart = ref<{ errors?: Record<string, unknown> } | null>(null);
 const mockAppliedPromotionCodes = ref<{ id: string; label: string }[]>([]);
 
-mockNuxtImport("useCart", () => () => ({
+mockNuxtImport("useCommerceCart", () => () => ({
   cart: mockCart,
   addPromotionCode: mockAddPromotionCode,
   appliedPromotionCodes: mockAppliedPromotionCodes,

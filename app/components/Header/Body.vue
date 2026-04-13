@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { useUser } from "@shopware/composables";
-
 const { mainMenu } = useNavigation(false);
 const multiChannelEnabled =
   useRuntimeConfig().public.shopBite.feature.multiChannel;
 
-const { isLoggedIn, isGuestSession, logout } = useUser();
+const { isLoggedIn, isGuestSession, logout } = useCommerceUser();
 const toast = useToast();
 
-const logoutHandler = () => {
-  logout();
+const logoutHandler = async () => {
+  await logout();
   toast.add({
     title: "Tschüss!",
     description: "Erfolgreich abgemeldet.",

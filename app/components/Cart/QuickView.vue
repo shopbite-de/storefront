@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { cart, shippingTotal, isEmpty } = useCart();
+const { cart, shippingTotal, isEmpty } = useCommerceCart();
 
 withDefaults(
   defineProps<{
@@ -14,7 +14,7 @@ withDefaults(
   },
 );
 
-const { getFormattedPrice } = usePrice({
+const { getFormattedPrice } = useCommercePrice({
   currencyCode: "EUR",
   localeCode: "de-DE",
 });

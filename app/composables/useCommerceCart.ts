@@ -15,12 +15,16 @@ const CART_STATE_KEY = "commerce:cart";
 export function useCommerceCart() {
   const cart = useState<Cart | null>(CART_STATE_KEY, () => null);
 
-  const isEmpty = computed(
+  const productLineItems = computed(
     () =>
-      !cart.value?.lineItems.filter(
+      cart.value?.lineItems.filter(
         (i) => i.type !== "promotion" && i.type !== "discount",
-      ).length,
+      ) ?? [],
   );
+
+  const isEmpty = computed(() => !productLineItems.value.length);
+
+  const count = computed(() => productLineItems.value.length);
 
   const shippingTotal = computed(() => cart.value?.shippingTotal ?? 0);
 
@@ -77,6 +81,7 @@ export function useCommerceCart() {
   return {
     cart,
     isEmpty,
+    count,
     shippingTotal,
     appliedPromotionCodes,
     refreshCart,

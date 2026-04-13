@@ -1,21 +1,19 @@
-import { useShopwareContext } from "#imports";
 import type { Ref } from "vue";
 import { setTime } from "~/utils/time";
 
 export type ServiceInterval = { start: Date; end: Date };
 
 export function useBusinessHours() {
-  const { apiClient } = useShopwareContext();
-
   const { data, pending, refresh } = useAsyncData(
     "business-hours",
-    async () => {
-      const response = await apiClient.invoke(
-        "shopbite.business-hour.get get /shopbite/business-hour",
-      );
-
-      return response.data.businessHours;
-    },
+    () =>
+      $fetch<
+        Array<{
+          dayOfWeek?: number;
+          openingTime?: string;
+          closingTime?: string;
+        }>
+      >("/api/shopbite/business-hours"),
     { immediate: false },
   );
 
@@ -86,22 +84,18 @@ export function useBusinessHours() {
     const currentDate = now.value;
     const isHoliday = isClosedHoliday(currentDate);
 
-    // If we don't know if today is a holiday, we can't reliably say we are open/closed
     if (isHoliday === undefined) return null;
 
-    // Try up to 60 days ahead to find next opening (covers long holiday periods)
     for (let i = 0; i < 60; i++) {
       const checkDate = new Date(currentDate);
       checkDate.setDate(checkDate.getDate() + i);
-      checkDate.setHours(12, 0, 0, 0); // Set to midday to avoid timezone issues
+      checkDate.setHours(12, 0, 0, 0);
 
-      // Skip holidays
       if (isClosedHoliday(checkDate) === true) continue;
 
       const intervals = getServiceIntervals(checkDate);
       if (intervals.length === 0) continue;
 
-      // For today, check if there's still an opening coming
       if (i === 0) {
         for (const interval of intervals) {
           if (interval.start.getTime() > currentDate.getTime()) {
@@ -113,7 +107,7 @@ export function useBusinessHours() {
             return `${hours}:${minutes} Uhr`;
           }
         }
-        continue; // Today's openings have passed, check next days
+        continue;
       }
 
       const nextOpen = intervals[0]!.start;

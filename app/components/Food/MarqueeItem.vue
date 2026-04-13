@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useProductSearch } from "@shopware/composables";
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 
 export type MarqueeItem = {
   productId: string;
@@ -10,16 +9,14 @@ export type MarqueeItem = {
 const props = defineProps<MarqueeItem>();
 
 const { productId, image } = toRefs(props);
-const { search } = useProductSearch();
 
-const productResponse = await search(productId.value);
-
-// object that keeps a Product entity
-const product: Schemas["Product"] = productResponse.product;
+const { product } = await $fetch<{ product: Product }>(
+  `/api/product/${productId.value}`,
+);
 
 const CART_SUCCESS_TITLE = "Gute Wahl!";
 
-const { refreshCart, addProduct } = useCart();
+const { addProducts } = useCommerceCart();
 const toast = useToast();
 
 const alt = computed(() => product.name + " #" + product.productNumber);
@@ -35,11 +32,7 @@ async function showSuccessToast() {
 }
 
 async function addToCart(productId: string) {
-  const newCart = await addProduct({
-    id: productId,
-    quantity: 1,
-  });
-  await refreshCart(newCart);
+  await addProducts([{ id: productId, quantity: 1, type: "product" }]);
   await showSuccessToast();
 }
 </script>

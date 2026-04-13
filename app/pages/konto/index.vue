@@ -4,7 +4,7 @@ definePageMeta({
 });
 
 const { user, userDefaultShippingAddress, userDefaultBillingAddress } =
-  useUser();
+  useCommerceUser();
 </script>
 
 <template>

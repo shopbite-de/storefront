@@ -1,14 +1,14 @@
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 
 export type useTopSellersReturn = {
-  loadTopSellers(): Promise<Schemas["Product"][]>;
+  loadTopSellers(): Promise<Product[]>;
 };
 
 export function useTopSellers(): useTopSellersReturn {
-  const { apiClient } = useShopwareContext();
-  async function loadTopSellers() {
+  async function loadTopSellers(): Promise<Product[]> {
     try {
-      const result = await apiClient.invoke("readProduct post /product", {
+      return await $fetch<Product[]>("/api/products", {
+        method: "POST",
         body: {
           filter: [{ type: "equals", field: "markAsTopseller", value: true }],
           includes: {
@@ -21,14 +21,11 @@ export function useTopSellers(): useTopSellersReturn {
           },
         },
       });
-      return result.data.elements;
     } catch (e) {
       console.error("[useTopSellers][loadTopSellers]", e);
       return [];
     }
   }
 
-  return {
-    loadTopSellers,
-  };
+  return { loadTopSellers };
 }
