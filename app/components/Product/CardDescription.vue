@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type {
+  PropertyGroup,
+  PropertyGroupOption,
+} from "~/types/commerce/product";
 
 const props = defineProps<{
   description: string | null | undefined;
-  sortedProperties: Schemas["PropertyGroup"][] | undefined;
+  sortedProperties: PropertyGroup[] | undefined;
 }>();
 
-const mainIngredients = computed<Schemas["PropertyGroupOption"][]>(() => {
+const mainIngredients = computed<PropertyGroupOption[]>(() => {
   const group = props.sortedProperties?.find(
     (propertyGroup) => propertyGroup.translated.name === "Hauptzutaten",
   );

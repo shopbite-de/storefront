@@ -1,19 +1,17 @@
 <script setup lang="ts">
-import { useAddress, useUser } from "@shopware/composables";
-
 definePageMeta({
   layout: "account",
 });
 
 const toast = useToast();
 const { userDefaultShippingAddress, userDefaultBillingAddress, refreshUser } =
-  useUser();
+  useCommerceUser();
 const {
   customerAddresses,
   loadCustomerAddresses,
   setDefaultCustomerBillingAddress,
   setDefaultCustomerShippingAddress,
-} = useAddress();
+} = useCommerceAddress();
 
 onMounted(() => {
   reloadCustomerData();

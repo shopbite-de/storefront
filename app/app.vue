@@ -28,33 +28,14 @@ const TOAST_CONFIG = {
   } as Partial<Toast>,
 } as const;
 
-const { apiClient } = useShopwareContext();
 const appConfig = useAppConfig();
 const router = useRouter();
 const toast = useToast();
 
-const { data: sessionContextData } = await useAsyncData(
-  "sessionContext",
-  async () => {
-    try {
-      const { data } = await apiClient.invoke("readContext get /context");
-      return data;
-    } catch (error) {
-      console.error("Failed to load session context", error);
-      return null;
-    }
-  },
-  {
-    default: () => null,
-  },
-);
-
-if (sessionContextData.value) {
-  usePrice({
-    currencyCode: sessionContextData.value.currency?.isoCode || "",
-  });
-  useSessionContext(sessionContextData.value);
-}
+// Populate commerce user state (SSR-safe, shared via useState).
+// Runs alongside the Shopware session init during the migration phase.
+const { refreshUser } = useCommerceUser();
+await useAsyncData("commerce-session", () => refreshUser());
 
 const {
   getNextOpeningTime,
@@ -79,8 +60,8 @@ function displayStoreStatus() {
   }
 }
 
-const { refreshCart } = useCart();
-const { getWishlistProducts } = useWishlist();
+const { refreshCart } = useCommerceCart();
+const { getWishlistProducts } = useCommerceWishlist();
 
 if (import.meta.client) {
   // getting the wishlist products should not block SSR

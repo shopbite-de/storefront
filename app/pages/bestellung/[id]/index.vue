@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useOrderDetails } from "@shopware/composables";
 import { formatDate } from "~/utils/formatDate";
 
 import type { RouteParams } from "vue-router";
@@ -11,7 +10,7 @@ interface OrderRouteParams extends RouteParams {
 
 const route = useRoute();
 const { id } = route.params as OrderRouteParams;
-const { order, loadOrderDetails, status } = useOrderDetails(id);
+const { order, loadOrderDetails, status } = useCommerceOrderDetails(id);
 
 const isLoadingData = ref(true);
 

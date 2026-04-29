@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Category } from "~/types/commerce/category";
 
 const props = defineProps<{
-  category: Schemas["Category"];
+  category: Category;
 }>();
 
 const { category: categoryRef } = toRefs(props);

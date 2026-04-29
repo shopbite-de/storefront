@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import * as z from "zod";
-import { ApiClientError } from "@shopware/api-client";
 import type { FormSubmitEvent } from "@nuxt/ui";
 
-const { isLoggedIn, login, user } = useUser();
+const { isLoggedIn, login, user } = useCommerceUser();
 const toast = useToast();
 
 const props = withDefaults(
@@ -68,16 +67,17 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     emit("login-success", payload.data.email);
   } catch (error) {
     console.error("Login failed:", error);
-    let description = "Bitte überprüfen Sie Ihre Zugangsdaten.";
-    if (error instanceof ApiClientError) {
-      const errors = error.details?.errors;
-      if (Array.isArray(errors) && errors.length > 0) {
-        description = errors
-          .map((e) => e.detail || e.title)
-          .filter(Boolean)
-          .join("\n");
-      }
-    }
+    const fetchErr = error as {
+      data?: { errors?: Array<{ detail?: string; title?: string }> };
+    };
+    const errors = fetchErr.data?.errors;
+    const description =
+      Array.isArray(errors) && errors.length > 0
+        ? errors
+            .map((e) => e.detail || e.title)
+            .filter(Boolean)
+            .join("\n")
+        : "Bitte überprüfen Sie Ihre Zugangsdaten.";
     toast.add({
       title: "Login fehlgeschlagen",
       description,

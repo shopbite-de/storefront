@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 
 defineProps<{
   price: number;
-  product: Schemas["Product"];
+  product: Product;
   withFavoriteButton: boolean;
   withAddToCartButton: boolean;
 }>();
 
 const emit = defineEmits<{
-  variantSelected: [variant: Schemas["Product"]];
+  variantSelected: [variant: Product];
 }>();
 
 const { isCheckoutEnabled } = useShopBiteConfig();
 
-const { getFormattedPrice } = usePrice({
+const { getFormattedPrice } = useCommercePrice({
   currencyCode: "EUR",
   localeCode: "de-DE",
 });

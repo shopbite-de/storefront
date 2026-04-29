@@ -1,4 +1,4 @@
-import type { Schemas } from "#shopware";
+import type { ProductListingResult } from "~/types/commerce/listing";
 import type { NitroFetchRequest } from "nitropack";
 
 export function useListingSearch(initialQuery: string) {
@@ -10,7 +10,7 @@ export function useListingSearch(initialQuery: string) {
     query: string,
     order?: string,
     signal?: AbortSignal,
-  ): Promise<Schemas["ProductListingResult"]> {
+  ): Promise<ProductListingResult> {
     return await $fetch("/api/search" as NitroFetchRequest, {
       query: {
         query,

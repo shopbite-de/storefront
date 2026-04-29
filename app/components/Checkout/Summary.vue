@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import QuickView from "~/components/Cart/QuickView.vue";
 import { useIntervalFn } from "@vueuse/core";
-import { useOrderPayment } from "@shopware/composables";
 
 const { createOrder, selectedPaymentMethod, selectedShippingMethod } =
-  useCheckout();
-const { refreshCart } = useCart();
-const { isLoggedIn, isGuestSession, refreshUser } = useUser();
+  useCommerceCheckout();
+const { refreshCart } = useCommerceCart();
+const { isLoggedIn, isGuestSession, refreshUser } = useCommerceUser();
 const { isCheckoutEnabled, refresh } = useShopBiteConfig();
 const { trackOrder } = useTrackEvent();
 
@@ -31,7 +30,7 @@ onMounted(() => {
 useIntervalFn(refresh, 10000);
 
 const createdOrder = ref<Awaited<ReturnType<typeof createOrder>> | null>(null);
-const { handlePayment, paymentUrl } = useOrderPayment(
+const { handlePayment, paymentUrl } = useCommerceOrderPayment(
   computed(() => createdOrder.value),
 );
 

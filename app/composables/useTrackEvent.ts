@@ -1,9 +1,10 @@
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
+import type { Order } from "~/types/commerce/order";
 
 export function useTrackEvent() {
   const { proxy } = useScriptMatomoAnalytics();
 
-  function trackProductView(product: Schemas["Product"]) {
+  function trackProductView(product: Product) {
     proxy._paq.push([
       "setEcommerceView",
       product.productNumber,
@@ -14,15 +15,15 @@ export function useTrackEvent() {
     proxy._paq.push(["trackPageView", product.productNumber]);
   }
 
-  function trackOrder(order: Schemas["Order"]) {
+  function trackOrder(order: Order) {
     order.lineItems?.forEach((item) => {
       if (item.type === "container") return;
       proxy._paq.push([
         "addEcommerceItem",
-        item.product?.productNumber ?? item.id,
+        item.id,
         item.label,
-        item.product?.seoCategory?.name ?? false,
-        item.unitPrice,
+        false,
+        item.price?.unitPrice ?? 0,
         item.quantity,
       ]);
     });
@@ -34,7 +35,7 @@ export function useTrackEvent() {
     ]);
   }
 
-  function trackAddToWishlist(product: Schemas["Product"]) {
+  function trackAddToWishlist(product: Product) {
     proxy._paq.push([
       "trackEvent",
       "Product",
@@ -43,7 +44,7 @@ export function useTrackEvent() {
     ]);
   }
 
-  function trackAddToCart(product: Schemas["Product"], quantity: number) {
+  function trackAddToCart(product: Product, quantity: number) {
     proxy._paq.push([
       "trackEvent",
       "Cart",

@@ -11,7 +11,7 @@ useSeoMeta({
 const route = useRoute();
 const orderId = route.params.id as string;
 
-const { refreshCart } = useCart();
+const { refreshCart } = useCommerceCart();
 
 onMounted(async () => {
   await refreshCart();

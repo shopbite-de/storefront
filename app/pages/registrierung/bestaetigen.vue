@@ -1,33 +1,20 @@
 <script setup lang="ts">
 const route = useRoute();
 const toast = useToast();
+const { mergeWishlistProducts } = useCommerceWishlist();
 
-const { apiClient } = useShopwareContext();
-
-const emParameter = computed(() => route.query.em as string | undefined);
-const hashParameter = computed(() => route.query.hash as string | undefined);
-
-const { mergeWishlistProducts } = useWishlist();
+const em = route.query.em as string | undefined;
+const hash = route.query.hash as string | undefined;
 
 await useAsyncData("register-confirm", async () => {
-  try {
-    if (!emParameter.value || !hashParameter.value) {
-      throw new Error("Missing required parameters");
-    }
-
-    return await apiClient.invoke(
-      "registerConfirm post /account/register-confirm",
-      {
-        body: {
-          em: emParameter.value,
-          hash: hashParameter.value,
-        },
-      },
-    );
-  } catch (e) {
-    console.error("Registration confirmation failed:", e);
-    return null;
+  if (!em || !hash) {
+    throw new Error("Missing required parameters");
   }
+
+  await $fetch("/api/auth/register-confirm", {
+    method: "POST",
+    body: { em, hash },
+  });
 });
 
 mergeWishlistProducts();

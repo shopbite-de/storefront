@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 import type { AssociationItemProduct } from "~/types/Association";
 
 const LOADING_ICON = "i-lucide-loader";
 
 const props = defineProps<{
-  product: Schemas["Product"];
+  product: Product;
 }>();
 
 const emit = defineEmits<{

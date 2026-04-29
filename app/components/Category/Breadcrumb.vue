@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Breadcrumb } from "~/types/commerce/category";
 import type { BreadcrumbItem } from "#ui/components/Breadcrumb.vue";
 
 const props = defineProps<{
@@ -7,8 +7,6 @@ const props = defineProps<{
 }>();
 
 const { categoryId } = toRefs(props);
-
-const { apiClient } = useShopwareContext();
 
 const breadcrumbJsonLd = ref<object | null>(null);
 
@@ -29,19 +27,12 @@ const cacheKey = computed(() => `breadcrumb-${categoryId.value}`);
 
 const { data } = await useAsyncData(cacheKey, async () => {
   if (!categoryId.value) return [];
-  const response = await apiClient.invoke(
-    "readBreadcrumb get /breadcrumb/{id}",
-    {
-      pathParams: { id: categoryId.value },
-      query: { type: "category" },
-    },
-  );
-  return response.data;
+  return await $fetch(`/api/breadcrumb/${categoryId.value}`);
 });
 
 const items = computed<BreadcrumbItem[]>(() => {
   if (!data.value) return [{ label: "Kategorie", to: "#" }];
-  return data.value?.map((item: Schemas["Breadcrumb"]) => {
+  return data.value?.map((item: Breadcrumb) => {
     return {
       label: item.name,
       to: "/" + item.path,

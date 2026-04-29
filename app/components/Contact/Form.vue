@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { z } from "zod";
 import type { FormSubmitEvent } from "#ui/types";
-import { useSalutations } from "@shopware/composables";
 
-const { apiClient } = useShopwareContext();
-const { getSalutations } = useSalutations();
 const toast = useToast();
 
+const { data: salutationData } = await useAsyncData("salutations", () =>
+  $fetch<Array<{ id: string; displayName: string }>>("/api/salutations"),
+);
+
 const salutations = computed(() =>
-  getSalutations.value.map((salutation) => ({
-    label: salutation.displayName,
-    value: salutation.id,
+  (salutationData.value ?? []).map((s) => ({
+    label: s.displayName,
+    value: s.id,
   })),
 );
 
@@ -54,9 +55,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   loading.value = true;
   const salutation = event.data.salutationId || salutations.value.at(-1)?.value;
   try {
-    const result = await apiClient.invoke(
-      "sendContactMail post /contact-form",
+    const result = await $fetch<Record<string, unknown> | null>(
+      "/api/contact",
       {
+        method: "POST",
         body: {
           salutationId: salutation,
           firstName: event.data.firstName,
@@ -69,7 +71,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       },
     );
 
-    const resultData = result?.data as Record<string, unknown> | undefined;
+    const resultData = result as Record<string, unknown> | undefined;
     const msg =
       typeof resultData?.individualSuccessMessage === "string"
         ? (resultData.individualSuccessMessage as string).trim()

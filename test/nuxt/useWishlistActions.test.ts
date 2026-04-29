@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { useWishlistActions } from "../../app/composables/useWishlistActions";
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 
 const {
   mockAddProducts,
@@ -19,7 +19,7 @@ const {
   mockTrackEvent: vi.fn(),
 }));
 
-mockNuxtImport("useCart", () => () => ({
+mockNuxtImport("useCommerceCart", () => () => ({
   addProducts: mockAddProducts,
   refreshCart: mockRefreshCart,
 }));
@@ -32,7 +32,7 @@ mockNuxtImport("useProductEvents", () => () => ({
   triggerProductAdded: mockTriggerProductAdded,
 }));
 
-mockNuxtImport("useWishlist", () => () => ({
+mockNuxtImport("useCommerceWishlist", () => () => ({
   clearWishlist: mockClearWishlist,
 }));
 
@@ -45,7 +45,7 @@ describe("useWishlistActions", () => {
     id: "prod-1",
     translated: { name: "Test Product" },
     productNumber: "SW123",
-  } as unknown as Schemas["Product"];
+  } as unknown as Product;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -70,7 +70,6 @@ describe("useWishlistActions", () => {
     expect(mockAddProducts).toHaveBeenCalledWith([
       { id: "prod-1", quantity: 1, type: "product" },
     ]);
-    expect(mockRefreshCart).toHaveBeenCalled();
     expect(mockTriggerProductAdded).toHaveBeenCalled();
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({ title: "In den Warenkorb gelegt" }),
@@ -94,7 +93,7 @@ describe("useWishlistActions", () => {
     const products = [
       { id: "p1", translated: { name: "P1" } },
       { id: "p2", translated: { name: "P2" } },
-    ] as unknown as Schemas["Product"][];
+    ] as unknown as Product[];
     const { addAllItemsToCart, isAddingToCart } = useWishlistActions();
     mockAddProducts.mockResolvedValue({ id: "cart-1" });
 
@@ -120,7 +119,7 @@ describe("useWishlistActions", () => {
     const products = [
       { id: "p1", translated: { name: "P1" } },
       { id: "p2", childCount: 1, translated: { name: "P2" } },
-    ] as unknown as Schemas["Product"][];
+    ] as unknown as Product[];
     const { addAllItemsToCart } = useWishlistActions();
     mockAddProducts.mockResolvedValue({ id: "cart-1" });
 

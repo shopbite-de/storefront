@@ -1,12 +1,9 @@
 export function useShopBiteConfig() {
-  const { apiClient } = useShopwareContext();
-
-  const { data, refresh } = useAsyncData("shopbite-config", async () => {
-    const { data } = await apiClient.invoke(
-      "shopbite.config.get get /shopbite/config",
-    );
-    return data;
-  });
+  const { data, refresh } = useAsyncData("shopbite-config", () =>
+    $fetch<{ deliveryTime?: number; isCheckoutEnabled?: boolean }>(
+      "/api/shopbite/config",
+    ),
+  );
 
   return {
     deliveryTime: computed(() => data.value?.deliveryTime ?? 30),

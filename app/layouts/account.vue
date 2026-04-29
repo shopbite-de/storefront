@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
-import { useUser } from "@shopware/composables";
+
 const toast = useToast();
-const { isLoggedIn, logout } = useUser();
+const { isLoggedIn, logout } = useCommerceUser();
 
 onMounted(() => {
   if (!isLoggedIn.value) {
@@ -16,8 +16,8 @@ watch(isLoggedIn, (newValue) => {
   }
 });
 
-const logoutHandler = () => {
-  logout();
+const logoutHandler = async () => {
+  await logout();
   toast.add({
     title: "Tschüss!",
     description: "Erfolreich abgemeldet.",

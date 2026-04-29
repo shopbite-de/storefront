@@ -14,7 +14,7 @@ const items = [
 
 const toast = useToast();
 
-const { mergeWishlistProducts } = useWishlist();
+const { mergeWishlistProducts } = useCommerceWishlist();
 
 async function handleLoginSuccess() {
   mergeWishlistProducts();

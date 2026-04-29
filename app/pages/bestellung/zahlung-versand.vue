@@ -8,7 +8,7 @@ useSeoMeta({
   robots: "noindex, nofollow",
 });
 
-const { isLoggedIn, isGuestSession } = useUser();
+const { isLoggedIn, isGuestSession } = useCommerceUser();
 const { setStep } = useCheckoutStore();
 
 if (!isLoggedIn.value && !isGuestSession.value) {

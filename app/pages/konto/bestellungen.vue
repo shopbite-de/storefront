@@ -5,13 +5,13 @@ definePageMeta({
   layout: "account",
 });
 
-const { orders, loadOrders } = useCustomerOrders();
+const { orders, loadOrders } = useCommerceOrders();
 
 onMounted(() => {
   loadOrders();
 });
 
-const { getFormattedPrice } = usePrice({
+const { getFormattedPrice } = useCommercePrice({
   currencyCode: "EUR",
   localeCode: "de-DE",
 });

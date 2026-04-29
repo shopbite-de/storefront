@@ -1,4 +1,4 @@
-import type { components } from "~~/api-types/storeApiTypes";
+import type { components } from "~~/server/adapters/shopware/api-types/storeApiTypes";
 
 type Schemas = components["schemas"];
 

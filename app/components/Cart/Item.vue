@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { CartLineItem } from "~/types/commerce/cart";
 
 interface Props {
-  cartItem?: Schemas["LineItem"] | null;
+  cartItem?: CartLineItem | null;
   withQuantityInput?: boolean;
   withDeleteButton?: boolean;
 }
@@ -13,8 +13,8 @@ const props = withDefaults(defineProps<Props>(), {
   withDeleteButton: true,
 });
 
-const { removeItem, changeProductQuantity } = useCart();
-const { getFormattedPrice } = usePrice({
+const { removeItem, changeProductQuantity } = useCommerceCart();
+const { getFormattedPrice } = useCommercePrice({
   currencyCode: "EUR",
   localeCode: "de-DE",
 });

@@ -3,7 +3,6 @@ import type {
   RadioGroupItem,
   RadioGroupValue,
 } from "#ui/components/RadioGroup.vue";
-import type { Schemas } from "#shopware";
 
 const {
   paymentMethods,
@@ -14,9 +13,9 @@ const {
   getShippingMethods,
   selectedShippingMethod,
   setShippingMethod,
-} = useCheckout();
+} = useCommerceCheckout();
 
-const { refreshCart } = useCart();
+const { refreshCart } = useCommerceCart();
 
 const toast = useToast();
 
@@ -26,17 +25,17 @@ onMounted(() => {
 });
 
 const selectablePaymentMethods = computed<RadioGroupItem[]>(() => {
-  return paymentMethods.value?.map((method: Schemas["PaymentMethod"]) => ({
-    label: method.distinguishableName,
-    description: method.description,
+  return (paymentMethods.value ?? []).map((method) => ({
+    label: method.distinguishableName ?? method.name,
+    description: method.description ?? undefined,
     value: method.id,
   }));
 });
 
 const selectableShippingMethods = computed<RadioGroupItem[]>(() => {
-  return shippingMethods.value?.map((method: Schemas["ShippingMethod"]) => ({
+  return (shippingMethods.value ?? []).map((method) => ({
     label: method.name,
-    description: method.description,
+    description: method.description ?? undefined,
     value: method.id,
   }));
 });
@@ -57,7 +56,7 @@ watch(
     toast.add({
       title: "Zahlart geändert",
       description:
-        selectedPaymentMethod.value.distinguishableName + " ausgewählt",
+        selectedPaymentMethod.value?.distinguishableName + " ausgewählt",
       color: "success",
       progress: false,
     });
@@ -73,7 +72,7 @@ watch(
     await refreshCart();
     toast.add({
       title: "Versandart geändert",
-      description: selectedShippingMethod.value.name + " ausgewählt",
+      description: selectedShippingMethod.value?.name + " ausgewählt",
       color: "success",
       progress: false,
     });

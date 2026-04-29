@@ -10,7 +10,7 @@ const { mockSetPaymentMethod, mockSetShippingMethod, mockRefreshCart } =
     mockRefreshCart: vi.fn(),
   }));
 
-mockNuxtImport("useCheckout", () => () => ({
+mockNuxtImport("useCommerceCheckout", () => () => ({
   paymentMethods: ref([
     { id: "pm1", distinguishableName: "Payment 1" },
     { id: "pm2", distinguishableName: "Payment 2" },
@@ -27,7 +27,7 @@ mockNuxtImport("useCheckout", () => () => ({
   getShippingMethods: vi.fn(),
 }));
 
-mockNuxtImport("useCart", () => () => ({
+mockNuxtImport("useCommerceCart", () => () => ({
   refreshCart: mockRefreshCart,
 }));
 

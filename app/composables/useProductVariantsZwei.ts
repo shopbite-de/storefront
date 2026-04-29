@@ -1,5 +1,5 @@
+import type { PropertyGroup } from "~/types/commerce/product";
 import { computed, type ComputedRef, type Ref } from "vue";
-import type { Schemas } from "#shopware";
 
 // Define the SelectItem interface to match what USelect expects
 interface SelectItem {
@@ -19,7 +19,7 @@ type useProductVariantsReturn = {
 
 // Accept configuratorSettings as a Ref of PropertyGroup[]
 export function useProductVariantsZwei(
-  configuratorSettings: Ref<Schemas["PropertyGroup"][]>,
+  configuratorSettings: Ref<PropertyGroup[]>,
 ): useProductVariantsReturn {
   const variants = computed(() => {
     const groups = configuratorSettings.value || [];

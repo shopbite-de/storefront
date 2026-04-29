@@ -8,8 +8,8 @@ useSeoMeta({
   robots: "noindex, nofollow",
 });
 
-const { isLoggedIn, isGuestSession } = useUser();
-const { isEmpty } = useCart();
+const { isLoggedIn, isGuestSession } = useCommerceUser();
+const { isEmpty } = useCommerceCart();
 const { setStep } = useCheckoutStore();
 
 setStep(0);

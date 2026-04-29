@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { useUser } from "@shopware/composables";
 import type { DropdownMenuItem } from "@nuxt/ui";
 
 const cartQuickViewOpen = ref(false);
-const { count: cartCount } = useCart();
-const { count: wishListCount } = useWishlist();
+const { count: cartCount } = useCommerceCart();
+const { count: wishListCount } = useCommerceWishlist();
 const { isCheckoutEnabled } = useShopBiteConfig();
-const { isLoggedIn, isGuestSession, logout } = useUser();
+const { isLoggedIn, isGuestSession, logout } = useCommerceUser();
 const toast = useToast();
 
-const logoutHandler = () => {
-  logout();
+const logoutHandler = async () => {
+  await logout();
   toast.add({
     title: "Tschüss!",
     description: "Erfolreich abgemeldet.",

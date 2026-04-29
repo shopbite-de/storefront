@@ -1,12 +1,12 @@
-import type { Schemas } from "#shopware";
+import type { Product, PropertyGroup } from "~/types/commerce/product";
 import type { AssociationItemProduct } from "~/types/Association";
 
 export function useProductDetail(getProductId: () => string) {
   const { trackProductView } = useTrackEvent();
 
   const { data: productDetails, pending } = useFetch<{
-    product: Schemas["Product"];
-    configurator?: Schemas["PropertyGroup"][];
+    product: Product;
+    configurator?: PropertyGroup[];
   }>(() => `/api/product/${getProductId()}`, {
     key: () => `product-${getProductId() ?? "none"}`,
   });

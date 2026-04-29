@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { PropertyGroup } from "~/types/commerce/product";
 
 const props = defineProps<{
-  sortedProperties: Schemas["PropertyGroup"][] | undefined;
+  sortedProperties: PropertyGroup[] | undefined;
 }>();
 
 const kitchen = computed<

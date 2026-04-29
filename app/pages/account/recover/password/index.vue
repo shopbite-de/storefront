@@ -28,7 +28,6 @@ const ERROR_TOAST_CONFIG = {
   color: "error" as const,
 };
 
-const { apiClient } = useShopwareContext();
 const route = useRoute();
 const toast = useToast();
 
@@ -98,16 +97,14 @@ async function handlePasswordReset(
   payload: FormSubmitEvent<PasswordResetSchema>,
 ) {
   try {
-    await apiClient.invoke(
-      "recoveryPassword post /account/recovery-password-confirm",
-      {
-        body: {
-          newPassword: payload.data.newPassword,
-          newPasswordConfirm: payload.data.newPasswordConfirm,
-          hash: recoveryHash.value,
-        },
+    await $fetch("/api/auth/recovery-password-confirm", {
+      method: "POST",
+      body: {
+        newPassword: payload.data.newPassword,
+        newPasswordConfirm: payload.data.newPasswordConfirm,
+        hash: recoveryHash.value,
       },
-    );
+    });
     showSuccessToast();
     navigateTo("/anmelden");
   } catch (error) {

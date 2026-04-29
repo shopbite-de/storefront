@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { useWishlist } from "@shopware/composables";
-
-const { isLoggedIn } = useUser();
-const { mergeWishlistProducts } = useWishlist();
+const { isLoggedIn } = useCommerceUser();
+const { mergeWishlistProducts } = useCommerceWishlist();
 
 onBeforeMount(async () => {
   if (import.meta.client && isLoggedIn.value) {

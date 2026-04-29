@@ -1,17 +1,8 @@
-import { useShopwareContext } from "#imports";
-
 export function useHolidays() {
-  const { apiClient } = useShopwareContext();
-
   const { data, pending, refresh } = useAsyncData(
     "holidays",
-    async () => {
-      const response = await apiClient.invoke(
-        "shopbite.holiday.get get /shopbite/holiday",
-      );
-
-      return response.data.holidays;
-    },
+    () =>
+      $fetch<Array<{ start?: string; end?: string }>>("/api/shopbite/holidays"),
     { immediate: false },
   );
 
@@ -44,6 +35,5 @@ function formatDateYYYYMMDD(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return `${year}-${month}-${day}`;
 }

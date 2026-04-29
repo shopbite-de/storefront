@@ -26,7 +26,6 @@ const ERROR_TOAST_CONFIG = {
   color: "error" as const,
 };
 
-const { apiClient } = useShopwareContext();
 const toast = useToast();
 
 const schema = z.object({
@@ -56,11 +55,9 @@ function showErrorToast(): void {
 
 async function handlePasswordRecovery(payload: FormSubmitEvent<Schema>) {
   try {
-    await apiClient.invoke("sendRecoveryMail post /account/recovery-password", {
-      body: {
-        email: payload.data.email,
-        storefrontUrl: useRuntimeConfig().public.storeUrl,
-      },
+    await $fetch("/api/auth/recovery-password", {
+      method: "POST",
+      body: { email: payload.data.email },
     });
     showSuccessToast();
   } catch (error) {

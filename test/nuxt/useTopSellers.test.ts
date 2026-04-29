@@ -1,18 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { useTopSellers } from "~/composables/useTopSellers";
 
-const { mockInvoke } = vi.hoisted(() => ({
-  mockInvoke: vi.fn(),
+const { mockFetch } = vi.hoisted(() => ({
+  mockFetch: vi.fn(),
 }));
 
-mockNuxtImport("useShopwareContext", () => {
-  return () => ({
-    apiClient: {
-      invoke: mockInvoke,
-    },
-  });
-});
+vi.stubGlobal("$fetch", mockFetch);
 
 describe("useTopSellers", () => {
   beforeEach(() => {
@@ -21,24 +14,27 @@ describe("useTopSellers", () => {
 
   it("should load top sellers successfully", async () => {
     const mockElements = [{ id: "1", name: "Top Product" }];
-    mockInvoke.mockResolvedValue({
-      data: {
-        elements: mockElements,
-      },
-    });
+    mockFetch.mockResolvedValue(mockElements);
 
     const { loadTopSellers } = useTopSellers();
     const result = await loadTopSellers();
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "readProduct post /product",
-      expect.any(Object),
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/products",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.objectContaining({
+          filter: expect.arrayContaining([
+            expect.objectContaining({ field: "markAsTopseller" }),
+          ]),
+        }),
+      }),
     );
     expect(result).toEqual(mockElements);
   });
 
   it("should return empty array on error", async () => {
-    mockInvoke.mockRejectedValue(new Error("Network error"));
+    mockFetch.mockRejectedValue(new Error("Network error"));
 
     // Silence console.error for this test
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});

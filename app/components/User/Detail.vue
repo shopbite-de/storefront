@@ -8,7 +8,7 @@ const {
   userDefaultBillingAddress,
   userDefaultShippingAddress,
   refreshUser,
-} = useUser();
+} = useCommerceUser();
 
 const fullName = computed(
   () => user.value?.firstName + " " + user.value?.lastName,

@@ -1,20 +1,23 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type {
+  Product,
+  PropertyGroup,
+  PropertyGroupOption,
+} from "~/types/commerce/product";
 import { useProductConfigurator } from "~/composables/useProductConfigurator";
 
 const props = defineProps<{
-  p: Schemas["Product"];
-  c: Schemas["PropertyGroup"][];
+  p: Product;
+  c: PropertyGroup[];
 }>();
 
 const { p, c } = toRefs(props);
-const { product, changeVariant, configurator } = useProduct(p, c);
-const { findVariantForSelectedOptions } = useProductConfigurator();
-const { variants: selectableOptions } = useProductVariantsZwei(configurator);
+const { findVariantForSelectedOptions } = useProductConfigurator(p);
+const { variants: selectableOptions } = useProductVariantsZwei(c);
 
 const selectedOptions = ref<Record<string, string>>({});
 
-const options = product.value.options as Schemas["PropertyGroupOption"][];
+const options = p.value.options as PropertyGroupOption[];
 for (const option of options ?? []) {
   if (option.group && option.id) {
     selectedOptions.value[option.group.id] = option.id;
@@ -29,7 +32,6 @@ watch(
     );
 
     if (foundVariant) {
-      changeVariant(foundVariant);
       emit("variant-switched", foundVariant);
     }
   },
@@ -37,7 +39,7 @@ watch(
 );
 
 const emit = defineEmits<{
-  "variant-switched": [variant: Schemas["Product"]];
+  "variant-switched": [variant: Product];
 }>();
 </script>
 <template>

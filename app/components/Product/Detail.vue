@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
 
 const props = defineProps<{
   productId: string;
@@ -19,7 +19,7 @@ const {
   onIngredientsDeselected,
 } = useProductDetail(() => props.productId);
 
-const onVariantSwitched = (variant: Schemas["Product"]) => {
+const onVariantSwitched = (variant: Product) => {
   setSelectedProduct(variant);
   emit("variant-selected", variant);
 };

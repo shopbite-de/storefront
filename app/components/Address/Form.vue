@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
-import { useAddress } from "@shopware/composables";
 import type { FormSubmitEvent } from "@nuxt/ui";
-
+import type { CustomerAddress } from "~/types/commerce/user";
 import { createAddressSchema } from "~/validation/addressSchema";
 import type { AddressSchema } from "~/validation/addressSchema";
 
 const props = defineProps<{
-  address?: Schemas["CustomerAddress"] | undefined;
+  address?: CustomerAddress | undefined;
 }>();
 
 const config = useRuntimeConfig();
-const { updateCustomerAddress, createCustomerAddress } = useAddress();
+const { updateCustomerAddress, createCustomerAddress } = useCommerceAddress();
 
 const state = reactive({
   id: props.address?.id,
@@ -33,7 +31,7 @@ const toast = useToast();
 
 async function onSubmit(event: FormSubmitEvent<AddressSchema>) {
   try {
-    let response: undefined | Schemas["CustomerAddress"] = undefined;
+    let response: undefined | CustomerAddress = undefined;
     const addressData = event.data as unknown as Parameters<
       typeof updateCustomerAddress
     >[0];
@@ -61,7 +59,7 @@ async function onSubmit(event: FormSubmitEvent<AddressSchema>) {
 const accountType = ref("privat");
 
 const emit = defineEmits<{
-  "submit-success": [data: Schemas["CustomerAddress"]];
+  "submit-success": [data: CustomerAddress];
 }>();
 </script>
 

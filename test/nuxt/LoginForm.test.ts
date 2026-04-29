@@ -2,28 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref } from "vue";
 import LoginForm from "@/components/User/LoginForm.vue";
-import { ApiClientError } from "@shopware/api-client";
 
 type LoginFormVm = {
   onSubmit: (arg: {
     data: { email: string; password: string };
   }) => Promise<void>;
 };
-
-vi.mock("@shopware/api-client", () => ({
-  ApiClientError: class extends Error {
-    details: unknown;
-    constructor(details: unknown) {
-      super("ApiClientError");
-      this.details = details;
-    }
-  },
-}));
-
-vi.mock("@shopware/composables", () => ({
-  useUser: vi.fn(),
-  useWishlist: vi.fn(),
-}));
 
 const mockToastAdd = vi.fn();
 mockNuxtImport("useToast", () => {
@@ -36,17 +20,11 @@ const loginMock = vi.fn();
 const userMock = ref({ firstName: "John", lastName: "Doe" });
 const isLoggedInMock = ref(false);
 
-mockNuxtImport("useUser", () => {
+mockNuxtImport("useCommerceUser", () => {
   return () => ({
     isLoggedIn: isLoggedInMock,
     login: loginMock,
     user: userMock,
-  });
-});
-
-mockNuxtImport("useWishlist", () => {
-  return () => ({
-    mergeWishlistProducts: vi.fn(),
   });
 });
 
@@ -107,15 +85,14 @@ describe("LoginForm", () => {
     );
   });
 
-  it("should show detailed error toast on ApiClientError", async () => {
-    const apiClientError = new ApiClientError({
-      errors: [
-        {
-          detail: 'The email address "test@example.com" is already in use',
-        },
-      ],
-    } as unknown as ConstructorParameters<typeof ApiClientError>[0]);
-    loginMock.mockRejectedValueOnce(apiClientError);
+  it("should show detailed error toast on fetch error with errors array", async () => {
+    loginMock.mockRejectedValueOnce({
+      data: {
+        errors: [
+          { detail: 'The email address "test@example.com" is already in use' },
+        ],
+      },
+    });
     const wrapper = await mountSuspended(LoginForm);
 
     await (wrapper.vm as unknown as LoginFormVm).onSubmit({
@@ -134,11 +111,8 @@ describe("LoginForm", () => {
     );
   });
 
-  it("should handle ApiClientError with missing errors gracefully", async () => {
-    const apiClientError = new ApiClientError(
-      {} as unknown as ConstructorParameters<typeof ApiClientError>[0],
-    );
-    loginMock.mockRejectedValueOnce(apiClientError);
+  it("should handle error with missing errors array gracefully", async () => {
+    loginMock.mockRejectedValueOnce({ data: {} });
     const wrapper = await mountSuspended(LoginForm);
 
     await (wrapper.vm as unknown as LoginFormVm).onSubmit({

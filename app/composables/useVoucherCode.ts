@@ -1,6 +1,6 @@
 export function useVoucherCode() {
   const { cart, addPromotionCode, appliedPromotionCodes, removeItem } =
-    useCart();
+    useCommerceCart();
   const toast = useToast();
 
   const voucherCode = ref("");

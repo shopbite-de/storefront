@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Product } from "~/types/commerce/product";
+import type { Category } from "~/types/commerce/category";
 import ProductCard from "~/components/Product/Card.vue";
 
 const props = defineProps({
   category: {
-    type: Object as () => Schemas["Category"],
+    type: Object as () => Category,
     required: true,
   },
 });
 
 const category = toRef(props.category);
-const { apiClient } = useShopwareContext();
-const categoryProducts = ref<Schemas["Product"][]>([]);
+const categoryProducts = ref<Product[]>([]);
 const isLoading = ref(true);
 
 const fetchCategoryProducts = async () => {
   isLoading.value = true;
   try {
-    const { data } = await apiClient.invoke("readProduct post /product", {
+    categoryProducts.value = await $fetch<Product[]>("/api/products", {
+      method: "POST",
       body: {
         filter: [
           {
@@ -109,10 +110,6 @@ const fetchCategoryProducts = async () => {
         },
       },
     });
-
-    if (data?.elements) {
-      categoryProducts.value = data.elements;
-    }
   } catch (error) {
     console.error(`[category-products][${category.value.id}]`, error);
   } finally {
@@ -132,7 +129,7 @@ onMounted(() => {
     class="flex flex-col"
   >
     <CategoryHeader :category="category" />
-    <div v-if="category.childCount > 0" class="grid grid-cols-1 gap-4">
+    <div v-if="(category.childCount ?? 0) > 0" class="grid grid-cols-1 gap-4">
       <ProductCategory
         v-for="child in category.children"
         :key="child.id"

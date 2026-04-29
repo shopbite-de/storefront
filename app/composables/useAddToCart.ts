@@ -1,4 +1,5 @@
-import type { Schemas, operations } from "#shopware";
+import type { Product } from "~/types/commerce/product";
+import type { AddCartItemPayload } from "~/types/commerce/cart";
 import type { AssociationItemProduct } from "~/types/Association";
 import { v5 as uuidv5, v4 as uuidv4 } from "uuid";
 import { computed, ref } from "vue";
@@ -9,7 +10,7 @@ const LINE_ITEM_PRODUCT = "product";
 const LINE_ITEM_CONTAINER = "container";
 
 export function useAddToCart() {
-  const { addProducts, refreshCart } = useCart();
+  const { addProducts } = useCommerceCart();
   const toast = useToast();
   const { triggerProductAdded } = useProductEvents();
   const { trackAddToCart: trackAddToCartEvent } = useTrackEvent();
@@ -17,7 +18,7 @@ export function useAddToCart() {
   const selectedExtras = ref<AssociationItemProduct[]>([]);
   const deselectedIngredients = ref<string[]>([]);
   const selectedQuantity = ref(1);
-  const selectedProduct = ref<Schemas["Product"] | null>(null);
+  const selectedProduct = ref<Product | null>(null);
   const isLoading = ref(false);
 
   const cartItemLabel = computed(() => {
@@ -72,7 +73,7 @@ export function useAddToCart() {
     extras: AssociationItemProduct[],
   ) => (extras.length ? baseId + generateSortedExtrasString(extras) : baseId);
 
-  function createCartItems(): operations["addLineItem post /checkout/cart/line-item"]["body"]["items"] {
+  function createCartItems(): AddCartItemPayload[] {
     if (!selectedProduct.value) return [];
 
     const extras = createExtras();
@@ -99,8 +100,6 @@ export function useAddToCart() {
         id: generatedUuid,
         quantity: selectedQuantity.value,
         type: LINE_ITEM_CONTAINER,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         label: cartItemLabel.value,
         payload: {
           productNumber: selectedProduct.value.productNumber,
@@ -142,8 +141,7 @@ export function useAddToCart() {
     isLoading.value = true;
 
     const cartItems = createCartItems();
-    const newCart = await addProducts(cartItems);
-    await refreshCart(newCart);
+    await addProducts(cartItems);
     await showSuccessToast();
 
     triggerProductAdded();
@@ -155,7 +153,7 @@ export function useAddToCart() {
     }
   }
 
-  function setSelectedProduct(product: Schemas["Product"]) {
+  function setSelectedProduct(product: Product) {
     selectedProduct.value = product;
   }
 

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useUser } from "@shopware/composables";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as z from "zod";
 
@@ -7,10 +6,15 @@ definePageMeta({
   layout: "account",
 });
 
-const { apiClient } = useShopwareContext();
 const loading = ref(true);
-const { user, refreshUser, updatePersonalInfo, updateEmail, logout } =
-  useUser();
+const {
+  user,
+  refreshUser,
+  updatePersonalInfo,
+  updateEmail,
+  logout,
+  deleteAccount,
+} = useCommerceUser();
 const toast = useToast();
 const open = ref(false);
 
@@ -83,7 +87,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 }
 
 async function deleteCustomerAccount() {
-  await apiClient.invoke("deleteCustomer delete /account/customer");
+  await deleteAccount();
   toast.add({
     title: "Tschüss!",
     icon: "i-lucide-check",

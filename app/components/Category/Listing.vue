@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { PropertyGroup } from "~/types/commerce/product";
 import Breadcrumb from "~/components/Category/Breadcrumb.vue";
 
 const props = defineProps<{
@@ -47,11 +47,11 @@ watch(
   { once: true },
 );
 
-const propertyFilters = computed<Schemas["PropertyGroup"][]>(
+const propertyFilters = computed<PropertyGroup[]>(
   () =>
     (availableFilters.value?.filter(
       (availableFilter) => availableFilter.code === "properties",
-    ) ?? []) as unknown as Schemas["PropertyGroup"][],
+    ) ?? []) as unknown as PropertyGroup[],
 );
 const selectedPropertyFiltersString = computed(() =>
   selectedPropertyFilters.value?.join("|"),

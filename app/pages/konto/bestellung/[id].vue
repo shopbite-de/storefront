@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import { useOrderDetails } from "@shopware/composables";
 import { formatDate } from "~/utils/formatDate";
-import type { Schemas } from "#shopware";
-
 import type { RouteParams } from "vue-router";
 
 definePageMeta({
@@ -15,22 +12,13 @@ interface OrderRouteParams extends RouteParams {
 
 const route = useRoute();
 const { id } = route.params as OrderRouteParams;
-const {
-  order: orderRaw,
-  loadOrderDetails,
-  status,
-} = useOrderDetails(id as string);
-const order = computed(
-  () => orderRaw.value as Schemas["Order"] | undefined | null,
-);
+const { order, loadOrderDetails, status } = useCommerceOrderDetails(id);
 
 const isLoadingData = ref(true);
 
 onMounted(async () => {
   isLoadingData.value = true;
-
   await loadOrderDetails();
-
   isLoadingData.value = false;
 });
 </script>
@@ -43,11 +31,7 @@ onMounted(async () => {
       :description="formatDate(order?.createdAt)"
     />
     <UPageBody>
-      <OrderDetail
-        v-if="order"
-        :order="order as Schemas['Order']"
-        :status="status ?? 'laden...'"
-      />
+      <OrderDetail v-if="order" :order="order" :status="status ?? 'laden...'" />
     </UPageBody>
   </UContainer>
 </template>

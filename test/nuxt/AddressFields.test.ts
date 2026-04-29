@@ -106,7 +106,7 @@ describe("AddressFields", () => {
       props: {
         ...defaultProps,
         modelValue,
-        "onUpdate:modelValue": (val: typeof modelValue) =>
+        "onUpdate:modelValue": (val: Partial<typeof modelValue>) =>
           Object.assign(modelValue, val),
       },
     });
