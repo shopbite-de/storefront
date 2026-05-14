@@ -42,7 +42,7 @@
     "@iconify-json/simple-icons": "^1.2.73",
     "@nuxt/content": "3.12.0",
     "@nuxt/image": "^2.0.0",
-    "@nuxt/scripts": "0.13.4",
+    "@nuxt/scripts": "1.1.0",
     "@nuxt/ui": "^4.5.1",
     "@nuxtjs/robots": "^6.0.0",
     "@pinia/nuxt": "0.11.3",
