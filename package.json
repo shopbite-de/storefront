@@ -52,7 +52,7 @@
     "@shopware/composables": "^1.10.0",
     "@shopware/helpers": "^1.6.0",
     "@shopware/nuxt-module": "^1.4.2",
-    "@unhead/vue": "^2.1.12",
+    "@unhead/vue": "^3.0.0",
     "@vite-pwa/nuxt": "^1.1.1",
     "@vueuse/core": "^14.2.1",
     "dotenv": "^17.3.1",
