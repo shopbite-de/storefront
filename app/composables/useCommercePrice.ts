@@ -35,14 +35,21 @@ export function useCommercePrice(params?: Partial<CommercePriceConfig>) {
     () => params?.localeCode ?? config.value.localeCode,
   );
 
+  // Memoized: constructing Intl.NumberFormat is expensive and listing pages
+  // format many prices per render.
+  const formatter = computed(
+    () =>
+      new Intl.NumberFormat(localeCode.value, {
+        style: "currency",
+        currency: currencyCode.value,
+      }),
+  );
+
   function getFormattedPrice(value: number | string | undefined): string {
     if (value === undefined) {
       return "";
     }
-    return new Intl.NumberFormat(localeCode.value, {
-      style: "currency",
-      currency: currencyCode.value,
-    }).format(+value);
+    return formatter.value.format(+value);
   }
 
   return {

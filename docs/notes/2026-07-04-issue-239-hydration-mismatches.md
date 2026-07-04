@@ -62,10 +62,12 @@ This is a step toward the multi-platform goal: only the seeding in
 - `pnpm typecheck` is broken on main: `vue-tsc` is not a devDependency, and
   installing it temporarily surfaces pre-existing type errors in ~8 files
   (none related to this fix). → separate issue
-- Every filter change in `Category/Listing.vue` sets `currentSorting` to
-  `"Sortieren"`, which triggers a second, redundant listing fetch with
+- Every filter change in `Category/Listing.vue` set `currentSorting` to
+  `"Sortieren"`, which triggered a second, redundant listing fetch with
   `order=Sortieren` racing the `setFilters` fetch (Shopware silently ignores
-  the invalid order). → separate issue
+  the invalid order). Filed as #249 — then fixed in this PR after Copilot's
+  review flagged the same spot: the placeholder is treated as "no override"
+  and the sorting watcher ignores it.
 - `AnimatedSection` renders product cards with `opacity-0` in SSR HTML
   (IntersectionObserver reveals them post-mount) — content invisible without
   JS; potential SEO/CLS concern. → suggested issue
