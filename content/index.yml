@@ -30,7 +30,7 @@ hero:
       size: xl
       color: neutral
       variant: outline
-      to: 'tel:+490610477777'
+      to: "tel:+490610477777"
       target: _blank
 features:
   title: Alle [Informationen]{.text-primary} auf einen Blick
@@ -101,7 +101,7 @@ mittagstisch:
       icon: i-lucide-info
   links:
     - label: Reservieren
-      to: 'tel:+49610471427'
+      to: "tel:+49610471427"
       color: neutral
       variant: subtle
       trailingIcon: i-lucide-phone
