@@ -11,10 +11,7 @@ onMounted(() => {
   loadOrders();
 });
 
-const { getFormattedPrice } = usePrice({
-  currencyCode: "EUR",
-  localeCode: "de-DE",
-});
+const { getFormattedPrice } = useCommercePrice();
 </script>
 
 <template>

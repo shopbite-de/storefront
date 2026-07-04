@@ -8,10 +8,7 @@ const props = defineProps<{
 
 const { order } = toRefs(props);
 
-const { getFormattedPrice } = usePrice({
-  currencyCode: "EUR",
-  localeCode: "de-DE",
-});
+const { getFormattedPrice } = useCommercePrice();
 
 const lineItems = computed(() =>
   order.value?.lineItems?.filter(

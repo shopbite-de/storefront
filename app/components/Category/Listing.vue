@@ -35,17 +35,17 @@ async function resetFilters() {
 
 useCategorySeo(category);
 
-const currentSorting = ref(currentSortingOrder.value ?? "Sortieren");
-
-// Sync currentSorting when listing data arrives during client-side navigation
-// (currentSortingOrder.value is null at setup time in that case).
-watch(
-  currentSortingOrder,
-  (val) => {
-    if (val) currentSorting.value = val;
+// Derived from the listing data instead of snapshotted at setup time: on the
+// server the listing resolves after setup, so a snapshot would render
+// "Sortieren" while client hydration (payload already present) would render
+// the actual sorting label — a hydration mismatch (#239).
+const sortingOverride = ref<string | null>(null);
+const currentSorting = computed<string>({
+  get: () => sortingOverride.value ?? currentSortingOrder.value ?? "Sortieren",
+  set: (val) => {
+    sortingOverride.value = val;
   },
-  { once: true },
-);
+});
 
 const propertyFilters = computed<Schemas["PropertyGroup"][]>(
   () =>

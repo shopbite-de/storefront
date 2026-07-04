@@ -14,6 +14,7 @@ const props = withDefaults(
 
 const { getWishlistProducts, items } = useWishlist();
 const { apiClient } = useShopwareContext();
+const { getFormattedPrice } = useCommercePrice();
 const {
   isAddingToCart,
   addingItemId,
@@ -158,10 +159,7 @@ onMounted(async () => {
                         </h3>
                         <p class="text-base font-bold text-primary-600">
                           {{
-                            usePrice({
-                              currencyCode: "EUR",
-                              localeCode: "de-DE",
-                            }).getFormattedPrice(
+                            getFormattedPrice(
                               product.calculatedPrice.totalPrice,
                             )
                           }}

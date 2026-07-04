@@ -14,10 +14,7 @@ const emit = defineEmits<{
 
 const { isCheckoutEnabled } = useShopBiteConfig();
 
-const { getFormattedPrice } = usePrice({
-  currencyCode: "EUR",
-  localeCode: "de-DE",
-});
+const { getFormattedPrice } = useCommercePrice();
 
 const openDetails = ref(false);
 
