@@ -2517,9 +2517,7 @@ export type Schemas = {
   };
   NavigationRouteResponse: components["schemas"]["Category"][];
   NavigationType:
-    | "main-navigation"
-    | "footer-navigation"
-    | "service-navigation";
+    "main-navigation" | "footer-navigation" | "service-navigation";
   NewsletterRecipient: {
     /** Format: date-time */
     readonly createdAt?: string;

@@ -36,7 +36,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="relative">
+  <div class="relative isolate overflow-hidden">
     <video
       ref="videoRef"
       autoplay
@@ -44,11 +44,11 @@ onMounted(() => {
       muted
       playsinline
       fetchpriority="high"
-      class="absolute inset-0 w-full h-full object-cover -z-10"
+      class="absolute inset-0 w-full h-full object-cover -z-10 blur-sm scale-105"
     >
       <source :src="backgroundVideo" type="video/mp4" />
     </video>
-    <div class="bg-black/50 backdrop-blur-sm">
+    <div class="bg-black/50">
       <UPageHero
         :title="title"
         :description="description"

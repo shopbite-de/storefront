@@ -24,12 +24,7 @@ const paymentState = computed(
 );
 
 type BadgeColor =
-  | "success"
-  | "error"
-  | "warning"
-  | "info"
-  | "neutral"
-  | "primary";
+  "success" | "error" | "warning" | "info" | "neutral" | "primary";
 
 const paymentStateColor = computed((): BadgeColor => {
   switch (paymentState.value?.technicalName) {

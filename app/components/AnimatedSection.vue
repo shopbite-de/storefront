@@ -3,17 +3,9 @@ import { useScrollAnimation } from "~/composables/useScrollAnimation";
 
 interface Props {
   animation?:
-    | "fade-up"
-    | "fade-down"
-    | "fade-left"
-    | "fade-right"
-    | "fade"
-    | "scale";
+    "fade-up" | "fade-down" | "fade-left" | "fade-right" | "fade" | "scale";
   duration?:
-    | "duration-500"
-    | "duration-700"
-    | "duration-1000"
-    | "duration-1500";
+    "duration-500" | "duration-700" | "duration-1000" | "duration-1500";
   delay?: string;
   threshold?: number;
   rootMargin?: string;
