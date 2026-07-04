@@ -39,11 +39,15 @@ useCategorySeo(category);
 // server the listing resolves after setup, so a snapshot would render
 // "Sortieren" while client hydration (payload already present) would render
 // the actual sorting label — a hydration mismatch (#239).
+// The placeholder is never stored as an override, so the select keeps
+// following the listing data until the user explicitly picks a sorting.
+const SORTING_PLACEHOLDER = "Sortieren";
 const sortingOverride = ref<string | null>(null);
 const currentSorting = computed<string>({
-  get: () => sortingOverride.value ?? currentSortingOrder.value ?? "Sortieren",
+  get: () =>
+    sortingOverride.value ?? currentSortingOrder.value ?? SORTING_PLACEHOLDER,
   set: (val) => {
-    sortingOverride.value = val;
+    sortingOverride.value = val === SORTING_PLACEHOLDER ? null : val;
   },
 });
 
@@ -91,7 +95,9 @@ let filterChain = Promise.resolve();
 
 watch(selectedListingFilters, (newFilters, oldFilters) => {
   if (newFilters[0]?.value === oldFilters?.[0]?.value) return;
-  currentSorting.value = "Sortieren";
+  // setFilters doesn't send an order, so the response falls back to the
+  // default sorting; drop the override so the select follows it (#249).
+  currentSorting.value = SORTING_PLACEHOLDER;
   filterChain = filterChain
     .catch(() => {})
     .then(() => setFilters(newFilters))
@@ -99,12 +105,12 @@ watch(selectedListingFilters, (newFilters, oldFilters) => {
 });
 
 watch(currentSorting, async (val) => {
-  if (val === currentSortingOrder.value) return;
+  if (val === SORTING_PLACEHOLDER || val === currentSortingOrder.value) return;
   const sortingQuery = {
     query: currentFilters.value?.search,
     properties: currentFilters.value?.properties?.join("|"),
   };
-  await changeSorting(val as string, sortingQuery);
+  await changeSorting(val, sortingQuery);
 });
 
 const moreThanOneFilterAndOption = computed<boolean>(
