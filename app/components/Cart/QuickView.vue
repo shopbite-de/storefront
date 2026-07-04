@@ -14,10 +14,7 @@ withDefaults(
   },
 );
 
-const { getFormattedPrice } = usePrice({
-  currencyCode: "EUR",
-  localeCode: "de-DE",
-});
+const { getFormattedPrice } = useCommercePrice();
 const emit = defineEmits(["go-to-cart"]);
 </script>
 

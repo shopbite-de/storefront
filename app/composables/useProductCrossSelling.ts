@@ -1,8 +1,6 @@
 import type { Schemas } from "#shopware";
 import type { AssociationItem } from "~/types/Association";
 
-const DEFAULT_CURRENCY = "EUR";
-const DEFAULT_LOCALE = "de-DE";
 const DEFAULT_ICON = "i-lucide-plus";
 
 function mapAssociationToItems(
@@ -23,10 +21,7 @@ function mapAssociationToItems(
 }
 
 export function useProductCrossSelling(getProductId: () => string) {
-  const { getFormattedPrice } = usePrice({
-    currencyCode: DEFAULT_CURRENCY,
-    localeCode: DEFAULT_LOCALE,
-  });
+  const { getFormattedPrice } = useCommercePrice();
 
   const { data, pending: isAssociationsLoading } = useFetch<
     Schemas["CrossSellingElement"][]

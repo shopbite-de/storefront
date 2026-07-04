@@ -14,10 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { removeItem, changeProductQuantity } = useCart();
-const { getFormattedPrice } = usePrice({
-  currencyCode: "EUR",
-  localeCode: "de-DE",
-});
+const { getFormattedPrice } = useCommercePrice();
 
 // Use computed for reactive quantity with proper null checks
 const quantity = computed({

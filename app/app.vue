@@ -49,9 +49,12 @@ const { data: sessionContextData } = await useAsyncData(
   },
 );
 
+const { setPriceConfig } = useCommercePrice();
+
 if (sessionContextData.value) {
-  usePrice({
-    currencyCode: sessionContextData.value.currency?.isoCode || "",
+  setPriceConfig({
+    currencyCode: sessionContextData.value.currency?.isoCode,
+    localeCode: sessionContextData.value.languageInfo?.localeCode,
   });
   useSessionContext(sessionContextData.value);
 }
