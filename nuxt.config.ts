@@ -72,6 +72,16 @@ export default defineNuxtConfig({
         countryId: "",
       },
       storeUrl: "",
+      // Matomo config for the @nuxt/scripts registry. Declared here (not as
+      // registry options) so the values stay runtime-overridable via
+      // NUXT_PUBLIC_SCRIPTS_MATOMO_ANALYTICS_* env vars: registry options are
+      // inlined into the build and would shadow the runtime config (#259).
+      scripts: {
+        matomoAnalytics: {
+          matomoUrl: "",
+          siteId: "",
+        },
+      },
     },
   },
 
@@ -231,10 +241,10 @@ export default defineNuxtConfig({
   $production: {
     scripts: {
       registry: {
-        matomoAnalytics: {
-          matomoUrl: "",
-          siteId: "",
-        },
+        // `true` enables the script without inlining option values into the
+        // build; the actual config comes from runtimeConfig.public.scripts
+        // above (env-overridable at runtime, see #259).
+        matomoAnalytics: true,
       },
     },
   },
