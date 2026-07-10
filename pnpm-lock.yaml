@@ -78,8 +78,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0(magicast@0.5.3)
       uuid:
-        specifier: ^13.0.2
-        version: 13.0.2
+        specifier: ^14.0.0
+        version: 14.0.1
     devDependencies:
       '@iconify-json/heroicons':
         specifier: ^1.2.3
@@ -8101,8 +8101,8 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  uuid@13.0.2:
-    resolution: {integrity: sha512-vzi9uRZ926x4XV73S/4qQaTwPXM2JBj6/6lI/byHH1jOpCzb0zDbfytgA9LcN/hzb2l7WQSQnxITOVx5un/wGw==}
+  uuid@14.0.1:
+    resolution: {integrity: sha512-6ZxzVpzDXDa3bJWaHilVayA+BH/1zmxCJoVgvmqJnid/gPoKHxUrS/aC/T6LGQtNHT+XHG9fXPJB4d+IrU30Ew==}
     hasBin: true
 
   valibot@1.4.2:
@@ -18176,7 +18176,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  uuid@13.0.2: {}
+  uuid@14.0.1: {}
 
   valibot@1.4.2(typescript@6.0.3):
     optionalDependencies:
