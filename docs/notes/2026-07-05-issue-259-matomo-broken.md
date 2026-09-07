@@ -67,3 +67,10 @@ src; the `undefined` cloud URL is gone.
 - Upstream issue candidate: `defu` in `useRegistryScript` silently
   prefers inlined build-time options (even empty strings) over
   `runtimeConfig.public.scripts.*` — arguably a regression vs 0.13.2.
+
+## Addendum 2026-09-07
+
+`@nuxt/scripts` 1.x deprecates the `true` shorthand. The registry entry is
+now `matomoAnalytics: { trigger: "onNuxtReady" }` (what `true` normalised to);
+only `scriptOptions` is inlined, so runtime config still wins. Re-verified on
+a production build — see `docs/notes/2026-09-07-dependency-update.md`.

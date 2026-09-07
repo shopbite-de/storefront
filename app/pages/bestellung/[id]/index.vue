@@ -33,8 +33,8 @@ const links = ref<ButtonProps[]>([
 </script>
 
 <template>
-  <!-- Show loading spinner while fetching order data -->
   <UContainer v-if="isLoadingData">
+    <!-- Show loading spinner while fetching order data -->
     <UPageHeader headline="BESTELLUNG" title="Lädt..." />
     <UPageBody>
       <div class="flex flex-col items-center justify-center py-16 gap-4">
