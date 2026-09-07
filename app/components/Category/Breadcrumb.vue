@@ -12,18 +12,17 @@ const { apiClient } = useShopwareContext();
 
 const breadcrumbJsonLd = ref<object | null>(null);
 
-useHead(() => {
-  if (!breadcrumbJsonLd.value) return {};
-  return {
-    script: [
-      {
-        key: "jsonld-breadcrumb",
-        type: "application/ld+json",
-        children: JSON.stringify(breadcrumbJsonLd.value),
-      },
-    ],
-  };
-});
+useHead(() => ({
+  script: breadcrumbJsonLd.value
+    ? [
+        {
+          key: "jsonld-breadcrumb",
+          type: "application/ld+json",
+          innerHTML: JSON.stringify(breadcrumbJsonLd.value),
+        },
+      ]
+    : [],
+}));
 
 const cacheKey = computed(() => `breadcrumb-${categoryId.value}`);
 

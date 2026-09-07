@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { flushPromises } from "@vue/test-utils";
-import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { defineComponent, h } from "vue";
 import { useCategoryListing } from "~/composables/useCategoryListing";
 
 // ---- mock helpers ------------------------------------------------------------
 
 const { mockFetch } = vi.hoisted(() => ({ mockFetch: vi.fn() }));
+
+// `$fetch` is a Nuxt auto-import (bound at module load), so a global stub
+// would not reach the composable.
+mockNuxtImport("$fetch", () => mockFetch);
 
 const emptyListing = (properties: string[] = []) => ({
   elements: [],
@@ -50,12 +54,10 @@ async function mountWithListing(
 
 describe("useCategoryListing", () => {
   beforeEach(() => {
-    vi.stubGlobal("$fetch", mockFetch);
     mockFetch.mockResolvedValue(emptyListing());
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
 

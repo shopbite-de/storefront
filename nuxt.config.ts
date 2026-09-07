@@ -241,10 +241,10 @@ export default defineNuxtConfig({
   $production: {
     scripts: {
       registry: {
-        // `true` enables the script without inlining option values into the
-        // build; the actual config comes from runtimeConfig.public.scripts
+        // Only the trigger is set here so no option values get inlined into
+        // the build; the actual config comes from runtimeConfig.public.scripts
         // above (env-overridable at runtime, see #259).
-        matomoAnalytics: true,
+        matomoAnalytics: { trigger: "onNuxtReady" },
       },
     },
   },

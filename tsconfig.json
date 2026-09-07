@@ -16,7 +16,7 @@
     "content.config.*"
   ],
   "exclude": [
-    "node_modules",
+    "node_modules"
   ],
   "compilerOptions": {
     "typeRoots": ["./api-types", "./node_modules/@types", "./node_modules"]

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, nextTick } from "vue";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { DOMWrapper, type VueWrapper } from "@vue/test-utils";
 import RegistrationForm from "~/components/User/RegistrationForm.vue";
 import { ApiClientError } from "@shopware/api-client";
 
@@ -48,6 +49,18 @@ mockNuxtImport("useRuntimeConfig", () => () => ({
     },
   },
 }));
+
+// UCheckbox renders the clickable control as `button[role="checkbox"]` next to
+// an aria-hidden native input that only mirrors the state, so the button is
+// what has to be clicked to toggle the v-model.
+async function acceptDataProtection(wrapper: VueWrapper) {
+  const hiddenInput = wrapper.find('input[name="acceptedDataProtection"]');
+  const button = hiddenInput.element.parentElement!.querySelector(
+    'button[role="checkbox"]',
+  )!;
+  await new DOMWrapper(button).trigger("click");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 describe("RegistrationForm", () => {
   beforeEach(() => {
@@ -145,9 +158,7 @@ describe("RegistrationForm", () => {
       .setValue("12345678");
 
     // Accept data protection
-    const dpCheckbox = wrapper.find('input[name="acceptedDataProtection"]');
-    await dpCheckbox.trigger("click");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await acceptDataProtection(wrapper);
 
     // Submit
     await wrapper.find("form").trigger("submit");
@@ -196,7 +207,7 @@ describe("RegistrationForm", () => {
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
       .setValue("12345678");
-    await wrapper.find('input[name="acceptedDataProtection"]').trigger("click");
+    await acceptDataProtection(wrapper);
 
     await wrapper.find("form").trigger("submit");
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -238,7 +249,7 @@ describe("RegistrationForm", () => {
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
       .setValue("12345678");
-    await wrapper.find('input[name="acceptedDataProtection"]').trigger("click");
+    await acceptDataProtection(wrapper);
 
     await wrapper.find("form").trigger("submit");
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -294,7 +305,7 @@ describe("RegistrationForm", () => {
     await wrapper
       .find('input[name="billingAddress.phoneNumber"]')
       .setValue("12345678");
-    await wrapper.find('input[name="acceptedDataProtection"]').trigger("click");
+    await acceptDataProtection(wrapper);
 
     await wrapper.find("form").trigger("submit");
     await new Promise((resolve) => setTimeout(resolve, 100));

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { useProductConfigurator } from "../../app/composables/useProductConfigurator";
 
 const { mockFetch, mockConfigurator, mockProduct } = vi.hoisted(() => ({
@@ -7,7 +8,9 @@ const { mockFetch, mockConfigurator, mockProduct } = vi.hoisted(() => ({
   mockProduct: { value: { id: "p1", optionIds: [], options: [] } },
 }));
 
-vi.stubGlobal("$fetch", mockFetch);
+// `$fetch` is a Nuxt auto-import (bound at module load), so a global stub
+// would not reach the composable.
+mockNuxtImport("$fetch", () => mockFetch);
 
 vi.mock("@shopware/composables", () => ({
   useProductConfigurator: () => ({
