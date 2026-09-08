@@ -1,7 +1,7 @@
 # Issue #276 — `payment-method-blocked` is not handled headlessly
 
-Date: 2026-09-08 · Branch: `fix/issue-276-payment-method-blocked`
-(stacked on `fix/issue-240-shipping-method-blocked`)
+Date: 2026-09-08 · Branch: `fix/issue-276-payment-method-blocked` · PR #280
+(builds on #278, merged the same day)
 
 ## Background
 
