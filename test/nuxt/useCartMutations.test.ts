@@ -151,16 +151,35 @@ describe("useCartMutations", () => {
   });
 
   it("retries once when the cart is locked", async () => {
-    mockChangeProductQuantity
-      .mockRejectedValueOnce(lockedError)
-      .mockResolvedValueOnce(cartWith([{ id: "li-1", quantity: 3 }]));
+    vi.useFakeTimers();
+    try {
+      mockChangeProductQuantity
+        .mockRejectedValueOnce(lockedError)
+        .mockResolvedValueOnce(cartWith([{ id: "li-1", quantity: 3 }]));
 
-    const { setQuantity } = useCartMutations();
-    // real timers: the retry waits 400 ms
-    await setQuantity("li-1", 3);
+      const { setQuantity } = useCartMutations();
+      const pending = setQuantity("li-1", 3);
+      await vi.advanceTimersByTimeAsync(400);
+      await pending;
 
-    expect(mockChangeProductQuantity).toHaveBeenCalledTimes(2);
-    expect(mockToastAdd).not.toHaveBeenCalled();
+      expect(mockChangeProductQuantity).toHaveBeenCalledTimes(2);
+      expect(mockToastAdd).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("syncs the shared cart from the write response", async () => {
+    const returned = cartWith([
+      { id: "li-1", quantity: 1 },
+      { id: "li-2", quantity: 1 },
+    ]);
+    mockAddProducts.mockResolvedValueOnce(returned);
+
+    const { addLineItems } = useCartMutations();
+    await addLineItems([{ id: "p2", quantity: 1, type: "product" }]);
+
+    expect(mockRefreshCart).toHaveBeenCalledWith(returned);
   });
 
   it("does not retry other errors", async () => {
@@ -188,7 +207,7 @@ describe("useCartMutations", () => {
         color: "error",
       }),
     );
-    expect(mockRefreshCart).toHaveBeenCalledTimes(1);
+    expect(mockRefreshCart).toHaveBeenCalledWith();
     expect(isMutating.value).toBe(false);
   });
 

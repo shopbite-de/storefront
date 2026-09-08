@@ -60,6 +60,19 @@ export function useCartMutations() {
   }
 
   /**
+   * Sends one cart write and syncs the shared cart state from its
+   * response. The layer's write functions already do that internally;
+   * doing it here as well keeps the queue's contract explicit.
+   */
+  async function write(
+    request: () => Promise<Schemas["Cart"]>,
+  ): Promise<Schemas["Cart"]> {
+    const newCart = await withLockRetry(request);
+    await refreshCart(newCart);
+    return newCart;
+  }
+
+  /**
    * Runs `task` after every previously queued cart write. Resolves with
    * `undefined` when the write failed; the failure is already reported.
    */
@@ -112,7 +125,7 @@ export function useCartMutations() {
       )?.quantity;
       if (target === current) return;
 
-      await withLockRetry(() =>
+      await write(() =>
         changeProductQuantity({ id: lineItemId, quantity: target }),
       );
     }, "Menge konnte nicht geändert werden").then(() => undefined);
@@ -123,14 +136,14 @@ export function useCartMutations() {
 
   function removeLineItem(lineItem: Schemas["LineItem"]) {
     return enqueue(
-      () => withLockRetry(() => removeItem(lineItem)),
+      () => write(() => removeItem(lineItem)),
       "Artikel konnte nicht entfernt werden",
     );
   }
 
   function addLineItems(items: LineItems) {
     return enqueue(
-      () => withLockRetry(() => addProducts(items)),
+      () => write(() => addProducts(items)),
       "Artikel konnte nicht in den Warenkorb gelegt werden",
     );
   }
