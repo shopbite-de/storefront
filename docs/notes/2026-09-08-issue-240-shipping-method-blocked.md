@@ -68,7 +68,9 @@ Tests: `test/nuxt/useShippingMethodGuard.test.ts` (new) and
 
 - The same gap exists for `payment-method-blocked`
   (`BlockedPaymentMethodSwitcher` is Twig-storefront only as well).
-  Filed as a separate issue.
+  Filed as #276 and fixed on a stacked branch; the composable was
+  generalised into `useCheckoutMethodGuard` there (see
+  `2026-09-08-issue-276-payment-method-blocked.md`).
 - The *reason* a shipping method gets blocked lives in the Shopware admin
   rule configuration of each shop and cannot be determined from this
   repository. If the RUM count does not drop after this fix, check the

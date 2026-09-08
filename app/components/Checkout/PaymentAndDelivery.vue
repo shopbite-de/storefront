@@ -17,14 +17,14 @@ const {
 } = useCheckout();
 
 const { refreshCart } = useCart();
-const { ensureAvailableShippingMethod } = useShippingMethodGuard();
+const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
 
 const toast = useToast();
 
 onMounted(async () => {
   try {
     await Promise.all([getPaymentMethods(), getShippingMethods()]);
-    await ensureAvailableShippingMethod();
+    await ensureAvailableCheckoutMethods();
   } catch (error) {
     console.error("[checkout][PaymentAndDelivery][onMounted]", error);
   }
@@ -53,11 +53,21 @@ const selectedShippingMethodId = ref<RadioGroupValue | undefined>(
   selectedShippingMethod.value?.id,
 );
 
+// Keep the radios in sync when the session's methods change elsewhere
+// (e.g. the guard switched away from a blocked method).
+watch(selectedPaymentMethod, (method) => {
+  selectedPaymentMethodId.value = method?.id;
+});
+watch(selectedShippingMethod, (method) => {
+  selectedShippingMethodId.value = method?.id;
+});
+
 watch(
   selectedPaymentMethodId,
   async (newValue: RadioGroupValue | undefined) => {
     if (newValue === undefined) return;
     if (selectedPaymentMethod.value === null) return;
+    if (newValue === selectedPaymentMethod.value.id) return;
     await setPaymentMethod({ id: newValue as string });
     toast.add({
       title: "Zahlart geändert",
@@ -68,12 +78,6 @@ watch(
     });
   },
 );
-
-// Keep the radio in sync when the session's shipping method changes
-// elsewhere (e.g. the guard switched away from a blocked method).
-watch(selectedShippingMethod, (method) => {
-  selectedShippingMethodId.value = method?.id;
-});
 
 watch(
   selectedShippingMethodId,
