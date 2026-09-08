@@ -9,6 +9,8 @@ const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
 const { isCheckoutEnabled, refresh } = useShopBiteConfig();
 const { trackOrder } = useTrackEvent();
+const { isShippingMethodBlocked, ensureAvailableShippingMethod } =
+  useShippingMethodGuard();
 
 const {
   public: { storeUrl },
@@ -26,6 +28,9 @@ onMounted(() => {
       activeBillingAddress: {},
     },
   });
+  ensureAvailableShippingMethod().catch((error) => {
+    console.error("[checkout][ensureAvailableShippingMethod]", error);
+  });
 });
 
 useIntervalFn(refresh, 10000);
@@ -38,6 +43,22 @@ const { handlePayment, paymentUrl } = useOrderPayment(
 async function handleCreateOrder() {
   isPlacingOrder.value = true;
   try {
+    // The shipping method may have become unavailable since the cart was
+    // last loaded (availability rules, order value, address). Re-check and
+    // switch before creating the order instead of failing with an invalid
+    // cart. See issue #240.
+    if (!(await ensureAvailableShippingMethod())) {
+      toast.add({
+        title: "Keine Versandart verfügbar",
+        description:
+          "Für deine Bestellung ist aktuell keine Versandart verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.",
+        color: "error",
+        icon: "i-lucide-truck",
+        progress: false,
+      });
+      return;
+    }
+
     const order = await createOrder({
       customerComment: "Wunschlieferzeit: " + selectedDeliveryTime.value,
     });
@@ -63,6 +84,17 @@ async function handleCreateOrder() {
       progress: false,
     });
     navigateTo(`/bestellung/${order.id}/erfolg`);
+  } catch (error) {
+    console.error("[checkout][createOrder]", error);
+    toast.add({
+      title: "Bestellung fehlgeschlagen",
+      description:
+        "Deine Bestellung konnte nicht aufgegeben werden. Bitte prüfe deine Angaben und versuche es erneut.",
+      color: "error",
+      icon: "i-lucide-x-circle",
+      progress: false,
+    });
+    await refreshCart().catch(() => {});
   } finally {
     isPlacingOrder.value = false;
   }
@@ -81,7 +113,8 @@ const isValidToProceed = computed(
     customerDataAvailable.value &&
     isCheckoutEnabled.value &&
     isValidTime.value &&
-    shippingAndPaymentSet.value,
+    shippingAndPaymentSet.value &&
+    !isShippingMethodBlocked.value,
 );
 
 const isPlacingOrder = ref(false);
@@ -99,6 +132,10 @@ const checkoutButtonLabel = computed<string>(() => {
 
   if (!isCheckoutEnabled.value) {
     return "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen";
+  }
+
+  if (isShippingMethodBlocked.value) {
+    return "Aktuell ist keine Versandart verfügbar";
   }
 
   return "Jetzt bestellen!";
