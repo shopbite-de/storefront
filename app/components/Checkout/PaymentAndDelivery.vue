@@ -26,7 +26,7 @@ onMounted(async () => {
     await Promise.all([getPaymentMethods(), getShippingMethods()]);
     await ensureAvailableShippingMethod();
   } catch (error) {
-    console.error("[checkout][ensureAvailableShippingMethod]", error);
+    console.error("[checkout][PaymentAndDelivery][onMounted]", error);
   }
 });
 
