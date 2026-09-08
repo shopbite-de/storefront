@@ -20,6 +20,12 @@ const {
   mockTrackEvent: vi.fn(),
 }));
 
+mockNuxtImport("useCartMutations", () => {
+  return () => ({
+    addLineItems: mockAddProducts,
+  });
+});
+
 mockNuxtImport("useCart", () => {
   return () => ({
     addProducts: mockAddProducts,
@@ -46,6 +52,9 @@ mockNuxtImport("useTrackEvent", () => {
 });
 
 // Provide the mocks globally or in a way that they are picked up
+vi.stubGlobal("useCartMutations", () => ({
+  addLineItems: mockAddProducts,
+}));
 vi.stubGlobal("useCart", () => ({
   addProducts: mockAddProducts,
   refreshCart: mockRefreshCart,
@@ -133,10 +142,34 @@ describe("useAddToCart", () => {
         type: "product",
       },
     ]);
-    expect(mockRefreshCart).toHaveBeenCalled();
     expect(mockToastAdd).toHaveBeenCalled();
     expect(mockTriggerProductAdded).toHaveBeenCalled();
     expect(mockTrackEvent).toHaveBeenCalledWith(mockProduct, 1);
+  });
+
+  it("should not report success when adding to cart failed", async () => {
+    const { setSelectedProduct, addToCart, isLoading } = useAddToCart();
+    setSelectedProduct(mockProduct);
+
+    // useCartMutations reports the failure itself and resolves undefined
+    mockAddProducts.mockResolvedValue(undefined);
+
+    await addToCart();
+
+    expect(isLoading.value).toBe(false);
+    expect(mockToastAdd).not.toHaveBeenCalled();
+    expect(mockTriggerProductAdded).not.toHaveBeenCalled();
+    expect(mockTrackEvent).not.toHaveBeenCalled();
+  });
+
+  it("should reset isLoading when the mutation throws", async () => {
+    const { setSelectedProduct, addToCart, isLoading } = useAddToCart();
+    setSelectedProduct(mockProduct);
+
+    mockAddProducts.mockRejectedValue(new Error("boom"));
+
+    await expect(addToCart()).rejects.toThrow("boom");
+    expect(isLoading.value).toBe(false);
   });
 
   it("should add product with extras to cart as container", async () => {

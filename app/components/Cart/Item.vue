@@ -13,19 +13,28 @@ const props = withDefaults(defineProps<Props>(), {
   withDeleteButton: true,
 });
 
-const { removeItem, changeProductQuantity } = useCart();
+const { setQuantity, removeLineItem, isMutating } = useCartMutations();
 const { getFormattedPrice } = useCommercePrice();
 
-// Use computed for reactive quantity with proper null checks
-const quantity = computed({
-  get: () => props.cartItem?.quantity ?? 1,
-  set: async (value: number) => {
-    if (!props.cartItem?.id) return;
+// Optimistic local quantity: the input reflects the customer's clicks
+// immediately while the (queued, coalesced) request is in flight, and is
+// re-synced from the cart once no mutation is running.
+const localQuantity = ref(props.cartItem?.quantity ?? 1);
+watch(
+  [() => props.cartItem?.quantity, isMutating],
+  ([cartQuantity, mutating]) => {
+    if (!mutating && cartQuantity !== undefined) {
+      localQuantity.value = cartQuantity;
+    }
+  },
+);
 
-    await changeProductQuantity({
-      id: props.cartItem.id,
-      quantity: value,
-    });
+const quantity = computed({
+  get: () => localQuantity.value,
+  set: (value: number) => {
+    if (!props.cartItem?.id) return;
+    localQuantity.value = value;
+    setQuantity(props.cartItem.id, value);
   },
 });
 
@@ -37,7 +46,7 @@ const formattedPrice = computed(() => {
 
 const handleRemoveItem = () => {
   if (!props.cartItem) return;
-  removeItem(props.cartItem);
+  removeLineItem(props.cartItem);
 };
 </script>
 
@@ -89,6 +98,7 @@ const handleRemoveItem = () => {
           variant="soft"
           color="neutral"
           aria-label="Artikel entfernen"
+          :disabled="isMutating"
           @click="handleRemoveItem"
         />
       </div>
@@ -99,6 +109,7 @@ const handleRemoveItem = () => {
         variant="outline"
         color="error"
         aria-label="Artikel entfernen"
+        :disabled="isMutating"
         @click="handleRemoveItem"
       />
     </div>

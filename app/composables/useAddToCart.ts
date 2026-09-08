@@ -9,7 +9,7 @@ const LINE_ITEM_PRODUCT = "product";
 const LINE_ITEM_CONTAINER = "container";
 
 export function useAddToCart() {
-  const { addProducts, refreshCart } = useCart();
+  const { addLineItems } = useCartMutations();
   const toast = useToast();
   const { triggerProductAdded } = useProductEvents();
   const { trackAddToCart: trackAddToCartEvent } = useTrackEvent();
@@ -138,20 +138,20 @@ export function useAddToCart() {
   }
 
   async function addToCart(onSuccess?: () => void) {
-    if (!selectedProduct.value) return;
+    if (!selectedProduct.value || isLoading.value) return;
     isLoading.value = true;
 
-    const cartItems = createCartItems();
-    const newCart = await addProducts(cartItems);
-    await refreshCart(newCart);
-    await showSuccessToast();
+    try {
+      // Failures are reported by useCartMutations; it resolves undefined.
+      const newCart = await addLineItems(createCartItems());
+      if (!newCart) return;
 
-    triggerProductAdded();
-    trackAddToCartEvent(selectedProduct.value, selectedQuantity.value);
-
-    isLoading.value = false;
-    if (onSuccess) {
-      onSuccess();
+      await showSuccessToast();
+      triggerProductAdded();
+      trackAddToCartEvent(selectedProduct.value, selectedQuantity.value);
+      onSuccess?.();
+    } finally {
+      isLoading.value = false;
     }
   }
 

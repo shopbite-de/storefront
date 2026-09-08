@@ -19,7 +19,7 @@ const product: Schemas["Product"] = productResponse.product;
 
 const CART_SUCCESS_TITLE = "Gute Wahl!";
 
-const { refreshCart, addProduct } = useCart();
+const { addLineItems, isMutating } = useCartMutations();
 const toast = useToast();
 
 const alt = computed(() => product.name + " #" + product.productNumber);
@@ -35,11 +35,10 @@ async function showSuccessToast() {
 }
 
 async function addToCart(productId: string) {
-  const newCart = await addProduct({
-    id: productId,
-    quantity: 1,
-  });
-  await refreshCart(newCart);
+  const newCart = await addLineItems([
+    { id: productId, quantity: 1, type: "product" },
+  ]);
+  if (!newCart) return;
   await showSuccessToast();
 }
 </script>
@@ -58,6 +57,7 @@ async function addToCart(productId: string) {
       <UButton
         icon="i-lucide-shopping-cart"
         size="lg"
+        :disabled="isMutating"
         @click="addToCart(product.id)"
       />
     </div>
