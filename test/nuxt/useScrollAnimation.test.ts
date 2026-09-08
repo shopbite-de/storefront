@@ -70,8 +70,11 @@ describe("useScrollAnimation", () => {
     await nextTick();
 
     // Simulate intersection
-    const mockEntry = { isIntersecting: true, target: wrapper.element };
-    intersectionCallback([mockEntry]);
+    const mockEntry = {
+      isIntersecting: true,
+      target: wrapper.element,
+    } as IntersectionObserverEntry;
+    intersectionCallback([mockEntry], {} as IntersectionObserver);
 
     await nextTick();
     expect(wrapper.vm.isVisible).toBe(true);
@@ -91,8 +94,11 @@ describe("useScrollAnimation", () => {
     await nextTick();
 
     // Simulate non-intersection
-    const mockEntry = { isIntersecting: false, target: wrapper.element };
-    intersectionCallback([mockEntry]);
+    const mockEntry = {
+      isIntersecting: false,
+      target: wrapper.element,
+    } as IntersectionObserverEntry;
+    intersectionCallback([mockEntry], {} as IntersectionObserver);
 
     await nextTick();
     expect(wrapper.vm.isVisible).toBe(false);

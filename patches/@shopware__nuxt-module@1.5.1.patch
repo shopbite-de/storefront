@@ -1,0 +1,32 @@
+diff --git a/plugin.ts b/plugin.ts
+index 5b9cdef440df1eb477ffea4d66180bc65b33835a..c23d08a8af61875b55e192d108d009bc5ddd7b07 100644
+--- a/plugin.ts
++++ b/plugin.ts
+@@ -14,7 +14,8 @@ import {
+ } from "#imports";
+ import type { ApiClient } from "#shopware";
+ 
+-import type { ShopwareNuxtOptions } from "./src";
++import type { ShopwareNuxtOptions } from "./dist/index";
++import type { Plugin } from "#app";
+ 
+ declare module "#app" {
+   interface NuxtApp {
+@@ -28,7 +29,10 @@ declare module "vue" {
+   }
+ }
+ 
+-export default defineNuxtPlugin((NuxtApp) => {
++// Explicit type keeps Nuxt's generated NuxtApp augmentation from
++// recursively depending on this plugin's inferred return type.
++const shopwarePlugin: Plugin<{ shopwareApiClient: ApiClient }> =
++  defineNuxtPlugin((NuxtApp) => {
+   const runtimeConfig = useRuntimeConfig();
+ 
+   const shopwareRuntimeConfigPublic = runtimeConfig.public
+@@ -143,3 +147,5 @@ export default defineNuxtPlugin((NuxtApp) => {
+     },
+   };
+ });
++
++export default shopwarePlugin;

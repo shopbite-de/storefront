@@ -45,11 +45,12 @@ vi.mock("#app", async () => {
 });
 
 // Target under test will be dynamically imported after setting up globals
-let useCategorySeo: (
-  arg: unknown,
-) => ReturnType<
-  (typeof import("../../app/composables/useCategorySeo"))["useCategorySeo"]
->;
+type UseCategorySeo =
+  (typeof import("../../app/composables/useCategorySeo"))["useCategorySeo"];
+let useCategorySeo: UseCategorySeo;
+// The tests only need a partial category shape.
+const asCategory = (category: unknown) =>
+  category as Parameters<UseCategorySeo>[0];
 
 describe("useCategorySeo", () => {
   beforeEach(async () => {
@@ -91,7 +92,7 @@ describe("useCategorySeo", () => {
       media: { url: "https://example.com/img/pasta.jpg" },
     });
 
-    const result = useCategorySeo(category);
+    const result = useCategorySeo(asCategory(category));
 
     // Returned refs
     expect(result.pageTitle.value).toBe(
@@ -136,7 +137,7 @@ describe("useCategorySeo", () => {
       seoUrl: "/c/salate",
     });
 
-    const result = useCategorySeo(category);
+    const result = useCategorySeo(asCategory(category));
     expect(result.robots.value).toBe("noindex,nofollow");
   });
 });

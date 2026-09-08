@@ -1,0 +1,35 @@
+{
+  "paths": {
+    "/newsletter/subscribe": {
+      "post": [
+        {
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "status"
+                    ],
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "notSet",
+                          "optIn",
+                          "optOut",
+                          "direct"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

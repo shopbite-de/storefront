@@ -8,7 +8,7 @@ const props = defineProps<{
 
 const { id: categoryId } = toRefs(props);
 
-const { category } = await useCategory(categoryId);
+const { category } = await useCategoryById(categoryId);
 
 const selectedPropertyFilters = useState<string[]>(
   "listing-property-filters",

@@ -6,7 +6,7 @@ import { useBusinessHours } from "~/composables/useBusinessHours";
 // Mock useAsyncData
 mockNuxtImport("useAsyncData", () => {
   return (key: string, handler: () => Promise<unknown>) => {
-    const data = ref(null);
+    const data = ref<unknown>(null);
     const pending = ref(false);
     const refresh = vi.fn(async () => {
       data.value = await handler();
