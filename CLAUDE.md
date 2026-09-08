@@ -24,7 +24,7 @@ pnpm test:unit        # Vitest (unit + nuxt environments, with coverage)
 pnpm test:e2E         # Playwright e2e (Chromium, requires .env.test)
 
 # Shopware API types
-pnpm generate-types   # Regenerate api-types/storeApiTypes.d.ts from schema
+pnpm generate-types   # Regenerate api-types/storeApiTypes.d.ts from schema (then run pnpm lint:fix)
 pnpm load-schema      # Reload Shopware API schema
 ```
 
@@ -41,7 +41,15 @@ pnpm playwright test test/e2e/checkout.spec.ts
 
 ### Typecheck note
 
-Always run `nuxt typecheck` via the `pnpm typecheck` script, not via `npx vue-tsc`. The global npx-cached `vue-tsc` version may not be compatible with the project's installed `vue-router`. If `.nuxt/tsconfig.json` has stale pnpm paths after a dependency update, run `pnpm nuxt prepare` to regenerate it.
+Always run `nuxt typecheck` via the `pnpm typecheck` script, not via `npx vue-tsc`. The global npx-cached `vue-tsc` version may not be compatible with the project's installed `vue-router`. If `.nuxt/tsconfig.json` has stale pnpm paths after a dependency update (or after adding/renaming a composable), run `pnpm nuxt prepare` to regenerate it.
+
+`pnpm typecheck` must stay at zero errors; CI runs it in the lint job. The sources of `@shopware/composables` and the `@shopware/nuxt-module` plugin are part of the checked program, so three things keep them green (see `docs/notes/2026-09-08-issue-277-typecheck.md`):
+
+- `shopware.d.ts` falls back to the api-client's default types for operations/schemas our instance does not expose, and keeps `LineItem.payload` optional.
+- `api-gen.config.json` applies the upstream schema patches plus `api-types/storeApiSchema.shopbite.overrides.json` when generating types.
+- `patches/@shopware__nuxt-module@1.5.1.patch` (pnpm patch) gives the module's plugin an explicit type. When Renovate bumps `@shopware/nuxt-module`, the patch must be re-applied to the new version (`pnpm patch @shopware/nuxt-module@<version>`).
+
+Do not name a project composable like one from the `@shopware/composables` layer (e.g. `useCategory`): the project version shadows the layer's inside the layer's own code as well.
 
 ## Architecture
 
@@ -66,7 +74,7 @@ declare module "#shopware" {
 }
 ```
 
-Custom ShopBite plugin endpoints are prefixed `shopbite.*` in the operations type (e.g. `shopbite.business-hour.get`, `shopbite.config.get`). Run `pnpm generate-types` after Shopware plugin changes.
+Custom ShopBite plugin endpoints are prefixed `shopbite.*` in the operations type (e.g. `shopbite.business-hour.get`, `shopbite.config.get`). Run `pnpm generate-types` after Shopware plugin changes, then `pnpm lint:fix` (the generator output is not Prettier-formatted). `shopware.d.ts` merges the generated types with the api-client defaults so the composables layer typechecks (see Typecheck note).
 
 ### Composables layer
 

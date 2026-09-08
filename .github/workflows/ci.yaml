@@ -91,6 +91,9 @@ jobs:
       - name: ESLint
         run: pnpm eslint
 
+      - name: Typecheck
+        run: pnpm typecheck
+
   unit-test:
     name: Unit tests
     environment: test

@@ -33,7 +33,7 @@
     "generate-types": "shopware-api-gen generate --apiType=store",
     "load-schema": "pnpx @shopware/api-gen loadSchema --apiType=store",
     "lint:fix": "pnpm run prettier:fix && pnpm run eslint:fix",
-    "typecheck": "pnpx nuxt typecheck --cwd=app"
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
@@ -69,6 +69,7 @@
     "@nuxt/hints": "1.1.4",
     "@nuxt/test-utils": "^4.3.2",
     "@playwright/test": "^1.63.0",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^26.5.0",
     "@typescript-eslint/eslint-plugin": "^8.70.0",
     "@typescript-eslint/parser": "^8.70.0",

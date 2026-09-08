@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { reactive } from "vue";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import Fields from "~/components/Address/Fields.vue";
+import type { AddressSchema } from "~/validation/registrationSchema";
 
 const { mockGetSuggestions } = vi.hoisted(() => ({
   mockGetSuggestions: vi.fn().mockResolvedValue([]),
@@ -106,7 +107,7 @@ describe("AddressFields", () => {
       props: {
         ...defaultProps,
         modelValue,
-        "onUpdate:modelValue": (val: typeof modelValue) =>
+        "onUpdate:modelValue": (val: AddressSchema) =>
           Object.assign(modelValue, val),
       },
     });

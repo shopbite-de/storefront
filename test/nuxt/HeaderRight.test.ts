@@ -26,13 +26,7 @@ mockNuxtImport("useUser", () => () => ({
 
 mockNuxtImport("useToast", () => () => ({
   add: (_payload: unknown) => {
-    if (
-      typeof global !== "undefined" &&
-      (global as Record<string, { value: boolean }>).toastAddCalled
-    ) {
-      (global as Record<string, { value: boolean }>).toastAddCalled!.value =
-        true;
-    }
+    mocks.toastAddCalled.value = true;
   },
 }));
 
@@ -83,7 +77,6 @@ describe("HeaderRight", () => {
     reactiveState.isGuestSession = false;
     reactiveState.user = null;
     mocks.toastAddCalled.value = false;
-    (global as Record<string, unknown>).toastAddCalled = mocks.toastAddCalled;
     vi.clearAllMocks();
   });
 
