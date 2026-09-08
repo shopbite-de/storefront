@@ -24,8 +24,9 @@ export function isCartLockedError(error: unknown): boolean {
   );
 }
 
-// Module-level so every component shares one queue. Cart writes only
-// happen in the browser, so nothing here leaks between SSR requests.
+// Module-level so every component instance in the browser shares one
+// queue. On the server this state would be shared across requests, so
+// server-side calls bypass it (see `enqueue`/`setQuantity`).
 let queue: Promise<unknown> = Promise.resolve();
 const pendingQuantities = new Map<string, number>();
 const queuedQuantityTasks = new Map<string, Promise<void>>();
@@ -99,6 +100,9 @@ export function useCartMutations() {
         pendingCount.value--;
       }
     };
+    // No shared queue on the server: it would span unrelated requests.
+    if (import.meta.server) return run();
+
     const result = queue.then(run, run);
     queue = result;
     return result;
@@ -110,6 +114,13 @@ export function useCartMutations() {
    * the latest value.
    */
   function setQuantity(lineItemId: string, quantity: number): Promise<void> {
+    if (import.meta.server) {
+      return enqueue(
+        () => write(() => changeProductQuantity({ id: lineItemId, quantity })),
+        "Menge konnte nicht geändert werden",
+      ).then(() => undefined);
+    }
+
     pendingQuantities.set(lineItemId, quantity);
     const queued = queuedQuantityTasks.get(lineItemId);
     if (queued) return queued;
