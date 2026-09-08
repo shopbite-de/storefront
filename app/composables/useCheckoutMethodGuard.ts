@@ -177,15 +177,16 @@ export function useCheckoutMethodGuard() {
   /**
    * Refreshes the cart and resolves blocked shipping and payment methods.
    * Shipping is handled first because payment availability rules may
-   * depend on the shipping method.
+   * depend on the shipping method. If shipping cannot be resolved the
+   * checkout stays blocked anyway, so payment is left untouched to avoid
+   * a pointless switch and toast.
    *
    * @returns `true` when both methods are available afterwards.
    */
   function ensureAvailableCheckoutMethods(): Promise<boolean> {
     return run(async () => {
-      const shippingOk = await resolve(shippingConfig);
-      const paymentOk = await resolve(paymentConfig);
-      return shippingOk && paymentOk;
+      if (!(await resolve(shippingConfig))) return false;
+      return resolve(paymentConfig);
     });
   }
 
