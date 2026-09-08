@@ -308,6 +308,22 @@ describe("useCheckoutMethodGuard", () => {
       expect(mockToastAdd).toHaveBeenCalledTimes(2);
     });
 
+    it("leaves the payment method untouched when shipping cannot be resolved", async () => {
+      cart.value = cartWith({
+        [shippingBlocked.key]: shippingBlocked,
+        [paymentBlocked.key]: paymentBlocked,
+      });
+      mockGetShippingMethods.mockResolvedValue(ref([delivery]));
+
+      const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
+
+      await expect(ensureAvailableCheckoutMethods()).resolves.toBe(false);
+
+      expect(mockGetPaymentMethods).not.toHaveBeenCalled();
+      expect(mockSetPaymentMethod).not.toHaveBeenCalled();
+      expect(mockToastAdd).not.toHaveBeenCalled();
+    });
+
     it("returns false when the payment method cannot be resolved", async () => {
       cart.value = cartWith({ [paymentBlocked.key]: paymentBlocked });
       mockGetPaymentMethods.mockResolvedValue(ref([cash]));
