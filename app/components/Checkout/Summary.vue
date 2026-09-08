@@ -40,24 +40,40 @@ const { handlePayment, paymentUrl } = useOrderPayment(
   computed(() => createdOrder.value),
 );
 
+/**
+ * The shipping method may have become unavailable since the cart was last
+ * loaded (availability rules, order value, address). Re-check and switch
+ * before creating the order instead of failing with an invalid cart.
+ * Reports problems to the customer itself. See issue #240.
+ */
+async function hasAvailableShippingMethod(): Promise<boolean> {
+  try {
+    if (await ensureAvailableShippingMethod()) return true;
+    toast.add({
+      title: "Keine Versandart verfügbar",
+      description:
+        "Für deine Bestellung ist aktuell keine Versandart verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.",
+      color: "error",
+      icon: "i-lucide-truck",
+      progress: false,
+    });
+  } catch (error) {
+    console.error("[checkout][ensureAvailableShippingMethod]", error);
+    toast.add({
+      title: "Versandart konnte nicht geprüft werden",
+      description: "Bitte versuche es in einem Moment erneut.",
+      color: "error",
+      icon: "i-lucide-truck",
+      progress: false,
+    });
+  }
+  return false;
+}
+
 async function handleCreateOrder() {
   isPlacingOrder.value = true;
   try {
-    // The shipping method may have become unavailable since the cart was
-    // last loaded (availability rules, order value, address). Re-check and
-    // switch before creating the order instead of failing with an invalid
-    // cart. See issue #240.
-    if (!(await ensureAvailableShippingMethod())) {
-      toast.add({
-        title: "Keine Versandart verfügbar",
-        description:
-          "Für deine Bestellung ist aktuell keine Versandart verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.",
-        color: "error",
-        icon: "i-lucide-truck",
-        progress: false,
-      });
-      return;
-    }
+    if (!(await hasAvailableShippingMethod())) return;
 
     const order = await createOrder({
       customerComment: "Wunschlieferzeit: " + selectedDeliveryTime.value,

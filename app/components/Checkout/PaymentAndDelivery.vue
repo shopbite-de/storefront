@@ -22,8 +22,12 @@ const { ensureAvailableShippingMethod } = useShippingMethodGuard();
 const toast = useToast();
 
 onMounted(async () => {
-  await Promise.all([getPaymentMethods(), getShippingMethods()]);
-  await ensureAvailableShippingMethod();
+  try {
+    await Promise.all([getPaymentMethods(), getShippingMethods()]);
+    await ensureAvailableShippingMethod();
+  } catch (error) {
+    console.error("[checkout][ensureAvailableShippingMethod]", error);
+  }
 });
 
 const selectablePaymentMethods = computed<RadioGroupItem[]>(() => {
