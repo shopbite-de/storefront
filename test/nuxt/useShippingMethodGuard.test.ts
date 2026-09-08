@@ -176,6 +176,46 @@ describe("useShippingMethodGuard", () => {
     expect(mockToastAdd).not.toHaveBeenCalled();
   });
 
+  it("serializes concurrent calls so the switch happens only once", async () => {
+    cart.value = cartWith({ [blockedError.key]: blockedError });
+    let releaseFirstRefresh: () => void = () => {};
+    mockRefreshCart
+      .mockImplementationOnce(
+        () => new Promise<void>((r) => (releaseFirstRefresh = r)),
+      )
+      .mockImplementationOnce(async () => {
+        cart.value = cartWith({});
+      });
+
+    const { ensureAvailableShippingMethod } = useShippingMethodGuard();
+
+    const first = ensureAvailableShippingMethod();
+    const second = ensureAvailableShippingMethod();
+    await Promise.resolve();
+    expect(mockRefreshCart).toHaveBeenCalledTimes(1);
+
+    releaseFirstRefresh();
+    await expect(first).resolves.toBe(true);
+    await expect(second).resolves.toBe(true);
+
+    expect(mockSetShippingMethod).toHaveBeenCalledTimes(1);
+    expect(mockToastAdd).toHaveBeenCalledTimes(1);
+    // second call re-checked after the first one finished
+    expect(mockRefreshCart).toHaveBeenCalledTimes(3);
+    expect(mockRefreshCart.mock.invocationCallOrder[2]).toBeGreaterThan(
+      mockSetShippingMethod.mock.invocationCallOrder[0] as number,
+    );
+  });
+
+  it("still runs after a previous call failed", async () => {
+    mockRefreshCart.mockRejectedValueOnce(new Error("network"));
+
+    const { ensureAvailableShippingMethod } = useShippingMethodGuard();
+
+    await expect(ensureAvailableShippingMethod()).rejects.toThrow("network");
+    await expect(ensureAvailableShippingMethod()).resolves.toBe(true);
+  });
+
   it("resets isResolving even when a request fails", async () => {
     mockRefreshCart.mockRejectedValueOnce(new Error("network"));
 

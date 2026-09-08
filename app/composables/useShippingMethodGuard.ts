@@ -44,13 +44,25 @@ export function useShippingMethodGuard() {
 
   const isResolving = ref(false);
 
+  // Calls are serialized: the guard performs side effects (cart refresh,
+  // method switch, toast), so overlapping runs (e.g. the mount-time check
+  // plus a quick click on the order button) must not race each other.
+  let queue: Promise<unknown> = Promise.resolve();
+
   /**
    * Refreshes the cart and, if the selected shipping method is blocked,
-   * switches to an available one.
+   * switches to an available one. A call made while another one is in
+   * flight waits for it and then re-checks the latest cart state.
    *
    * @returns `true` when an unblocked shipping method is selected afterwards.
    */
-  async function ensureAvailableShippingMethod(): Promise<boolean> {
+  function ensureAvailableShippingMethod(): Promise<boolean> {
+    const result = queue.then(resolveShippingMethod, resolveShippingMethod);
+    queue = result.catch(() => {});
+    return result;
+  }
+
+  async function resolveShippingMethod(): Promise<boolean> {
     isResolving.value = true;
     try {
       await refreshCart();
