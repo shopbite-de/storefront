@@ -19,8 +19,12 @@ const product: Schemas["Product"] = productResponse.product;
 
 const CART_SUCCESS_TITLE = "Gute Wahl!";
 
-const { addLineItems, isMutating } = useCartMutations();
+const { addLineItems } = useCartMutations();
 const toast = useToast();
+
+// Synchronous guard: a double-click fires before a reactive :disabled
+// binding reaches the DOM.
+const isAdding = ref(false);
 
 const alt = computed(() => product.name + " #" + product.productNumber);
 
@@ -35,11 +39,17 @@ async function showSuccessToast() {
 }
 
 async function addToCart(productId: string) {
-  const newCart = await addLineItems([
-    { id: productId, quantity: 1, type: "product" },
-  ]);
-  if (!newCart) return;
-  await showSuccessToast();
+  if (isAdding.value) return;
+  isAdding.value = true;
+  try {
+    const newCart = await addLineItems([
+      { id: productId, quantity: 1, type: "product" },
+    ]);
+    if (!newCart) return;
+    await showSuccessToast();
+  } finally {
+    isAdding.value = false;
+  }
 }
 </script>
 
@@ -57,7 +67,7 @@ async function addToCart(productId: string) {
       <UButton
         icon="i-lucide-shopping-cart"
         size="lg"
-        :disabled="isMutating"
+        :disabled="isAdding"
         @click="addToCart(product.id)"
       />
     </div>
