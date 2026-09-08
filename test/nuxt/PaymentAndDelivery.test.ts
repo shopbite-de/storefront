@@ -3,12 +3,21 @@ import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import PaymentAndDelivery from "~/components/Checkout/PaymentAndDelivery.vue";
 import { ref } from "vue";
 
-const { mockSetPaymentMethod, mockSetShippingMethod, mockRefreshCart } =
-  vi.hoisted(() => ({
-    mockSetPaymentMethod: vi.fn(),
-    mockSetShippingMethod: vi.fn(),
-    mockRefreshCart: vi.fn(),
-  }));
+const {
+  mockSetPaymentMethod,
+  mockSetShippingMethod,
+  mockRefreshCart,
+  mockEnsureAvailableShippingMethod,
+} = vi.hoisted(() => ({
+  mockSetPaymentMethod: vi.fn(),
+  mockSetShippingMethod: vi.fn(),
+  mockRefreshCart: vi.fn(),
+  mockEnsureAvailableShippingMethod: vi.fn(),
+}));
+
+// Shared so tests can simulate the session's shipping method changing.
+// Only read lazily inside the composable factory, after module init.
+const selectedShippingMethod = ref({ id: "sm1", name: "Shipping 1" });
 
 mockNuxtImport("useCheckout", () => () => ({
   paymentMethods: ref([
@@ -20,7 +29,7 @@ mockNuxtImport("useCheckout", () => () => ({
     { id: "sm2", name: "Shipping 2" },
   ]),
   selectedPaymentMethod: ref({ id: "pm1", distinguishableName: "Payment 1" }),
-  selectedShippingMethod: ref({ id: "sm1", name: "Shipping 1" }),
+  selectedShippingMethod,
   setPaymentMethod: mockSetPaymentMethod,
   setShippingMethod: mockSetShippingMethod,
   getPaymentMethods: vi.fn(),
@@ -31,6 +40,12 @@ mockNuxtImport("useCart", () => () => ({
   refreshCart: mockRefreshCart,
 }));
 
+mockNuxtImport("useShippingMethodGuard", () => () => ({
+  ensureAvailableShippingMethod: mockEnsureAvailableShippingMethod,
+  isShippingMethodBlocked: ref(false),
+  isResolving: ref(false),
+}));
+
 mockNuxtImport("useToast", () => () => ({
   add: vi.fn(),
 }));
@@ -38,6 +53,25 @@ mockNuxtImport("useToast", () => () => ({
 describe("PaymentAndDelivery", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    selectedShippingMethod.value = { id: "sm1", name: "Shipping 1" };
+  });
+
+  it("resolves a blocked shipping method after loading the methods", async () => {
+    await mountSuspended(PaymentAndDelivery);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(mockEnsureAvailableShippingMethod).toHaveBeenCalledTimes(1);
+  });
+
+  it("syncs the radio when the session shipping method changes without re-setting it", async () => {
+    const wrapper = await mountSuspended(PaymentAndDelivery);
+
+    selectedShippingMethod.value = { id: "sm2", name: "Shipping 2" };
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // @ts-expect-error - access internal state
+    expect(wrapper.vm.selectedShippingMethodId).toBe("sm2");
+    expect(mockSetShippingMethod).not.toHaveBeenCalled();
   });
 
   it("renders correctly", async () => {

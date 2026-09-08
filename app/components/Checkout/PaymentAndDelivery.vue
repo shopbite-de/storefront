@@ -17,12 +17,17 @@ const {
 } = useCheckout();
 
 const { refreshCart } = useCart();
+const { ensureAvailableShippingMethod } = useShippingMethodGuard();
 
 const toast = useToast();
 
-onMounted(() => {
-  getPaymentMethods();
-  getShippingMethods();
+onMounted(async () => {
+  try {
+    await Promise.all([getPaymentMethods(), getShippingMethods()]);
+    await ensureAvailableShippingMethod();
+  } catch (error) {
+    console.error("[checkout][PaymentAndDelivery][onMounted]", error);
+  }
 });
 
 const selectablePaymentMethods = computed<RadioGroupItem[]>(() => {
@@ -64,11 +69,18 @@ watch(
   },
 );
 
+// Keep the radio in sync when the session's shipping method changes
+// elsewhere (e.g. the guard switched away from a blocked method).
+watch(selectedShippingMethod, (method) => {
+  selectedShippingMethodId.value = method?.id;
+});
+
 watch(
   selectedShippingMethodId,
   async (newValue: RadioGroupValue | undefined) => {
     if (newValue === undefined) return;
     if (selectedShippingMethod.value === null) return;
+    if (newValue === selectedShippingMethod.value.id) return;
     await setShippingMethod({ id: newValue as string });
     await refreshCart();
     toast.add({
