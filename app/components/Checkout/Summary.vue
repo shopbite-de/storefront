@@ -9,8 +9,11 @@ const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
 const { isCheckoutEnabled, refresh } = useShopBiteConfig();
 const { trackOrder } = useTrackEvent();
-const { isShippingMethodBlocked, ensureAvailableShippingMethod } =
-  useShippingMethodGuard();
+const {
+  isShippingMethodBlocked,
+  isPaymentMethodBlocked,
+  ensureAvailableCheckoutMethods,
+} = useCheckoutMethodGuard();
 
 const {
   public: { storeUrl },
@@ -28,8 +31,8 @@ onMounted(() => {
       activeBillingAddress: {},
     },
   });
-  ensureAvailableShippingMethod().catch((error) => {
-    console.error("[checkout][ensureAvailableShippingMethod]", error);
+  ensureAvailableCheckoutMethods().catch((error) => {
+    console.error("[checkout][ensureAvailableCheckoutMethods]", error);
   });
 });
 
@@ -41,29 +44,29 @@ const { handlePayment, paymentUrl } = useOrderPayment(
 );
 
 /**
- * The shipping method may have become unavailable since the cart was last
- * loaded (availability rules, order value, address). Re-check and switch
- * before creating the order instead of failing with an invalid cart.
- * Reports problems to the customer itself. See issue #240.
+ * The shipping or payment method may have become unavailable since the
+ * cart was last loaded (availability rules, order value, address).
+ * Re-check and switch before creating the order instead of failing with
+ * an invalid cart. Reports problems to the customer itself.
+ * See issues #240 and #276.
  */
-async function hasAvailableShippingMethod(): Promise<boolean> {
+async function hasAvailableCheckoutMethods(): Promise<boolean> {
   try {
-    if (await ensureAvailableShippingMethod()) return true;
+    if (await ensureAvailableCheckoutMethods()) return true;
     toast.add({
-      title: "Keine Versandart verfügbar",
-      description:
-        "Für deine Bestellung ist aktuell keine Versandart verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.",
+      title: `Keine ${blockedMethodLabel.value} verfügbar`,
+      description: `Für deine Bestellung ist aktuell keine ${blockedMethodLabel.value} verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.`,
       color: "error",
-      icon: "i-lucide-truck",
+      icon: blockedMethodIcon.value,
       progress: false,
     });
   } catch (error) {
-    console.error("[checkout][ensureAvailableShippingMethod]", error);
+    console.error("[checkout][ensureAvailableCheckoutMethods]", error);
     toast.add({
-      title: "Versandart konnte nicht geprüft werden",
+      title: "Versand- und Zahlart konnten nicht geprüft werden",
       description: "Bitte versuche es in einem Moment erneut.",
       color: "error",
-      icon: "i-lucide-truck",
+      icon: "i-lucide-x-circle",
       progress: false,
     });
   }
@@ -73,7 +76,7 @@ async function hasAvailableShippingMethod(): Promise<boolean> {
 async function handleCreateOrder() {
   isPlacingOrder.value = true;
   try {
-    if (!(await hasAvailableShippingMethod())) return;
+    if (!(await hasAvailableCheckoutMethods())) return;
 
     const order = await createOrder({
       customerComment: "Wunschlieferzeit: " + selectedDeliveryTime.value,
@@ -130,7 +133,15 @@ const isValidToProceed = computed(
     isCheckoutEnabled.value &&
     isValidTime.value &&
     shippingAndPaymentSet.value &&
-    !isShippingMethodBlocked.value,
+    !isShippingMethodBlocked.value &&
+    !isPaymentMethodBlocked.value,
+);
+
+const blockedMethodLabel = computed(() =>
+  isShippingMethodBlocked.value ? "Versandart" : "Zahlart",
+);
+const blockedMethodIcon = computed(() =>
+  isShippingMethodBlocked.value ? "i-lucide-truck" : "i-lucide-badge-euro",
 );
 
 const isPlacingOrder = ref(false);
@@ -150,8 +161,8 @@ const checkoutButtonLabel = computed<string>(() => {
     return "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen";
   }
 
-  if (isShippingMethodBlocked.value) {
-    return "Aktuell ist keine Versandart verfügbar";
+  if (isShippingMethodBlocked.value || isPaymentMethodBlocked.value) {
+    return `Aktuell ist keine ${blockedMethodLabel.value} verfügbar`;
   }
 
   return "Jetzt bestellen!";
