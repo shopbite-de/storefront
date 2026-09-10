@@ -77,6 +77,6 @@ const logoutHandler = () => {
 
   <div v-if="multiChannelEnabled" class="mt-4">
     <USeparator class="mb-4" />
-    <SalesChannelSwitch />
+    <LazySalesChannelSwitch />
   </div>
 </template>

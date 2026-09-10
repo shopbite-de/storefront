@@ -1,10 +1,10 @@
 <script setup>
 const route = useRoute();
+// Server route instead of queryCollection(): keeps the SQLite WASM client
+// out of client-side navigations (#314).
 const { data: page, error } = await useAsyncData(
   `landingpages-${route.path}`,
-  () => {
-    return queryCollection("landingpages").path(route.path).first();
-  },
+  () => $fetch("/api/content/page", { query: { path: route.path } }),
 );
 
 if (error.value || !page.value) {

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 import Breadcrumb from "~/components/Category/Breadcrumb.vue";
+import ProductCard from "~/components/Product/Card.vue";
+
+// A menu category lists up to 100 products; hydrating every card up front
+// costs ~1 s of main-thread time on phones (#314).
+const ProductCardWhenVisible = hydrateWhenVisible(ProductCard);
 
 const props = defineProps<{
   id: string;
@@ -105,6 +110,19 @@ watch(currentSorting, async (val) => {
 const moreThanOneFilterAndOption = computed<boolean>(
   () => propertyFilters.value.length > 0,
 );
+
+// The mobile filter drawer (vaul) is created on first use; mounting it with
+// the page forced a layout of the whole listing (#314).
+const filterDrawerMounted = ref(false);
+const filterDrawerOpen = ref(false);
+
+async function openFilterDrawer() {
+  if (!filterDrawerMounted.value) {
+    filterDrawerMounted.value = true;
+    await nextTick();
+  }
+  filterDrawerOpen.value = true;
+}
 </script>
 
 <template>
@@ -130,26 +148,31 @@ const moreThanOneFilterAndOption = computed<boolean>(
               :items="sortingOrders"
               placeholder="Sortierung"
             />
-            <ClientOnly v-if="moreThanOneFilterAndOption">
-              <UDrawer class="lg:hidden" title="Filter" direction="right">
-                <UButton
-                  icon="i-lucide-sliders-horizontal"
-                  :color="
-                    selectedPropertyFilters.length ? 'primary' : 'neutral'
-                  "
-                  :variant="selectedPropertyFilters.length ? 'solid' : 'subtle'"
-                >
-                  Filter
-                  <UBadge
-                    v-if="selectedPropertyFilters.length"
-                    :label="String(selectedPropertyFilters.length)"
-                    size="sm"
-                    color="neutral"
-                    variant="solid"
-                    class="ml-1"
-                  />
-                </UButton>
-
+            <template v-if="moreThanOneFilterAndOption">
+              <UButton
+                class="lg:hidden"
+                icon="i-lucide-sliders-horizontal"
+                :color="selectedPropertyFilters.length ? 'primary' : 'neutral'"
+                :variant="selectedPropertyFilters.length ? 'solid' : 'subtle'"
+                aria-haspopup="dialog"
+                @click="openFilterDrawer"
+              >
+                Filter
+                <UBadge
+                  v-if="selectedPropertyFilters.length"
+                  :label="String(selectedPropertyFilters.length)"
+                  size="sm"
+                  color="neutral"
+                  variant="solid"
+                  class="ml-1"
+                />
+              </UButton>
+              <LazyUDrawer
+                v-if="filterDrawerMounted"
+                v-model:open="filterDrawerOpen"
+                title="Filter"
+                direction="right"
+              >
                 <template #body>
                   <div class="flex flex-col gap-4">
                     <CategoryFilterGroup
@@ -166,11 +189,8 @@ const moreThanOneFilterAndOption = computed<boolean>(
                     />
                   </div>
                 </template>
-              </UDrawer>
-              <template #fallback>
-                <USkeleton class="h-8 w-20 lg:hidden" />
-              </template>
-            </ClientOnly>
+              </LazyUDrawer>
+            </template>
           </div>
 
           <div
@@ -187,7 +207,7 @@ const moreThanOneFilterAndOption = computed<boolean>(
             class="flex flex-col gap-4 transition-opacity duration-200"
             :class="{ 'opacity-40 pointer-events-none': loading }"
           >
-            <ProductCard
+            <ProductCardWhenVisible
               v-for="product in elements"
               :key="product.id"
               :product="product"

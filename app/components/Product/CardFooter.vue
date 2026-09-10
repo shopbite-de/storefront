@@ -17,8 +17,16 @@ const { isCheckoutEnabled } = useShopBiteConfig();
 const { getFormattedPrice } = useCommercePrice();
 
 const openDetails = ref(false);
+// The collapsible is created on the first toggle: mounting one per card
+// (with its height measurement) was a large part of the listing's
+// hydration cost (#314). Never rendered on the server.
+const detailsMounted = ref(false);
 
-function toggleDetails() {
+async function toggleDetails() {
+  if (!detailsMounted.value) {
+    detailsMounted.value = true;
+    await nextTick();
+  }
   openDetails.value = !openDetails.value;
 }
 </script>
@@ -37,15 +45,17 @@ function toggleDetails() {
       />
     </div>
   </div>
-  <ClientOnly>
-    <UCollapsible v-model:open="openDetails" class="flex flex-col gap-2">
-      <template #content>
-        <LazyProductDetail
-          :product-id="product.id"
-          @product-added="toggleDetails"
-          @variant-selected="emit('variantSelected', $event)"
-        />
-      </template>
-    </UCollapsible>
-  </ClientOnly>
+  <UCollapsible
+    v-if="detailsMounted"
+    v-model:open="openDetails"
+    class="flex flex-col gap-2"
+  >
+    <template #content>
+      <LazyProductDetail
+        :product-id="product.id"
+        @product-added="toggleDetails"
+        @variant-selected="emit('variantSelected', $event)"
+      />
+    </template>
+  </UCollapsible>
 </template>

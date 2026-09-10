@@ -94,6 +94,14 @@ Key custom composables:
 `server/utils/shopware/adminApiClient.ts` — Admin API client for server-side Shopware operations requiring elevated credentials.
 `server/api/__sitemap__/urls.get.ts` — dynamic `@nuxtjs/sitemap` source (navigation categories from the Store API).
 `server/utils/storeApi.ts` — `storeApiPost()` and `MEDIA_INCLUDES` for the routes above. Always send Store API criteria as a POST body (also via `apiClient.invoke("… post …", { body })`): as `_criteria` query parameters Shopware ignores the `includes` projection and returns every field (#312).
+`server/api/content/*.get.ts` — Nuxt Content queries for the pages. Do not call `queryCollection()` in page code: in the browser it downloads the SQLite WASM build (865 KB) on client-side navigation (#314).
+
+### Client-side JavaScript budget (#314)
+
+- Nothing that the first paint does not need belongs in the entry chunk. Components that only some shops use go behind `Lazy…` + `v-if` (`SalesChannelSwitch`); the Matomo registry is imported in `plugins/matomo.ts` after `onNuxtReady`, tracking pushes to `_paq` via `useTrackEvent`.
+- Overlays (vaul drawers, collapsibles) are created on first use (`v-if` + `nextTick()` before opening), not mounted with the page — mounting forces a layout of the whole page.
+- Long lists render on the server and hydrate on scroll: `hydrateWhenVisible(Component)` (`app/utils`) keeps the markup and the chunk, `AnimatedSection` still animates. Used for product cards and the footer.
+- `NuxtLink` prefetches on interaction only (`experimental.defaults.nuxtLink`), and Rolldown groups shared framework/UI modules into two chunks (`vite.build.rollupOptions.output.codeSplitting`). Measure with Lighthouse behind the h2 proxy (see `docs/notes/2026-09-10-issue-314-mobile-js-cost.md`) before changing either.
 
 ### SEO
 
