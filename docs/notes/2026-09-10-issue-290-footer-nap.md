@@ -1,28 +1,28 @@
-# Issue #290: Adresse, Telefon, Öffnungszeiten und Google-Link im Footer
+# Issue #290: Address, phone, opening hours and Google link in the footer
 
-Stand 2026-09-10, Branch `feature/290-footer-nap`.
+As of 2026-09-10, branch `feature/290-footer-nap`.
 
-## Entscheidungen (mit Lirim abgestimmt)
+## Decisions (agreed with Lirim)
 
-- Daten über `runtimeConfig.public.site` (plattformneutral, per Env): `address.street`, `address.postalCode`, `address.city` (seit #274), `telephone`, `googleBusinessProfileUrl`. Dieselben Werte speisen später das `Restaurant`-Schema aus #272.
-- Eigener Kontakt-Block oberhalb der Shopware-Footer-Navigation (nicht als zusätzliche Spalten), damit er unabhängig von der Spaltenzahl lesbar bleibt.
-- Öffnungszeiten: aufeinanderfolgende Tage mit identischen Intervallen zusammengefasst, Tage ohne Zeiten als „Ruhetag“. Keine Feiertage/Schließtage im Footer.
-- La Fattoria: nur Hinweis, keine Sonderlogik (siehe unten).
+- Data comes from `runtimeConfig.public.site` (platform-neutral, via env): `address.street`, `address.postalCode`, `address.city` (since #274), `telephone`, `googleBusinessProfileUrl`. The same values will later feed the `Restaurant` schema from #272. Long-term the values move to the Shopware plugin config (shopbite-de/shopware-plugin#15, storefront #298), env stays as fallback.
+- A dedicated contact block above the Shopware footer navigation (not extra columns), so it stays readable regardless of the number of navigation columns.
+- Opening hours: consecutive days with identical intervals are grouped, days without hours show as "Ruhetag". No holidays/closing days in the footer.
+- La Fattoria: only a note in the PR, no special handling (see below).
 
-## Umsetzung
+## Implementation
 
-- `app/components/Footer/Contact.vue` (`<address>` für NAP, `<dl>` für Zeiten), eingebunden im `#top`-Slot von `Footer.vue`. Leere Werte werden ausgeblendet; ohne Kontaktdaten und ohne Öffnungszeiten rendert der Block nichts.
-- `app/utils/openingHours.ts`: `groupOpeningHours` (Wochentage 1 = Mo … 7 = So, Sekunden abgeschnitten, Intervalle nach Öffnungszeit sortiert) und `toTelHref`.
-- **SSR:** `useBusinessHours` hat `immediate: false`, `app.vue` lädt die Zeiten erst `onMounted` (Toast „geöffnet/geschlossen“). Damit die Zeiten im HTML stehen, ruft der Footer `onServerPrefetch(() => refresh())` auf. Die Daten landen unter dem Key `business-hours` im Payload, der Client hydratisiert damit, `app.vue` lädt beim Mount wie bisher neu. Kostet einen Store-API-Call pro SSR-Render.
-- Tippfehler „Bestellsystm“ im Footer korrigiert.
+- `app/components/Footer/Contact.vue` (`<address>` for NAP, `<dl>` for hours), rendered in the `#top` slot of `Footer.vue`. Empty values are hidden; without contact data and without opening hours the block renders nothing.
+- `app/utils/openingHours.ts`: `groupOpeningHours` (weekdays 1 = Mon … 7 = Sun, seconds stripped, intervals sorted by opening time) and `toTelHref`.
+- **SSR:** `useBusinessHours` uses `immediate: false`; `app.vue` only loads the hours `onMounted` (open/closed toast). To get the hours into the HTML, the footer calls `onServerPrefetch(() => refresh())`. The data lands in the payload under the key `business-hours`, the client hydrates with it, and `app.vue` refreshes on mount as before. Costs one Store API call per SSR render.
+- Fixed the "Bestellsystm" typo in the footer.
 
-## Stolperfallen
+## Pitfalls
 
-- Ein `mockNuxtImport("useRuntimeConfig")` ohne `app.baseURL` bricht das Router-Setup des Nuxt-Testenvironments (`useRouter()` undefined, siehe #294; `HeaderRight.test.ts` mockt mit `app.baseURL` und läuft). `test/nuxt/FooterContact.test.ts` setzt stattdessen die echte Runtime-Config per `Object.assign`.
-- Nach einem Branch-Wechsel über #292 hinweg fehlte `@nuxtjs/sitemap` in `node_modules` (`nuxt prepare`: „Cannot resolve module“). `pnpm install --frozen-lockfile` nach jedem Wechsel auf einen neueren `main`.
+- A `mockNuxtImport("useRuntimeConfig")` without `app.baseURL` breaks the router setup of the Nuxt test environment (`useRouter()` undefined, see #294; `HeaderRight.test.ts` mocks with `app.baseURL` and works). `test/nuxt/FooterContact.test.ts` sets the real runtime config via `Object.assign` instead.
+- After switching branches across #292, `@nuxtjs/sitemap` was missing from `node_modules` (`nuxt prepare`: "Cannot resolve module"). Run `pnpm install --frozen-lockfile` after every switch to a newer `main`.
 
-## Nach dem Release für Pizzeria La Fattoria
+## After the release for Pizzeria La Fattoria
 
-- Env setzen: `NUXT_PUBLIC_SITE_ADDRESS_STREET="Kantstr. 6"`, `NUXT_PUBLIC_SITE_ADDRESS_POSTAL_CODE=63179`, `NUXT_PUBLIC_SITE_ADDRESS_CITY=Obertshausen`, `NUXT_PUBLIC_SITE_TELEPHONE`, `NUXT_PUBLIC_SITE_GOOGLE_BUSINESS_PROFILE_URL`.
-- **Telefonnummer klären:** Impressum `+49 6104 71427`, Shopware-Footer-Navigation `tel:+491726723920`. Für NAP-Konsistenz eine Nummer, identisch mit dem Google Business Profil.
-- Die Link-Kategorien „Kantstraße 6“ und „Tel: …“ im Shopware-Ordner „Unternehmen“ entfernen, sonst stehen Adresse und Telefon doppelt im Footer.
+- Set env: `NUXT_PUBLIC_SITE_ADDRESS_STREET="Kantstr. 6"`, `NUXT_PUBLIC_SITE_ADDRESS_POSTAL_CODE=63179`, `NUXT_PUBLIC_SITE_ADDRESS_CITY=Obertshausen`, `NUXT_PUBLIC_SITE_TELEPHONE`, `NUXT_PUBLIC_SITE_GOOGLE_BUSINESS_PROFILE_URL`.
+- **Clarify the phone number:** imprint says `+49 6104 71427`, the Shopware footer navigation `tel:+491726723920`. For NAP consistency use one number, identical to the Google Business Profile.
+- Remove the link categories "Kantstraße 6" and "Tel: …" in the Shopware folder "Unternehmen", otherwise address and phone appear twice in the footer.
