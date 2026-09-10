@@ -35,21 +35,9 @@ async function resetFilters() {
 
 useCategorySeo(category);
 
-// Derived from the listing data instead of snapshotted at setup time: on the
-// server the listing resolves after setup, so a snapshot would render
-// "Sortieren" while client hydration (payload already present) would render
-// the actual sorting label — a hydration mismatch (#239).
-// The placeholder is never stored as an override, so the select keeps
-// following the listing data until the user explicitly picks a sorting.
-const SORTING_PLACEHOLDER = "Sortieren";
-const sortingOverride = ref<string | null>(null);
-const currentSorting = computed<string>({
-  get: () =>
-    sortingOverride.value ?? currentSortingOrder.value ?? SORTING_PLACEHOLDER,
-  set: (val) => {
-    sortingOverride.value = val === SORTING_PLACEHOLDER ? null : val;
-  },
-});
+// Derived from the listing data instead of snapshotted at setup time, which
+// would be a hydration mismatch (#239); see useSortingSelection.
+const { currentSorting } = useSortingSelection(currentSortingOrder);
 
 const propertyFilters = computed<Schemas["PropertyGroup"][]>(
   () =>

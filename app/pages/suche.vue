@@ -26,8 +26,18 @@ const {
   changeSorting,
 } = useListingSearch(searchQuery.value);
 
-// Re-fetch when the URL query changes (e.g. user searches again from this page)
-watch(searchQuery, (q) => applySearch(q));
+// Derived from the listing data instead of snapshotted at setup time, which
+// rendered the placeholder on the server and the actual sorting on the
+// client: a hydration mismatch (#295, same as #239 in Category/Listing.vue).
+const { currentSorting } = useSortingSelection(currentSortingOrder);
+
+// Re-fetch when the URL query changes (e.g. user searches again from this
+// page). applySearch sends no order, so the response falls back to the
+// default sorting; drop the override so the select follows it.
+watch(searchQuery, (q) => {
+  currentSorting.value = SORTING_PLACEHOLDER;
+  return applySearch(q);
+});
 
 useSearchTracking(searchQuery, elements, showSkeleton);
 
@@ -60,14 +70,8 @@ watch(showFallback, (visible) => {
   }
 });
 
-const currentSorting = ref(currentSortingOrder.value ?? "Sortieren");
-
-watch(currentSortingOrder, (val) => {
-  if (val) currentSorting.value = val;
-});
-
 watch(currentSorting, async (val) => {
-  if (val === currentSortingOrder.value) return;
+  if (val === SORTING_PLACEHOLDER || val === currentSortingOrder.value) return;
   await changeSorting(val, searchQuery.value);
 });
 
