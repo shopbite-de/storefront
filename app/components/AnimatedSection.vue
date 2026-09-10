@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { useScrollAnimation } from "~/composables/useScrollAnimation";
+import {
+  ABOVE_VIEWPORT_MARGIN,
+  useScrollAnimation,
+} from "~/composables/useScrollAnimation";
 
 interface Props {
   animation?:
@@ -16,10 +19,12 @@ const props = withDefaults(defineProps<Props>(), {
   duration: "duration-1000",
   delay: "delay-0",
   threshold: 0.1,
-  rootMargin: "0px 0px 100px 0px",
+  rootMargin: `${ABOVE_VIEWPORT_MARGIN} 0px 100px 0px`,
 });
 
-const { isVisible, elementRef } = useScrollAnimation({
+// Visible in SSR and on the first client render; hidden only after mount
+// for sections below the fold, until they scroll into view (#250).
+const { isHidden, elementRef } = useScrollAnimation({
   threshold: props.threshold,
   rootMargin: props.rootMargin,
 });
@@ -61,7 +66,7 @@ const currentAnimation = animationClasses[props.animation];
     :class="[
       duration,
       delay,
-      isVisible ? currentAnimation.final : currentAnimation.initial,
+      isHidden ? currentAnimation.initial : currentAnimation.final,
     ]"
   >
     <slot />
