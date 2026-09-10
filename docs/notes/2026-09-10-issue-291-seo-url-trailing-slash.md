@@ -20,4 +20,5 @@ Only paths that do not match exactly trigger a second Store API call (unknown pa
 ## Not covered
 
 - Non-canonical SEO URLs (old URLs after a rename, `isCanonical: false`) are still served instead of redirected to the canonical one.
-- Technical URLs (`/navigation/<id>`) are not redirected to their SEO URL; `@shopware/helpers` offers `getCanonicalPathForTechnicalPath` for that.
+- Technical URLs (`/navigation/<id>`) are not routed at all (they hit the content catch-all and 404); see #289 and `docs/notes/2026-09-08-issue-244-category-url-trailing-slash.md`.
+- Differently cased paths: covered by #244 (same note).
