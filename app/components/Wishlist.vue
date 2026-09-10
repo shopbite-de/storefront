@@ -149,7 +149,7 @@ onMounted(async () => {
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="flex flex-col gap-1">
-                        <span class="text-xs text-brand-500 font-medium">
+                        <span class="text-xs text-primary font-medium">
                           #{{ product.productNumber }}
                         </span>
                         <h3
@@ -157,7 +157,7 @@ onMounted(async () => {
                         >
                           {{ product.translated.name }}
                         </h3>
-                        <p class="text-base font-bold text-primary-600">
+                        <p class="text-base font-bold text-primary">
                           {{
                             getFormattedPrice(
                               product.calculatedPrice.totalPrice,

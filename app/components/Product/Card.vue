@@ -54,7 +54,7 @@ function onVariantSelected(variant: Schemas["Product"]) {
 
       <template #title>
         <div class="flex flex-row items-center gap-1">
-          <span class="text-sm text-brand-500">#{{ number }}</span>
+          <span class="text-sm text-primary">#{{ number }}</span>
           <ProductCardKitchen :sorted-properties="sortedProperties" />
           <p class="text-base text-pretty font-semibold text-highlighted">
             {{ label }}

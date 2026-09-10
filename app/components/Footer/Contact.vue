@@ -57,7 +57,8 @@ const hasContact = Boolean(
 
     <div v-if="openingHours.length" class="text-sm">
       <p class="font-semibold">Öffnungszeiten</p>
-      <dl class="mt-6 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-muted">
+      <FooterStoreStatus class="mt-6" />
+      <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-muted">
         <template v-for="row in openingHours" :key="row.days">
           <dt class="font-medium text-default">{{ row.days }}</dt>
           <dd>

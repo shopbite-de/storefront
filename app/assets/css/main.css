@@ -11,8 +11,10 @@
   --color-brand-300: #ffa169;
   --color-brand-400: #ff7a2d;
   --color-brand-500: #ff5b00;
-  --color-brand-600: #e64d00;
-  --color-brand-700: #c23d00;
+  /* primary colour of the light mode: 5.3:1 on white, 4.6:1 on its own
+     10 % tint (subtle buttons and badges), see #275 */
+  --color-brand-600: #c23d00;
+  --color-brand-700: #a83500;
   --color-brand-800: #9a3200;
   --color-brand-900: #7a2800;
   --color-brand-950: #471500;
@@ -22,8 +24,18 @@
   --text-sm: 16px;
 }
 
+/*
+ * Primary and success colours per colour mode, the Nuxt UI convention: a
+ * dark step on light backgrounds, the 400 step on dark ones. Text in these
+ * colours and text on solid buttons need a contrast of at least 4.5:1
+ * (WCAG AA), which the 500 step of most scales misses (#275). Subtle
+ * buttons and badges put the colour on a 10 % tint of itself, so aim for
+ * 5:1 on white. A brand scale must keep 600 >= 5:1 on white and
+ * 400 >= 4.5:1 on #171717.
+ */
 :root {
-  --ui-primary: var(--color-brand-500);
+  --ui-primary: var(--color-brand-600);
+  --ui-success: var(--color-green-800);
 
   --ui-bg: #fff;
   --ui-bg-muted: #f5f5f5;
@@ -36,12 +48,16 @@
 
   --ui-text-accented: #171717;
   --ui-text-default: #404040;
-  --ui-text-muted: #737373;
+  /* 4.9:1 on --ui-bg-elevated (#737373 was 4.38, #275) */
+  --ui-text-muted: #6b6b6b;
   --ui-text-dimmed: #a3a3a3;
   --ui-text-inverted: #fff;
 }
 
 :root.dark {
+  --ui-primary: var(--color-brand-400);
+  --ui-success: var(--color-green-400);
+
   --ui-bg: #171717;
   --ui-bg-muted: #1f1f1f;
   --ui-bg-elevated: #2a2a2a;

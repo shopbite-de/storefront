@@ -1,10 +1,12 @@
 <script setup lang="ts">
 const { mainMenu } = useNavigation(false);
 const loginSlide = ref(false);
+// The logo link's accessible name; Nuxt UI's default is "Nuxt UI" (#275).
+const { site } = useRuntimeConfig().public;
 </script>
 
 <template>
-  <UHeader>
+  <UHeader :title="site.name">
     <template #title>
       <HeaderTitle />
     </template>
