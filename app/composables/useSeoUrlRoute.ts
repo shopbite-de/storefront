@@ -3,8 +3,9 @@ import { resolveSeoPath } from "~/utils/seoPath";
 
 /**
  * Resolves the current route against the backend SEO URLs. Throws a 404 if
- * nothing matches and redirects (301) to the SEO URL if the path only matches
- * with the trailing slash toggled (#291).
+ * nothing matches and redirects (301) to the SEO URL if the visited path is
+ * only an alias of it: missing or extra trailing slash (#291) or different
+ * casing (#244).
  */
 export async function useSeoUrlRoute() {
   const { resolvePath } = useNavigationSearch();
