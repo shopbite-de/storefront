@@ -1,23 +1,23 @@
-# Issue #291: SEO-URLs ohne bzw. mit überzähligem Schrägstrich
+# Issue #291: SEO URLs with a missing or extra trailing slash
 
-Stand 2026-09-10, Branch `fix/291-seo-url-trailing-slash`.
+As of 2026-09-10, branch `fix/291-seo-url-trailing-slash`.
 
-## Ursache
+## Cause
 
-`c/[...all].vue` und `speisekarte/[...all].vue` lösen den Pfad über `useNavigationSearch().resolvePath` auf. Das filtert `/store-api/seo-url` exakt auf `seoPathInfo`. Shopware speichert Kategorie-URLs mit Schrägstrich (`c/Pizza/`), Produkt-URLs ohne (`Pizza-Margherita/21`). Der Fallback `getRouteFromPathInfo` aus `@shopware/helpers` greift nur für technische Pfade (`/navigation/<id>`, `/detail/<id>`, ...) und liefert sonst `null`. Ergebnis: `/c/Pizza` → 404 (live geprüft).
+`c/[...all].vue` and `speisekarte/[...all].vue` resolve the path via `useNavigationSearch().resolvePath`. That filters `/store-api/seo-url` exactly on `seoPathInfo`. Shopware stores category URLs with a trailing slash (`c/Pizza/`) and product URLs without (`Pizza-Margherita/21`). The fallback `getRouteFromPathInfo` from `@shopware/helpers` only handles technical paths (`/navigation/<id>`, `/detail/<id>`, ...) and returns `null` otherwise. Result: `/c/Pizza` → 404 (verified live).
 
-## Lösung
+## Solution
 
-- `app/utils/seoPath.ts` → `resolveSeoPath(path, resolve)`: exakter Lookup, bei Fehlschlag genau ein zweiter Lookup mit umgekehrtem Schrägstrich. Treffer liefern `redirectPath` aus `seoPathInfo` (nicht den umgedrehten Pfad), damit immer auf die SEO-URL aus dem Backend geleitet wird. Treffer ohne `seoPathInfo` (technische Routen) zählen nicht, `/` wird nicht umgedreht.
-- `app/composables/useSeoUrlRoute.ts` bündelt Auflösung, 404 und `navigateTo(..., { redirectCode: 301, replace: true })` inkl. Query-Parametern. Beide Kategorie-Seiten nutzen es; die Produktseiten aus #289 können es für ihre URLs wiederverwenden.
-- Der `useAsyncData`-Wert hat jetzt die Form `{ seoUrl, redirectPath }` (Key unverändert `cmsResponse<path>`).
-- Nebenbei: verirrtes `H` vor `<script>` in `speisekarte/[...all].vue` entfernt.
+- `app/utils/seoPath.ts` → `resolveSeoPath(path, resolve)`: exact lookup; on a miss exactly one second lookup with the trailing slash toggled. Hits yield `redirectPath` from `seoPathInfo` (not the toggled path), so the redirect always targets the backend SEO URL. Hits without `seoPathInfo` (technical routes) do not count, `/` is not toggled.
+- `app/composables/useSeoUrlRoute.ts` bundles resolution, 404 and `navigateTo(..., { redirectCode: 301, replace: true })` incl. query parameters. Both category pages use it; the product pages from #289 can reuse it for their URLs.
+- The `useAsyncData` value now has the shape `{ seoUrl, redirectPath }` (key unchanged: `cmsResponse<path>`).
+- On the side: removed a stray `H` before `<script>` in `speisekarte/[...all].vue`.
 
-## Kosten
+## Cost
 
-Nur Pfade, die nicht exakt treffen, lösen einen zweiten Store-API-Call aus (unbekannte Pfade von Bots: 2 statt 1 Call, danach 404).
+Only paths that do not match exactly trigger a second Store API call (unknown paths from bots: 2 calls instead of 1, then 404).
 
-## Nicht abgedeckt
+## Not covered
 
-- Nicht-kanonische SEO-URLs (alte URLs nach Umbenennung, `isCanonical: false`) werden weiterhin ausgeliefert statt auf die kanonische umgeleitet.
-- Technische URLs (`/navigation/<id>`) werden nicht auf ihre SEO-URL umgeleitet; `@shopware/helpers` bietet dafür `getCanonicalPathForTechnicalPath`.
+- Non-canonical SEO URLs (old URLs after a rename, `isCanonical: false`) are still served instead of redirected to the canonical one.
+- Technical URLs (`/navigation/<id>`) are not redirected to their SEO URL; `@shopware/helpers` offers `getCanonicalPathForTechnicalPath` for that.
