@@ -15,8 +15,8 @@ const { mockPush, mockUseScriptMatomoAnalytics } = vi.hoisted(() => {
 
 mockNuxtImport("useScriptMatomoAnalytics", () => mockUseScriptMatomoAnalytics);
 
-// Mocking useRuntimeConfig breaks the Nuxt test environment (router setup),
-// so the tests set the real runtime config instead.
+// A useRuntimeConfig mock would also have to provide `app.baseURL` for the
+// router setup of the test environment; setting the real config is simpler.
 function setMatomoConfig(matomoUrl: string, siteId: string | number) {
   Object.assign(useRuntimeConfig().public.scripts.matomoAnalytics, {
     matomoUrl,
