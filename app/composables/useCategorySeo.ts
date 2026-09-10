@@ -1,18 +1,27 @@
 import type { Schemas } from "#shopware";
+import { formatPageTitle, toAbsoluteUrl } from "../utils/seo";
 
 export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
   const config = useRuntimeConfig();
+  const siteConfig = useSiteConfig();
   const storeName = config.public.site?.name || "";
 
-  const pageTitle = computed(() => {
-    const categoryName =
+  const pageTitle = computed(
+    () =>
       category.value?.translated?.metaTitle ??
       category.value?.metaTitle ??
       category.value?.translated?.name ??
-      category.value?.name;
+      category.value?.name,
+  );
 
-    return categoryName + " | Speisekarte | " + storeName;
-  });
+  // <title> gets the template via app.vue; og/twitter titles need it spelled out.
+  const fullTitle = computed(() =>
+    formatPageTitle(
+      pageTitle.value,
+      storeName,
+      config.public.site?.titleTemplate ?? "",
+    ),
+  );
 
   const pageDescription = computed(
     () =>
@@ -22,25 +31,13 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
       category.value?.description,
   );
 
-  const seoUrl = computed(() => {
-    const base = config.public.storeUrl || "";
-    const path = category.value?.seoUrl || "";
-    return base + path;
-  });
+  const seoUrl = computed(() =>
+    toAbsoluteUrl(siteConfig.url, category.value?.seoUrl || ""),
+  );
 
   const ogImage = computed(() => category.value?.media?.url);
 
   const siteName = computed(() => config.public.site?.name || "");
-  const locale = computed(() => {
-    try {
-      const lang = import.meta.client
-        ? document?.documentElement?.lang
-        : undefined;
-      return (lang || "de").replace("_", "-");
-    } catch {
-      return "de";
-    }
-  });
 
   const robots = computed(() => {
     const active = category.value?.active;
@@ -54,15 +51,14 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
   useSeoMeta({
     title: pageTitle,
     description: pageDescription,
-    ogTitle: pageTitle,
+    ogTitle: fullTitle,
     ogDescription: pageDescription,
     ogUrl: seoUrl,
     ogImage,
     ogType: "website",
     ogSiteName: siteName,
-    ogLocale: locale,
     ogImageAlt,
-    twitterTitle: pageTitle,
+    twitterTitle: fullTitle,
     twitterDescription: pageDescription,
     twitterImage: ogImage,
     twitterCard: "summary_large_image",
@@ -74,6 +70,7 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
     link: [
       {
         rel: "canonical",
+        key: "canonical",
         href: canonicalUrl.value,
       },
     ],
@@ -91,7 +88,7 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
                 isPartOf: {
                   "@type": "WebSite",
                   name: siteName.value,
-                  url: config.public.storeUrl || "",
+                  url: siteConfig.url,
                 },
               }
             : {}),
@@ -103,12 +100,12 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
 
   return {
     pageTitle,
+    fullTitle,
     pageDescription,
     seoUrl,
     ogImage,
     canonicalUrl,
     robots,
     siteName,
-    locale,
   };
 }

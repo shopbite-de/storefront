@@ -9,6 +9,10 @@ interface OrderRouteParams extends RouteParams {
   id: string;
 }
 
+useSeoMeta({
+  title: "Bestellung",
+});
+
 const route = useRoute();
 const { id } = route.params as OrderRouteParams;
 const { order, loadOrderDetails, status } = useOrderDetails(id);

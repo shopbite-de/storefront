@@ -10,19 +10,26 @@ if (!page.value) {
   });
 }
 
-const config = useRuntimeConfig();
+const { site } = useRuntimeConfig().public;
+const homeSite = {
+  name: site.name,
+  city: site.address.city,
+  cuisine: site.cuisine,
+};
 
-useSeoMeta({
-  title: page.value.seo?.title || page.value.title,
-  ogTitle: page.value.seo?.title || page.value.title,
-  twitterTitle: page.value.seo?.title || page.value.title,
-  description: page.value.seo?.description || page.value.description,
-  ogDescription: page.value.seo?.description || page.value.description,
-  twitterDescription: page.value.seo?.description || page.value.description,
-  twitterCard: "summary",
-  ogImage: page.value.seo?.image as string | undefined,
-  twitterImage: page.value.seo?.image as string | undefined,
-  ogUrl: config.public.storeUrl,
+// Nuxt Content fills seo.title/description from title/description, so only
+// values that differ from those were set explicitly for search engines.
+const { seo, title, description } = page.value;
+const customTitle = seo?.title !== title ? seo?.title : undefined;
+const customDescription =
+  seo?.description !== description ? seo?.description : undefined;
+
+usePageSeo({
+  title: customTitle || buildHomeTitle(homeSite),
+  description:
+    customDescription || buildHomeDescription(homeSite) || description,
+  image: seo?.image as string | undefined,
+  standalone: true,
 });
 </script>
 <template>

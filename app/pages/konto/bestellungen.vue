@@ -5,6 +5,10 @@ definePageMeta({
   layout: "account",
 });
 
+useSeoMeta({
+  title: "Meine Bestellungen",
+});
+
 const { orders, loadOrders } = useCustomerOrders();
 
 onMounted(() => {

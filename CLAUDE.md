@@ -92,6 +92,14 @@ Key custom composables:
 
 `server/api/address/autocomplete.get.ts` — Geoapify proxy (keeps API key server-side).
 `server/utils/shopware/adminApiClient.ts` — Admin API client for server-side Shopware operations requiring elevated credentials.
+`server/api/__sitemap__/urls.get.ts` — dynamic `@nuxtjs/sitemap` source (navigation categories from the Store API).
+
+### SEO
+
+- `server/plugins/site-url.ts` makes `storeUrl` the nuxt-site-config URL, so canonical, sitemap and robots.txt share one base. Build absolute URLs with `toAbsoluteUrl(useSiteConfig().url, path)` (`app/utils/seo.ts`).
+- `app.vue` sets the title template (`site.titleTemplate`), canonical from the route, `og:url`, fallback `og:image` (`site.ogImage`) and `twitter:card`. Page titles are plain (`"Warenkorb"`), never suffixed with the shop name. Indexable pages use `usePageSeo` (`standalone: true` skips the template, home page); categories use `useCategorySeo`, which overrides the canonical with the SEO URL.
+- Shopware category SEO URLs end in `/` and 404 without it, but the sitemap module strips trailing slashes from every URL. Sitemap entries that need the slash carry `_trailingSlash: true`; `server/plugins/sitemap-trailing-slash.ts` restores it in the XML. Never normalise trailing slashes of backend SEO URLs.
+- `@nuxtjs/sitemap` must stay before `@nuxt/content` in `modules`; content collections need the `sitemap` schema field to appear in the sitemap.
 
 ### Testing setup
 

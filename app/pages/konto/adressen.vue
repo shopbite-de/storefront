@@ -5,6 +5,10 @@ definePageMeta({
   layout: "account",
 });
 
+useSeoMeta({
+  title: "Adressen",
+});
+
 const toast = useToast();
 const { userDefaultShippingAddress, userDefaultBillingAddress, refreshUser } =
   useUser();

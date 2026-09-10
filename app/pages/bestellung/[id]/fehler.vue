@@ -3,11 +3,11 @@ import { useOrderPayment, useOrderDetails } from "@shopware/composables";
 import type { Schemas } from "#shopware";
 
 const {
-  public: { site, storeUrl },
+  public: { storeUrl },
 } = useRuntimeConfig();
 
 useSeoMeta({
-  title: `Zahlung fehlgeschlagen | ${site.name}`,
+  title: "Zahlung fehlgeschlagen",
   robots: "noindex, nofollow",
 });
 

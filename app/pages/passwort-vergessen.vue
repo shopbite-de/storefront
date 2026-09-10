@@ -3,6 +3,7 @@ import * as z from "zod";
 import type { FormSubmitEvent } from "@nuxt/ui";
 
 useHead({
+  title: "Passwort vergessen",
   meta: [
     { name: "robots", content: "noindex, nofollow" },
     { name: "googlebot", content: "noindex, nofollow" },

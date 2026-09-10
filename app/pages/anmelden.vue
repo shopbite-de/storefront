@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useWishlist } from "@shopware/composables";
 
+useSeoMeta({
+  title: "Anmelden",
+});
+
 const { isLoggedIn } = useUser();
 const { mergeWishlistProducts } = useWishlist();
 

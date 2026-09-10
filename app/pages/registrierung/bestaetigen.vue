@@ -1,4 +1,8 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: "Registrierung bestätigen",
+});
+
 const route = useRoute();
 const toast = useToast();
 

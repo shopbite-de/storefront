@@ -8,6 +8,15 @@ import { useHead, useSeoMeta } from "#imports";
 const shared = vi.hoisted(() => ({
   useHead: vi.fn(),
   useSeoMeta: vi.fn(),
+  runtimeConfig: {
+    public: {
+      site: {
+        name: "My Store",
+        titleTemplate: "%s | %siteName – Online bestellen",
+      },
+    },
+  },
+  siteConfig: { url: "https://example.com" },
 }));
 
 // Mock Nuxt auto-imports via `#imports`
@@ -17,12 +26,8 @@ vi.mock("#imports", async () => {
   // Expose mocks for inspection in tests
   return {
     ...vue,
-    useRuntimeConfig: () => ({
-      public: {
-        site: { name: "My Store" },
-        storeUrl: "https://example.com",
-      },
-    }),
+    useRuntimeConfig: () => shared.runtimeConfig,
+    useSiteConfig: () => shared.siteConfig,
     useHead: shared.useHead,
     useSeoMeta: shared.useSeoMeta,
   };
@@ -33,12 +38,8 @@ vi.mock("#app", async () => {
   const vue = await import("vue");
   return {
     ...vue,
-    useRuntimeConfig: () => ({
-      public: {
-        site: { name: "My Store" },
-        storeUrl: "https://example.com",
-      },
-    }),
+    useRuntimeConfig: () => shared.runtimeConfig,
+    useSiteConfig: () => shared.siteConfig,
     useHead: shared.useHead,
     useSeoMeta: shared.useSeoMeta,
   };
@@ -59,9 +60,10 @@ describe("useCategorySeo", () => {
     const vue = await import("vue");
     (globalThis as Record<string, unknown>).computed = vue.computed;
     (globalThis as Record<string, unknown>).ref = vue.ref;
-    (globalThis as Record<string, unknown>).useRuntimeConfig = () => ({
-      public: { site: { name: "My Store" }, storeUrl: "https://example.com" },
-    });
+    (globalThis as Record<string, unknown>).useRuntimeConfig = () =>
+      shared.runtimeConfig;
+    (globalThis as Record<string, unknown>).useSiteConfig = () =>
+      shared.siteConfig;
     (globalThis as Record<string, unknown>).useHead = useHead;
     (globalThis as Record<string, unknown>).useSeoMeta = useSeoMeta;
 
@@ -87,24 +89,31 @@ describe("useCategorySeo", () => {
         metaDescription: "Leckere Pizza und Pasta bestellen",
         breadcrumb: ["Speisen", "Italienisch", "Pasta"],
       },
-      seoUrl: "/c/pasta",
+      seoUrl: "/c/pasta/",
       active: true,
       media: { url: "https://example.com/img/pasta.jpg" },
     });
 
     const result = useCategorySeo(asCategory(category));
 
-    // Returned refs
-    expect(result.pageTitle.value).toBe(
-      "Pizza & Pasta | Speisekarte | My Store",
+    // Returned refs: the <title> template is applied globally, og/twitter
+    // titles carry it explicitly
+    expect(result.pageTitle.value).toBe("Pizza & Pasta");
+    expect(result.fullTitle.value).toBe(
+      "Pizza & Pasta | My Store – Online bestellen",
     );
-    expect(result.canonicalUrl.value).toBe("https://example.com/c/pasta");
+    expect(result.canonicalUrl.value).toBe("https://example.com/c/pasta/");
     expect(result.robots.value).toBe("index,follow");
 
     // useSeoMeta should be called once with expected keys
     expect(
       useSeoMeta as unknown as ReturnType<typeof vi.fn>,
     ).toHaveBeenCalledTimes(1);
+    const seoArg = (useSeoMeta as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0]!;
+    expect(seoArg.ogTitle.value).toBe(
+      "Pizza & Pasta | My Store – Online bestellen",
+    );
 
     // useHead should receive canonical link and JSON-LD scripts
     expect(
@@ -113,11 +122,11 @@ describe("useCategorySeo", () => {
     const headArg = (useHead as unknown as ReturnType<typeof vi.fn>).mock
       .calls[0]![0]!;
 
-    // Canonical link
+    // Canonical link keeps the trailing slash of the SEO URL
     const link = headArg.link?.[0];
     expect(link).toMatchObject({
       rel: "canonical",
-      href: "https://example.com/c/pasta",
+      href: "https://example.com/c/pasta/",
     });
 
     // JSON-LD scripts
@@ -126,7 +135,7 @@ describe("useCategorySeo", () => {
 
     const collection = JSON.parse(scripts[0].innerHTML);
     expect(collection["@type"]).toBe("CollectionPage");
-    expect(collection.url).toBe("https://example.com/c/pasta");
+    expect(collection.url).toBe("https://example.com/c/pasta/");
     expect(collection.image?.[0]).toBe("https://example.com/img/pasta.jpg");
   });
 
