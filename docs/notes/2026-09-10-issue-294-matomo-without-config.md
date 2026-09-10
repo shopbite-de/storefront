@@ -19,7 +19,7 @@ Stand 2026-09-10, Branch `fix/294-matomo-without-config`.
 ## Stolperfallen
 
 - Build-Warnung `env var NUXT_PUBLIC_SCRIPTS_MATOMO_ANALYTICS_MATOMO_URL is set but matomoAnalytics is not registered in scripts.registry` ist ein False Positive: Der Validator von `@nuxt/scripts` prüft nur den Registry-Eintrag. Die Werte kommen trotzdem über `runtimeConfig.public.scripts.matomoAnalytics` an (siehe Verifikation).
-- `mockNuxtImport("useRuntimeConfig")` bricht das Nuxt-Testenvironment (`useRouter()` in `@nuxt/test-utils` ist dann `undefined`). `test/nuxt/useTrackEvent.test.ts` setzt deshalb die echte Runtime-Config.
+- Ein `mockNuxtImport("useRuntimeConfig")` ohne `app.baseURL` bricht das Router-Setup des Nuxt-Testenvironments (`useRouter()` in `@nuxt/test-utils` ist dann `undefined`; `HeaderRight.test.ts` mockt mit `app.baseURL` und läuft). `test/nuxt/useTrackEvent.test.ts` setzt deshalb die echte Runtime-Config.
 
 ## Verifikation
 
