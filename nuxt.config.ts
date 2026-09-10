@@ -68,11 +68,9 @@ export default defineNuxtConfig({
         },
         menuCategoryId: "",
         searchFallbackCategoryId: "",
-        // Delivery area for address validation and autocomplete (#251):
-        // comma-separated cities (empty = any) and a Geoapify bounding box
-        // "lon1,lat1,lon2,lat2" (empty = no filter).
-        delivery: {
-          cities: "",
+        // Optional Geoapify bounding box "lon1,lat1,lon2,lat2" that narrows
+        // the address suggestions in the checkout (empty = no filter, #251).
+        addressAutocomplete: {
           boundingBox: "",
         },
         feature: {

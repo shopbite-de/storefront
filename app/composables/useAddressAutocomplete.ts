@@ -25,7 +25,7 @@ interface GeoapifyResponse {
 }
 
 export function useAddressAutocomplete() {
-  const { boundingBoxCoordinates, validCities } = useValidCitiesForDelivery();
+  const { boundingBoxCoordinates } = useAddressSuggestionArea();
 
   async function getSuggestions(text: string): Promise<AddressSuggestion[]> {
     if (!text || text.length < 3) {
@@ -54,24 +54,17 @@ export function useAddressAutocomplete() {
         return [];
       }
 
-      return data.value.features
-        .map((feature: GeoapifyFeature) => {
-          const props = feature.properties;
-          return {
-            street: props.street
-              ? `${props.street}${props.housenumber ? " " + props.housenumber : ""}`
-              : props.name || "",
-            city: props.city || "",
-            zipcode: props.postcode || "",
-            label: props.formatted || "",
-          };
-        })
-        .filter((suggestion: AddressSuggestion) => {
-          if (validCities.value.length === 0) return true;
-          return validCities.value.some(
-            (city) => city.toLowerCase() === suggestion.city.toLowerCase(),
-          );
-        });
+      return data.value.features.map((feature: GeoapifyFeature) => {
+        const props = feature.properties;
+        return {
+          street: props.street
+            ? `${props.street}${props.housenumber ? " " + props.housenumber : ""}`
+            : props.name || "",
+          city: props.city || "",
+          zipcode: props.postcode || "",
+          label: props.formatted || "",
+        };
+      });
     } catch (error) {
       console.error("Error fetching address suggestions:", error);
       return [];

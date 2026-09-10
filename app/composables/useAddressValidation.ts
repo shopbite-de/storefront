@@ -1,17 +1,15 @@
-import { ref, computed, watch, toValue, onUnmounted } from "vue";
-import type { Ref, ComputedRef } from "vue";
+import { ref, watch, toValue, onUnmounted } from "vue";
+import type { Ref } from "vue";
 import type { AddressSchema } from "~/validation/registrationSchema";
 import type { AddressSuggestion } from "~/composables/useAddressAutocomplete";
 
 export function useAddressValidation(
   model: Ref<AddressSchema>,
   options: {
-    isShipping?: Ref<boolean> | ComputedRef<boolean> | boolean;
     getSuggestions: (query: string) => Promise<AddressSuggestion[] | undefined>;
-    validCities: Ref<string[]>;
   },
 ) {
-  const { isShipping = ref(true), getSuggestions, validCities } = options;
+  const { getSuggestions } = options;
 
   const showCorrection = ref(false);
   const correction = ref<AddressSuggestion | null>(null);
@@ -40,19 +38,6 @@ export function useAddressValidation(
     correction.value = null;
     return false;
   }
-
-  const isInvalidCity = computed(() => {
-    if (!toValue(isShipping)) {
-      return false;
-    }
-    const m = toValue(model);
-    if (!m.city || validCities.value.length === 0) {
-      return false;
-    }
-    return !validCities.value.some(
-      (city) => city.toLowerCase() === m.city.toLowerCase(),
-    );
-  });
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -99,7 +84,6 @@ export function useAddressValidation(
   return {
     showCorrection,
     correction,
-    isInvalidCity,
     checkAddress,
     flushPendingCheck,
     applyCorrection,

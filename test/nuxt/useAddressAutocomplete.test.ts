@@ -16,14 +16,13 @@ mockNuxtImport("useRuntimeConfig", () => () => ({
   geoapifyApiKey: "test-api-key",
 }));
 
-// Mock useValidCitiesForDelivery
+// Mock useAddressSuggestionArea
 const { mockBoundingBoxCoordinates } = vi.hoisted(() => ({
   mockBoundingBoxCoordinates: {
     value: "8.822251,50.055026,8.899077,50.104327",
   },
 }));
-mockNuxtImport("useValidCitiesForDelivery", () => () => ({
-  validCities: ref(["Obertshausen", "Lämmerspiel", "Hausen"]),
+mockNuxtImport("useAddressSuggestionArea", () => () => ({
   boundingBoxCoordinates: mockBoundingBoxCoordinates,
 }));
 
@@ -103,41 +102,6 @@ describe("useAddressAutocomplete", () => {
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
-  it("should filter suggestions based on valid cities", async () => {
-    const mockResponse = {
-      features: [
-        {
-          properties: {
-            street: "Main St",
-            housenumber: "1",
-            city: "Obertshausen",
-            postcode: "63179",
-            formatted: "Main St 1, 63179 Obertshausen, Germany",
-          },
-        },
-        {
-          properties: {
-            street: "Other St",
-            housenumber: "2",
-            city: "Berlin",
-            postcode: "10115",
-            formatted: "Other St 2, 10115 Berlin, Germany",
-          },
-        },
-      ],
-    };
-
-    mockUseFetch.mockResolvedValue({
-      data: ref(mockResponse),
-    });
-
-    const { getSuggestions } = useAddressAutocomplete();
-    const suggestions = await getSuggestions("Main St 1");
-
-    expect(suggestions).toHaveLength(1);
-    expect(suggestions[0]?.city).toBe("Obertshausen");
-  });
-
   it("should not include filter when boundingBoxCoordinates is empty", async () => {
     mockBoundingBoxCoordinates.value = "";
     mockUseFetch.mockResolvedValue({
