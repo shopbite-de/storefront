@@ -1,9 +1,8 @@
-import { encodeForQuery } from "@shopware/api-client/helpers";
 import type { components } from "~~/api-types/storeApiTypes";
 
 type Schemas = components["schemas"];
 
-const criteria = encodeForQuery({
+const criteria = {
   includes: {
     product: [
       "id",
@@ -28,6 +27,7 @@ const criteria = encodeForQuery({
     product_configurator_setting: ["id", "optionId", "option", "productId"],
     product_option: ["id", "groupId", "name", "translated", "group"],
     category: ["id", "name", "translated"],
+    ...MEDIA_INCLUDES,
   },
   associations: {
     cover: { associations: { media: {} } },
@@ -44,7 +44,7 @@ const criteria = encodeForQuery({
       },
     },
   },
-});
+};
 
 export default defineCachedEventHandler(
   async (
@@ -54,12 +54,8 @@ export default defineCachedEventHandler(
     configurator?: Schemas["PropertyGroup"][];
   }> => {
     const productId = getRouterParam(event, "productId")!;
-    const { endpoint, accessToken } = useRuntimeConfig().public.shopware;
 
-    return await $fetch(`${endpoint}/product/${productId}`, {
-      headers: { "sw-access-key": accessToken },
-      query: { _criteria: criteria },
-    });
+    return await storeApiPost(`/product/${productId}`, criteria);
   },
   {
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.product,

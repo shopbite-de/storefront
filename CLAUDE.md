@@ -93,6 +93,7 @@ Key custom composables:
 `server/api/address/autocomplete.get.ts` — Geoapify proxy (keeps API key server-side).
 `server/utils/shopware/adminApiClient.ts` — Admin API client for server-side Shopware operations requiring elevated credentials.
 `server/api/__sitemap__/urls.get.ts` — dynamic `@nuxtjs/sitemap` source (navigation categories from the Store API).
+`server/utils/storeApi.ts` — `storeApiPost()` and `MEDIA_INCLUDES` for the routes above. Always send Store API criteria as a POST body (also via `apiClient.invoke("… post …", { body })`): as `_criteria` query parameters Shopware ignores the `includes` projection and returns every field (#312).
 
 ### SEO
 

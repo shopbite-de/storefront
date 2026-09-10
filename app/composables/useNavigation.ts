@@ -1,5 +1,4 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
-import { encodeForQuery } from "@shopware/api-client/helpers";
 import type { Schemas } from "#shopware";
 
 export function useNavigation(withChildren: boolean | undefined) {
@@ -9,9 +8,13 @@ export function useNavigation(withChildren: boolean | undefined) {
     () => config.public.shopBite.menuCategoryId ?? "main-navigation",
   );
 
-  const criteria = encodeForQuery({
+  // Sent as a POST body: as `_criteria` query parameters the projection is
+  // ignored and every category arrives with media, translations, cms page
+  // and more (#312).
+  const criteria = {
     includes: {
       category: [
+        "id",
         "name",
         "translated",
         "seoUrl",
@@ -20,13 +23,13 @@ export function useNavigation(withChildren: boolean | undefined) {
         "linkNewTab",
       ],
     },
-  });
+  };
 
   const { data: mainNavigation } = useAsyncData("main-navigation", async () => {
     const response = await apiClient.invoke(
-      "readNavigationGet get /navigation/{activeId}/{rootId}",
+      "readNavigation post /navigation/{activeId}/{rootId}",
       {
-        query: { _criteria: criteria },
+        body: criteria,
         pathParams: {
           activeId: "main-navigation",
           rootId: "main-navigation",
@@ -61,9 +64,9 @@ export function useNavigation(withChildren: boolean | undefined) {
     "footer-navigation",
     async () => {
       const response = await apiClient.invoke(
-        "readNavigationGet get /navigation/{activeId}/{rootId}",
+        "readNavigation post /navigation/{activeId}/{rootId}",
         {
-          query: { _criteria: criteria },
+          body: criteria,
           pathParams: {
             activeId: "footer-navigation",
             rootId: "footer-navigation",
@@ -85,9 +88,9 @@ export function useNavigation(withChildren: boolean | undefined) {
     "menu-category",
     async () => {
       const response = await apiClient.invoke(
-        "readNavigationGet get /navigation/{activeId}/{rootId}",
+        "readNavigation post /navigation/{activeId}/{rootId}",
         {
-          query: { _criteria: criteria },
+          body: criteria,
           pathParams: {
             activeId: "main-navigation",
             rootId: menuCategoryId.value,
