@@ -8,6 +8,8 @@ const { count: wishListCount } = useWishlist();
 const { isCheckoutEnabled } = useShopBiteConfig();
 const { isLoggedIn, isGuestSession, logout } = useUser();
 const toast = useToast();
+// Shop phone number from the site config; the button is hidden without one (#251).
+const { site } = useRuntimeConfig().public;
 
 const logoutHandler = () => {
   logout();
@@ -75,12 +77,12 @@ const dropDownMenu = computed<DropdownMenuItem[][]>(() => {
 
 <template>
   <UButton
+    v-if="site.telephone"
     color="neutral"
     variant="ghost"
-    to="tel:+49610471427"
-    target="_blank"
+    :to="toTelHref(site.telephone)"
     icon="i-lucide-phone"
-    aria-label="Anrufen"
+    :aria-label="`Anrufen: ${site.telephone}`"
   />
   <UDropdownMenu :items="dropDownMenu">
     <UChip v-if="isLoggedIn || isGuestSession" size="3xl" text="✓">

@@ -16,6 +16,8 @@ useSeoMeta({
 const route = useRoute();
 const { id } = route.params as OrderRouteParams;
 const { order, loadOrderDetails, status } = useOrderDetails(id);
+// Shop phone number for the "call us" card; hidden without one (#251).
+const { site } = useRuntimeConfig().public;
 
 const isLoadingData = ref(true);
 
@@ -59,7 +61,7 @@ const links = ref<ButtonProps[]>([
     />
     <UPageBody>
       <OrderDetail :order="order" :status="status ?? 'laden...'" />
-      <UCard class="mt-6">
+      <UCard v-if="site.telephone" class="mt-6">
         <div
           class="flex flex-col sm:flex-row items-start sm:items-center gap-4"
         >
@@ -71,9 +73,9 @@ const links = ref<ButtonProps[]>([
             </p>
           </div>
           <UButton
-            label="Jetzt anrufen"
+            :label="`Jetzt anrufen: ${site.telephone}`"
             color="primary"
-            to="tel:+4917623456789"
+            :to="toTelHref(site.telephone)"
             icon="i-lucide-phone"
             shrink-0
           />

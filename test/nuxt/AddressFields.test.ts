@@ -1,11 +1,18 @@
 import { describe, it, expect, vi } from "vitest";
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import Fields from "~/components/Address/Fields.vue";
 import type { AddressSchema } from "~/validation/registrationSchema";
 
 const { mockGetSuggestions } = vi.hoisted(() => ({
   mockGetSuggestions: vi.fn().mockResolvedValue([]),
+}));
+
+// The delivery area comes from the runtime config (#251); the warning case
+// below needs a restricted one.
+mockNuxtImport("useValidCitiesForDelivery", () => () => ({
+  validCities: ref(["Obertshausen", "Lämmerspiel", "Hausen"]),
+  boundingBoxCoordinates: ref(""),
 }));
 
 mockNuxtImport("useAddressAutocomplete", () => () => ({
