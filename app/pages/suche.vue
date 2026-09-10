@@ -26,19 +26,10 @@ const {
   changeSorting,
 } = useListingSearch(searchQuery.value);
 
-const { trackSearch } = useTrackEvent();
-
 // Re-fetch when the URL query changes (e.g. user searches again from this page)
 watch(searchQuery, (q) => applySearch(q));
 
-// Fire a Matomo event whenever results settle for a given search term
-watch(elements, (products) => {
-  if (!searchQuery.value || showSkeleton.value) return;
-  trackSearch(
-    searchQuery.value,
-    products.map((p) => p.productNumber),
-  );
-});
+useSearchTracking(searchQuery, elements, showSkeleton);
 
 // Fallback: fetch a curated category listing when search returns no results.
 // The category should have a dynamic product group assigned in Shopware.
