@@ -1,5 +1,3 @@
-import { encodeForQuery } from "@shopware/api-client/helpers";
-
 /**
  * Fixed projections applied to every listing request. Defined server-side so
  * clients cannot override includes/associations/limit via query params.
@@ -28,6 +26,7 @@ const BASE_CRITERIA = {
       "mediaId",
     ],
     product_option: ["id", "groupId", "name", "translated", "group"],
+    ...MEDIA_INCLUDES,
   },
   associations: {
     cover: {
@@ -71,28 +70,23 @@ function resolveAllowedParams(query: Record<string, unknown>) {
 export default defineCachedEventHandler(
   async (event) => {
     const categoryId = getRouterParam(event, "categoryId")!;
-    const { endpoint, accessToken } = useRuntimeConfig().public.shopware;
 
     const { order, properties, manufacturer, query, p } = resolveAllowedParams(
       getQuery(event) as Record<string, unknown>,
     );
 
-    const criteria = {
-      ...BASE_CRITERIA,
-      ...(order !== undefined && { order }),
-      ...(properties !== undefined && { properties }),
-      ...(manufacturer !== undefined && { manufacturer }),
-      ...(query !== undefined && { query }),
-      ...(p !== undefined && { p }),
-    };
-
-    return await $fetch(`${endpoint}/product-listing/${categoryId}`, {
-      headers: {
-        "sw-access-key": accessToken,
-        "sw-include-seo-urls": "true",
+    return await storeApiPost(
+      `/product-listing/${categoryId}`,
+      {
+        ...BASE_CRITERIA,
+        ...(order !== undefined && { order }),
+        ...(properties !== undefined && { properties }),
+        ...(manufacturer !== undefined && { manufacturer }),
+        ...(query !== undefined && { query }),
+        ...(p !== undefined && { p }),
       },
-      query: { _criteria: encodeForQuery(criteria) },
-    });
+      { headers: { "sw-include-seo-urls": "true" } },
+    );
   },
   {
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.listing,
