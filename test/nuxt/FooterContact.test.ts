@@ -18,8 +18,8 @@ mockNuxtImport("useBusinessHours", () => () => ({
   refresh: vi.fn(),
 }));
 
-// Mocking useRuntimeConfig breaks the Nuxt test environment, so the tests set
-// the real runtime config instead.
+// A useRuntimeConfig mock would also have to provide `app.baseURL` for the
+// router setup of the test environment; setting the real config is simpler.
 function setSite(site: {
   street?: string;
   postalCode?: string;
