@@ -74,3 +74,10 @@ src; the `undefined` cloud URL is gone.
 now `matomoAnalytics: { trigger: "onNuxtReady" }` (what `true` normalised to);
 only `scriptOptions` is inlined, so runtime config still wins. Re-verified on
 a production build — see `docs/notes/2026-09-07-dependency-update.md`.
+
+## Addendum 2026-09-10
+
+The registry entry is gone. Matomo is now registered by `app/plugins/matomo.ts`
+via `useMatomo()`, and only when `matomoUrl` and `siteId` are set — without
+config the registry requested `cdn.matomo.cloud/undefined/matomo.js` (#294).
+See `docs/notes/2026-09-10-issue-294-matomo-without-config.md`.
