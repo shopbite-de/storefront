@@ -1,10 +1,6 @@
 <script setup lang="ts">
-const {
-  public: { site },
-} = useRuntimeConfig();
-
 useSeoMeta({
-  title: `Zahlung & Versand | ${site.name}`,
+  title: "Zahlung & Versand",
   robots: "noindex, nofollow",
 });
 

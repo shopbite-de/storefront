@@ -98,17 +98,44 @@ onMounted(async () => {
   displayStoreStatus();
 });
 
+const route = useRoute();
+const siteConfig = useSiteConfig();
+const { site } = useRuntimeConfig().public;
+
+// Pages with a backend SEO URL (categories) override the canonical link.
+const canonicalUrl = computed(() => toAbsoluteUrl(siteConfig.url, route.path));
+
 useHead({
   htmlAttrs: {
     lang: "de",
   },
+  titleTemplate: (title) =>
+    formatPageTitle(title, site.name, site.titleTemplate),
   link: [
     {
       rel: "icon",
       type: "image/png",
       href: "/favicon.ico",
     },
+    {
+      rel: "canonical",
+      key: "canonical",
+      href: canonicalUrl,
+    },
   ],
+});
+
+useSeoMeta({
+  ogUrl: canonicalUrl,
+  ogType: "website",
+  ogSiteName: site.name,
+  ogLocale: (
+    sessionContextData.value?.languageInfo?.localeCode ?? "de-DE"
+  ).replace("-", "_"),
+  ogImage: site.ogImage
+    ? toAbsoluteUrl(siteConfig.url, site.ogImage)
+    : undefined,
+  twitterCard: "summary_large_image",
 });
 </script>
 

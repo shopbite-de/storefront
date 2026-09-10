@@ -9,6 +9,10 @@ if (config.public.shopBite.feature.contactForm !== true) {
     fatal: true,
   });
 }
+
+useSeoMeta({
+  title: "Kontakt",
+});
 </script>
 
 <template>

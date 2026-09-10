@@ -3,6 +3,10 @@ definePageMeta({
   layout: "account",
 });
 
+useSeoMeta({
+  title: "Mein Konto",
+});
+
 const { user, userDefaultShippingAddress, userDefaultBillingAddress } =
   useUser();
 </script>

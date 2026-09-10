@@ -15,7 +15,7 @@ if (error.value || !page.value) {
   });
 }
 
-useSeoMeta({
+usePageSeo({
   title: page.value?.title,
   description: page.value?.description,
 });

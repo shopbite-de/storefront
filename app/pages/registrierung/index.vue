@@ -1,4 +1,8 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: "Registrieren",
+});
+
 const { isLoggedIn } = useUser();
 
 if (import.meta.client && isLoggedIn.value) {

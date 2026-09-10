@@ -6,6 +6,10 @@ definePageMeta({
   layout: "listing",
 });
 
+useSeoMeta({
+  title: "Suche",
+});
+
 const route = useRoute();
 const router = useRouter();
 const { searchFallbackCategoryId } = useRuntimeConfig().public.shopBite;

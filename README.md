@@ -42,7 +42,7 @@ talking to the Store API and to the custom routes added by the
 | 🎟️ **Vouchers**               | Discount codes backed by the ShopBite plugin                                |
 | 📱 **Installable PWA**        | Offline-aware service worker, app manifest, mobile bottom navigation        |
 | ⚡ **SSR + caching**          | Server routes with tuned TTLs for products, listings, categories            |
-| 🔍 **SEO ready**              | German URL routes, canonical redirects, robots rules, structured metadata   |
+| 🔍 **SEO ready**              | Sitemap, canonical URLs, share previews, title template, structured data    |
 | 📊 **Analytics & monitoring** | Matomo via `@nuxt/scripts`, error tracking via Sentry                       |
 | 🎨 **Themeable**              | Nuxt UI + Tailwind v4 tokens — brand a shop by overriding CSS variables     |
 | 🌐 **Multi-channel**          | Optional sales channel switching for multi-location businesses              |
@@ -67,6 +67,7 @@ The shop is now running on **http://localhost:3000**.
 | --------------------------------------- | ------------------------------------------------------------- |
 | `NUXT_PUBLIC_SHOPWARE_ENDPOINT`         | Store API base URL, e.g. `https://shop.example.com/store-api` |
 | `NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN`     | Sales channel access key                                      |
+| `NUXT_PUBLIC_STORE_URL`                 | Public shop URL, base for canonical URLs and the sitemap      |
 | `NUXT_STORE_NAME` / `STORE_DESCRIPTION` | Branding for `<head>`, PWA manifest and OG tags               |
 | `NUXT_GEOAPIFY_API_KEY`                 | Server-side key for address autocomplete (optional)           |
 

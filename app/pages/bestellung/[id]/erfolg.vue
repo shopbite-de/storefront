@@ -1,10 +1,6 @@
 <script setup lang="ts">
-const {
-  public: { site },
-} = useRuntimeConfig();
-
 useSeoMeta({
-  title: `Zahlung erfolgreich | ${site.name}`,
+  title: "Zahlung erfolgreich",
   robots: "noindex, nofollow",
 });
 

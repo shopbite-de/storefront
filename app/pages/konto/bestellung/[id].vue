@@ -9,6 +9,10 @@ definePageMeta({
   layout: "account",
 });
 
+useSeoMeta({
+  title: "Bestellung",
+});
+
 interface OrderRouteParams extends RouteParams {
   id: string;
 }

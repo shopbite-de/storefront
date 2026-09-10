@@ -7,6 +7,10 @@ definePageMeta({
   layout: "account",
 });
 
+useSeoMeta({
+  title: "Profil",
+});
+
 const { apiClient } = useShopwareContext();
 const loading = ref(true);
 const { user, refreshUser, updatePersonalInfo, updateEmail, logout } =

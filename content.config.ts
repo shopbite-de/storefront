@@ -1,4 +1,5 @@
 import { defineCollection, defineContentConfig, z } from "@nuxt/content";
+import { defineSitemapSchema } from "@nuxtjs/sitemap/content";
 
 const createEnum = (options: [string, ...string[]]) => z.enum(options);
 
@@ -106,6 +107,7 @@ export default defineContentConfig({
       schema: z.object({
         title: z.string().min(1),
         description: z.string().optional(),
+        sitemap: defineSitemapSchema({ z }),
       }),
     }),
   },

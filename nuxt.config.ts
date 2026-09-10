@@ -20,7 +20,7 @@ export default defineNuxtConfig({
         },
         {
           property: "og:title",
-          content: storeDescription,
+          content: storeName,
         },
         {
           property: "og:description",
@@ -39,6 +39,14 @@ export default defineNuxtConfig({
       "/passwort-vergessen",
       "/account/recover/password",
     ],
+  },
+  sitemap: {
+    // File-based pages and route rules (ssr/swr/redirect) are checkout and
+    // account flows; indexable URLs come from the home page, content pages
+    // and the Store API source.
+    excludeAppSources: ["nuxt:pages", "nuxt:route-rules"],
+    urls: ["/"],
+    sources: ["/api/__sitemap__/urls"],
   },
 
   runtimeConfig: {
@@ -70,6 +78,16 @@ export default defineNuxtConfig({
         name: storeName,
         description: storeDescription,
         countryId: "",
+        // `%s` = page title, `%siteName` = site.name; the home page renders
+        // its title without the template.
+        titleTemplate: "%s | %siteName – Online bestellen",
+        // Share preview for pages without their own image (path or URL).
+        ogImage: "/card.png",
+        // Used in the default home page title and description.
+        cuisine: "",
+        address: {
+          city: "",
+        },
       },
       storeUrl: "",
       // Matomo config for the @nuxt/scripts registry. Declared here (not as
@@ -109,6 +127,8 @@ export default defineNuxtConfig({
   modules: [
     "@shopware/nuxt-module",
     "@nuxt/image",
+    // must be loaded before @nuxt/content for the content integration
+    "@nuxtjs/sitemap",
     "@nuxt/content",
     "@nuxtjs/robots",
     "@vite-pwa/nuxt",
@@ -229,6 +249,7 @@ export default defineNuxtConfig({
     modules: [
       "@shopware/nuxt-module",
       "@nuxt/image",
+      "@nuxtjs/sitemap",
       "@nuxt/content",
       "@nuxtjs/robots",
       "@nuxt/ui",
