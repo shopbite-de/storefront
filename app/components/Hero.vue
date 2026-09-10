@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { ButtonProps } from "#ui/components/Button.vue";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     title: string;
     description?: string;
     headline?: string;
     backgroundVideo?: string;
+    /** First frame of the video as an image; the LCP element (#273). */
+    poster?: string;
     links: ButtonProps[];
     usps?: {
       title?: string;
@@ -19,13 +21,43 @@ withDefaults(
     description: undefined,
     headline: undefined,
     backgroundVideo: undefined,
+    poster: undefined,
     usps: () => [],
   },
 );
 
+// The poster is server-rendered and preloaded, so the largest paint is a
+// small image instead of a multi-megabyte video. The video only joins on
+// wide screens after hydration; phones never request it (#273).
+const VIDEO_MEDIA_QUERY = "(min-width: 768px)";
+const showVideo = ref(false);
 const videoRef = ref<HTMLVideoElement>();
 
+useHead(() => ({
+  link: props.poster
+    ? [
+        {
+          key: "hero-poster-preload",
+          rel: "preload",
+          as: "image",
+          href: props.poster,
+          fetchpriority: "high",
+        },
+      ]
+    : [],
+}));
+
 onMounted(() => {
+  const wide = props.backgroundVideo
+    ? window.matchMedia?.(VIDEO_MEDIA_QUERY)
+    : undefined;
+  if (wide) {
+    showVideo.value = wide.matches;
+    wide.addEventListener("change", (event) => {
+      showVideo.value = event.matches;
+    });
+  }
+
   // Handle video playback on bfcache restore
   window.addEventListener("pageshow", (event) => {
     if (event.persisted && videoRef.value) {
@@ -37,13 +69,24 @@ onMounted(() => {
 
 <template>
   <div class="relative isolate overflow-hidden">
+    <!-- No CSS blur on the poster: blur the image file itself (see docs);
+         a filter on a full-screen image delays the first paint on phones. -->
+    <img
+      v-if="poster"
+      :src="poster"
+      alt=""
+      fetchpriority="high"
+      class="absolute inset-0 w-full h-full object-cover -z-20"
+    />
     <video
+      v-if="showVideo"
       ref="videoRef"
       autoplay
       loop
       muted
       playsinline
-      fetchpriority="high"
+      preload="metadata"
+      :poster="poster"
       class="absolute inset-0 w-full h-full object-cover -z-10 blur-sm scale-105"
     >
       <source :src="backgroundVideo" type="video/mp4" />

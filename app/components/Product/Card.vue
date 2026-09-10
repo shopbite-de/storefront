@@ -45,10 +45,16 @@ function onVariantSelected(variant: Schemas["Product"]) {
       </template>
 
       <div v-if="product.cover?.media?.url">
-        <LazyNuxtImg
+        <img
           :src="product.cover.media.url"
-          class="rounded-md h-auto max-w-full object-contain transition-opacity duration-700"
+          :srcset="mediaSrcSet(product.cover.media)"
           sizes="(min-width: 1024px) 50vw, 100vw"
+          :width="mediaSize(product.cover.media)?.width"
+          :height="mediaSize(product.cover.media)?.height"
+          :alt="label"
+          loading="lazy"
+          decoding="async"
+          class="rounded-md h-auto max-w-full object-contain transition-opacity duration-700"
         />
       </div>
 

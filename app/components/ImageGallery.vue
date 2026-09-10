@@ -16,6 +16,10 @@ defineProps<{
   images: ImageCarousel[] | undefined;
   links?: ButtonProps[] | undefined;
 }>();
+
+// The gallery sits below the fold: a fixed aspect ratio reserves the space
+// (no layout shift) and the slides load lazily (#273).
+const imageClass = "aspect-[4/3] w-full rounded-lg object-cover";
 </script>
 
 <template>
@@ -28,7 +32,7 @@ defineProps<{
     <template #body>
       <ClientOnly>
         <UCarousel
-          v-slot="{ item, index }"
+          v-slot="{ item }"
           arrows
           :items="images"
           class="w-full max-w-2xl mx-auto"
@@ -36,8 +40,9 @@ defineProps<{
           <img
             :src="item.image"
             :alt="item.alt"
-            :fetchpriority="index === 0 ? 'high' : 'auto'"
-            class="rounded-lg"
+            loading="lazy"
+            decoding="async"
+            :class="imageClass"
           />
         </UCarousel>
         <template #fallback>
@@ -46,8 +51,9 @@ defineProps<{
               v-if="images?.[0]"
               :src="images[0].image"
               :alt="images[0].alt"
-              fetchpriority="high"
-              class="rounded-lg"
+              loading="lazy"
+              decoding="async"
+              :class="imageClass"
             />
           </div>
         </template>

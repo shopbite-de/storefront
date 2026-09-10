@@ -37,6 +37,7 @@ usePageSeo({
     <Hero
       :title="page.title"
       :background-video="page.hero.backgroundVideo"
+      :poster="page.hero.poster"
       :description="page.description"
       :headline="page.hero.headline"
       :links="page.hero.links"

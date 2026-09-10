@@ -55,9 +55,11 @@ async function addToCart(productId: string) {
 
 <template>
   <div v-if="product" :id="product.id" class="relative inline-block">
-    <NuxtImg
+    <img
       :src="image"
       :alt="alt"
+      loading="lazy"
+      decoding="async"
       class="rounded-lg shadow-2xl ring ring-default h-50 md:h-80"
     />
     <div

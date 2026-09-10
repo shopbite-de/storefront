@@ -56,6 +56,7 @@ export default defineContentConfig({
       schema: z.object({
         hero: z.object({
           backgroundVideo: z.string().optional(),
+          poster: z.string().optional(),
           headline: z.string().optional(),
           links: z.array(createLinkSchema()),
           usps: z.array(

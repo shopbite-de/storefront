@@ -11,11 +11,13 @@ defineProps<{
 
 <template>
   <div class="relative overflow-hidden">
-    <NuxtImg
+    <img
       v-if="backgroundImage"
       :src="backgroundImage"
+      loading="lazy"
+      decoding="async"
       class="absolute inset-0 z-0 w-full h-full object-cover opacity-40"
-      alt="CTA Background"
+      alt=""
     />
     <UPageCTA
       variant="soft"
