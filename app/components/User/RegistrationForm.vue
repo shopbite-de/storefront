@@ -224,7 +224,6 @@ const emit = defineEmits<{
         prefix="shippingAddress"
         :account-type="state.accountType"
         show-names
-        is-shipping
       />
     </template>
 

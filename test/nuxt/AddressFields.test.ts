@@ -1,18 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { reactive, ref } from "vue";
+import { reactive } from "vue";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import Fields from "~/components/Address/Fields.vue";
 import type { AddressSchema } from "~/validation/registrationSchema";
 
 const { mockGetSuggestions } = vi.hoisted(() => ({
   mockGetSuggestions: vi.fn().mockResolvedValue([]),
-}));
-
-// The delivery area comes from the runtime config (#251); the warning case
-// below needs a restricted one.
-mockNuxtImport("useValidCitiesForDelivery", () => () => ({
-  validCities: ref(["Obertshausen", "Lämmerspiel", "Hausen"]),
-  boundingBoxCoordinates: ref(""),
 }));
 
 mockNuxtImport("useAddressAutocomplete", () => () => ({
@@ -123,78 +116,6 @@ describe("AddressFields", () => {
       .find('input[name="billingAddress.street"]')
       .setValue("New Street");
     expect(modelValue.street).toBe("New Street");
-  });
-
-  it("shows warning when an invalid city is selected for shipping address", async () => {
-    const modelValue = reactive({
-      firstName: "John",
-      lastName: "Doe",
-      street: "Main St 1",
-      zipcode: "12345",
-      city: "InvalidCity",
-      phoneNumber: "12345678",
-      countryId: "",
-    });
-
-    const wrapper = await mountSuspended(Fields, {
-      props: {
-        ...defaultProps,
-        modelValue,
-        isShipping: true,
-      },
-    });
-
-    expect(wrapper.text()).toContain(
-      "An diese Adresse können wir leider nicht liefern.",
-    );
-  });
-
-  it("does not show warning for valid city in shipping address", async () => {
-    const modelValue = reactive({
-      firstName: "John",
-      lastName: "Doe",
-      street: "Main St 1",
-      zipcode: "63179",
-      city: "Obertshausen",
-      phoneNumber: "12345678",
-      countryId: "",
-    });
-
-    const wrapper = await mountSuspended(Fields, {
-      props: {
-        ...defaultProps,
-        modelValue,
-        isShipping: true,
-      },
-    });
-
-    expect(wrapper.text()).not.toContain(
-      "An diese Adresse können wir leider nicht liefern.",
-    );
-  });
-
-  it("does not show warning for billing address even if city is 'invalid'", async () => {
-    const modelValue = reactive({
-      firstName: "John",
-      lastName: "Doe",
-      street: "Main St 1",
-      zipcode: "12345",
-      city: "InvalidCity",
-      phoneNumber: "12345678",
-      countryId: "",
-    });
-
-    const wrapper = await mountSuspended(Fields, {
-      props: {
-        ...defaultProps,
-        modelValue,
-        isShipping: false,
-      },
-    });
-
-    expect(wrapper.text()).not.toContain(
-      "An diese Adresse können wir leider nicht liefern.",
-    );
   });
 
   it("shows correction automatically on input after debounce", async () => {

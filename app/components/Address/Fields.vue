@@ -3,28 +3,21 @@ import type { AddressSchema } from "~/validation/registrationSchema";
 
 const model = defineModel<AddressSchema>({ required: true });
 
-const props = defineProps<{
+defineProps<{
   prefix: string;
   accountType?: string;
   showNames?: boolean;
-  isShipping?: boolean;
 }>();
 
 const { getSuggestions } = useAddressAutocomplete();
-const { validCities } = useValidCitiesForDelivery();
 
 const {
   showCorrection,
   correction,
-  isInvalidCity,
   checkAddress,
   flushPendingCheck,
   applyCorrection,
-} = useAddressValidation(model, {
-  isShipping: props.isShipping,
-  getSuggestions,
-  validCities,
-});
+} = useAddressValidation(model, { getSuggestions });
 
 defineExpose({
   checkAddress,
@@ -102,18 +95,6 @@ defineExpose({
         @click="applyCorrection"
       />
     </div>
-
-    <UAlert
-      v-if="isInvalidCity"
-      color="warning"
-      variant="soft"
-      icon="i-lucide-triangle-alert"
-    >
-      <template #title>
-        An diese Adresse können wir leider nicht liefern.
-        <ULink to="/zahlung-und-versand">Weitere Infos.</ULink>
-      </template>
-    </UAlert>
 
     <UFormField label="Adresszusatz" :name="`${prefix}.additionalAddressLine1`">
       <UInput
