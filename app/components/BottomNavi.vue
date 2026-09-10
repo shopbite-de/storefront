@@ -8,6 +8,9 @@ import {
 } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
+// Route and phone come from the site config; without a value the button is
+// left out instead of pointing at another shop (#251).
+const { site } = useRuntimeConfig().public;
 </script>
 
 <template>
@@ -16,9 +19,12 @@ const route = useRoute();
   >
     <div class="flex flex-row justify-between items-center py-2 gap-1">
       <NuxtLink
+        v-if="site.googleBusinessProfileUrl"
         title="Routenplaner"
         class="flex flex-col justify-center items-center bg-blackish rounded-md px-3.5 py-2.5 basis-1/4 gap-2"
-        to="https://www.openstreetmap.org/directions?from=&to=50.080610%2C8.863783#map=19/50.080323/8.864079"
+        :to="site.googleBusinessProfileUrl"
+        target="_blank"
+        rel="noopener"
       >
         <MapPinIcon class="w-5 h-5 text-white" />
         <div class="text-white text-xs">Route</div>
@@ -51,8 +57,9 @@ const route = useRoute();
         <div class="text-white text-xs">Speisekarte</div>
       </NuxtLink>
       <NuxtLink
+        v-if="site.telephone"
         title="Anrufen"
-        to="tel:+49610471427"
+        :to="toTelHref(site.telephone)"
         class="flex flex-col justify-center items-center bg-blackish rounded-md px-3.5 py-2.5 basis-1/4 gap-2"
       >
         <PhoneIcon class="w-5 h-5 text-white" />

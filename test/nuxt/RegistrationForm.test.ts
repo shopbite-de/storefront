@@ -47,6 +47,9 @@ mockNuxtImport("useRuntimeConfig", () => () => ({
     site: {
       countryId: "default-country-id",
     },
+    shopBite: {
+      delivery: { cities: "", boundingBox: "" },
+    },
   },
 }));
 

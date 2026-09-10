@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
     isLoggedIn: false,
     isGuestSession: false,
     user: null as { firstName: string; lastName: string } | null,
+    telephone: "+49 6104 71427",
   },
   toastAddCalled: { value: false },
 }));
@@ -40,7 +41,7 @@ mockNuxtImport("useCart", () => () => ({
 
 mockNuxtImport("useRuntimeConfig", () => () => ({
   app: { baseURL: "/" },
-  public: { shopware: {} },
+  public: { shopware: {}, site: { telephone: mocks.state.telephone } },
 }));
 
 mockNuxtImport("useWishlist", () => () => ({
@@ -80,10 +81,20 @@ describe("HeaderRight", () => {
     vi.clearAllMocks();
   });
 
-  it("renders phone link", async () => {
+  it("renders the phone link from the site config", async () => {
     const component = await mountSuspended(HeaderRight);
     const phoneButton = component.find('a[href="tel:+49610471427"]');
     expect(phoneButton.exists()).toBe(true);
+    expect(phoneButton.attributes("aria-label")).toBe(
+      "Anrufen: +49 6104 71427",
+    );
+  });
+
+  it("hides the phone link without a configured number", async () => {
+    mocks.state.telephone = "";
+    const component = await mountSuspended(HeaderRight);
+    expect(component.find('a[href^="tel:"]').exists()).toBe(false);
+    mocks.state.telephone = "+49 6104 71427";
   });
 
   it("shows logged out dropdown items when not logged in", async () => {
