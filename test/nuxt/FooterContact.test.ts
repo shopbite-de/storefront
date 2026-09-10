@@ -18,6 +18,10 @@ mockNuxtImport("useBusinessHours", () => () => ({
   refresh: vi.fn(),
 }));
 
+mockNuxtImport("useStoreStatus", () => () => ({
+  status: ref(null),
+}));
+
 // A useRuntimeConfig mock would also have to provide `app.baseURL` for the
 // router setup of the test environment; setting the real config is simpler.
 function setSite(site: {
