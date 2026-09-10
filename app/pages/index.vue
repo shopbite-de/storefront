@@ -31,6 +31,8 @@ usePageSeo({
   image: seo?.image as string | undefined,
   standalone: true,
 });
+
+useRestaurantSchema();
 </script>
 <template>
   <div v-if="page" class="relative">

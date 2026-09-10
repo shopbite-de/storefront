@@ -34,6 +34,7 @@ async function resetFilters() {
 }
 
 useCategorySeo(category);
+useMenuSectionSchema(category, elements);
 
 // Derived from the listing data instead of snapshotted at setup time, which
 // would be a hydration mismatch (#239); see useSortingSelection.
