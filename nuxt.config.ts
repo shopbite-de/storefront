@@ -95,10 +95,10 @@ export default defineNuxtConfig({
         googleBusinessProfileUrl: "",
       },
       storeUrl: "",
-      // Matomo config for the @nuxt/scripts registry. Declared here (not as
-      // registry options) so the values stay runtime-overridable via
-      // NUXT_PUBLIC_SCRIPTS_MATOMO_ANALYTICS_* env vars: registry options are
-      // inlined into the build and would shadow the runtime config (#259).
+      // Matomo config, runtime-overridable via NUXT_PUBLIC_SCRIPTS_MATOMO_ANALYTICS_*
+      // env vars. Never set these as registry options: those are inlined into
+      // the build and shadow the runtime config (#259). Matomo only loads when
+      // both values are set (app/plugins/matomo.ts, #294).
       scripts: {
         matomoAnalytics: {
           matomoUrl: "",
@@ -263,15 +263,5 @@ export default defineNuxtConfig({
       "@nuxt/eslint",
       "@nuxt/hints",
     ],
-  },
-  $production: {
-    scripts: {
-      registry: {
-        // Only the trigger is set here so no option values get inlined into
-        // the build; the actual config comes from runtimeConfig.public.scripts
-        // above (env-overridable at runtime, see #259).
-        matomoAnalytics: { trigger: "onNuxtReady" },
-      },
-    },
   },
 });
