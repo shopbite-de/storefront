@@ -85,9 +85,14 @@ export default defineNuxtConfig({
         ogImage: "/card.png",
         // Used in the default home page title and description.
         cuisine: "",
+        // Shown in the footer (NAP for local SEO, #290); empty values are hidden.
         address: {
+          street: "",
+          postalCode: "",
           city: "",
         },
+        telephone: "",
+        googleBusinessProfileUrl: "",
       },
       storeUrl: "",
       // Matomo config for the @nuxt/scripts registry. Declared here (not as
