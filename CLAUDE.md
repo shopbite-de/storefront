@@ -100,6 +100,7 @@ Key custom composables:
 - `app.vue` sets the title template (`site.titleTemplate`), canonical from the route, `og:url`, fallback `og:image` (`site.ogImage`) and `twitter:card`. Page titles are plain (`"Warenkorb"`), never suffixed with the shop name. Indexable pages use `usePageSeo` (`standalone: true` skips the template, home page); categories use `useCategorySeo`, which overrides the canonical with the SEO URL.
 - Shopware category SEO URLs end in `/` and 404 without it, but the sitemap module strips trailing slashes from every URL. Sitemap entries that need the slash carry `_trailingSlash: true`; `server/plugins/sitemap-trailing-slash.ts` restores it in the XML. Never normalise trailing slashes of backend SEO URLs.
 - `@nuxtjs/sitemap` must stay before `@nuxt/content` in `modules`; content collections need the `sitemap` schema field to appear in the sitemap.
+- Shop contact data (NAP) lives in `runtimeConfig.public.site` (`address.*`, `telephone`, `googleBusinessProfileUrl`) and is rendered by `components/Footer/Contact.vue`. `useBusinessHours`/`useHolidays` use `immediate: false` (app.vue loads them on mount); a component that needs them in the SSR HTML calls `onServerPrefetch(() => refresh())`.
 
 ### Testing setup
 
@@ -107,6 +108,8 @@ Two Vitest projects in `vitest.config.ts`:
 
 - **`unit`** – `test/unit/`, Node environment, pure function tests
 - **`nuxt`** – `test/nuxt/`, Nuxt environment via `@nuxt/test-utils`, for composables and components
+
+In `test/nuxt/`, a `mockNuxtImport("useRuntimeConfig")` without `app.baseURL` breaks the router setup of the test environment (`useRouter()` is undefined, see `HeaderRight.test.ts` for a working mock). For config values, prefer setting them on the real config, e.g. `Object.assign(useRuntimeConfig().public.site, { … })`.
 
 E2E tests in `test/e2e/` use Playwright (Chromium only) and require `TEST_USER` / `TEST_USER_PASS` env vars. A local dev server must be running before the suite executes.
 

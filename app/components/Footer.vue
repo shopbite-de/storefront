@@ -36,6 +36,7 @@ const footerColumns = computed<FooterColumn[]>(() =>
   <UFooter :ui="{ top: 'border-b border-default' }">
     <template #top>
       <UContainer>
+        <FooterContact />
         <UFooterColumns :columns="footerColumns" />
       </UContainer>
     </template>
@@ -46,7 +47,7 @@ const footerColumns = computed<FooterColumn[]>(() =>
         class="text-sm text-muted"
         target="_blank"
       >
-        Bestellsystm von ShopBite • © {{ new Date().getFullYear() }}
+        Bestellsystem von ShopBite • © {{ new Date().getFullYear() }}
       </NuxtLink>
     </template>
 
