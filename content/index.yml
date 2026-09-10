@@ -6,6 +6,7 @@ title: ShopBite
 description: Reduziere Kosten und steigere deinen Umsatz
 hero:
   backgroundVideo: https://shopware.shopbite.de/media/10/59/96/1762465181/background.mp4
+  poster: /hero-poster.webp
   headline: SHOPBITE
   usps:
     - title: 4.5 ⭐
@@ -108,7 +109,7 @@ mittagstisch:
 cta:
   title: Jetzt bestellen!
   description: Genieße die italienische Küche, frisch zubereitet und direkt zu dir geliefert oder vor Ort genießen.
-  backgroundImage: https://shopware.shopbite.de/media/f2/22/5f/1770899823/category-pizza-header2.webp
+  backgroundImage: https://shopware.shopbite.de/thumbnail/f2/22/5f/1770899823/category-pizza-header2_1000x284.webp
   links:
     - label: Zur Speisekarte
       to: /speisekarte/

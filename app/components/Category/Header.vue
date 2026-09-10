@@ -10,18 +10,24 @@ const { category: categoryRef } = toRefs(props);
 const categoryCover = computed(
   () => categoryRef.value.media?.url ?? "/category-placeholder.webp",
 );
+
+// Shopware thumbnails (400/800/1920 px) instead of the original, which is
+// several thousand pixels wide (#273). The box is 700 px at most.
+const srcset = computed(() => mediaSrcSet(categoryRef.value.media));
 </script>
 
 <template>
   <div
     class="relative mb-4 mt-8 min-h-36 w-full overflow-hidden rounded-[0.5rem]"
   >
-    <NuxtImg
+    <img
       :src="categoryCover"
+      :srcset="srcset"
+      sizes="(min-width: 768px) 700px, 100vw"
+      fetchpriority="high"
+      decoding="async"
       class="absolute inset-0 h-full w-full object-cover"
-      sizes="sm:100vw md:700px"
       :alt="category.name + ' Cover Image'"
-      placeholder
     />
     <div class="absolute inset-0 bg-linear-to-t from-black/50 to-black/10" />
 
