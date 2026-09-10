@@ -1,11 +1,26 @@
 import type { Schemas } from "#shopware";
 
-export function useTrackEvent() {
-  const matomo = useMatomo();
+type MatomoWindow = Window & { _paq?: unknown[][] };
 
-  // Tracking is a no-op when Matomo is not configured (#294).
+export function useTrackEvent() {
+  const { enabled } = useMatomoConfig();
+
+  // Commands go into Matomo's `_paq` queue; matomo.js processes what was
+  // pushed before it loaded, so tracking does not depend on the script (which
+  // `plugins/matomo.ts` loads after `onNuxtReady`, #314). Tracking is a no-op
+  // when Matomo is not configured (#294).
   function push(command: unknown[]) {
-    matomo?.proxy._paq.push(command);
+    if (!enabled || import.meta.server) return;
+    const matomoWindow = window as MatomoWindow;
+    (matomoWindow._paq ??= []).push(command);
+  }
+
+  // Page views are pushed by `plugins/matomo.ts` (initial page and every
+  // `page:finish`), not by the registry's page watcher.
+  function trackPageView(path: string) {
+    push(["setCustomUrl", path]);
+    push(["setDocumentTitle", document.title]);
+    push(["trackPageView"]);
   }
 
   function trackProductView(product: Schemas["Product"]) {
@@ -48,6 +63,7 @@ export function useTrackEvent() {
   }
 
   return {
+    trackPageView,
     trackProductView,
     trackOrder,
     trackAddToWishlist,

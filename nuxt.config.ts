@@ -240,6 +240,32 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
 
   vite: {
+    build: {
+      // Vite 8 bundles with Rolldown; `rollupOptions` would drop this key.
+      rolldownOptions: {
+        output: {
+          // Rolldown code splitting: the framework and UI libraries used by
+          // more than one chunk go into two shared chunks instead of ~60
+          // tiny ones, which halves the module preloads of every page (#314).
+          codeSplitting: {
+            groups: [
+              {
+                name: "framework",
+                test: /node_modules\/(\.pnpm\/)?(vue|@vue\+|@vue\/|vue-router|unhead|@unhead|nuxt@|hookable|ofetch|ufo|defu|h3|devalue|klona|destr|cookie-es|radix3|rou3|unctx|pinia)[@/]/,
+                minShareCount: 2,
+                priority: 20,
+              },
+              {
+                name: "ui",
+                test: /node_modules\/(\.pnpm\/)?(reka-ui|@nuxt\+ui|@nuxt\/ui|tailwind-variants|tailwind-merge|@floating-ui|@vueuse|vaul-vue|@internationalized|@tanstack|@nuxt\+icon|@nuxt\/icon|@iconify)[@/]/,
+                minShareCount: 2,
+                priority: 10,
+              },
+            ],
+          },
+        },
+      },
+    },
     optimizeDeps: {
       include: [
         "@vue/devtools-core",
@@ -258,6 +284,14 @@ export default defineNuxtConfig({
     asyncContext: true,
     payloadExtraction: true,
     watcher: "parcel",
+    defaults: {
+      nuxtLink: {
+        // Prefetch route chunks on hover/touch instead of for every link in
+        // view: the header alone pulled ~20 chunks and a page stylesheet
+        // during the initial load (#314).
+        prefetchOn: { visibility: false, interaction: true },
+      },
+    },
   },
   $development: {
     modules: [

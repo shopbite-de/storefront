@@ -1,7 +1,13 @@
 <script setup lang="ts">
+import Footer from "~/components/Footer.vue";
+
 const { apiClient } = useShopwareContext();
 const appConfig = useAppConfig();
 const router = useRouter();
+
+// The footer is below the fold on every page; its hydration waits until it
+// scrolls into view (#314).
+const FooterWhenVisible = hydrateWhenVisible(Footer);
 
 const { data: sessionContextData } = await useAsyncData(
   "sessionContext",
@@ -101,6 +107,6 @@ useSeoMeta({
         <NuxtPage />
       </NuxtLayout>
     </UMain>
-    <Footer />
+    <FooterWhenVisible />
   </UApp>
 </template>

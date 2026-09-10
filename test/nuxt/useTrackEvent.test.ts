@@ -3,15 +3,11 @@ import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { useMatomo } from "../../app/composables/useMatomo";
 import { useTrackEvent } from "../../app/composables/useTrackEvent";
 
-const { mockPush, mockUseScriptMatomoAnalytics } = vi.hoisted(() => {
-  const mockPush = vi.fn();
-  return {
-    mockPush,
-    mockUseScriptMatomoAnalytics: vi.fn(() => ({
-      proxy: { _paq: { push: mockPush } },
-    })),
-  };
-});
+const { mockUseScriptMatomoAnalytics } = vi.hoisted(() => ({
+  mockUseScriptMatomoAnalytics: vi.fn(() => ({
+    proxy: { _paq: { push: vi.fn() } },
+  })),
+}));
 
 mockNuxtImport("useScriptMatomoAnalytics", () => mockUseScriptMatomoAnalytics);
 
@@ -50,15 +46,21 @@ describe("useMatomo", () => {
 
     expect(useMatomo()).not.toBeNull();
     expect(mockUseScriptMatomoAnalytics).toHaveBeenCalledWith({
+      watch: false,
       scriptOptions: { trigger: "onNuxtReady" },
     });
   });
 });
 
 describe("useTrackEvent", () => {
+  const matomoWindow = window as Window & { _paq?: unknown[][] };
+
   beforeEach(() => {
     vi.clearAllMocks();
     setMatomoConfig("", "");
+    // @nuxt/scripts declares `_paq` as always present; the queue only exists
+    // once something was pushed.
+    Reflect.deleteProperty(matomoWindow, "_paq");
   });
 
   it("is a no-op without Matomo configuration", () => {
@@ -66,20 +68,45 @@ describe("useTrackEvent", () => {
 
     expect(() => trackSearch("pizza", ["21", "22"])).not.toThrow();
     expect(mockUseScriptMatomoAnalytics).not.toHaveBeenCalled();
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(matomoWindow._paq).toBeUndefined();
   });
 
-  it("pushes tracking commands when Matomo is configured", () => {
+  // The commands land in Matomo's own `_paq` queue, so they do not depend on
+  // the registry script, which is loaded after `onNuxtReady` (#314).
+  it("queues tracking commands in _paq when Matomo is configured", () => {
     setMatomoConfig("https://analytics.example.com/", 3);
 
     const { trackSearch } = useTrackEvent();
     trackSearch("pizza", ["21", "22"]);
 
-    expect(mockPush).toHaveBeenCalledWith([
-      "trackSiteSearch",
-      "pizza",
-      false,
-      2,
+    expect(matomoWindow._paq).toEqual([["trackSiteSearch", "pizza", false, 2]]);
+    expect(mockUseScriptMatomoAnalytics).not.toHaveBeenCalled();
+  });
+
+  it("tracks a page view with URL and title", () => {
+    setMatomoConfig("https://analytics.example.com/", 3);
+    document.title = "Pizza";
+
+    useTrackEvent().trackPageView("/c/Pizza/");
+
+    expect(matomoWindow._paq).toEqual([
+      ["setCustomUrl", "/c/Pizza/"],
+      ["setDocumentTitle", "Pizza"],
+      ["trackPageView"],
+    ]);
+  });
+
+  it("appends to an existing _paq queue", () => {
+    setMatomoConfig("https://analytics.example.com/", 3);
+    matomoWindow._paq = [["setSiteId", "3"]];
+
+    useTrackEvent().trackAddToWishlist({
+      productNumber: "21",
+    } as Parameters<ReturnType<typeof useTrackEvent>["trackAddToWishlist"]>[0]);
+
+    expect(matomoWindow._paq).toEqual([
+      ["setSiteId", "3"],
+      ["trackEvent", "Product", "AddToWishlist", "21"],
     ]);
   });
 });

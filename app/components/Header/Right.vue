@@ -3,6 +3,17 @@ import { useUser } from "@shopware/composables";
 import type { DropdownMenuItem } from "@nuxt/ui";
 
 const cartQuickViewOpen = ref(false);
+// The drawer (vaul) is created on first use instead of on every page (#314).
+const cartQuickViewMounted = ref(false);
+
+async function openCartQuickView() {
+  if (!cartQuickViewMounted.value) {
+    cartQuickViewMounted.value = true;
+    await nextTick();
+  }
+  cartQuickViewOpen.value = true;
+}
+
 const { count: cartCount } = useCart();
 const { count: wishListCount } = useWishlist();
 const { isCheckoutEnabled } = useShopBiteConfig();
@@ -112,21 +123,22 @@ const dropDownMenu = computed<DropdownMenuItem[][]>(() => {
       />
     </UChip>
   </div>
+  <UChip v-if="isCheckoutEnabled" :text="cartCount" size="3xl">
+    <UButton
+      aria-label="Zum Warenkorb"
+      aria-haspopup="dialog"
+      color="neutral"
+      variant="ghost"
+      icon="i-lucide-shopping-bag"
+      @click="openCartQuickView"
+    />
+  </UChip>
   <LazyUDrawer
-    v-if="isCheckoutEnabled"
+    v-if="cartQuickViewMounted"
     v-model:open="cartQuickViewOpen"
     title="Warenkorb"
     direction="right"
   >
-    <UChip :text="cartCount" size="3xl">
-      <UButton
-        aria-label="Zum Warenkorb"
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-shopping-bag"
-      />
-    </UChip>
-
     <template #header>
       <div class="h-full flex flex-col justify-center">
         <h2 class="flex items-center gap-2 text-3xl md:text-4xl mt-8 mb-3 pb-2">

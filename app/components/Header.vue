@@ -1,8 +1,7 @@
 <script setup lang="ts">
 const { mainMenu } = useNavigation(false);
-const loginSlide = ref(false);
 // The logo link's accessible name; Nuxt UI's default is "Nuxt UI" (#275).
-const { site } = useRuntimeConfig().public;
+const { site, shopBite } = useRuntimeConfig().public;
 </script>
 
 <template>
@@ -12,7 +11,8 @@ const { site } = useRuntimeConfig().public;
     </template>
 
     <UNavigationMenu color="primary" variant="pill" :items="mainMenu" />
-    <SalesChannelSwitch />
+    <!-- Lazy keeps USelectMenu out of the entry chunk of single-channel shops (#314). -->
+    <LazySalesChannelSwitch v-if="shopBite.feature.multiChannel" />
 
     <template #right>
       <HeaderRight />
@@ -22,16 +22,4 @@ const { site } = useRuntimeConfig().public;
       <LazyHeaderBody />
     </template>
   </UHeader>
-
-  <USlideover
-    v-model:open="loginSlide"
-    title="Konto"
-    description="Alle Vorteile eines Kontos genießen"
-  >
-    <template #body>
-      <div class="h-full m-4">
-        <LazyUserLoginForm />
-      </div>
-    </template>
-  </USlideover>
 </template>
