@@ -85,14 +85,18 @@ export default defineNuxtConfig({
         ogImage: "/card.png",
         // Used in the default home page title and description.
         cuisine: "",
-        // Shown in the footer (NAP for local SEO, #290); empty values are hidden.
+        // Shown in the footer (NAP for local SEO, #290) and in the Restaurant
+        // schema (#272); empty values are left out.
         address: {
           street: "",
           postalCode: "",
           city: "",
+          country: "DE",
         },
         telephone: "",
         googleBusinessProfileUrl: "",
+        // Restaurant schema only, e.g. "€€" (#272).
+        priceRange: "",
       },
       storeUrl: "",
       // Matomo config, runtime-overridable via NUXT_PUBLIC_SCRIPTS_MATOMO_ANALYTICS_*
