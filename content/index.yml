@@ -88,7 +88,7 @@ mittagstisch:
   description: Jetzt auch Samstags!
   reverse: true
   orientation: horizontal
-  image: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/1a/83/a9/1789148344/innenbereich-4.png?ts=1789148344
+  image: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/50/31/b1/1789148669/restaurant4.webp?ts=1789148669
   imageAlt: Illustration
   features:
     - title: Montag bis Samstag
