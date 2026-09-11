@@ -39,7 +39,7 @@ importers:
         version: 4.11.1(9f78ac20e74b235d0a30571310cba9c4)
       '@nuxtjs/robots':
         specifier: ^6.2.0
-        version: 6.2.1(33db7149e8f226af20a338dc24f8e953)
+        version: 6.2.2(33db7149e8f226af20a338dc24f8e953)
       '@nuxtjs/sitemap':
         specifier: ^8.5.0
         version: 8.5.0(33db7149e8f226af20a338dc24f8e953)
@@ -1871,8 +1871,8 @@ packages:
   '@nuxtjs/mdc@0.23.1':
     resolution: {integrity: sha512-H+e/eO/Uj5Apb3YwFQs3X0e6HsIPYEm++/lEDFGuQCvPxUh89idhsZRnYQ5EQgAMge5uTS2hmSYIH4mX8xj+Hw==}
 
-  '@nuxtjs/robots@6.2.1':
-    resolution: {integrity: sha512-LCHuawbM7IEYzI3vBxWsTLpcD6DgQDsexBO8bZnKr7EAtPw85NEr/UTFYDFjI+DqrMxQ0JM3TAu8JRTWHI6HQw==}
+  '@nuxtjs/robots@6.2.2':
+    resolution: {integrity: sha512-2o+XTw8vmVMz3xxRVJ5pgTW8eP4qhzpk0Hkeyaj1c4+uRLea+2XkWhIvJhm9I8QijeIsWQqg9XFy4w4BzpmHKA==}
     peerDependencies:
       zod: '>=3'
     peerDependenciesMeta:
@@ -11215,7 +11215,7 @@ snapshots:
       - supports-color
       - unplugin
 
-  '@nuxtjs/robots@6.2.1(33db7149e8f226af20a338dc24f8e953)':
+  '@nuxtjs/robots@6.2.2(33db7149e8f226af20a338dc24f8e953)':
     dependencies:
       '@fingerprintjs/botd': 2.0.0
       '@nuxt/kit': 4.5.2(magic-string@1.2.3)(magicast@0.5.4)(oxc-parser@0.140.0)(rolldown@1.2.7)(unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.7)(rollup@4.63.1)(vite@8.2.2(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)))
