@@ -88,6 +88,16 @@ Key custom composables:
 - **`useAddressAutocomplete`** – proxies Geoapify through `/api/address/autocomplete` to avoid exposing the API key client-side
 - **`useShopBiteConfig`** – fetches delivery config and checkout state from the custom Shopware plugin
 
+### Product data model (what Shopware must contain)
+
+The storefront reads plain Shopware entities with fixed names; seed data must match them exactly (`shopware/scripts/seed-demo-menu.py` is a working example):
+
+- **Navigation:** menu sections are the children of the sales channel navigation root (`readNavigation main-navigation`), optionally scoped by `runtimeConfig.public.shopBite.menuCategoryId`. Category icon comes from the custom field `shopbite_category_icon` (icones.js.org name such as `i-lucide-pizza`), set by the ShopBite plugin.
+- **Property groups:** `Hauptzutaten` (ingredients on the card, deselectable on the detail page, removed ones are appended to the cart label with "-"), `Vegetarisch` and `Vegan` with the option `Ja` (diet badges), `Küche` (kitchen badge). Filterable groups appear as listing filters.
+- **Extras:** product cross-sellings of type `productList`; the cross-selling name is the label ("Extras", "Beilagen"), the assigned products need a price and sales-channel visibility but no category. Selected extras are sent as children of a `container` line item (`useAddToCart.ts`, handled by the ShopBite plugin).
+- **Custom fields on products:** `shopbite_receipt_print_type` (`number` prints the menu number on the receipt, `label` prints the name) and `shopbite_delivery_time_factor` (int), both from the ShopBite plugin.
+- **Variants:** standard configurator settings (`Product/Configurator.vue`); `server/api/product/variant.get.ts` resolves a variant by option ids.
+
 ### Server routes
 
 `server/api/address/autocomplete.get.ts` — Geoapify proxy (keeps API key server-side).

@@ -69,17 +69,17 @@ gallery:
       variant: subtle
       trailingIcon: i-lucide-phone
   images:
-    - image: https://shopware.shopbite.de/media/71/2a/1a/1762465670/restaurant1.webp
+    - image: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/be/7b/ba/1789148625/restaurant1.webp?ts=1789148625
       alt: La Fattoria Restaurant Innenbereich 1
-    - image: https://shopware.shopbite.de/media/61/ea/77/1762465670/restaurant2.webp
+    - image: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/7c/a7/1c/1789148639/restaurant2.webp?ts=1789148639
       alt: La Fattoria Restaurant Innenbereich 2
-    - image: https://shopware.shopbite.de/media/6d/ac/ca/1762465670/restaurant3.webp
+    - image: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/94/27/0b/1789148651/restaurant3.webp?ts=1789148651
       alt: La Fattoria Restaurant Innenbereich 3
-    - image: https://shopware.shopbite.de/media/af/d6/da/1762465670/restaurant4.webp
+    - image: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/50/31/b1/1789148669/restaurant4.webp?ts=1789148669
       alt: La Fattoria Restaurant Innenbereich 4
-    - image: https://shopware.shopbite.de/media/6a/ff/e2/1762465670/restaurant5.webp
+    - image: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/41/1b/09/1789148680/restaurant5.webp?ts=1789148680
       alt: La Fattoria Restaurant Innenbereich 5
-    - image: https://shopware.shopbite.de/media/80/76/d0/1762465670/restaurant6.webp
+    - image: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/5b/d1/f9/1789148692/restaurant6.webp?ts=1789148692
       alt: La Fattoria Restaurant Innenbereich 6
 
 mittagstisch:
@@ -88,7 +88,7 @@ mittagstisch:
   description: Jetzt auch Samstags!
   reverse: true
   orientation: horizontal
-  image: https://shopware.shopbite.de/media/1f/c3/c8/1771943544/lm2.webp
+  image: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/1a/83/a9/1789148344/innenbereich-4.png?ts=1789148344
   imageAlt: Illustration
   features:
     - title: Montag bis Samstag
@@ -109,7 +109,7 @@ mittagstisch:
 cta:
   title: Jetzt bestellen!
   description: Genieße die italienische Küche, frisch zubereitet und direkt zu dir geliefert oder vor Ort genießen.
-  backgroundImage: https://shopware.shopbite.de/thumbnail/f2/22/5f/1770899823/category-pizza-header2_1000x284.webp
+  backgroundImage: https://veliu-minio.cjcbee.easypanel.host/shopbite-demo-shopware/media/60/5f/0e/1789148993/footer-cta.webp?ts=1789148993
   links:
     - label: Zur Speisekarte
       to: /speisekarte/
