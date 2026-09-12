@@ -31,3 +31,10 @@ playwright-report
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Performance tooling (scripts/perf)
+scripts/perf/out
+scripts/perf/exp
+scripts/perf/*.pem
+test/visual/__snapshots__
+test/visual/results

@@ -131,6 +131,27 @@ export default defineNuxtConfig({
 
   css: ["~/assets/css/main.css"],
 
+  fonts: {
+    defaults: {
+      // Metric fallback faces for the font swap period: only the system
+      // fonts of phones (Roboto on Android, Helvetica Neue on iOS). Every
+      // family in the font stack costs a system font lookup per text style
+      // during the first layout; the five module defaults were ~0.4 s of
+      // Style & Layout in Lighthouse mobile (#319).
+      fallbacks: {
+        "sans-serif": ["Roboto", "Helvetica Neue"],
+      },
+    },
+  },
+
+  ui: {
+    experimental: {
+      // Only the theme files of the Nuxt UI components the layers render
+      // become Tailwind sources (instead of all 120 components), see #319.
+      componentDetection: true,
+    },
+  },
+
   shopware: {
     endpoint: "",
     accessToken: "",

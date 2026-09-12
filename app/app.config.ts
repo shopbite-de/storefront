@@ -1,8 +1,9 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: "#ff5b00",
-      gray: "cool",
+      // Alias of the colour scale in main.css; a hex value here produced
+      // invalid `var(--color-#ff5b00-*)` declarations (#319).
+      primary: "brand",
     },
     drawer: {
       slots: {
