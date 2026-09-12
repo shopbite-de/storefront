@@ -40,7 +40,12 @@ a product quick view, the "micro PDP" the customer asked for.
   on first use.
 - `Product/QuickView.vue`: `UDrawer` as bottom sheet on phones and side
   panel from `lg` (`useMediaQuery`), title = number + name, description,
-  ingredient chips, then `Product/Detail.vue`.
+  ingredient chips, then `Product/Detail.vue`. Only the body scrolls
+  (`container: overflow-hidden`, `body: min-h-0 overflow-y-auto`), so the
+  title stays visible above 34 extras chips; the header needs `shrink-0`
+  or the flex column squeezes it to its `min-h-8`. The button says
+  "Hinzufügen" plus the total (`aria-label` "In den Warenkorb"): the long
+  label wrapped to two lines next to the stepper on phones.
 - `Product/Detail.vue`: variants (`Configurator`, unchanged select), extras
   as toggle chips with surcharge (`CrossSelling.vue`, replaces the
   `UInputMenu`), "Ohne" chips with line-through for the ingredient
@@ -80,5 +85,3 @@ loads cross-sellings.
 - Sticky cart bar on mobile once the cart holds items.
 - The quick view URL only resolves products of the current listing; a
   `?produkt=` on a page that does not list the product is ignored.
-- The drawer's header scrolls with the content; a sticky title would help
-  with long extras lists (34 chips for a pizza).

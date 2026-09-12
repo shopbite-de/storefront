@@ -41,19 +41,23 @@ const emit = defineEmits<{
 }>();
 </script>
 <template>
-  <div
-    v-for="(variantGroup, propertyGroupId) in selectableOptions"
-    :key="propertyGroupId"
-    class="my-6"
-  >
-    <div class="flex flex-row gap-2 items-center">
-      <div class="basis-1/3">{{ variantGroup.name }}:</div>
+  <div class="flex flex-col gap-5">
+    <div
+      v-for="(variantGroup, propertyGroupId) in selectableOptions"
+      :key="propertyGroupId"
+      class="flex flex-col gap-2"
+    >
+      <span class="font-semibold text-highlighted">{{
+        variantGroup.name
+      }}</span>
       <USelect
         v-model="selectedOptions[propertyGroupId]"
         value-key="productId"
         :items="variantGroup.options"
+        size="lg"
         class="w-full"
         icon="i-lucide-square-stack"
+        :aria-label="variantGroup.name"
       />
     </div>
   </div>

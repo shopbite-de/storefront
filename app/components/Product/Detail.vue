@@ -80,7 +80,7 @@ const onAddToCart = () => emit("product-added");
     </template>
 
     <div
-      class="sticky bottom-0 -mx-4 mt-auto flex items-center gap-3 border-t border-default bg-default px-4 pt-4 pb-1 sm:-mx-6 sm:px-6"
+      class="sticky bottom-0 mt-auto flex items-center gap-3 border-t border-default bg-default pt-4"
     >
       <UInputNumber
         v-model="selectedQuantity"
@@ -89,17 +89,19 @@ const onAddToCart = () => emit("product-added");
         :min="1"
         :max="100"
         :disabled="pending"
-        class="w-32 shrink-0"
+        class="w-28 shrink-0"
       />
+      <!-- Short label: "In den Warenkorb" wrapped next to the total on phones. -->
       <UButton
-        class="flex-1 justify-between"
+        class="flex-1 justify-between whitespace-nowrap"
         size="xl"
         icon="i-lucide-shopping-cart"
         :disabled="isLoading || pending || !isAvailable"
         :loading="isLoading"
+        aria-label="In den Warenkorb"
         @click="addToCart(onAddToCart)"
       >
-        <span>{{ isAvailable ? "In den Warenkorb" : "Ausverkauft" }}</span>
+        <span>{{ isAvailable ? "Hinzufügen" : "Ausverkauft" }}</span>
         <span v-if="isAvailable && !pending" class="font-bold">
           {{ getFormattedPrice(total) }}
         </span>
