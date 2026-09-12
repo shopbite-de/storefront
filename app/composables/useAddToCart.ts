@@ -4,14 +4,13 @@ import { v5 as uuidv5, v4 as uuidv4 } from "uuid";
 import { computed, ref } from "vue";
 
 const UUID_NAMESPACE = "b098ef7e-0fa2-4073-b002-7ceec4360fbf";
-const CART_SUCCESS_TITLE = "Gute Wahl!";
 const LINE_ITEM_PRODUCT = "product";
 const LINE_ITEM_CONTAINER = "container";
 
 export function useAddToCart() {
   const { addLineItems } = useCartMutations();
-  const toast = useToast();
-  const { triggerProductAdded } = useProductEvents();
+  // Feedback is the cart bar / header badge animation, not a toast (#325).
+  const { triggerCartItemAdded } = useProductEvents();
   const { trackAddToCart: trackAddToCartEvent } = useTrackEvent();
 
   const selectedExtras = ref<AssociationItemProduct[]>([]);
@@ -118,25 +117,6 @@ export function useAddToCart() {
     ];
   }
 
-  async function showSuccessToast() {
-    if (!selectedProduct.value) return;
-
-    toast.add({
-      title: CART_SUCCESS_TITLE,
-      description: `${selectedProduct.value.translated.name} wurde in den Warenkorb gelegt.`,
-      icon: "i-lucide-shopping-cart",
-      color: "primary",
-      progress: true,
-      duration: 2000,
-      actions: [
-        {
-          label: "Zum Warenkorb",
-          to: "/bestellung/warenkorb",
-        },
-      ],
-    });
-  }
-
   async function addToCart(onSuccess?: () => void) {
     if (!selectedProduct.value || isLoading.value) return;
     isLoading.value = true;
@@ -146,8 +126,7 @@ export function useAddToCart() {
       const newCart = await addLineItems(createCartItems());
       if (!newCart) return;
 
-      await showSuccessToast();
-      triggerProductAdded();
+      triggerCartItemAdded(selectedProduct.value, selectedQuantity.value);
       trackAddToCartEvent(selectedProduct.value, selectedQuantity.value);
       onSuccess?.();
     } finally {

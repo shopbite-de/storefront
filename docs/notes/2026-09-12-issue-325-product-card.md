@@ -58,7 +58,13 @@ a product quick view, the "micro PDP" the customer asked for.
   n Artikel · subtotal", opens the cart drawer. `useCartQuickView` holds
   the drawer state (`useState`) so the header button and the bar share it.
   Hidden under `/bestellung`; a spacer keeps the footer clear; the cart is
-  loaded on the client, so the bar never renders on the server.
+  loaded on the client, so the bar never renders on the server. Adding a
+  product pops the bar (`--animate-cart-pop` in `main.css`, re-triggered
+  by re-keying the button) and shows "2× Pizza Salami hinzugefügt" for
+  1.8 s before the count and subtotal return; the header cart badge pops
+  as well. This replaces the add-to-cart toast: `useAddToCart` now emits
+  `triggerCartItemAdded(product, quantity)` (`useProductEvents`,
+  `onCartItemAdded`) instead of calling `useToast`.
 - Listing and search routes add `available` to the projection.
 - `AddToWishlist.vue` takes `size` and `variant` and an `aria-label`.
 - Category listing, search page and `Product/Category.vue` render two
