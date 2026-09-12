@@ -64,31 +64,40 @@ async function selectProductAndAddToCart(
 ) {
   const productCard = page.locator(`#product-card-${productId}`);
   await expect(productCard).toBeVisible();
-
-  // Verify product card structure
-  const buttons = productCard.locator("button");
-  await expect(buttons).toHaveCount(2);
   await expect(productCard.locator("button .i-lucide\\:heart")).toBeVisible();
 
-  // Open product details
-  const showDetailsButton = productCard.locator(
-    "button .i-lucide\\:shopping-cart",
-  );
-  await expect(showDetailsButton).toBeVisible();
-  await showDetailsButton.click();
+  // Products with extras or variants open their options first; plain
+  // products go into the cart with one tap per unit (#325).
+  const optionsButton = productCard.getByRole("button", {
+    name: /^(Auswählen|Anpassen)$/,
+  });
+  if ((await optionsButton.count()) > 0) {
+    await optionsButton.first().click();
 
-  // Set quantity and add to cart
-  const quantityInput = page.getByRole("spinbutton", { name: /anzahl/i });
-  await expect(quantityInput).toBeVisible();
-  await quantityInput.fill(quantity.toString());
-  await expect(quantityInput).toHaveValue(quantity.toString());
+    const quantityInput = page.getByRole("spinbutton", { name: /anzahl/i });
+    await expect(quantityInput).toBeVisible();
+    await quantityInput.fill(quantity.toString());
+    await expect(quantityInput).toHaveValue(quantity.toString());
 
-  const addToCartButton = page.getByRole("button", {
+    const addToCartButton = productCard.getByRole("button", {
+      name: "In den Warenkorb",
+    });
+    await expect(addToCartButton).toBeVisible({ timeout: 10000 });
+    await addToCartButton.click();
+    await expect(addToCartButton).not.toBeVisible({ timeout: 5000 });
+    return;
+  }
+
+  const addToCartButton = productCard.getByRole("button", {
     name: "In den Warenkorb",
   });
-  await expect(addToCartButton).toBeVisible({ timeout: 10000 });
-  await addToCartButton.click();
-  await expect(addToCartButton).not.toBeVisible({ timeout: 5000 });
+  for (let added = 1; added <= quantity; added++) {
+    await addToCartButton.click();
+    await expect(productCard.getByTestId("in-cart-quantity")).toHaveText(
+      `${added}× im Warenkorb`,
+      { timeout: 10000 },
+    );
+  }
 }
 
 async function proceedToCheckoutAndLogin(page: Page) {

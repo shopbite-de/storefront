@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
+import type { ButtonProps } from "@nuxt/ui";
 
-const props = defineProps<{
-  product: Schemas["Product"];
-}>();
+const props = withDefaults(
+  defineProps<{
+    product: Schemas["Product"];
+    size?: ButtonProps["size"];
+    variant?: ButtonProps["variant"];
+  }>(),
+  { size: "md", variant: "ghost" },
+);
 
 const { addToWishlist, isInWishlist, removeFromWishlist } = useProductWishlist(
   props.product.id,
@@ -23,11 +29,10 @@ const toggleWishlistProduct = async () => {
   }
 };
 
-// Computed tooltip text
 const tooltipText = computed(() =>
   isInWishlist.value
     ? "Von der Merkliste entfernen"
-    : "Auf die Merkliste setzten",
+    : "Auf die Merkliste setzen",
 );
 </script>
 
@@ -35,8 +40,10 @@ const tooltipText = computed(() =>
   <UTooltip :text="tooltipText">
     <UButton
       icon="i-lucide-heart"
-      variant="ghost"
+      :size="size"
+      :variant="variant"
       :color="isInWishlist ? 'error' : 'neutral'"
+      :aria-label="tooltipText"
       @click="toggleWishlistProduct"
     />
   </UTooltip>
