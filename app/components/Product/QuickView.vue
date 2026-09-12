@@ -35,12 +35,18 @@ function onVariantSelected(variant: Schemas["Product"]) {
 </script>
 
 <template>
+  <!-- Only the body scrolls: header and footer stay in place without sticky
+       positioning, and shrink-0 keeps the flex column from squeezing the
+       header to its min-height (#325). -->
   <UDrawer
     v-model:open="open"
     :direction="direction"
+    :close="true"
     :ui="{
       content: direction === 'right' ? 'w-full max-w-md' : 'max-h-[92vh]',
-      body: 'flex flex-col gap-5',
+      container: 'overflow-hidden',
+      header: 'shrink-0 items-start border-b border-default pb-3',
+      body: 'flex min-h-0 flex-col gap-5 overflow-y-auto',
     }"
   >
     <template #title>
