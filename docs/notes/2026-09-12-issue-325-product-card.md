@@ -16,59 +16,69 @@ without any image.
 
 ## Changes
 
+Second iteration (same day): the card carries no buttons at all. The
+whole card is the control (`role="button"`, keyboard, hover ring) and opens
+a product quick view, the "micro PDP" the customer asked for.
+
 - `Product/Card.vue`: an `article` with `ring ring-default rounded-xl
   shadow-md`, the cover as `h-44 object-cover` on top with the diet badge
-  and the wishlist button as overlays, then number (primary, `text-xs`),
-  name (`text-lg font-bold`), description, price on the right with a
-  "n× im Warenkorb" hint (`useProductCartQuantity`), the main ingredients
-  as neutral soft chips (`Product/CardIngredients.vue`, replaces
-  `CardDescription.vue`), the diet badge as a green chip when there is no
-  image (`CardDietBadges` got a `variant` prop).
-- `Product/CardFooter.vue`: one primary button. Products with variants
-  (`childCount > 0`) or an active cross-selling show "Auswählen" and open
-  the options collapsible as before; all others go straight into the cart
-  (`useAddToCart` with the listing product, the existing success toast).
-  `available === false` disables it as "Ausverkauft". Products with main
-  ingredients but no options keep a ghost "Anpassen" button for the
-  ingredient deselection. Detection lives in `app/utils/product.ts`.
-- `server/api/listing/[categoryId].get.ts` and `server/api/search.get.ts`
-  add `available`, `childCount` and the `crossSellings` association
-  (`id`, `active`) to the fixed projection. Verified against the La
-  Fattoria Store API: every pizza carries an active "Extras" cross-selling,
-  drinks none.
-- `AddToWishlist.vue` takes `size` and `variant` (outline, 44 px in the
-  footer; soft on a white circle over the image) and an `aria-label`.
+  as overlay, the wishlist button top right (a `@click.stop` wrapper keeps
+  it from opening the quick view), number (primary, `text-xs`), name
+  (`text-lg font-bold`), description, price on the right with either
+  "Ausverkauft" (`available === false`) or a "n× im Warenkorb" hint
+  (`useProductCartQuantity`), and the main ingredients as chips
+  (`Product/CardIngredients.vue`, replaces `CardDescription.vue`;
+  `CardDietBadges` got a `variant` prop). `selectable` (replaces
+  `withAddToCartButton`) emits `select`; the top sellers on the home page
+  are not selectable.
+- `useProductQuickView(products)`: the open product is the `produkt`
+  query parameter (product number, e.g. `/c/Pizza/?produkt=22`). Opening
+  pushes a history entry, so the back button closes the drawer; closing
+  replaces the URL. A direct load with the parameter opens the drawer once
+  the listing holds the product. One drawer per listing (category page,
+  search page incl. fallback suggestions, `Product/Category.vue`), created
+  on first use.
+- `Product/QuickView.vue`: `UDrawer` as bottom sheet on phones and side
+  panel from `lg` (`useMediaQuery`), title = number + name, description,
+  ingredient chips, then `Product/Detail.vue`.
+- `Product/Detail.vue`: variants (`Configurator`, unchanged select), extras
+  as toggle chips with surcharge (`CrossSelling.vue`, replaces the
+  `UInputMenu`), "Ohne" chips with line-through for the ingredient
+  deselection (`DeselectIngredient.vue`, replaces the `USelect`), and a
+  sticky footer with the quantity stepper and the button that shows the
+  total (unit price plus extras, times quantity; `AssociationItemProduct`
+  carries `unitPrice` for that). Skeleton while the detail loads.
+- Listing and search routes add `available` to the projection.
+- `AddToWishlist.vue` takes `size` and `variant` and an `aria-label`.
 - Category listing, search page and `Product/Category.vue` render two
   columns from `xl`; `CardSkeleton.vue` follows the new anatomy.
-- The e2e helper `selectProductAndAddToCart` handles both paths: options
-  (quantity input) or repeated direct taps checked against the cart hint.
+- The e2e helper opens the quick view from the card, checks the URL
+  parameter, sets the quantity and adds from the drawer.
+
+`productHasOptions` (variants or cross-sellings) from the first iteration
+is gone with the direct add-to-cart; the listing projection no longer
+loads cross-sellings.
 
 ## Verification
 
-- Production build with the La Fattoria API: `/c/Pizza/` shows "Auswählen"
-  and opens the options with the quantity input; `/c/Getraenke/` shows
-  "In den Warenkorb", two taps give "2× im Warenkorb" and the header badge
-  2, the toast appears. Screenshots mobile light/dark and desktop (two
-  columns) reviewed; no page errors.
-- Lighthouse mobile on `/c/Pizza/` (branch based on `main`, i.e. without
-  the #319 stylesheet changes): 967–1063 ms Style & Layout, 1055–1212 ms
-  script evaluation, TBT 276–314 ms. The `main` build measured directly
-  afterwards on the same machine gave 941–1223 ms, 1063–1479 ms and TBT
-  247–545 ms, so the card is within the run-to-run spread. CDP CPU
-  profiles of both builds (4× throttle) are equal within 5 %
-  (2,410 ms vs 2,525 ms sampled, the same top functions), and static
-  copies of both pages have the same first layout (199 ms). The chips are
-  plain spans with the `UBadge` classes rather than `UBadge` instances so
-  that hydrating a card does not run a tailwind-variants merge per chip.
-- Unit tests (`test/unit/product.spec.ts`), Prettier, ESLint, typecheck
-  and build pass. The unit run still exits 1 because of #323.
+- Production build with the La Fattoria API: tapping a pizza card sets
+  `?produkt=22` and opens the sheet with 34 extras chips and the "Ohne"
+  chip; one extra plus quantity 2 puts 17,00 € into the cart and the card
+  shows "2× im Warenkorb"; the back button closes the sheet;
+  `/c/Pizza/?produkt=30` opens the side panel on desktop directly; the
+  search page opens it from a result. A drink without extras shows only
+  the quantity and the button. Screenshots mobile light/dark and desktop
+  reviewed, no page errors.
+- Unit tests, Prettier, ESLint, typecheck and build pass. The unit run
+  still exits 1 because of #323.
+- Lighthouse (first iteration, still valid as an upper bound: the card
+  now hydrates fewer components): within the run-to-run spread of `main`
+  on this machine; CDP CPU profiles of both builds equal within 5 %.
 
 ## Follow-ups (not in this issue)
 
-- Options as a bottom sheet with extras as chips and the total in the
-  button (canvas artboard "Optionen") instead of the inline collapsible,
-  whose select and solid button do not match the new card yet.
 - Sticky cart bar on mobile once the cart holds items.
-- A cross-selling that is active but has no assigned products still
-  counts as "has options"; the listing cannot tell without loading the
-  products.
+- The quick view URL only resolves products of the current listing; a
+  `?produkt=` on a page that does not list the product is ignored.
+- The drawer's header scrolls with the content; a sticky title would help
+  with long extras lists (34 chips for a pizza).

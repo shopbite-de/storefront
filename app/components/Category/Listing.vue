@@ -41,6 +41,8 @@ async function resetFilters() {
 useCategorySeo(category);
 useMenuSectionSchema(category, elements);
 
+const quickView = useProductQuickView(elements);
+
 // Derived from the listing data instead of snapshotted at setup time, which
 // would be a hydration mismatch (#239); see useSortingSelection.
 const { currentSorting } = useSortingSelection(currentSortingOrder);
@@ -212,9 +214,15 @@ async function openFilterDrawer() {
               :key="product.id"
               :product="product"
               :with-favorite-button="true"
-              :with-add-to-cart-button="true"
+              :selectable="true"
+              @select="quickView.show"
             />
           </div>
+          <LazyProductQuickView
+            v-if="quickView.mounted.value"
+            v-model:open="quickView.open.value"
+            :product="quickView.product.value"
+          />
         </div>
       </UPageBody>
 

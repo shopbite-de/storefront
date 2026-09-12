@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { Schemas } from "#shopware";
 import {
   getMainIngredients,
-  productHasOptions,
   productIsAvailable,
 } from "../../app/utils/product";
 
@@ -17,43 +16,6 @@ const group = (name: string, options: string[]) =>
       translated: { name: option },
     })),
   }) as unknown as Schemas["PropertyGroup"];
-
-describe("productHasOptions", () => {
-  it("is false for a plain product", () => {
-    expect(productHasOptions(product())).toBe(false);
-    expect(
-      productHasOptions(product({ childCount: 0, crossSellings: [] })),
-    ).toBe(false);
-  });
-
-  it("is true for a product with variants", () => {
-    expect(productHasOptions(product({ childCount: 3 }))).toBe(true);
-  });
-
-  it("is true for a product with an active cross-selling", () => {
-    expect(
-      productHasOptions(
-        product({
-          crossSellings: [
-            { id: "c1", active: true },
-          ] as unknown as Schemas["ProductCrossSelling"][],
-        }),
-      ),
-    ).toBe(true);
-  });
-
-  it("ignores inactive cross-sellings", () => {
-    expect(
-      productHasOptions(
-        product({
-          crossSellings: [
-            { id: "c1", active: false },
-          ] as unknown as Schemas["ProductCrossSelling"][],
-        }),
-      ),
-    ).toBe(false);
-  });
-});
 
 describe("productIsAvailable", () => {
   it("treats a missing flag as available", () => {

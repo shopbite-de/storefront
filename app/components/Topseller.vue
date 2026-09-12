@@ -34,7 +34,7 @@ const links = ref<ButtonProps[]>([
             :key="product.productNumber"
             :product="product"
             :with-favorite-button="false"
-            :with-add-to-cart-button="false"
+            :selectable="false"
           />
         </UPageGrid>
       </UPageSection>

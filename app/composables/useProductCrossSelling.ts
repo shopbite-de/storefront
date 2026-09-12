@@ -14,6 +14,7 @@ function mapAssociationToItems(
         label: product.name,
         value: product.id,
         price: getFormattedPrice(product.calculatedPrice.unitPrice),
+        unitPrice: product.calculatedPrice.unitPrice,
         icon: DEFAULT_ICON,
       }),
     ),
