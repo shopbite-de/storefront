@@ -22,6 +22,22 @@
 
   /* This is important because apple devices will zoom in when the font size is below 16px */
   --text-sm: 16px;
+
+  /* Feedback after adding to the cart: the cart bar and the header badge
+     pop instead of a toast (#325). */
+  --animate-cart-pop: cart-pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  @keyframes cart-pop {
+    0% {
+      transform: scale(1);
+    }
+    35% {
+      transform: scale(1.06);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
 }
 
 /*

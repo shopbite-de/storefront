@@ -9,14 +9,12 @@ import { nextTick } from "vue";
 const {
   mockAddProducts,
   mockRefreshCart,
-  mockToastAdd,
-  mockTriggerProductAdded,
+  mockTriggerCartItemAdded,
   mockTrackEvent,
 } = vi.hoisted(() => ({
   mockAddProducts: vi.fn(),
   mockRefreshCart: vi.fn(),
-  mockToastAdd: vi.fn(),
-  mockTriggerProductAdded: vi.fn(),
+  mockTriggerCartItemAdded: vi.fn(),
   mockTrackEvent: vi.fn(),
 }));
 
@@ -33,15 +31,9 @@ mockNuxtImport("useCart", () => {
   });
 });
 
-mockNuxtImport("useToast", () => {
-  return () => ({
-    add: mockToastAdd,
-  });
-});
-
 mockNuxtImport("useProductEvents", () => {
   return () => ({
-    triggerProductAdded: mockTriggerProductAdded,
+    triggerCartItemAdded: mockTriggerCartItemAdded,
   });
 });
 
@@ -59,11 +51,8 @@ vi.stubGlobal("useCart", () => ({
   addProducts: mockAddProducts,
   refreshCart: mockRefreshCart,
 }));
-vi.stubGlobal("useToast", () => ({
-  add: mockToastAdd,
-}));
 vi.stubGlobal("useProductEvents", () => ({
-  triggerProductAdded: mockTriggerProductAdded,
+  triggerCartItemAdded: mockTriggerCartItemAdded,
 }));
 vi.stubGlobal("useTrackEvent", () => ({
   trackAddToCart: mockTrackEvent,
@@ -142,8 +131,7 @@ describe("useAddToCart", () => {
         type: "product",
       },
     ]);
-    expect(mockToastAdd).toHaveBeenCalled();
-    expect(mockTriggerProductAdded).toHaveBeenCalled();
+    expect(mockTriggerCartItemAdded).toHaveBeenCalledWith(mockProduct, 1);
     expect(mockTrackEvent).toHaveBeenCalledWith(mockProduct, 1);
   });
 
@@ -157,8 +145,7 @@ describe("useAddToCart", () => {
     await addToCart();
 
     expect(isLoading.value).toBe(false);
-    expect(mockToastAdd).not.toHaveBeenCalled();
-    expect(mockTriggerProductAdded).not.toHaveBeenCalled();
+    expect(mockTriggerCartItemAdded).not.toHaveBeenCalled();
     expect(mockTrackEvent).not.toHaveBeenCalled();
   });
 

@@ -9,6 +9,13 @@ const {
 } = useCartQuickView();
 
 const { count: cartCount } = useCart();
+
+// The cart badge pops when a product goes into the cart (#325).
+const { onCartItemAdded } = useProductEvents();
+const cartPop = ref(0);
+onCartItemAdded(() => {
+  cartPop.value++;
+});
 const { count: wishListCount } = useWishlist();
 const { isCheckoutEnabled } = useShopBiteConfig();
 const { isLoggedIn, isGuestSession, logout } = useUser();
@@ -117,7 +124,13 @@ const dropDownMenu = computed<DropdownMenuItem[][]>(() => {
       />
     </UChip>
   </div>
-  <UChip v-if="isCheckoutEnabled" :text="cartCount" size="3xl">
+  <UChip
+    v-if="isCheckoutEnabled"
+    :key="cartPop"
+    :text="cartCount"
+    size="3xl"
+    :class="{ 'motion-safe:animate-cart-pop': cartPop > 0 }"
+  >
     <UButton
       aria-label="Zum Warenkorb"
       aria-haspopup="dialog"

@@ -5,6 +5,11 @@ import CartBar from "~/components/Cart/Bar.vue";
 
 const state = reactive({ count: 0, subtotal: 0, path: "/c/Pizza/" });
 const showCalls = vi.hoisted(() => ({ value: 0 }));
+type Addition = {
+  product: { name: string; translated: { name: string } };
+  quantity: number;
+};
+const listeners: Array<(addition: Addition) => void> = [];
 
 mockNuxtImport("useCart", () => () => ({
   count: computed(() => state.count),
@@ -22,6 +27,11 @@ mockNuxtImport("useRoute", () => () => ({
   },
   query: {},
 }));
+mockNuxtImport("useProductEvents", () => () => ({
+  onCartItemAdded: (callback: (addition: Addition) => void) => {
+    listeners.push(callback);
+  },
+}));
 mockNuxtImport("useCartQuickView", () => () => ({
   open: ref(false),
   mounted: ref(false),
@@ -36,6 +46,7 @@ describe("CartBar", () => {
     state.subtotal = 0;
     state.path = "/c/Pizza/";
     showCalls.value = 0;
+    listeners.length = 0;
   });
 
   it("stays hidden with an empty cart", async () => {
@@ -65,6 +76,29 @@ describe("CartBar", () => {
     const wrapper = await mountSuspended(CartBar);
     await wrapper.find('[data-testid="cart-bar"]').trigger("click");
     expect(showCalls.value).toBe(1);
+  });
+
+  it("names the added product for a moment instead of a toast", async () => {
+    vi.useFakeTimers();
+    state.count = 2;
+    state.subtotal = 15.5;
+    const wrapper = await mountSuspended(CartBar);
+    for (const listener of listeners) {
+      listener({
+        product: { name: "Pizza Salami", translated: { name: "Pizza Salami" } },
+        quantity: 2,
+      });
+    }
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-testid="cart-bar"]').text()).toContain(
+      "2× Pizza Salami",
+    );
+    vi.advanceTimersByTime(2000);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-testid="cart-bar"]').text()).toContain(
+      "2 Artikel",
+    );
+    vi.useRealTimers();
   });
 
   it("is hidden on the checkout pages", async () => {
