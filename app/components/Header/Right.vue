@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { useUser } from "@shopware/composables";
 import type { DropdownMenuItem } from "@nuxt/ui";
+import { useMediaQuery } from "@vueuse/core";
 
 const {
   open: cartQuickViewOpen,
   mounted: cartQuickViewMounted,
   show: openCartQuickView,
 } = useCartQuickView();
+// Bottom sheet on phones (also opened from the cart bar), side panel from
+// the lg breakpoint (64rem); the drawer only renders on the client (#325).
+const isDesktop = useMediaQuery("(min-width: 64rem)");
+const cartDrawerDirection = computed(() =>
+  isDesktop.value ? "right" : "bottom",
+);
 
 const { count: cartCount } = useCart();
 
@@ -144,11 +151,17 @@ const dropDownMenu = computed<DropdownMenuItem[][]>(() => {
     v-if="cartQuickViewMounted"
     v-model:open="cartQuickViewOpen"
     title="Warenkorb"
-    direction="right"
+    :direction="cartDrawerDirection"
+    :ui="{
+      content:
+        cartDrawerDirection === 'right' ? 'w-full max-w-md' : 'max-h-[92vh]',
+    }"
   >
     <template #header>
       <div class="h-full flex flex-col justify-center">
-        <h2 class="flex items-center gap-2 text-3xl md:text-4xl mt-8 mb-3 pb-2">
+        <h2
+          class="flex items-center gap-2 text-3xl md:text-4xl mb-3 pb-2 lg:mt-8"
+        >
           <UIcon name="i-lucide-shopping-bag" class="size-8" color="primary" />
           Warenkorb
         </h2>
