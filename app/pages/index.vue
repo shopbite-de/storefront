@@ -39,7 +39,7 @@ useRestaurantSchema();
 <template>
   <div v-if="page" class="relative">
     <Hero
-      :title="page.title"
+      :title="page.hero.title || page.title"
       :background-video="page.hero.backgroundVideo"
       :poster="page.hero.poster"
       :description="page.description"
@@ -47,6 +47,8 @@ useRestaurantSchema();
       :links="page.hero.links"
       :usps="page.hero.usps"
     />
+
+    <Topseller />
 
     <USeparator :ui="{ border: 'border-primary/30' }" />
 

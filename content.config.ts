@@ -58,6 +58,8 @@ export default defineContentConfig({
           backgroundVideo: z.string().optional(),
           poster: z.string().optional(),
           headline: z.string().optional(),
+          // Hero title; the page title (shop name) is the fallback (#327).
+          title: z.string().optional(),
           links: z.array(createLinkSchema()),
           usps: z.array(
             z.object({
