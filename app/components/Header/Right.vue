@@ -2,17 +2,11 @@
 import { useUser } from "@shopware/composables";
 import type { DropdownMenuItem } from "@nuxt/ui";
 
-const cartQuickViewOpen = ref(false);
-// The drawer (vaul) is created on first use instead of on every page (#314).
-const cartQuickViewMounted = ref(false);
-
-async function openCartQuickView() {
-  if (!cartQuickViewMounted.value) {
-    cartQuickViewMounted.value = true;
-    await nextTick();
-  }
-  cartQuickViewOpen.value = true;
-}
+const {
+  open: cartQuickViewOpen,
+  mounted: cartQuickViewMounted,
+  show: openCartQuickView,
+} = useCartQuickView();
 
 const { count: cartCount } = useCart();
 const { count: wishListCount } = useWishlist();

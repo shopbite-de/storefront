@@ -53,6 +53,12 @@ a product quick view, the "micro PDP" the customer asked for.
   sticky footer with the quantity stepper and the button that shows the
   total (unit price plus extras, times quantity; `AssociationItemProduct`
   carries `unitPrice` for that). Skeleton while the detail loads.
+- `Cart/Bar.vue` (mounted in `app.vue`): sticky bar at the bottom on
+  phones (`lg:hidden`) as soon as the cart holds something, "Warenkorb ·
+  n Artikel · subtotal", opens the cart drawer. `useCartQuickView` holds
+  the drawer state (`useState`) so the header button and the bar share it.
+  Hidden under `/bestellung`; a spacer keeps the footer clear; the cart is
+  loaded on the client, so the bar never renders on the server.
 - Listing and search routes add `available` to the projection.
 - `AddToWishlist.vue` takes `size` and `variant` and an `aria-label`.
 - Category listing, search page and `Product/Category.vue` render two
@@ -72,7 +78,9 @@ loads cross-sellings.
   shows "2× im Warenkorb"; the back button closes the sheet;
   `/c/Pizza/?produkt=30` opens the side panel on desktop directly; the
   search page opens it from a result. A drink without extras shows only
-  the quantity and the button. Screenshots mobile light/dark and desktop
+  the quantity and the button. After adding, the cart bar reads
+  "2 Artikel · 7,00 €", opens the cart drawer, and is absent on
+  `/bestellung/warenkorb` and at 1280 px. Screenshots mobile light/dark and desktop
   reviewed, no page errors.
 - Unit tests, Prettier, ESLint, typecheck and build pass. The unit run
   still exits 1 because of #323.
@@ -82,6 +90,5 @@ loads cross-sellings.
 
 ## Follow-ups (not in this issue)
 
-- Sticky cart bar on mobile once the cart holds items.
 - The quick view URL only resolves products of the current listing; a
   `?produkt=` on a page that does not list the product is ignored.

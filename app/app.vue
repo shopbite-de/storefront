@@ -108,5 +108,6 @@ useSeoMeta({
       </NuxtLayout>
     </UMain>
     <FooterWhenVisible />
+    <CartBar />
   </UApp>
 </template>
