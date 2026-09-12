@@ -1,42 +1,49 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 
-const props = defineProps<{
-  sortedProperties: Schemas["PropertyGroup"][] | undefined;
-}>();
-
-const isVegi = computed<boolean>(
-  () =>
-    props.sortedProperties?.some(
-      (group) =>
-        group.translated.name === "Vegetarisch" &&
-        group.options?.some((option) => option.translated.name === "Ja"),
-    ) ?? false,
+const props = withDefaults(
+  defineProps<{
+    sortedProperties: Schemas["PropertyGroup"][] | undefined;
+    // `chip` sits in the ingredient row, `overlay` on the cover image (#325).
+    variant?: "chip" | "overlay";
+  }>(),
+  { variant: "chip" },
 );
 
-const isVegan = computed<boolean>(
-  () =>
-    props.sortedProperties?.some(
-      (group) =>
-        group.translated.name === "Vegan" &&
-        group.options?.some((option) => option.translated.name === "Ja"),
-    ) ?? false,
+const hasYesOption = (groupName: string) =>
+  props.sortedProperties?.some(
+    (group) =>
+      group.translated.name === groupName &&
+      group.options?.some((option) => option.translated.name === "Ja"),
+  ) ?? false;
+
+const badges = computed(() =>
+  [
+    {
+      label: "Vegetarisch",
+      icon: "i-lucide-leaf",
+      show: hasYesOption("Vegetarisch"),
+    },
+    { label: "Vegan", icon: "i-lucide-vegan", show: hasYesOption("Vegan") },
+  ].filter((badge) => badge.show),
+);
+
+// Static spans with the UBadge classes, see CardIngredients.vue.
+const badgeClass = computed(() =>
+  props.variant === "overlay"
+    ? "rounded-md bg-default ring ring-inset ring-success/50"
+    : "rounded-full bg-success/10",
 );
 </script>
 
 <template>
-  <LazyUBadge
-    v-if="isVegi"
-    icon="i-lucide-leaf"
-    color="success"
-    variant="outline"
-    label="Vegetarisch"
-  />
-  <LazyUBadge
-    v-if="isVegan"
-    icon="i-lucide-vegan"
-    color="success"
-    variant="outline"
-    label="Vegan"
-  />
+  <span
+    v-for="badge in badges"
+    :key="badge.label"
+    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-success"
+    :class="badgeClass"
+  >
+    <UIcon :name="badge.icon" class="size-4 shrink-0" />
+    {{ badge.label }}
+  </span>
 </template>

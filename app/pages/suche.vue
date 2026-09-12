@@ -135,7 +135,7 @@ function submitSearch() {
 
           <div
             v-if="showSkeleton"
-            class="flex flex-col gap-4"
+            class="grid grid-cols-1 gap-4 xl:grid-cols-2"
             aria-busy="true"
             aria-label="Produkte werden geladen"
           >
@@ -144,7 +144,7 @@ function submitSearch() {
 
           <div
             v-else-if="elements.length > 0"
-            class="flex flex-col gap-4 transition-opacity duration-200"
+            class="grid grid-cols-1 gap-4 transition-opacity duration-200 xl:grid-cols-2"
             :class="{ 'opacity-40 pointer-events-none': loading }"
           >
             <ProductCardWhenVisible
@@ -162,7 +162,7 @@ function submitSearch() {
             </p>
             <template v-if="showFallback && fallbackProducts?.length">
               <p class="text-sm font-medium mt-2">Das könnte dir gefallen:</p>
-              <div class="flex flex-col gap-4">
+              <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <ProductCardWhenVisible
                   v-for="product in fallbackProducts"
                   :key="product.id"

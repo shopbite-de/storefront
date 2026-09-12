@@ -139,7 +139,7 @@ onMounted(() => {
         :category="child"
       />
     </div>
-    <div v-else class="grid grid-cols-1 gap-4">
+    <div v-else class="grid grid-cols-1 gap-4 xl:grid-cols-2">
       <ProductCard
         v-for="product in categoryProducts"
         :key="product.id"

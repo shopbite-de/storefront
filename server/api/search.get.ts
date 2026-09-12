@@ -15,7 +15,12 @@ const BASE_CRITERIA = {
       "propertyIds",
       "sortedProperties",
       "cover",
+      // The card decides between direct add-to-cart and the options (#325).
+      "available",
+      "childCount",
+      "crossSellings",
     ],
+    product_cross_selling: ["id", "active"],
     property: ["id", "name", "translated", "displayType", "options"],
     property_group_option: [
       "id",
@@ -33,6 +38,7 @@ const BASE_CRITERIA = {
         media: {},
       },
     },
+    crossSellings: {},
     properties: {
       associations: {
         group: {},

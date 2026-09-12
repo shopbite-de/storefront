@@ -14,10 +14,17 @@ const sortedProperties = computed(
     product.value.sortedProperties as Schemas["PropertyGroup"][] | undefined,
 );
 
+const { getFormattedPrice } = useCommercePrice();
+const { quantity: inCartQuantity } = useProductCartQuantity(
+  () => product.value.id,
+);
+
 const price = ref(product.value.calculatedPrice.totalPrice);
 const label = ref(product.value.translated.name ?? product.value.name);
 const description = ref(product.value.description);
 const number = ref(product.value.productNumber);
+
+const coverMedia = computed(() => product.value.cover?.media);
 
 function onVariantSelected(variant: Schemas["Product"]) {
   price.value = variant.calculatedPrice.totalPrice;
@@ -34,56 +41,78 @@ function onVariantSelected(variant: Schemas["Product"]) {
     duration="duration-1000"
     delay="delay-100"
   >
-    <UPageCard
-      :orientation="product.cover?.media?.url ? 'horizontal' : 'vertical'"
-      variant="outline"
-      reverse
-      :ui="{ footer: 'w-full', root: 'shadow-lg' }"
+    <article
+      class="flex h-full flex-col overflow-hidden rounded-xl bg-default shadow-md ring ring-default"
     >
-      <template #header>
-        <ProductCardDietBadges :sorted-properties="sortedProperties" />
-      </template>
-
-      <div v-if="product.cover?.media?.url">
+      <div v-if="coverMedia?.url" class="relative">
         <img
-          :src="product.cover.media.url"
-          :srcset="mediaSrcSet(product.cover.media)"
-          sizes="(min-width: 1024px) 50vw, 100vw"
-          :width="mediaSize(product.cover.media)?.width"
-          :height="mediaSize(product.cover.media)?.height"
+          :src="coverMedia.url"
+          :srcset="mediaSrcSet(coverMedia)"
+          sizes="(min-width: 1280px) 400px, 100vw"
+          :width="mediaSize(coverMedia)?.width"
+          :height="mediaSize(coverMedia)?.height"
           :alt="label"
           loading="lazy"
           decoding="async"
-          class="rounded-md h-auto max-w-full object-contain transition-opacity duration-700"
+          class="h-44 w-full object-cover"
+        />
+        <div class="absolute top-2.5 left-2.5 flex gap-1.5">
+          <ProductCardDietBadges
+            :sorted-properties="sortedProperties"
+            variant="overlay"
+          />
+        </div>
+        <AddToWishlist
+          v-if="withFavoriteButton"
+          :product="product"
+          variant="soft"
+          class="absolute top-2.5 right-2.5 rounded-full bg-default/90"
         />
       </div>
 
-      <template #title>
-        <div class="flex flex-row items-center gap-1">
-          <span class="text-sm text-primary">#{{ number }}</span>
-          <ProductCardKitchen :sorted-properties="sortedProperties" />
-          <p class="text-base text-pretty font-semibold text-highlighted">
-            {{ label }}
-          </p>
+      <div class="flex flex-1 flex-col gap-3 p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex min-w-0 flex-col gap-0.5">
+            <span
+              class="flex items-center gap-1 text-xs font-semibold text-primary"
+            >
+              #{{ number }}
+              <ProductCardKitchen :sorted-properties="sortedProperties" />
+            </span>
+            <h3 class="text-lg font-bold text-pretty text-highlighted">
+              {{ label }}
+            </h3>
+            <p v-if="description" class="text-sm text-default">
+              {{ description }}
+            </p>
+          </div>
+          <div class="flex shrink-0 flex-col items-end">
+            <span class="text-lg font-bold whitespace-nowrap text-highlighted">
+              {{ getFormattedPrice(price) }}
+            </span>
+            <span
+              v-if="inCartQuantity > 0"
+              class="text-xs whitespace-nowrap text-muted"
+              data-testid="in-cart-quantity"
+            >
+              {{ inCartQuantity }}× im Warenkorb
+            </span>
+          </div>
         </div>
-      </template>
 
-      <template #description>
-        <ProductCardDescription
-          :description="description"
+        <ProductCardIngredients
           :sorted-properties="sortedProperties"
+          :with-diet-badges="!coverMedia?.url"
         />
-      </template>
 
-      <template #footer>
         <ProductCardFooter
-          :price="price"
+          class="mt-auto"
           :product="product"
-          :with-favorite-button="withFavoriteButton"
+          :with-favorite-button="withFavoriteButton && !coverMedia?.url"
           :with-add-to-cart-button="withAddToCartButton"
           @variant-selected="onVariantSelected"
         />
-      </template>
-    </UPageCard>
+      </div>
+    </article>
   </AnimatedSection>
 </template>
