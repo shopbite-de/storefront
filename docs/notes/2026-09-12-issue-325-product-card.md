@@ -56,7 +56,7 @@ a product quick view, the "micro PDP" the customer asked for.
 - `Cart/Bar.vue` (mounted in `app.vue`): sticky bar at the bottom on
   phones (`lg:hidden`) as soon as the cart holds something, "Warenkorb ·
   n Artikel · subtotal", opens the cart drawer. `useCartQuickView` holds
-  the drawer state (`useState`) so the header button and the bar share it.
+  the drawer state (`useState`) so the header button and the bar share it. The cart drawer itself is a bottom sheet on phones and a side panel from `lg`, like the product quick view, with a close button next to the title (it also closes by swiping the handle down, tapping the overlay or Escape).
   Hidden under `/bestellung`; a spacer keeps the footer clear; the cart is
   loaded on the client, so the bar never renders on the server. Adding a
   product pops the bar (`--animate-cart-pop` in `main.css`, re-triggered
