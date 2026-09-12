@@ -113,6 +113,12 @@ The storefront reads plain Shopware entities with fixed names; seed data must ma
 - Long lists render on the server and hydrate on scroll: `hydrateWhenVisible(Component)` (`app/utils`) keeps the markup and the chunk, `AnimatedSection` still animates. Used for product cards and the footer.
 - `NuxtLink` prefetches on interaction only (`experimental.defaults.nuxtLink`), and Rolldown groups shared framework/UI modules into two chunks (`vite.build.rollupOptions.output.codeSplitting`). Measure with Lighthouse behind the h2 proxy (see `docs/notes/2026-09-10-issue-314-mobile-js-cost.md`) before changing either.
 
+### Stylesheet (#319)
+
+- Nuxt UI runs with `ui.experimental.componentDetection`, so only the theme files of the `<U…>` components found in the layers become Tailwind sources; a component rendered dynamically by name must be listed in the option's array form or its theme is empty.
+- Every family in the `--font-sans` stack costs a system font lookup per text style during the first layout. `fonts.defaults.fallbacks["sans-serif"]` is therefore limited to the phone system fonts (Roboto, Helvetica Neue); do not add desktop families back without measuring Style & Layout (`docs/notes/2026-09-12-issue-319-stylesheet-cost.md`).
+- `ui.colors.primary` in `app.config.ts` must be a colour alias defined in `main.css` (`brand`), not a hex value.
+
 ### SEO
 
 - `server/plugins/site-url.ts` makes `storeUrl` the nuxt-site-config URL, so canonical, sitemap and robots.txt share one base. Build absolute URLs with `toAbsoluteUrl(useSiteConfig().url, path)` (`app/utils/seo.ts`).
