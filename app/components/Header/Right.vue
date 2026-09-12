@@ -158,13 +158,22 @@ const dropDownMenu = computed<DropdownMenuItem[][]>(() => {
     }"
   >
     <template #header>
-      <div class="h-full flex flex-col justify-center">
+      <div class="flex h-full w-full items-center justify-between gap-2">
         <h2
           class="flex items-center gap-2 text-3xl md:text-4xl mb-3 pb-2 lg:mt-8"
         >
           <UIcon name="i-lucide-shopping-bag" class="size-8" color="primary" />
           Warenkorb
         </h2>
+        <!-- The sheet also closes by swiping the handle down, tapping the
+             overlay or pressing Escape; the button makes it obvious. -->
+        <UButton
+          icon="i-lucide-x"
+          color="neutral"
+          variant="ghost"
+          aria-label="Warenkorb schließen"
+          @click="cartQuickViewOpen = false"
+        />
       </div>
     </template>
     <template #body>
