@@ -57,7 +57,7 @@ importers:
         version: 1.5.2
       '@shopware/composables':
         specifier: ^1.12.1
-        version: 1.12.1(vue@3.5.42(typescript@6.0.3))
+        version: 1.13.0(vue@3.5.42(typescript@6.0.3))
       '@shopware/helpers':
         specifier: ^1.7.2
         version: 1.7.2
@@ -3033,8 +3033,14 @@ packages:
   '@shopware/composables@1.12.1':
     resolution: {integrity: sha512-5lbQwhXNyKKQf3+TUF3QqSHg/Gkqq+3/RkzW7qlgAmccEBFtkj45JL0/XvPD8vLwJ/oUpzRL9FhTM/THV3M8ZA==}
 
+  '@shopware/composables@1.13.0':
+    resolution: {integrity: sha512-sgXaiU5p2IHmAUqRhFlxmE9KrMLi9G6Qkv3TU13YKhthqhRB/VvOzNqzn9TApj2YwNx3DDZI5gS9ctJkFKZqxg==}
+
   '@shopware/helpers@1.7.2':
     resolution: {integrity: sha512-0MvgKYcpt5XrmKlz7RUHZvwaP+o9QOwqoOFnt+32DGSRrrwJlYhvFbfAk8pz/9tnhMmqI8k5xC5MITR6r5pnVw==}
+
+  '@shopware/helpers@1.8.0':
+    resolution: {integrity: sha512-19wZd5xjBeA/0wxKd2VIukr/ykAJwsAYdITjhhkoPw83V5xWxom6Uvm4UQGbLmytnmcl5tFT1sUXOvvCicmipQ==}
 
   '@shopware/nuxt-module@1.5.1':
     resolution: {integrity: sha512-Qp7hGhRm3KoSKtgrnFwgkRSei+Uc1t6SzDCKD/dchWfltWwMeAc3ac/agSnU2aUBn1yrUY8Fw3aKet8o0CNLkA==}
@@ -12169,7 +12175,19 @@ snapshots:
     transitivePeerDependencies:
       - vue
 
+  '@shopware/composables@1.13.0(vue@3.5.42(typescript@6.0.3))':
+    dependencies:
+      '@shopware/api-client': 1.6.0
+      '@shopware/helpers': 1.8.0
+      '@vueuse/core': 14.4.0(vue@3.5.42(typescript@6.0.3))
+      defu: 6.1.7
+      scule: 1.3.0
+    transitivePeerDependencies:
+      - vue
+
   '@shopware/helpers@1.7.2': {}
+
+  '@shopware/helpers@1.8.0': {}
 
   '@shopware/nuxt-module@1.5.1(patch_hash=34fdedb3969386171ca0ec74fc415d2c93161cd43f28b0e550ac417b30e82bca)(magicast@0.5.4)(vue@3.5.42(typescript@6.0.3))':
     dependencies:
