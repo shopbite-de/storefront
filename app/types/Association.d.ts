@@ -2,6 +2,7 @@ export type AssociationItemProduct = {
   label: string;
   value: string;
   price: string;
+  unitPrice?: number;
   icon?: string;
 };
 

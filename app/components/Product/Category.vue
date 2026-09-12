@@ -12,6 +12,7 @@ const props = defineProps({
 const category = toRef(props.category);
 const { apiClient } = useShopwareContext();
 const categoryProducts = ref<Schemas["Product"][]>([]);
+const quickView = useProductQuickView(categoryProducts);
 const isLoading = ref(true);
 
 const fetchCategoryProducts = async () => {
@@ -145,9 +146,15 @@ onMounted(() => {
         :key="product.id"
         :product="product"
         :with-favorite-button="true"
-        :with-add-to-cart-button="true"
+        :selectable="true"
+        @select="quickView.show"
       />
     </div>
+    <LazyProductQuickView
+      v-if="quickView.mounted.value"
+      v-model:open="quickView.open.value"
+      :product="quickView.product.value"
+    />
   </div>
   <div v-else-if="isLoading" class="flex flex-col" />
 </template>

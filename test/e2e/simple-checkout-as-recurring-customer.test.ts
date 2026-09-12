@@ -66,38 +66,25 @@ async function selectProductAndAddToCart(
   await expect(productCard).toBeVisible();
   await expect(productCard.locator("button .i-lucide\\:heart")).toBeVisible();
 
-  // Products with extras or variants open their options first; plain
-  // products go into the cart with one tap per unit (#325).
-  const optionsButton = productCard.getByRole("button", {
-    name: /^(Auswählen|Anpassen)$/,
+  // The card opens the quick view drawer; its state is the `produkt`
+  // query parameter (#325).
+  await productCard.getByRole("button", { name: /auswählen$/i }).click();
+  const drawer = page.locator('[data-vaul-drawer][data-state="open"]');
+  await expect(drawer).toBeVisible({ timeout: 10000 });
+  await expect(page).toHaveURL(/[?&]produkt=/);
+
+  const quantityInput = drawer.getByRole("spinbutton", { name: /anzahl/i });
+  await expect(quantityInput).toBeVisible({ timeout: 10000 });
+  await quantityInput.fill(quantity.toString());
+  await expect(quantityInput).toHaveValue(quantity.toString());
+
+  const addToCartButton = drawer.getByRole("button", {
+    name: /In den Warenkorb/,
   });
-  if ((await optionsButton.count()) > 0) {
-    await optionsButton.first().click();
-
-    const quantityInput = page.getByRole("spinbutton", { name: /anzahl/i });
-    await expect(quantityInput).toBeVisible();
-    await quantityInput.fill(quantity.toString());
-    await expect(quantityInput).toHaveValue(quantity.toString());
-
-    const addToCartButton = productCard.getByRole("button", {
-      name: "In den Warenkorb",
-    });
-    await expect(addToCartButton).toBeVisible({ timeout: 10000 });
-    await addToCartButton.click();
-    await expect(addToCartButton).not.toBeVisible({ timeout: 5000 });
-    return;
-  }
-
-  const addToCartButton = productCard.getByRole("button", {
-    name: "In den Warenkorb",
-  });
-  for (let added = 1; added <= quantity; added++) {
-    await addToCartButton.click();
-    await expect(productCard.getByTestId("in-cart-quantity")).toHaveText(
-      `${added}× im Warenkorb`,
-      { timeout: 10000 },
-    );
-  }
+  await expect(addToCartButton).toBeEnabled({ timeout: 10000 });
+  await addToCartButton.click();
+  await expect(drawer).not.toBeVisible({ timeout: 10000 });
+  await expect(page).not.toHaveURL(/[?&]produkt=/);
 }
 
 async function proceedToCheckoutAndLogin(page: Page) {

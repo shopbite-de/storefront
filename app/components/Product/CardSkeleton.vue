@@ -14,9 +14,5 @@
       <USkeleton class="h-6 w-20 rounded-full" />
       <USkeleton class="h-6 w-16 rounded-full" />
     </div>
-    <div class="flex gap-2">
-      <USkeleton class="size-11 rounded-md" />
-      <USkeleton class="h-11 flex-1 rounded-md" />
-    </div>
   </div>
 </template>

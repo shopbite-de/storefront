@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
+import type { AssociationItemProduct } from "~/types/Association";
 
 const props = defineProps<{
   productId: string;
@@ -19,6 +20,29 @@ const {
   onIngredientsDeselected,
 } = useProductDetail(() => props.productId);
 
+const { getFormattedPrice } = useCommercePrice();
+
+const selectedExtras = ref<AssociationItemProduct[]>([]);
+
+function onExtras(extras: AssociationItemProduct[]) {
+  selectedExtras.value = extras;
+  onExtrasSelected(extras);
+}
+
+// Unit price plus extras, times the quantity: what the button will add.
+const total = computed(() => {
+  const unitPrice = selectedProduct.value?.calculatedPrice.unitPrice ?? 0;
+  const extrasPrice = selectedExtras.value.reduce(
+    (sum, extra) => sum + (extra.unitPrice ?? 0),
+    0,
+  );
+  return (unitPrice + extrasPrice) * selectedQuantity.value;
+});
+
+const isAvailable = computed(() =>
+  selectedProduct.value ? productIsAvailable(selectedProduct.value) : true,
+);
+
 const onVariantSwitched = (variant: Schemas["Product"]) => {
   setSelectedProduct(variant);
   emit("variant-selected", variant);
@@ -28,10 +52,17 @@ const onAddToCart = () => emit("product-added");
 </script>
 
 <template>
-  <div v-if="!pending">
-    <div v-if="productDetails?.configurator">
+  <div class="flex flex-col gap-5">
+    <div v-if="pending" class="flex flex-col gap-3" aria-busy="true">
+      <USkeleton class="h-5 w-24" />
+      <div class="flex flex-wrap gap-2">
+        <USkeleton class="h-10 w-32 rounded-full" />
+        <USkeleton class="h-10 w-28 rounded-full" />
+        <USkeleton class="h-10 w-36 rounded-full" />
+      </div>
+    </div>
+    <template v-else-if="productDetails?.configurator">
       <ProductConfigurator
-        v-if="productDetails?.configurator"
         :p="productDetails.product"
         :c="productDetails.configurator"
         @variant-switched="onVariantSwitched"
@@ -39,30 +70,40 @@ const onAddToCart = () => emit("product-added");
       <ProductCrossSelling
         v-if="selectedProduct"
         :product="selectedProduct"
-        @extras-selected="onExtrasSelected"
+        @extras-selected="onExtras"
       />
       <ProductDeselectIngredient
         v-if="selectedProduct"
         :product="selectedProduct"
         @ingredients-deselected="onIngredientsDeselected"
       />
-    </div>
-    <div class="flex flex-row gap-4 mt-8">
+    </template>
+
+    <div
+      class="sticky bottom-0 -mx-4 mt-auto flex items-center gap-3 border-t border-default bg-default px-4 pt-4 pb-1 sm:-mx-6 sm:px-6"
+    >
       <UInputNumber
         v-model="selectedQuantity"
         size="xl"
-        placeholder="Anzahl"
+        aria-label="Anzahl"
         :min="1"
         :max="100"
+        :disabled="pending"
+        class="w-32 shrink-0"
       />
       <UButton
-        :disabled="isLoading"
+        class="flex-1 justify-between"
         size="xl"
-        label="In den Warenkorb"
         icon="i-lucide-shopping-cart"
-        block
+        :disabled="isLoading || pending || !isAvailable"
+        :loading="isLoading"
         @click="addToCart(onAddToCart)"
-      />
+      >
+        <span>{{ isAvailable ? "In den Warenkorb" : "Ausverkauft" }}</span>
+        <span v-if="isAvailable && !pending" class="font-bold">
+          {{ getFormattedPrice(total) }}
+        </span>
+      </UButton>
     </div>
   </div>
 </template>

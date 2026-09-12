@@ -68,6 +68,12 @@ const { data: fallbackProducts, refresh: refreshFallback } = useLazyAsyncData<
   { immediate: false },
 );
 
+// One quick view for the results and the fallback suggestions (#325).
+const quickView = useProductQuickView(() => [
+  ...elements.value,
+  ...(fallbackProducts.value ?? []),
+]);
+
 watch(showFallback, (visible) => {
   if (visible && !fallbackProducts.value) {
     refreshFallback();
@@ -92,6 +98,11 @@ function submitSearch() {
   <UContainer>
     <UPage>
       <UPageBody>
+        <LazyProductQuickView
+          v-if="quickView.mounted.value"
+          v-model:open="quickView.open.value"
+          :product="quickView.product.value"
+        />
         <div class="flex flex-col gap-4">
           <div class="flex flex-col sm:flex-row gap-4">
             <UInput
@@ -152,7 +163,8 @@ function submitSearch() {
               :key="product.id"
               :product="product"
               :with-favorite-button="true"
-              :with-add-to-cart-button="true"
+              :selectable="true"
+              @select="quickView.show"
             />
           </div>
 
@@ -168,7 +180,8 @@ function submitSearch() {
                   :key="product.id"
                   :product="product"
                   :with-favorite-button="true"
-                  :with-add-to-cart-button="true"
+                  :selectable="true"
+                  @select="quickView.show"
                 />
               </div>
             </template>
