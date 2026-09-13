@@ -40,20 +40,24 @@ features:
   headline: SHOPBITE
   features:
     - title: Öffnungszeiten
-      description: Von 11:30 - 14:30 und 17:30 - 23:00 Uhr. Samstags von 17:30 - 23:30 Uhr. Dienstag ist Ruhetag.
+      kind: hours
+      description: Samstags 17:30 - 23:30 Uhr, Dienstag ist Ruhetag.
       icon: i-lucide-clock
-      ui:
-        leading: bg-accented/50 p-2 rounded-md border border-muted border-dashed
+      link:
+        label: Alle Öffnungszeiten
+        to: "#oeffnungszeiten"
     - title: Lieferung
-      description: Wir liefern nach Obertshausen und Lämmerspiel. Ab 15€ liefern wir frei Haus, darunter berechnen wir lediglich 1€. Die Lieferzeit beträgt bei normaler Auslastung ca. 30 min
+      kind: delivery
+      description: Wir liefern nach Obertshausen und Lämmerspiel. Ab 15 € frei Haus, darunter 1 € Liefergebühr.
       icon: i-lucide-truck
-      ui:
-        leading: bg-accented/50 p-2 rounded-md border border-muted border-dashed
-    - title: Reservierungen und Bestellungen
-      description: Reservierungen nehmen wir ausschließlich telefonisch entgegen. Bestellungen nehmen wir gerne telefonisch oder online entgegen.
-      icon: i-lucide-pizza
-      ui:
-        leading: bg-accented/50 p-2 rounded-md border border-muted border-dashed
+    - title: Reservierung
+      kind: reservation
+      lead: Tisch nur telefonisch
+      description: Bestellungen nehmen wir gerne online oder telefonisch entgegen.
+      icon: i-lucide-phone
+      link:
+        label: 06104 77777 anrufen
+        to: "tel:+490610477777"
 marquee:
   title: Das lieben unsere Kunden
   description: Kundenbilder
