@@ -77,6 +77,9 @@ export default defineNuxtConfig({
           multiChannel: false,
           secureKey: "",
           contactForm: false,
+          // Shows a non-dismissible notice above the header that the shop
+          // is a demo and orders are not fulfilled (demo shops in demos/).
+          demoBanner: false,
         },
       },
       site: {
