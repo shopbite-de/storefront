@@ -57,7 +57,7 @@ onMounted(async () => {
 
 const route = useRoute();
 const siteConfig = useSiteConfig();
-const { site } = useRuntimeConfig().public;
+const { site, shopBite } = useRuntimeConfig().public;
 
 // Pages with a backend SEO URL (categories) override the canonical link.
 const canonicalUrl = computed(() => toAbsoluteUrl(siteConfig.url, route.path));
@@ -101,6 +101,8 @@ useSeoMeta({
   <NuxtLoadingIndicator />
 
   <UApp :toaster="appConfig.toaster">
+    <!-- Lazy keeps UBanner out of the entry chunk of real shops (#314). -->
+    <LazyDemoBanner v-if="shopBite.feature.demoBanner" />
     <Header />
     <UMain>
       <NuxtLayout>
