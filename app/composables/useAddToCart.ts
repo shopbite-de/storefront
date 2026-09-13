@@ -44,12 +44,6 @@ export function useAddToCart() {
       "-",
     );
 
-    console.log(
-      selectedProduct.value.translated.name,
-      extrasFormatted,
-      removedFormatted,
-    );
-
     return `${selectedProduct.value.translated.name}${extrasFormatted}${removedFormatted}`;
   });
 
