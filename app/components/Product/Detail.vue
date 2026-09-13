@@ -10,6 +10,7 @@ const emit = defineEmits(["product-added", "variant-selected"]);
 
 const {
   productDetails,
+  associationItems,
   pending,
   selectedProduct,
   selectedQuantity,
@@ -53,12 +54,28 @@ const onAddToCart = () => emit("product-added");
 
 <template>
   <div class="flex flex-col gap-5">
-    <div v-if="pending" class="flex flex-col gap-3" aria-busy="true">
-      <USkeleton class="h-5 w-24" />
-      <div class="flex flex-wrap gap-2">
-        <USkeleton class="h-10 w-32 rounded-full" />
-        <USkeleton class="h-10 w-28 rounded-full" />
-        <USkeleton class="h-10 w-36 rounded-full" />
+    <!-- One placeholder in the shape of the loaded body (options, extras,
+         ingredients), shown until product and extras are both loaded. -->
+    <div v-if="pending" class="flex flex-col gap-5" aria-busy="true">
+      <div class="flex flex-col gap-2">
+        <USkeleton class="h-5 w-24" />
+        <USkeleton class="h-11 w-full" />
+      </div>
+      <div class="flex flex-col gap-2">
+        <USkeleton class="h-5 w-20" />
+        <div class="flex flex-wrap gap-2">
+          <USkeleton class="h-10 w-32 rounded-full" />
+          <USkeleton class="h-10 w-28 rounded-full" />
+          <USkeleton class="h-10 w-36 rounded-full" />
+          <USkeleton class="h-10 w-24 rounded-full" />
+        </div>
+      </div>
+      <div class="flex flex-col gap-2">
+        <USkeleton class="h-5 w-16" />
+        <div class="flex flex-wrap gap-2">
+          <USkeleton class="h-10 w-28 rounded-full" />
+          <USkeleton class="h-10 w-24 rounded-full" />
+        </div>
       </div>
     </div>
     <template v-else-if="productDetails?.configurator">
@@ -68,8 +85,8 @@ const onAddToCart = () => emit("product-added");
         @variant-switched="onVariantSwitched"
       />
       <ProductCrossSelling
-        v-if="selectedProduct"
-        :product="selectedProduct"
+        v-if="associationItems.length > 0"
+        :associations="associationItems"
         @extras-selected="onExtras"
       />
       <ProductDeselectIngredient

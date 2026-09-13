@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
-import type { AssociationItemProduct } from "~/types/Association";
+import type {
+  AssociationItem,
+  AssociationItemProduct,
+} from "~/types/Association";
 
-const props = defineProps<{
-  product: Schemas["Product"];
+// The extras are loaded by useProductDetail together with the product, so
+// the list renders once and stays put when a variant is switched.
+defineProps<{
+  associations: AssociationItem[];
 }>();
 
 const emit = defineEmits<{
@@ -11,10 +15,6 @@ const emit = defineEmits<{
 }>();
 
 const selectedExtras = ref<AssociationItemProduct[]>([]);
-
-const { associationItems, isAssociationsLoading } = useProductCrossSelling(
-  () => props.product.id,
-);
 
 const isSelected = (extra: AssociationItemProduct) =>
   selectedExtras.value.some((selected) => selected.value === extra.value);
@@ -29,13 +29,8 @@ watch(selectedExtras, () => emit("extras-selected", selectedExtras.value));
 </script>
 
 <template>
-  <div v-if="isAssociationsLoading" class="flex flex-wrap gap-2">
-    <USkeleton class="h-10 w-32 rounded-full" />
-    <USkeleton class="h-10 w-28 rounded-full" />
-  </div>
   <div
-    v-for="association in associationItems"
-    v-else
+    v-for="association in associations"
     :key="association.label"
     class="flex flex-col gap-2"
   >
