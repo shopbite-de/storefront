@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { groupOpeningHours, toTelHref } from "../../app/utils/openingHours";
+import {
+  formatTodayHours,
+  groupOpeningHours,
+  toTelHref,
+} from "../../app/utils/openingHours";
 
 const lunch = (dayOfWeek: number) => ({
   dayOfWeek,
@@ -55,5 +59,32 @@ describe("toTelHref", () => {
   it("strips formatting from the phone number", () => {
     expect(toTelHref("+49 6104 71427")).toBe("tel:+49610471427");
     expect(toTelHref("06104 / 71-427")).toBe("tel:0610471427");
+  });
+});
+
+describe("formatTodayHours", () => {
+  const hours = [
+    { dayOfWeek: 1, openingTime: "17:30:00", closingTime: "23:00:00" },
+    { dayOfWeek: 1, openingTime: "11:30:00", closingTime: "14:30:00" },
+    { dayOfWeek: 7, openingTime: "11:30:00", closingTime: "23:00:00" },
+  ];
+
+  it("joins the intervals of the weekday in order", () => {
+    // 2026-09-14 is a Monday
+    expect(formatTodayHours(hours, new Date(2026, 8, 14, 10))).toBe(
+      "Heute 11:30–14:30 und 17:30–23:00",
+    );
+  });
+
+  it("maps Sunday to day 7", () => {
+    expect(formatTodayHours(hours, new Date(2026, 8, 13, 10))).toBe(
+      "Heute 11:30–23:00",
+    );
+  });
+
+  it("names a closed day", () => {
+    expect(formatTodayHours(hours, new Date(2026, 8, 15, 10))).toBe(
+      "Heute Ruhetag",
+    );
   });
 });

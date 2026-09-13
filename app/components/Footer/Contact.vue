@@ -55,7 +55,11 @@ const hasContact = Boolean(
       </ul>
     </address>
 
-    <div v-if="openingHours.length" class="text-sm">
+    <div
+      v-if="openingHours.length"
+      id="oeffnungszeiten"
+      class="scroll-mt-24 text-sm"
+    >
       <p class="font-semibold">Öffnungszeiten</p>
       <FooterStoreStatus class="mt-6" />
       <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-muted">

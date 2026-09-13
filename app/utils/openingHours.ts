@@ -17,6 +17,36 @@ const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
 
 const formatTime = (time: string) => time.slice(0, 5);
 
+/** Intervals of one weekday (1 = Monday … 7 = Sunday), e.g. `["11:30–14:30"]`. */
+export function intervalsForDay(
+  businessHours: BusinessHourLike[],
+  dayOfWeek: number,
+): string[] {
+  return businessHours
+    .filter(
+      (bh) => bh.dayOfWeek === dayOfWeek && bh.openingTime && bh.closingTime,
+    )
+    .sort((a, b) => a.openingTime!.localeCompare(b.openingTime!))
+    .map(
+      (bh) => `${formatTime(bh.openingTime!)}–${formatTime(bh.closingTime!)}`,
+    );
+}
+
+/**
+ * Today's hours as a sentence for the information cards (#332):
+ * `Heute 11:30–14:30 und 17:30–23:00`, or `Heute Ruhetag` on a closed day.
+ */
+export function formatTodayHours(
+  businessHours: BusinessHourLike[],
+  date: Date,
+): string {
+  const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
+  const intervals = intervalsForDay(businessHours, dayOfWeek);
+  return intervals.length === 0
+    ? "Heute Ruhetag"
+    : `Heute ${intervals.join(" und ")}`;
+}
+
 /**
  * Groups business hours into display rows: consecutive days (Monday to
  * Sunday) with the same intervals share a row. Returns an empty list if no
@@ -26,14 +56,7 @@ export function groupOpeningHours(
   businessHours: BusinessHourLike[],
 ): OpeningHoursRow[] {
   const intervalsByDay = DAY_LABELS.map((_, index) =>
-    businessHours
-      .filter(
-        (bh) => bh.dayOfWeek === index + 1 && bh.openingTime && bh.closingTime,
-      )
-      .sort((a, b) => a.openingTime!.localeCompare(b.openingTime!))
-      .map(
-        (bh) => `${formatTime(bh.openingTime!)}–${formatTime(bh.closingTime!)}`,
-      ),
+    intervalsForDay(businessHours, index + 1),
   );
 
   if (intervalsByDay.every((intervals) => intervals.length === 0)) return [];

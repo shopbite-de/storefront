@@ -41,6 +41,17 @@ const createBaseSchema = () =>
 const createFeatureSchema = () =>
   createBaseSchema().extend({
     icon: z.string().editor({ input: "icon" }),
+    // Information cards on the home page (#332): `kind` fills the lead line
+    // with live data (today's hours, delivery time), `lead` is the static
+    // alternative, `link` the card's action (a `tel:` target is a button).
+    kind: createEnum(["hours", "delivery", "reservation"]).optional(),
+    lead: z.string().optional(),
+    link: z
+      .object({
+        label: z.string().nonempty(),
+        to: z.string().nonempty(),
+      })
+      .optional(),
     ui: z
       .object({
         leading: z.string().optional(),
