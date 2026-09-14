@@ -58,6 +58,12 @@ export function useTrackEvent() {
     push(["trackEvent", "Cart", "AddToCart", product.productNumber, quantity]);
   }
 
+  // A separate action, so the cart suggestions are measurable apart from
+  // regular adds (#338).
+  function trackUpsellAdd(product: Schemas["Product"], quantity: number) {
+    push(["trackEvent", "Cart", "UpsellAdd", product.productNumber, quantity]);
+  }
+
   function trackSearch(term: string, productNumbers: string[]) {
     push(["trackSiteSearch", term, false, productNumbers.length]);
   }
@@ -68,6 +74,7 @@ export function useTrackEvent() {
     trackOrder,
     trackAddToWishlist,
     trackAddToCart,
+    trackUpsellAdd,
     trackSearch,
   };
 }
