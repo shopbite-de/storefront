@@ -179,7 +179,6 @@ const dropDownMenu = computed<DropdownMenuItem[][]>(() => {
     <template #body>
       <LazyCartQuickView
         :with-to-cart-button="true"
-        :with-upsell="true"
         class="md:min-w-90"
         @go-to-cart="cartQuickViewOpen = false"
       />

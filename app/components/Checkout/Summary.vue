@@ -192,7 +192,11 @@ const checkoutButtonLabel = computed<string>(() => {
     <div class="flex flex-col gap-4">
       <h3 class="text-lg font-semibold">Warenkorb</h3>
       <UCard>
-        <QuickView :with-quantity-input="false" :with-delete-button="false" />
+        <QuickView
+          :with-quantity-input="false"
+          :with-delete-button="false"
+          :with-upsell="true"
+        />
       </UCard>
       <CheckoutVoucherInput />
       <UButton

@@ -3,7 +3,7 @@ import type { Schemas } from "#shopware";
 const UPSELL_LIMIT = 6;
 
 /**
- * Suggestions in the cart drawer (#338): products flagged with the custom
+ * Suggestions on the order confirmation step (#338): products flagged with the custom
  * field `shopbite_cart_upsell`, added with quantity 1 in one click. Named
  * "upsell" because "cross-selling" already means the extras of a product.
  */
