@@ -96,6 +96,21 @@ describe("useTrackEvent", () => {
     ]);
   });
 
+  it("tracks an add from the cart suggestions as its own action", () => {
+    setMatomoConfig("https://analytics.example.com/", 3);
+
+    useTrackEvent().trackUpsellAdd(
+      {
+        productNumber: "D1",
+      } as Parameters<ReturnType<typeof useTrackEvent>["trackUpsellAdd"]>[0],
+      1,
+    );
+
+    expect(matomoWindow._paq).toEqual([
+      ["trackEvent", "Cart", "UpsellAdd", "D1", 1],
+    ]);
+  });
+
   it("appends to an existing _paq queue", () => {
     setMatomoConfig("https://analytics.example.com/", 3);
     matomoWindow._paq = [["setSiteId", "3"]];

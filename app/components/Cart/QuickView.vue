@@ -6,11 +6,13 @@ withDefaults(
     withQuantityInput?: boolean;
     withDeleteButton?: boolean;
     withToCartButton?: boolean;
+    withUpsell?: boolean;
   }>(),
   {
     withQuantityInput: true,
     withDeleteButton: true,
     withToCartButton: false,
+    withUpsell: false,
   },
 );
 
@@ -30,6 +32,8 @@ const emit = defineEmits(["go-to-cart"]);
       />
     </div>
     <div class="flex flex-col gap-4">
+      <!-- Suggestions right above the total, in the drawer only (#338). -->
+      <LazyCartUpsell v-if="withUpsell && !isEmpty" />
       <div class="flex flex-row justify-between">
         <template v-if="shippingTotal === 0">
           <div class="text-success font-medium">

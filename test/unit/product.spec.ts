@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Schemas } from "#shopware";
 import {
   getMainIngredients,
+  lineItemHoldsProduct,
   productIsAvailable,
 } from "../../app/utils/product";
 
@@ -25,6 +26,30 @@ describe("productIsAvailable", () => {
 
   it("is false when the flag is false", () => {
     expect(productIsAvailable(product({ available: false }))).toBe(false);
+  });
+});
+
+describe("lineItemHoldsProduct", () => {
+  const lineItem = (overrides: Partial<Schemas["LineItem"]>) =>
+    ({ id: "li", type: "product", ...overrides }) as Schemas["LineItem"];
+
+  it("matches a plain line item of the product", () => {
+    expect(lineItemHoldsProduct(lineItem({ referencedId: "p1" }), "p1")).toBe(
+      true,
+    );
+    expect(lineItemHoldsProduct(lineItem({ referencedId: "p2" }), "p1")).toBe(
+      false,
+    );
+  });
+
+  it("matches a container item carrying the product", () => {
+    const container = {
+      id: "li",
+      type: "container",
+      children: [{ id: "child", type: "product", referencedId: "p1" }],
+    } as unknown as Schemas["LineItem"];
+    expect(lineItemHoldsProduct(container, "p1")).toBe(true);
+    expect(lineItemHoldsProduct(container, "p2")).toBe(false);
   });
 });
 
