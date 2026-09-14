@@ -64,5 +64,18 @@ flagged variants of one product look alike in the row.
 - `pnpm build`: `components/Cart/Upsell.vue` is its own dynamic chunk
   (3.5 KB); the heading and the custom field name only occur in that chunk,
   so the entry chunk only gains `trackUpsellAdd` and `lineItemHoldsProduct`.
-- Not verified in the browser against a Shopware instance with the plugin
-  field and a flagged product.
+- Demo Store API (shopware.shopbite.de, plugin field deployed, Tiramisu
+  flagged): the request returns exactly `LF-144 Tiramisu` with price and
+  cover. None of the 66 variants matches `childCount = 0` although the API
+  serializes their child count as `0`, which confirms the variant filter
+  finding above.
+- Production build against the demo backend, Playwright on 1280×800 and
+  390×844 (script not committed):
+  - empty cart: drawer without the row, the upsell chunk is not requested;
+  - Pizza Calzone in the cart: "Dazu passt" with the Tiramisu tile between
+    the line item and the total, the request carries `sw-inheritance: true`
+    and the filter above;
+  - plus: badge 1 → 2 with the pop animation, the row disappears, Tiramisu is
+    a line item; Matomo sends `Cart / UpsellAdd / LF-144 / 1` (tracker hits
+    were aborted in the check);
+  - `/bestellung/warenkorb` shows both line items and no row.
