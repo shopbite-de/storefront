@@ -39,10 +39,11 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
 
   const siteName = computed(() => config.public.site?.name || "");
 
-  const robots = computed(() => {
-    const active = category.value?.active;
-    return active === false ? "noindex,nofollow" : "index,follow";
-  });
+  // Only inactive categories get their own rule; otherwise @nuxtjs/robots
+  // renders the site rule, which is noindex on the demo shop.
+  const robots = computed(() =>
+    category.value?.active === false ? "noindex,nofollow" : undefined,
+  );
 
   const canonicalUrl = computed(() => seoUrl.value || "");
 

@@ -103,7 +103,8 @@ describe("useCategorySeo", () => {
       "Pizza & Pasta | My Store – Online bestellen",
     );
     expect(result.canonicalUrl.value).toBe("https://example.com/c/pasta/");
-    expect(result.robots.value).toBe("index,follow");
+    // Active categories leave the robots rule to @nuxtjs/robots
+    expect(result.robots.value).toBeUndefined();
 
     // useSeoMeta should be called once with expected keys
     expect(
