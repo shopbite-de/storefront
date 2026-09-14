@@ -32,7 +32,7 @@ const emit = defineEmits(["go-to-cart"]);
       />
     </div>
     <div class="flex flex-col gap-4">
-      <!-- Suggestions right above the total, in the drawer only (#338). -->
+      <!-- Suggestions right above the total, on the confirmation step only (#338). -->
       <LazyCartUpsell v-if="withUpsell && !isEmpty" />
       <div class="flex flex-row justify-between">
         <template v-if="shippingTotal === 0">
