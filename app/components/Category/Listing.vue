@@ -197,7 +197,7 @@ async function openFilterDrawer() {
 
           <div
             v-if="showSkeleton"
-            class="grid grid-cols-1 gap-4 xl:grid-cols-2"
+            class="grid grid-cols-1 gap-4"
             aria-busy="true"
             aria-label="Produkte werden geladen"
           >
@@ -206,7 +206,7 @@ async function openFilterDrawer() {
 
           <div
             v-else
-            class="grid grid-cols-1 gap-4 transition-opacity duration-200 xl:grid-cols-2"
+            class="grid grid-cols-1 gap-4 transition-opacity duration-200"
             :class="{ 'opacity-40 pointer-events-none': loading }"
           >
             <ProductCardWhenVisible
