@@ -128,7 +128,6 @@ app/
 ├── components/     Cart, Checkout, Product, Food, Navigation, Header, …
 ├── composables/    Business logic — useBusinessHours, useDeliveryTime, useAddToCart, …
 ├── pages/          German routes: /speisekarte, /warenkorb, /konto, /bestellung
-├── stores/         Pinia (checkout state)
 ├── validation/     Zod schemas for forms
 └── assets/css/     Tailwind v4 theme tokens
 server/api/         Cached Store API proxies + the Geoapify key guard
