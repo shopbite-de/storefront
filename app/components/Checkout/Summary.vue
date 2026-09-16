@@ -9,6 +9,8 @@ const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
 const { isCheckoutEnabled, refresh } = useShopBiteConfig();
 const { trackOrder } = useTrackEvent();
+const { businessHours } = useBusinessHours();
+const { holidays } = useHolidays();
 const {
   isShippingMethodBlocked,
   isPaymentMethodBlocked,
@@ -150,10 +152,19 @@ const selectedDeliveryTime = ref("");
 // the business hours load in the browser). Starting with `true` rendered the
 // order button differently on the server and at hydration (#339).
 const isValidTime = ref(false);
+// app.vue loads business hours and holidays after mounting. Until then an
+// invalid time says nothing about the shop being closed (#349).
+const isLoadingOpeningHours = computed(
+  () => !businessHours.value || !holidays.value,
+);
 
 const checkoutButtonLabel = computed<string>(() => {
   if (!customerDataAvailable.value) {
     return "Bitte einloggen oder Kundendaten erfassen";
+  }
+
+  if (isLoadingOpeningHours.value) {
+    return "Lade Öffnungszeiten …";
   }
 
   if (!isValidTime.value) {
@@ -205,7 +216,9 @@ const checkoutButtonLabel = computed<string>(() => {
       <UButton
         :icon="isValidToProceed ? 'i-lucide-shopping-cart' : 'i-lucide-lock'"
         :disabled="!isValidToProceed || isPlacingOrder"
-        :loading="isPlacingOrder"
+        :loading="
+          isPlacingOrder || (customerDataAvailable && isLoadingOpeningHours)
+        "
         :label="checkoutButtonLabel"
         size="xl"
         block
