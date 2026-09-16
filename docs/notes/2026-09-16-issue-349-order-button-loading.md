@@ -33,8 +33,7 @@ Neither retries the request.
   possible with a valid time. The loading test fails without the change.
 - Production build against the demo backend with a guest session: the server
   HTML has the loading label, the button then goes from
-  "Lade Öffnungszeiten …" (disabled, spinner) straight to "Jetzt bestellen!",
-  also with the business hours request delayed by 3 s; no "closed" in
+  "Lade Öffnungszeiten …" (disabled, spinner) straight to "Jetzt bestellen!"; no "closed" in
   between, no hydration warning.
 - `pnpm typecheck` (0 errors), `pnpm prettier`, `pnpm eslint`,
   `pnpm test:unit` without the Matomo variables (267 tests).
