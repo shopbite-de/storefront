@@ -9,8 +9,8 @@ const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
 const { isCheckoutEnabled, refresh } = useShopBiteConfig();
 const { trackOrder } = useTrackEvent();
-const { businessHours } = useBusinessHours();
-const { holidays } = useHolidays();
+const { isLoading: isLoadingOpeningHours, hasFailed: hasOpeningHoursFailed } =
+  useOpeningHoursData();
 const {
   isShippingMethodBlocked,
   isPaymentMethodBlocked,
@@ -152,19 +152,21 @@ const selectedDeliveryTime = ref("");
 // the business hours load in the browser). Starting with `true` rendered the
 // order button differently on the server and at hydration (#339).
 const isValidTime = ref(false);
-// app.vue loads business hours and holidays after mounting. Until then an
-// invalid time says nothing about the shop being closed (#349).
-const isLoadingOpeningHours = computed(
-  () => !businessHours.value || !holidays.value,
-);
 
 const checkoutButtonLabel = computed<string>(() => {
   if (!customerDataAvailable.value) {
     return "Bitte einloggen oder Kundendaten erfassen";
   }
 
+  // app.vue loads business hours and holidays after mounting. Until then (or
+  // when that fails) an invalid time says nothing about the shop being closed
+  // (#349, #355).
   if (isLoadingOpeningHours.value) {
     return "Lade Öffnungszeiten …";
+  }
+
+  if (hasOpeningHoursFailed.value) {
+    return "Öffnungszeiten konnten nicht geladen werden";
   }
 
   if (!isValidTime.value) {
