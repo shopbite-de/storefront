@@ -3,11 +3,14 @@ import { useShopwareContext } from "#imports";
 export function useHolidays() {
   const { apiClient } = useShopwareContext();
 
-  const { data, pending, refresh } = useAsyncData(
+  const { data, pending, status, refresh } = useAsyncData(
     "holidays",
     async () => {
-      const response = await apiClient.invoke(
-        "shopbite.holiday.get get /shopbite/holiday",
+      // Retried in the browser only: on the server a retry would delay the
+      // page, and app.vue loads the data again after mounting (#355).
+      const response = await withRetries(
+        () => apiClient.invoke("shopbite.holiday.get get /shopbite/holiday"),
+        import.meta.client ? OPENING_HOURS_RETRY_DELAYS : [],
       );
 
       return response.data.holidays;
@@ -36,6 +39,7 @@ export function useHolidays() {
     holidays: data,
     isClosedHoliday,
     isLoading: pending,
+    status,
     refresh,
   };
 }

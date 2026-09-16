@@ -45,6 +45,11 @@ const {
 } = useDeliveryTime(now);
 
 const { isClosedHoliday } = useHolidays();
+const {
+  isLoaded: isOpeningHoursLoaded,
+  hasFailed: hasOpeningHoursFailed,
+  retry: retryOpeningHours,
+} = useOpeningHoursData();
 
 const validationError = computed<string | null>(() =>
   selected.value ? validate(selected.value) : null,
@@ -134,7 +139,28 @@ function handleTimeInput(event: Event): void {
 </script>
 
 <template>
-  <div v-if="isClosedHoliday(now) === false" class="flex flex-col gap-2 mt-4">
+  <div v-if="hasOpeningHoursFailed" class="mt-4">
+    <UAlert
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      title="Öffnungszeiten konnten nicht geladen werden"
+      description="Ohne Öffnungszeiten können wir keine Lieferzeit anbieten."
+      :actions="[
+        {
+          label: 'Erneut versuchen',
+          icon: 'i-lucide-refresh-cw',
+          color: 'error',
+          variant: 'outline',
+          onClick: retryOpeningHours,
+        },
+      ]"
+    />
+  </div>
+  <div
+    v-else-if="isOpeningHoursLoaded && isClosedHoliday(now) === false"
+    class="flex flex-col gap-2 mt-4"
+  >
     <div class="flex flex-row items-center justify-between gap-4">
       <label for="delivery-time" class="flex-1">
         Wunschlieferung- oder Abholzeit ab:
@@ -171,7 +197,7 @@ function handleTimeInput(event: Event): void {
       variant="subtle"
     />
   </div>
-  <div v-else-if="isClosedHoliday(now) === true">
+  <div v-else-if="isOpeningHoursLoaded && isClosedHoliday(now) === true">
     <UBadge
       variant="subtle"
       class="w-full"

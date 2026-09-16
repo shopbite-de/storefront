@@ -5,18 +5,15 @@ import Summary from "~/components/Checkout/Summary.vue";
 
 const { state } = vi.hoisted(() => ({
   state: {
-    businessHours: null as unknown[] | null,
-    holidays: null as unknown[] | null,
+    isLoading: true,
+    hasFailed: false,
     validTime: false,
   },
 }));
 
-mockNuxtImport("useBusinessHours", () => () => ({
-  businessHours: ref(state.businessHours),
-}));
-
-mockNuxtImport("useHolidays", () => () => ({
-  holidays: ref(state.holidays),
+mockNuxtImport("useOpeningHoursData", () => () => ({
+  isLoading: ref(state.isLoading),
+  hasFailed: ref(state.hasFailed),
 }));
 
 mockNuxtImport("useCheckout", () => () => ({
@@ -84,14 +81,12 @@ async function mountSummary() {
 
 describe("Checkout Summary order button", () => {
   beforeEach(() => {
-    state.businessHours = null;
-    state.holidays = null;
+    state.isLoading = true;
+    state.hasFailed = false;
     state.validTime = false;
   });
 
   it("shows a loading state while the opening hours are not loaded", async () => {
-    state.holidays = [];
-
     const button = await mountSummary();
 
     expect(button.text()).toBe("Lade Öffnungszeiten …");
@@ -99,9 +94,19 @@ describe("Checkout Summary order button", () => {
     expect(button.find(".animate-spin").exists()).toBe(true);
   });
 
+  it("says the opening hours could not be loaded when loading failed", async () => {
+    state.isLoading = false;
+    state.hasFailed = true;
+
+    const button = await mountSummary();
+
+    expect(button.text()).toBe("Öffnungszeiten konnten nicht geladen werden");
+    expect(button.attributes("disabled")).toBeDefined();
+    expect(button.find(".animate-spin").exists()).toBe(false);
+  });
+
   it("says the shop is closed once loaded without a valid time", async () => {
-    state.businessHours = [];
-    state.holidays = [];
+    state.isLoading = false;
 
     const button = await mountSummary();
 
@@ -111,8 +116,7 @@ describe("Checkout Summary order button", () => {
   });
 
   it("allows ordering once loaded with a valid time", async () => {
-    state.businessHours = [];
-    state.holidays = [];
+    state.isLoading = false;
     state.validTime = true;
 
     const button = await mountSummary();

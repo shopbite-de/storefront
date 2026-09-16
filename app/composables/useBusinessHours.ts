@@ -7,11 +7,17 @@ export type ServiceInterval = { start: Date; end: Date };
 export function useBusinessHours() {
   const { apiClient } = useShopwareContext();
 
-  const { data, pending, refresh } = useAsyncData(
+  const { data, pending, status, refresh } = useAsyncData(
     "business-hours",
     async () => {
-      const response = await apiClient.invoke(
-        "shopbite.business-hour.get get /shopbite/business-hour",
+      // Retried in the browser only: on the server a retry would delay the
+      // page, and app.vue loads the data again after mounting (#355).
+      const response = await withRetries(
+        () =>
+          apiClient.invoke(
+            "shopbite.business-hour.get get /shopbite/business-hour",
+          ),
+        import.meta.client ? OPENING_HOURS_RETRY_DELAYS : [],
       );
 
       return response.data.businessHours;
@@ -154,6 +160,7 @@ export function useBusinessHours() {
   return {
     businessHours: data,
     isLoading: pending,
+    status,
     refresh,
     isStoreOpen,
     getServiceIntervals,
