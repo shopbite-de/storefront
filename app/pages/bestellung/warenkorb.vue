@@ -6,9 +6,6 @@ useSeoMeta({
 
 const { isLoggedIn, isGuestSession } = useUser();
 const { isEmpty } = useCart();
-const { setStep } = useCheckoutStore();
-
-setStep(0);
 
 const isCustomerAvailable = computed<boolean>(() => {
   return isLoggedIn.value || isGuestSession.value;

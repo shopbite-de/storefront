@@ -146,7 +146,10 @@ const blockedMethodIcon = computed(() =>
 
 const isPlacingOrder = ref(false);
 const selectedDeliveryTime = ref("");
-const isValidTime = ref(true);
+// DeliveryTimeSelect reports `false` during its setup (no time selected before
+// the business hours load in the browser). Starting with `true` rendered the
+// order button differently on the server and at hydration (#339).
+const isValidTime = ref(false);
 
 const checkoutButtonLabel = computed<string>(() => {
   if (!customerDataAvailable.value) {
