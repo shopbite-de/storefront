@@ -175,7 +175,6 @@ export default defineNuxtConfig({
     "@nuxt/scripts",
     "nuxt-vitalizer",
     "@nuxt/eslint",
-    "@pinia/nuxt",
   ],
 
   content: {
@@ -275,7 +274,7 @@ export default defineNuxtConfig({
             groups: [
               {
                 name: "framework",
-                test: /node_modules\/(\.pnpm\/)?(vue|@vue\+|@vue\/|vue-router|unhead|@unhead|nuxt@|hookable|ofetch|ufo|defu|h3|devalue|klona|destr|cookie-es|radix3|rou3|unctx|pinia)[@/]/,
+                test: /node_modules\/(\.pnpm\/)?(vue|@vue\+|@vue\/|vue-router|unhead|@unhead|nuxt@|hookable|ofetch|ufo|defu|h3|devalue|klona|destr|cookie-es|radix3|rou3|unctx)[@/]/,
                 minShareCount: 2,
                 priority: 20,
               },
