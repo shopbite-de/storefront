@@ -61,10 +61,11 @@ function onVariantSelected(variant: Schemas["Product"]) {
       {{ description }}
     </template>
     <template #body>
-      <ProductCardIngredients
-        :sorted-properties="sortedProperties"
-        :with-diet-badges="true"
-      />
+      <!-- Diet badges only: the ingredients are listed once, in the
+           deselectable "Zutaten" section of ProductDetail. -->
+      <div class="flex flex-wrap gap-1.5 empty:hidden">
+        <ProductCardDietBadges :sorted-properties="sortedProperties" />
+      </div>
       <ProductDetail
         v-if="product"
         :key="product.id"
