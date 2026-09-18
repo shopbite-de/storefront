@@ -48,7 +48,7 @@ importers:
         version: 10.73.0(ac019468e365709d9989df401a230f69)
       '@shopware/api-client':
         specifier: ^1.5.1
-        version: 1.5.1
+        version: 1.6.0
       '@shopware/api-gen':
         specifier: ^1.5.1
         version: 1.5.2
