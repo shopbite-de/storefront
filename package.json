@@ -54,7 +54,7 @@
     "@shopware/nuxt-module": "^1.5.1",
     "@unhead/vue": "^3.4.0",
     "@vite-pwa/nuxt": "^1.1.1",
-    "@vueuse/core": "^14.4.0",
+    "@vueuse/core": "^15.0.0",
     "dotenv": "^17.4.2",
     "fflate": "^0.8.3",
     "nuxt": "^4.5.2",
