@@ -65,6 +65,27 @@ async function acceptDataProtection(wrapper: VueWrapper) {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+// Fills everything the schema requires except the password fields.
+async function fillRequiredFields(wrapper: VueWrapper) {
+  await wrapper.find('input[name="firstName"]').setValue("John");
+  await wrapper.find('input[name="lastName"]').setValue("Doe");
+  await wrapper.find('input[name="email"]').setValue("john@example.com");
+  const state = (
+    wrapper.vm as unknown as {
+      state: {
+        billingAddress: { street: string; zipcode: string; city: string };
+      };
+    }
+  ).state;
+  state.billingAddress.street = "Musterstr 1";
+  state.billingAddress.zipcode = "12345";
+  state.billingAddress.city = "Musterstadt";
+  await wrapper
+    .find('input[name="billingAddress.phoneNumber"]')
+    .setValue("12345678");
+  await acceptDataProtection(wrapper);
+}
+
 describe("RegistrationForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -320,5 +341,91 @@ describe("RegistrationForm", () => {
     expect(wrapper.text()).toContain(
       "Meinten Sie: Corrected Street 123, 54321 Corrected City?",
     );
+  });
+
+  it("never offers a guest account when allowGuest is false", async () => {
+    const wrapper = await mountSuspended(RegistrationForm, {
+      props: { allowGuest: false },
+    });
+
+    expect(wrapper.text()).not.toContain("Kein Kundenkonto erstellen");
+    expect(
+      (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest,
+    ).toBe(false);
+    expect(wrapper.find('input[name="password"]').exists()).toBe(true);
+    expect(wrapper.find('input[name="passwordConfirm"]').exists()).toBe(true);
+  });
+
+  it("does not register without a password when allowGuest is false", async () => {
+    const wrapper = await mountSuspended(RegistrationForm, {
+      props: { allowGuest: false },
+    });
+
+    await fillRequiredFields(wrapper);
+    await wrapper.find("form").trigger("submit");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockRegister).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain(
+      "Das Passwort muss mindestens 8 Zeichen lang sein.",
+    );
+  });
+
+  it("registers a real customer account when allowGuest is false", async () => {
+    mockRegister.mockResolvedValueOnce({
+      id: "customer-id",
+      active: true,
+      doubleOptInRegistration: false,
+    });
+    const wrapper = await mountSuspended(RegistrationForm, {
+      props: { allowGuest: false },
+    });
+
+    await fillRequiredFields(wrapper);
+    await wrapper.find('input[name="password"]').setValue("supersecret");
+    await wrapper.find('input[name="passwordConfirm"]').setValue("supersecret");
+
+    await wrapper.find("form").trigger("submit");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockRegister).toHaveBeenCalled();
+    const calledData = mockRegister.mock.calls[0]![0];
+    expect(calledData.guest).toBe(false);
+    expect(calledData.password).toBe("supersecret");
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Konto erfolgreich erstellt",
+        color: "success",
+      }),
+    );
+  });
+
+  it("asks for the e-mail confirmation on double opt-in registrations", async () => {
+    const customer = {
+      id: "customer-id",
+      active: false,
+      doubleOptInRegistration: true,
+    };
+    mockRegister.mockResolvedValueOnce(customer);
+    const wrapper = await mountSuspended(RegistrationForm, {
+      props: { allowGuest: false },
+    });
+
+    await fillRequiredFields(wrapper);
+    await wrapper.find('input[name="password"]').setValue("supersecret");
+    await wrapper.find('input[name="passwordConfirm"]').setValue("supersecret");
+
+    await wrapper.find("form").trigger("submit");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Fast geschafft!",
+        color: "info",
+      }),
+    );
+    const emitted = wrapper.emitted("registration-success");
+    expect(emitted).toBeTruthy();
+    expect(emitted![0]![1]).toEqual(customer);
   });
 });
