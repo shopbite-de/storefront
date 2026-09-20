@@ -3,6 +3,21 @@ import { createRegistrationSchema } from "~/validation/registrationSchema";
 import type { RegistrationSchema } from "~/validation/registrationSchema";
 import { ApiClientError } from "@shopware/api-client";
 import type { FormSubmitEvent } from "@nuxt/ui";
+import type { Schemas } from "#shopware";
+
+const props = withDefaults(
+  defineProps<{
+    /**
+     * Whether the visitor may skip the customer account (guest order). The
+     * registration page (`/registrierung`) always creates a real account, the
+     * checkout offers the choice.
+     */
+    allowGuest?: boolean;
+  }>(),
+  {
+    allowGuest: true,
+  },
+);
 
 const config = useRuntimeConfig();
 const { register, isLoggedIn } = useUser();
@@ -23,7 +38,7 @@ const state = reactive({
   firstName: "",
   lastName: "",
   email: "",
-  guest: true,
+  guest: props.allowGuest,
   password: "",
   passwordConfirm: "",
   acceptedDataProtection: false,
@@ -59,6 +74,14 @@ const state = reactive({
 
 const schema = computed(() => createRegistrationSchema(state));
 
+/**
+ * With double opt-in enabled in Shopware the customer stays inactive until the
+ * confirmation link is clicked, so there is no session to continue with.
+ */
+function needsEmailConfirmation(customer: Schemas["Customer"] | undefined) {
+  return !!customer?.doubleOptInRegistration && !customer?.active;
+}
+
 const toast = useToast();
 
 const billingAddressFields = ref();
@@ -93,16 +116,30 @@ async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
   }
 
   try {
-    // @ts-expect-error - password is required in the API type but not for guests
-    await register(registrationData);
+    const customer: Schemas["Customer"] | undefined =
+      // @ts-expect-error - password is required in the API type but not for guests
+      await register(registrationData);
 
-    toast.add({
-      title: "Erfolgreich Kundendaten erfasst",
-      color: "success",
-    });
+    if (needsEmailConfirmation(customer)) {
+      toast.add({
+        title: "Fast geschafft!",
+        description:
+          "Wir haben dir eine E-Mail geschickt. Bitte bestätige den Link darin, um dein Konto zu aktivieren.",
+        color: "info",
+      });
+    } else {
+      toast.add({
+        title: registrationData.guest
+          ? "Erfolgreich Kundendaten erfasst"
+          : "Konto erfolgreich erstellt",
+        color: "success",
+      });
+    }
+
     emit(
       "registration-success",
       registrationData as unknown as RegistrationSchema,
+      customer,
     );
   } catch (error) {
     console.error("Registration failed:", error);
@@ -136,7 +173,10 @@ const accountTypes = ref([
 ]);
 
 const emit = defineEmits<{
-  "registration-success": [data: RegistrationSchema];
+  "registration-success": [
+    data: RegistrationSchema,
+    customer: Schemas["Customer"] | undefined,
+  ];
 }>();
 </script>
 
@@ -157,7 +197,7 @@ const emit = defineEmits<{
       />
     </UFormField>
 
-    <UFormField name="guest">
+    <UFormField v-if="allowGuest" name="guest">
       <USwitch
         v-model="state.guest"
         label="Kein Kundenkonto erstellen"
@@ -179,14 +219,15 @@ const emit = defineEmits<{
       <UInput v-model="state.email" class="w-full" />
     </UFormField>
 
-    <UFormField v-if="!state.guest" label="Password" name="password">
+    <UFormField v-if="!state.guest" label="Passwort" name="password" required>
       <UInput v-model="state.password" type="password" class="w-full" />
     </UFormField>
 
     <UFormField
       v-if="!state.guest"
-      label="Password wiederholen"
+      label="Passwort wiederholen"
       name="passwordConfirm"
+      required
     >
       <UInput v-model="state.passwordConfirm" type="password" class="w-full" />
     </UFormField>

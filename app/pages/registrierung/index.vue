@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Schemas } from "#shopware";
+
 useSeoMeta({
   title: "Registrieren",
 });
@@ -14,6 +16,20 @@ watch(isLoggedIn, (isLoggedIn) => {
     navigateTo({ path: "/konto" });
   }
 });
+
+function onRegistrationSuccess(
+  _data: unknown,
+  customer: Schemas["Customer"] | undefined,
+) {
+  // With double opt-in the customer stays inactive until the e-mail link is
+  // clicked, so there is no account session to show yet.
+  if (customer?.doubleOptInRegistration && !customer?.active) {
+    navigateTo("/anmelden");
+    return;
+  }
+
+  navigateTo("/konto");
+}
 </script>
 
 <template>
@@ -23,6 +39,9 @@ watch(isLoggedIn, (isLoggedIn) => {
     title="Registrieren"
     description="Erstelle dein Kundenkonto."
   >
-    <UserRegistrationForm @registration-success="navigateTo('/konto')" />
+    <UserRegistrationForm
+      :allow-guest="false"
+      @registration-success="onRegistrationSuccess"
+    />
   </UPageSection>
 </template>
