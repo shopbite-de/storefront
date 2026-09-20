@@ -56,13 +56,17 @@ mockNuxtImport("useRuntimeConfig", () => () => ({
 // UCheckbox renders the clickable control as `button[role="checkbox"]` next to
 // an aria-hidden native input that only mirrors the state, so the button is
 // what has to be clicked to toggle the v-model.
-async function acceptDataProtection(wrapper: VueWrapper) {
-  const hiddenInput = wrapper.find('input[name="acceptedDataProtection"]');
+async function toggleCheckbox(wrapper: VueWrapper, name: string) {
+  const hiddenInput = wrapper.find(`input[name="${name}"]`);
   const button = hiddenInput.element.parentElement!.querySelector(
     'button[role="checkbox"]',
   )!;
   await new DOMWrapper(button).trigger("click");
   await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+async function acceptDataProtection(wrapper: VueWrapper) {
+  await toggleCheckbox(wrapper, "acceptedDataProtection");
 }
 
 // Fills everything the schema requires except the password fields.
@@ -343,12 +347,31 @@ describe("RegistrationForm", () => {
     );
   });
 
+  it("orders as a guest by default and reveals the password fields on opt-in", async () => {
+    const wrapper = await mountSuspended(RegistrationForm);
+
+    expect(wrapper.text()).toContain("Kundenkonto anlegen");
+    expect(
+      (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest,
+    ).toBe(true);
+    expect(wrapper.find('input[name="password"]').exists()).toBe(false);
+
+    await toggleCheckbox(wrapper, "guest");
+    await nextTick();
+
+    expect(
+      (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest,
+    ).toBe(false);
+    expect(wrapper.find('input[name="password"]').exists()).toBe(true);
+    expect(wrapper.find('input[name="passwordConfirm"]').exists()).toBe(true);
+  });
+
   it("never offers a guest account when allowGuest is false", async () => {
     const wrapper = await mountSuspended(RegistrationForm, {
       props: { allowGuest: false },
     });
 
-    expect(wrapper.text()).not.toContain("Kein Kundenkonto erstellen");
+    expect(wrapper.text()).not.toContain("Kundenkonto anlegen");
     expect(
       (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest,
     ).toBe(false);

@@ -74,6 +74,15 @@ const state = reactive({
 
 const schema = computed(() => createRegistrationSchema(state));
 
+// The API payload keeps the negated `guest` flag, the form asks the positive
+// question: a guest order is the default, creating an account is the opt-in.
+const createAccount = computed({
+  get: () => !state.guest,
+  set: (value: boolean) => {
+    state.guest = !value;
+  },
+});
+
 /**
  * With double opt-in enabled in Shopware the customer stays inactive until the
  * confirmation link is clicked, so there is no session to continue with.
@@ -197,14 +206,6 @@ const emit = defineEmits<{
       />
     </UFormField>
 
-    <UFormField v-if="allowGuest" name="guest">
-      <USwitch
-        v-model="state.guest"
-        label="Kein Kundenkonto erstellen"
-        class="w-full"
-      />
-    </UFormField>
-
     <div class="flex flex-row justify-between gap-4">
       <UFormField label="Vorname" name="firstName" required class="w-full">
         <UInput v-model="state.firstName" type="text" class="w-full" />
@@ -217,6 +218,15 @@ const emit = defineEmits<{
 
     <UFormField label="Email" name="email" required>
       <UInput v-model="state.email" class="w-full" />
+    </UFormField>
+
+    <UFormField v-if="allowGuest" name="guest">
+      <UCheckbox
+        v-model="createAccount"
+        label="Kundenkonto anlegen"
+        description="Für schnellere Bestellungen mit gespeicherten Adressen"
+        class="w-full"
+      />
     </UFormField>
 
     <UFormField v-if="!state.guest" label="Passwort" name="password" required>
