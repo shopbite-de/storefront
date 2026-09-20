@@ -20,17 +20,10 @@ const props = withDefaults(
 );
 
 const config = useRuntimeConfig();
-const { register, isLoggedIn } = useUser();
-
-if (import.meta.client && isLoggedIn.value) {
-  navigateTo({ path: "/konto" });
-}
-
-watch(isLoggedIn, (isLoggedIn) => {
-  if (isLoggedIn) {
-    navigateTo({ path: "/konto" });
-  }
-});
+// Where to go after a successful registration is the caller's decision: the
+// registration page sends the visitor to the account, the checkout continues
+// with the order.
+const { register } = useUser();
 
 const state = reactive({
   accountType: "private" as "private" | "business",
