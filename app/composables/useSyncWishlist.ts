@@ -3,7 +3,7 @@ import type { ComputedRef, Ref } from "vue";
 import type { Schemas } from "#shopware";
 
 /**
- * Overrides `useSyncWishlist` of the `@shopware/composables` layer (1.12.1),
+ * Overrides `useSyncWishlist` of the `@shopware/composables` layer (1.13.0),
  * including its use inside the layer's `useWishlist`. The only change: a
  * customer without a wishlist (404) or a shop with the wishlist disabled (403)
  * is an expected state and not logged as an error (#366).
