@@ -6,8 +6,11 @@ import { useSearchTracking } from "../../app/composables/useSearchTracking";
 
 const { mockTrackSearch } = vi.hoisted(() => ({ mockTrackSearch: vi.fn() }));
 
+// plugins/matomo.ts calls trackPageView when Matomo is configured in the
+// test environment; without it the plugin rejects outside the test (#323).
 mockNuxtImport("useTrackEvent", () => () => ({
   trackSearch: mockTrackSearch,
+  trackPageView: vi.fn(),
 }));
 
 const products = (...numbers: string[]) =>
