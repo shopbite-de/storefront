@@ -1,0 +1,13 @@
+diff --git a/plugin.ts b/plugin.ts
+index 2b843eaa6d89f38ef4bd1bce3a0090aa41034572..3a59bd45ac795e80d668fa195f5f311bb92c8a4b 100644
+--- a/plugin.ts
++++ b/plugin.ts
+@@ -16,7 +16,7 @@ import {
+ } from "#imports";
+ import type { ApiClient } from "#shopware";
+ 
+-import type { ShopwareNuxtOptions } from "./src";
++import type { ShopwareNuxtOptions } from "./dist/index";
+ 
+ type ShopwarePluginInjections = {
+   shopwareApiClient: ApiClient;

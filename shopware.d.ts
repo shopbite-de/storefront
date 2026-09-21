@@ -19,7 +19,7 @@ declare module "#shopware" {
 
   // Fallback operations reference the default schemas, but the composables
   // compare their responses against ours. Re-map the affected responses.
-  type CreateOrderFromQuote = "createOrderFromQuote post /quote/order/{id}";
+  type CreateOrderFromQuote = "createOrderFromQuote post /quote/{id}/order";
 
   export type operations = Omit<FallbackOperations, CreateOrderFromQuote> &
     CustomOperations & {

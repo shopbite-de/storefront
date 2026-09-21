@@ -47,7 +47,7 @@ Always run `nuxt typecheck` via the `pnpm typecheck` script, not via `npx vue-ts
 
 - `shopware.d.ts` falls back to the api-client's default types for operations/schemas our instance does not expose, and keeps `LineItem.payload` optional.
 - `api-gen.config.json` applies the upstream schema patches plus `api-types/storeApiSchema.shopbite.overrides.json` when generating types.
-- `patches/@shopware__nuxt-module@1.5.1.patch` (pnpm patch) gives the module's plugin an explicit type. When Renovate bumps `@shopware/nuxt-module`, the patch must be re-applied to the new version (`pnpm patch @shopware/nuxt-module@<version>`).
+- `patches/@shopware__nuxt-module@1.5.2.patch` (pnpm patch) points the plugin's `ShopwareNuxtOptions` import at `./dist/index` (the package ships no `src/`). Since 1.5.2 the plugin carries its explicit type upstream, so this one line is all that is left. When Renovate bumps `@shopware/nuxt-module`, the patch must be re-applied to the new version (`pnpm patch @shopware/nuxt-module@<version>`), or dropped once upstream fixes the import.
 
 Do not name a project composable like one from the `@shopware/composables` layer (e.g. `useCategory`): the project version shadows the layer's inside the layer's own code as well.
 
@@ -87,7 +87,7 @@ Key custom composables:
 - **`useAddToCart`** – products with extras/toppings use UUID v5 (product ID + sorted extras) as container item reference; simple products bypass the container
 - **`useAddressAutocomplete`** – proxies Geoapify through `/api/address/autocomplete` to avoid exposing the API key client-side
 - **`useShopBiteConfig`** – fetches delivery config and checkout state from the custom Shopware plugin
-- **`useSyncWishlist`** – deliberate override of the layer composable (copy of `@shopware/composables` 1.12.1) that does not log the expected 404/403 of a missing or disabled wishlist (#366); compare with the layer source when Renovate bumps `@shopware/composables`
+- **`useSyncWishlist`** – deliberate override of the layer composable (copy of `@shopware/composables` 1.13.0) that does not log the expected 404/403 of a missing or disabled wishlist (#366); compare with the layer source when Renovate bumps `@shopware/composables`
 
 ### Product data model (what Shopware must contain)
 
