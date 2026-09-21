@@ -5,11 +5,7 @@ const { data: page } = await useAsyncData("index", () =>
   $fetch("/api/content/home"),
 );
 if (!page.value) {
-  throw createError({
-    statusCode: 404,
-    statusMessage: "Page not found",
-    fatal: true,
-  });
+  throw createNotFoundError();
 }
 
 const { site } = useRuntimeConfig().public;
