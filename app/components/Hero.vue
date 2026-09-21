@@ -165,18 +165,26 @@ const secondaryLinks = computed(() => props.links.slice(1));
           </p>
         </div>
 
-        <!-- Fixed height: the status arrives after hydration (#327). -->
+        <!-- Fixed height: the status arrives after mounting (#327, #365).
+             Phones get one row each for status and delivery, so a long
+             status cannot wrap the line; from sm both share one row and the
+             delivery time waits for the status. -->
         <div
-          class="flex min-h-6 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/90"
+          class="grid items-center text-sm text-white/90 sm:flex sm:min-h-6 sm:gap-x-4"
+          :class="
+            isCheckoutEnabled
+              ? 'grid-rows-[1.5rem_1.5rem]'
+              : 'grid-rows-[1.5rem]'
+          "
           aria-live="polite"
         >
           <span
             v-if="statusLabel"
-            class="inline-flex items-center gap-2"
+            class="row-start-1 flex min-w-0 items-center gap-2"
             data-testid="hero-status"
           >
             <span
-              class="size-2 rounded-full"
+              class="size-2 shrink-0 rounded-full"
               :class="
                 status?.open
                   ? 'bg-green-400 shadow-[0_0_0_3px_rgba(74,222,128,0.3)]'
@@ -184,11 +192,13 @@ const secondaryLinks = computed(() => props.links.slice(1));
               "
               aria-hidden="true"
             />
-            {{ statusLabel }}
+            <span class="truncate">{{ statusLabel }}</span>
           </span>
           <span
-            v-if="statusLabel && isCheckoutEnabled"
-            class="inline-flex items-center gap-1.5"
+            v-if="isCheckoutEnabled"
+            class="row-start-2 inline-flex items-center gap-1.5"
+            :class="{ 'sm:hidden': !statusLabel }"
+            data-testid="hero-delivery"
           >
             <UIcon name="i-lucide-bike" class="size-4" />
             Lieferung ca. {{ deliveryTime }} Min
