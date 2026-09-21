@@ -155,6 +155,12 @@ export default defineNuxtConfig({
     },
   },
 
+  image: {
+    // Logos resized by IPX: 30 days like the files in public/
+    // (modules/public-cache.ts, #273) instead of IPX's 60 seconds.
+    ipx: { maxAge: 2592000 },
+  },
+
   shopware: {
     endpoint: "",
     accessToken: "",
