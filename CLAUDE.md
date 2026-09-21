@@ -105,6 +105,7 @@ The storefront reads plain Shopware entities with fixed names; seed data must ma
 `server/utils/shopware/adminApiClient.ts` — Admin API client for server-side Shopware operations requiring elevated credentials.
 `server/api/__sitemap__/urls.get.ts` — dynamic `@nuxtjs/sitemap` source (navigation categories from the Store API).
 `server/utils/storeApi.ts` — `storeApiPost()` and `MEDIA_INCLUDES` for the routes above. Always send Store API criteria as a POST body (also via `apiClient.invoke("… post …", { body })`): as `_criteria` query parameters Shopware ignores the `includes` projection and returns every field (#312).
+Pages without content throw `createNotFoundError()` (`app/utils/notFound.ts`): fatal only in the browser, because a fatal error makes Nitro log a `[request error] [fatal]` block per scanner request (#363).
 `server/api/content/*.get.ts` — Nuxt Content queries for the pages. Do not call `queryCollection()` in page code: in the browser it downloads the SQLite WASM build (865 KB) on client-side navigation (#314).
 
 ### Client-side JavaScript budget (#314)
