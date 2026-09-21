@@ -5,9 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  '@shopware/nuxt-module@1.5.1':
-    hash: 34fdedb3969386171ca0ec74fc415d2c93161cd43f28b0e550ac417b30e82bca
-    path: patches/@shopware__nuxt-module@1.5.1.patch
+  '@shopware/nuxt-module@1.5.1': 34fdedb3969386171ca0ec74fc415d2c93161cd43f28b0e550ac417b30e82bca
 
 importers:
 
