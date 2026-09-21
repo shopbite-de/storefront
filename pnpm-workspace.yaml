@@ -1,3 +1,5 @@
+# Settings live here since pnpm 11; .npmrc is read for auth/registry only.
+shamefullyHoist: true
 allowBuilds:
   '@parcel/watcher': true
   '@sentry/cli': true
