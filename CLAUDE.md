@@ -28,6 +28,10 @@ pnpm generate-types   # Regenerate api-types/storeApiTypes.d.ts from schema (the
 pnpm load-schema      # Reload Shopware API schema
 ```
 
+### Package manager
+
+pnpm 12 (pinned in `package.json`, CI and `node.dockerfile`). Settings live in `pnpm-workspace.yaml` (`.npmrc` is auth/registry only since pnpm 11). pnpm 12 rejects packages published less than 24 hours ago (`minimumReleaseAge`), also in an existing lockfile; update dependencies with pnpm 12 itself, not an older global pnpm (`docs/notes/2026-09-21-dependency-update.md`).
+
 ### Running a single test
 
 ```bash
