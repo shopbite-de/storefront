@@ -87,6 +87,7 @@ Key custom composables:
 - **`useAddToCart`** – products with extras/toppings use UUID v5 (product ID + sorted extras) as container item reference; simple products bypass the container
 - **`useAddressAutocomplete`** – proxies Geoapify through `/api/address/autocomplete` to avoid exposing the API key client-side
 - **`useShopBiteConfig`** – fetches delivery config and checkout state from the custom Shopware plugin
+- **`useSyncWishlist`** – deliberate override of the layer composable (copy of `@shopware/composables` 1.12.1) that does not log the expected 404/403 of a missing or disabled wishlist (#366); compare with the layer source when Renovate bumps `@shopware/composables`
 
 ### Product data model (what Shopware must contain)
 
