@@ -180,7 +180,7 @@ export default defineNuxtConfig({
     "@nuxt/ui",
     "@nuxt/scripts",
     "nuxt-vitalizer",
-    "@nuxt/eslint",
+    // @nuxt/eslint, @nuxt/hints and @nuxt/test-utils: modules/dev-tooling.ts
   ],
 
   content: {
@@ -321,19 +321,5 @@ export default defineNuxtConfig({
         prefetchOn: { visibility: false, interaction: true },
       },
     },
-  },
-  $development: {
-    modules: [
-      "@shopware/nuxt-module",
-      "@nuxt/image",
-      "@nuxtjs/sitemap",
-      "@nuxt/content",
-      "@nuxtjs/robots",
-      "@nuxt/ui",
-      "@nuxt/scripts",
-      "@nuxt/test-utils/module",
-      "@nuxt/eslint",
-      "@nuxt/hints",
-    ],
   },
 });

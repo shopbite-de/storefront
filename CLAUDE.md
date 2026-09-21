@@ -110,6 +110,7 @@ The storefront reads plain Shopware entities with fixed names; seed data must ma
 `server/api/__sitemap__/urls.get.ts` — dynamic `@nuxtjs/sitemap` source (navigation categories from the Store API).
 `server/utils/storeApi.ts` — `storeApiPost()` and `MEDIA_INCLUDES` for the routes above. Always send Store API criteria as a POST body (also via `apiClient.invoke("… post …", { body })`): as `_criteria` query parameters Shopware ignores the `includes` projection and returns every field (#312).
 Pages without content throw `createNotFoundError()` (`app/utils/notFound.ts`): fatal only in the browser, because a fatal error makes Nitro log a `[request error] [fatal]` block per scanner request (#363).
+`modules/dev-tooling.ts` registers `@nuxt/eslint`, `@nuxt/hints` and `@nuxt/test-utils/module` only when the storefront itself is the project (not for shops extending the layer, not inside `node_modules`); they are devDependencies, so never add them to `modules` in `nuxt.config.ts` (#378).
 `modules/public-cache.ts` (local module, also active in shops extending the layer) adds a 30-day `Cache-Control` route rule for every file in the `public/` folders of all layers; Nitro serves them without one. `image.ipx.maxAge` gives resized logos the same lifetime. Replace a public file under a new name (#273).
 `server/api/content/*.get.ts` — Nuxt Content queries for the pages. Do not call `queryCollection()` in page code: in the browser it downloads the SQLite WASM build (865 KB) on client-side navigation (#314).
 
