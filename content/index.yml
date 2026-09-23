@@ -58,11 +58,14 @@ features:
       link:
         label: 06104 77777 anrufen
         to: "tel:+490610477777"
-marquee:
-  title: Das lieben unsere Kunden
-  description: Kundenbilder
+menu:
   headline: SHOPBITE
-  items:
+  title: Unsere Speisekarte
+  description: Pizza, Pasta, Fleisch und Fisch, frisch aus der Küche.
+highlights:
+  headline: SHOPBITE
+  title: Beliebt bei unseren Gästen
+  description: Die Gerichte, die am häufigsten bestellt werden.
 gallery:
   title: Restaurant
   description: Genießen Sie leckeres Essen in einem rustikalen und gemütlichen Ambiente.

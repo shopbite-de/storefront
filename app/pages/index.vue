@@ -44,7 +44,17 @@ useRestaurantSchema();
       :usps="page.hero.usps"
     />
 
-    <Topseller />
+    <HomeMenuCategories
+      :title="page.menu?.title"
+      :description="page.menu?.description"
+      :headline="page.menu?.headline"
+    />
+
+    <HomeHighlights
+      :title="page.highlights?.title"
+      :description="page.highlights?.description"
+      :headline="page.highlights?.headline"
+    />
 
     <USeparator :ui="{ border: 'border-primary/30' }" />
 
@@ -53,16 +63,6 @@ useRestaurantSchema();
       :description="page.features.description"
       :headline="page.features.headline"
       :features="page.features.features"
-    />
-
-    <USeparator :ui="{ border: 'border-primary/30' }" />
-
-    <LazyFoodMarquee
-      v-if="page.marquee.items?.length > 0"
-      :title="page.marquee.title"
-      :description="page.marquee.description"
-      :headline="page.marquee.headline"
-      :items="page.marquee.items"
     />
 
     <UPageSection
@@ -85,6 +85,7 @@ useRestaurantSchema();
     </UPageSection>
 
     <ImageGallery
+      v-if="page.gallery?.images?.length"
       :title="page.gallery.title"
       :description="page.gallery.description"
       :headline="page.gallery.headline"
