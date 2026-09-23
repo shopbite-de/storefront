@@ -84,23 +84,21 @@ export default defineContentConfig({
         features: createBaseSchema().extend({
           features: z.array(createFeatureSchema()),
         }),
-        marquee: createBaseSchema().extend({
-          items: z.array(
-            z.object({
-              image: z.string().nonempty(),
-              productId: z.string().nonempty(),
-            }),
-          ),
-        }),
-        gallery: createBaseSchema().extend({
-          images: z.array(
-            z.object({
-              image: z.string().nonempty(),
-              alt: z.string().nonempty(),
-            }),
-          ),
-          links: z.array(createLinkSchema()),
-        }),
+        // Headings of the menu tiles and the top seller grid below the hero
+        // (#388); the components carry German defaults.
+        menu: createBaseSchema().partial().optional(),
+        highlights: createBaseSchema().partial().optional(),
+        gallery: createBaseSchema()
+          .extend({
+            images: z.array(
+              z.object({
+                image: z.string().nonempty(),
+                alt: z.string().nonempty(),
+              }),
+            ),
+            links: z.array(createLinkSchema()),
+          })
+          .optional(),
         mittagstisch: createBaseSchema().extend({
           reverse: z.boolean().optional(),
           orientation: createEnum(["horizontal", "vertical"]).optional(),
