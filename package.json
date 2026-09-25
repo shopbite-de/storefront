@@ -46,7 +46,7 @@
     "@nuxt/ui": "^4.11.1",
     "@nuxtjs/robots": "^6.2.3",
     "@nuxtjs/sitemap": "^8.5.1",
-    "@sentry/nuxt": "^10.75.0",
+    "@sentry/nuxt": "^11.0.0",
     "@shopware/api-client": "^1.6.0",
     "@shopware/api-gen": "^1.5.2",
     "@shopware/composables": "^1.13.0",
