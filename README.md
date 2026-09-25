@@ -32,20 +32,20 @@ talking to the Store API and to the custom routes added by the
 
 ## Features
 
-|                               |                                                                             |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| 🕒 **Opening hours**          | Multi-interval business hours per weekday, live open/closed state           |
-| 📅 **Delivery slots**         | 5-minute increments, respects prep time, holidays and closing times         |
-| 🧀 **Extras & toppings**      | Configurable products grouped into container line items (UUID v5 reference) |
-| 📍 **Address autocomplete**   | Geoapify via a server proxy — the API key never reaches the browser         |
-| 🚚 **Delivery zones**         | City/postcode validation before checkout even starts                        |
-| 🎟️ **Vouchers**               | Discount codes backed by the ShopBite plugin                                |
-| 📱 **Installable PWA**        | Offline-aware service worker, app manifest, mobile bottom navigation        |
-| ⚡ **SSR + caching**          | Server routes with tuned TTLs for products, listings, categories            |
-| 🔍 **SEO ready**              | Sitemap, canonical URLs, share previews, title template, structured data    |
-| 📊 **Analytics & monitoring** | Matomo via `@nuxt/scripts`, error tracking via Sentry                       |
-| 🎨 **Themeable**              | Nuxt UI + Tailwind v4 tokens — brand a shop by overriding CSS variables     |
-| 🌐 **Multi-channel**          | Optional sales channel switching for multi-location businesses              |
+|                             |                                                                             |
+| --------------------------- | --------------------------------------------------------------------------- |
+| 🕒 **Opening hours**        | Multi-interval business hours per weekday, live open/closed state           |
+| 📅 **Delivery slots**       | 5-minute increments, respects prep time, holidays and closing times         |
+| 🧀 **Extras & toppings**    | Configurable products grouped into container line items (UUID v5 reference) |
+| 📍 **Address autocomplete** | Geoapify via a server proxy — the API key never reaches the browser         |
+| 🚚 **Delivery zones**       | City/postcode validation before checkout even starts                        |
+| 🎟️ **Vouchers**             | Discount codes backed by the ShopBite plugin                                |
+| 📱 **Installable PWA**      | Offline-aware service worker, app manifest, mobile bottom navigation        |
+| ⚡ **SSR + caching**        | Server routes with tuned TTLs for products, listings, categories            |
+| 🔍 **SEO ready**            | Sitemap, canonical URLs, share previews, title template, structured data    |
+| 📊 **Analytics**            | Matomo via `@nuxt/scripts`                                                  |
+| 🎨 **Themeable**            | Nuxt UI + Tailwind v4 tokens — brand a shop by overriding CSS variables     |
+| 🌐 **Multi-channel**        | Optional sales channel switching for multi-location businesses              |
 
 ## Quick start
 
