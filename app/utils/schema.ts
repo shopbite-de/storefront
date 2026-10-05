@@ -50,9 +50,22 @@ export type MenuSectionInfo = {
 export type MenuItemInfo = {
   name: string;
   description?: string;
+  /** Main ingredients, the description when the product has none (#400). */
+  ingredients?: string[];
+  diets?: ("vegetarian" | "vegan")[];
   image?: string;
   price?: number;
 };
+
+// Vegan dishes are vegetarian too, so they carry both diets.
+const DIET_URLS = {
+  vegetarian: ["https://schema.org/VegetarianDiet"],
+  vegan: ["https://schema.org/VegetarianDiet", "https://schema.org/VeganDiet"],
+} as const;
+
+function buildSuitableForDiet(diets: MenuItemInfo["diets"]) {
+  return [...new Set((diets ?? []).flatMap((diet) => DIET_URLS[diet]))];
+}
 
 const formatTime = (time: string) => time.slice(0, 5);
 
@@ -204,8 +217,9 @@ export function buildMenuSectionSchema(input: {
       compact({
         "@type": "MenuItem",
         name: item.name,
-        description: item.description,
+        description: item.description || item.ingredients?.join(", "),
         image: item.image,
+        suitableForDiet: buildSuitableForDiet(item.diets),
         offers:
           item.price !== undefined
             ? {

@@ -2,6 +2,11 @@ import type { Schemas } from "#shopware";
 
 const MAIN_INGREDIENTS_GROUP = "Hauptzutaten";
 
+// Property groups whose option "Ja" marks the diet of a product.
+const DIET_GROUPS = { vegetarian: "Vegetarisch", vegan: "Vegan" } as const;
+
+export type Diet = keyof typeof DIET_GROUPS;
+
 /** `available` is optional in the projection; missing means orderable. */
 export function productIsAvailable(product: Schemas["Product"]): boolean {
   return product.available !== false;
@@ -28,4 +33,27 @@ export function getMainIngredients(
     (propertyGroup) => propertyGroup.translated.name === MAIN_INGREDIENTS_GROUP,
   );
   return group?.options ?? [];
+}
+
+/** Whether the product has the option "Ja" in the given property group. */
+export function hasYesOption(
+  sortedProperties: Schemas["PropertyGroup"][] | undefined,
+  groupName: string,
+): boolean {
+  return (
+    sortedProperties?.some(
+      (group) =>
+        group.translated.name === groupName &&
+        group.options?.some((option) => option.translated.name === "Ja"),
+    ) ?? false
+  );
+}
+
+/** Diets marked on the product via the `Vegetarisch`/`Vegan` groups. */
+export function getDiets(
+  sortedProperties: Schemas["PropertyGroup"][] | undefined,
+): Diet[] {
+  return (Object.keys(DIET_GROUPS) as Diet[]).filter((diet) =>
+    hasYesOption(sortedProperties, DIET_GROUPS[diet]),
+  );
 }
