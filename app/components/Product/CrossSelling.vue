@@ -8,6 +8,8 @@ import type {
 // the list renders once and stays put when a variant is switched.
 const props = defineProps<{
   associations: AssociationItem[];
+  // Product numbers of extras selected via the quick view URL (#411).
+  initialExtras?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -21,7 +23,19 @@ const SEARCH_THRESHOLD = 15;
 
 const { getFormattedPrice } = useCommercePrice();
 
-const selectedExtras = ref<AssociationItemProduct[]>([]);
+// Each extra once, also if it is in several groups.
+const selectedExtras = ref<AssociationItemProduct[]>([
+  ...new Map(
+    props.associations
+      .flatMap((association) => association.products)
+      .filter(
+        (extra) =>
+          extra.productNumber &&
+          props.initialExtras?.includes(extra.productNumber),
+      )
+      .map((extra) => [extra.value, extra]),
+  ).values(),
+]);
 // Only the first group starts open, the others show their selection summary.
 const openGroups = ref<string[]>(
   props.associations[0] ? [props.associations[0].label] : [],
@@ -78,7 +92,9 @@ function summary(association: AssociationItem) {
 const baseId = useId();
 const groupId = (index: number) => `${baseId}-extras-${index}`;
 
-watch(selectedExtras, () => emit("extras-selected", selectedExtras.value));
+watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
+  immediate: selectedExtras.value.length > 0,
+});
 </script>
 
 <template>

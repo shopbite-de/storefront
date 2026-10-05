@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { productDeepLink } from "../../app/utils/productUrl";
+import {
+  parseListParam,
+  productDeepLink,
+  withQuickViewConfiguration,
+} from "../../app/utils/productUrl";
 
 describe("productDeepLink", () => {
   it("uses the canonical product SEO URL when it is a deep link", () => {
@@ -40,5 +44,47 @@ describe("productDeepLink", () => {
   it("is undefined without SEO URL and category", () => {
     expect(productDeepLink({ productNumber: "LF-21" })).toBeUndefined();
     expect(productDeepLink({}, "/c/Pizza/")).toBeUndefined();
+  });
+});
+
+describe("parseListParam", () => {
+  it("splits comma-separated and repeated values", () => {
+    expect(parseListParam("Zwiebeln, Oliven,")).toEqual(["Zwiebeln", "Oliven"]);
+    expect(parseListParam(["LF-500", "LF-501,LF-502"])).toEqual([
+      "LF-500",
+      "LF-501",
+      "LF-502",
+    ]);
+    expect(parseListParam(undefined)).toEqual([]);
+    expect(parseListParam([null])).toEqual([]);
+  });
+});
+
+describe("withQuickViewConfiguration", () => {
+  const query = {
+    properties: "a|b",
+    produkt: "LF-21",
+    ohne: "Zwiebeln",
+    extras: "LF-500",
+  };
+
+  it("replaces the configuration and keeps other parameters", () => {
+    expect(
+      withQuickViewConfiguration(query, {
+        productNumber: "LF-21-groß",
+        without: ["Zwiebeln", "Oliven"],
+        extras: [],
+      }),
+    ).toEqual({
+      properties: "a|b",
+      produkt: "LF-21-groß",
+      ohne: "Zwiebeln,Oliven",
+    });
+  });
+
+  it("removes all three parameters without a configuration", () => {
+    expect(withQuickViewConfiguration(query, undefined)).toEqual({
+      properties: "a|b",
+    });
   });
 });

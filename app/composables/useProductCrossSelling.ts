@@ -13,6 +13,7 @@ function mapAssociationToItems(
       (product: Schemas["Product"]) => ({
         label: product.name,
         value: product.id,
+        productNumber: product.productNumber,
         price: getFormattedPrice(product.calculatedPrice.unitPrice),
         unitPrice: product.calculatedPrice.unitPrice,
         icon: DEFAULT_ICON,
