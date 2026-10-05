@@ -57,6 +57,12 @@ export default defineNuxtConfig({
     },
     apiClientConfig: {},
     geoapifyApiKey: "",
+    // AI crawlers named in robots.txt (#403, server/plugins/ai-crawlers.ts):
+    // search = AI search and assistant fetches, training = model training.
+    aiCrawlers: {
+      search: true,
+      training: true,
+    },
     public: {
       shopBite: {
         cacheTtl: {
