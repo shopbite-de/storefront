@@ -33,6 +33,12 @@ export type SiteInfo = {
   cuisine?: string;
   priceRange?: string;
   googleBusinessProfileUrl?: string;
+  /** Places the shop delivers to, e.g. "63179 Obertshausen" (#401). */
+  deliveryAreas?: string[];
+  /** Nuxt parses numeric env values into numbers. */
+  geo?: { latitude?: number | string; longitude?: number | string };
+  /** `true`/`false` or a text such as "Nur telefonisch". */
+  acceptsReservations?: boolean | string;
   address?: {
     street?: string;
     postalCode?: string;
@@ -115,6 +121,39 @@ function buildAddress(address: SiteInfo["address"]) {
   });
 }
 
+function buildGeo(geo: SiteInfo["geo"]) {
+  const latitude = Number(geo?.latitude || NaN);
+  const longitude = Number(geo?.longitude || NaN);
+  if (Number.isNaN(latitude) || Number.isNaN(longitude)) return undefined;
+  return { "@type": "GeoCoordinates", latitude, longitude };
+}
+
+/**
+ * Online ordering as an `OrderAction` on the shop (#401): pickup when the
+ * shop has an address, own delivery when delivery areas are configured.
+ */
+function buildOrderAction(orderUrl: string | undefined, site: SiteInfo) {
+  if (!orderUrl) return undefined;
+  const deliveryMethod = [
+    ...(site.address?.street ? ["https://schema.org/OnSitePickup"] : []),
+    ...(site.deliveryAreas?.length
+      ? ["http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"]
+      : []),
+  ];
+  return compact({
+    "@type": "OrderAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: orderUrl,
+      actionPlatform: [
+        "https://schema.org/DesktopWebPlatform",
+        "https://schema.org/MobileWebPlatform",
+      ],
+    },
+    deliveryMethod,
+  });
+}
+
 /**
  * The shop as a `Restaurant` (a `LocalBusiness`) with its menu sections.
  * Empty values are left out, so a shop without address or phone still gets a
@@ -126,6 +165,10 @@ export function buildRestaurantSchema(input: {
   holidays?: HolidayLike[];
   menuUrl?: string;
   menuSections?: MenuSectionInfo[];
+  /** Set only when online ordering is enabled. */
+  orderUrl?: string;
+  paymentMethods?: string[];
+  currency?: string;
 }) {
   const { site } = input;
   const openingHours = buildOpeningHoursSpecification(
@@ -148,6 +191,12 @@ export function buildRestaurantSchema(input: {
     servesCuisine: site.cuisine,
     priceRange: site.priceRange,
     address: buildAddress(site.address),
+    geo: buildGeo(site.geo),
+    areaServed: site.deliveryAreas,
+    acceptsReservations: site.acceptsReservations,
+    paymentAccepted: input.paymentMethods?.join(", "),
+    currenciesAccepted: input.currency,
+    potentialAction: buildOrderAction(input.orderUrl, site),
     sameAs: site.googleBusinessProfileUrl
       ? [site.googleBusinessProfileUrl]
       : undefined,

@@ -6,7 +6,9 @@ import { toAbsoluteUrl } from "../utils/seo";
  * `Restaurant` JSON-LD for the home page (#272): shop data from
  * `runtimeConfig.public.site`, weekly hours and closing days from the ShopBite
  * plugin, the menu sections from the menu navigation. Hours and holidays are
- * prefetched on the server so the schema is part of the HTML.
+ * prefetched on the server so the schema is part of the HTML. Ordering,
+ * delivery areas and payment methods (#401) tell AI assistants and search
+ * engines how to order.
  */
 export function useRestaurantSchema() {
   const { site } = useRuntimeConfig().public;
@@ -14,6 +16,33 @@ export function useRestaurantSchema() {
   const { businessHours, refresh: refreshBusinessHours } = useBusinessHours();
   const { holidays, refresh: refreshHolidays } = useHolidays();
   const { menuCardMenu } = useNavigation(true);
+  const { isCheckoutEnabled } = useShopBiteConfig();
+  const { currencyCode } = useCommercePrice();
+  const { apiClient } = useShopwareContext();
+
+  const { data: paymentMethods } = useAsyncData(
+    "restaurant-schema-payment-methods",
+    async () => {
+      try {
+        const { data } = await apiClient.invoke(
+          "readPaymentMethod post /payment-method",
+          {
+            body: {
+              onlyAvailable: true,
+              includes: { payment_method: ["name", "translated"] },
+            },
+          },
+        );
+        return (data.elements ?? []).map(
+          (method) => method.translated?.name ?? method.name,
+        );
+      } catch (error) {
+        console.error("Failed to load payment methods", error);
+        return [];
+      }
+    },
+    { default: () => [] },
+  );
 
   onServerPrefetch(() =>
     Promise.all([refreshBusinessHours(), refreshHolidays()]),
@@ -27,6 +56,8 @@ export function useRestaurantSchema() {
         : undefined,
     sections: item.children?.map(toSection),
   });
+
+  const menuUrl = toAbsoluteUrl(siteConfig.url, "/speisekarte");
 
   const schema = computed(() =>
     buildRestaurantSchema({
@@ -42,11 +73,17 @@ export function useRestaurantSchema() {
         priceRange: site.priceRange,
         googleBusinessProfileUrl: site.googleBusinessProfileUrl,
         address: site.address,
+        deliveryAreas: splitList(site.deliveryAreas),
+        geo: site.geo,
+        acceptsReservations: site.acceptsReservations,
       },
       businessHours: businessHours.value ?? [],
       holidays: holidays.value ?? [],
-      menuUrl: toAbsoluteUrl(siteConfig.url, "/speisekarte"),
+      menuUrl,
       menuSections: menuCardMenu.value.map(toSection),
+      orderUrl: isCheckoutEnabled.value ? menuUrl : undefined,
+      paymentMethods: paymentMethods.value,
+      currency: currencyCode.value,
     }),
   );
 
@@ -61,4 +98,14 @@ export function useRestaurantSchema() {
   }));
 
   return { schema };
+}
+
+/** A comma-separated env value; Nuxt parses a JSON array value already. */
+function splitList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value !== "string") return [];
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
