@@ -10,23 +10,17 @@ const props = withDefaults(
   { variant: "chip" },
 );
 
-const hasYesOption = (groupName: string) =>
-  props.sortedProperties?.some(
-    (group) =>
-      group.translated.name === groupName &&
-      group.options?.some((option) => option.translated.name === "Ja"),
-  ) ?? false;
-
-const badges = computed(() =>
-  [
+const badges = computed(() => {
+  const diets = getDiets(props.sortedProperties);
+  return [
     {
       label: "Vegetarisch",
       icon: "i-lucide-leaf",
-      show: hasYesOption("Vegetarisch"),
+      show: diets.includes("vegetarian"),
     },
-    { label: "Vegan", icon: "i-lucide-vegan", show: hasYesOption("Vegan") },
-  ].filter((badge) => badge.show),
-);
+    { label: "Vegan", icon: "i-lucide-vegan", show: diets.includes("vegan") },
+  ].filter((badge) => badge.show);
+});
 
 // Static spans with the UBadge classes, see CardIngredients.vue.
 const badgeClass = computed(() =>

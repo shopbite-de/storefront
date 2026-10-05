@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Schemas } from "#shopware";
 import {
+  getDiets,
   getMainIngredients,
+  hasYesOption,
   lineItemHoldsProduct,
   productIsAvailable,
 } from "../../app/utils/product";
@@ -68,5 +70,23 @@ describe("getMainIngredients", () => {
   it("is empty without the group", () => {
     expect(getMainIngredients(undefined)).toEqual([]);
     expect(getMainIngredients([group("Küche", ["Italienisch"])])).toEqual([]);
+  });
+});
+
+describe("hasYesOption", () => {
+  it("needs the option Ja in the named group", () => {
+    const properties = [group("Vegetarisch", ["Ja"]), group("Vegan", ["Nein"])];
+    expect(hasYesOption(properties, "Vegetarisch")).toBe(true);
+    expect(hasYesOption(properties, "Vegan")).toBe(false);
+    expect(hasYesOption(undefined, "Vegetarisch")).toBe(false);
+  });
+});
+
+describe("getDiets", () => {
+  it("returns the marked diets", () => {
+    expect(
+      getDiets([group("Vegetarisch", ["Ja"]), group("Vegan", ["Ja"])]),
+    ).toEqual(["vegetarian", "vegan"]);
+    expect(getDiets([group("Hauptzutaten", ["Salami"])])).toEqual([]);
   });
 });
