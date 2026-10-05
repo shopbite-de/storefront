@@ -1,6 +1,7 @@
 import { queryCollection } from "@nuxt/content/server";
 import type { components } from "~~/api-types/storeApiTypes";
 import { getDiets, getMainIngredients } from "../../app/utils/product";
+import { productDeepLink } from "../../app/utils/productUrl";
 import { splitList, toAbsoluteUrl } from "../../app/utils/seo";
 import { buildLlmsTxt, type LlmsMenuSection } from "../utils/llmsTxt";
 
@@ -34,7 +35,10 @@ const PRODUCT_CRITERIA = {
       "calculatedPrice",
       "calculatedCheapestPrice",
       "sortedProperties",
+      "productNumber",
+      "seoUrls",
     ],
+    seo_url: ["seoPathInfo", "isCanonical"],
     calculated_price: ["unitPrice"],
     calculated_cheapest_price: ["unitPrice"],
     property_group: ["name", "translated", "options"],
@@ -67,10 +71,11 @@ export default defineEventHandler(async (event) => {
         NAVIGATION_CRITERIA,
       ),
       loadProducts((page) =>
-        storeApiPost<{ elements?: Schemas["Product"][] }>("/product", {
-          ...PRODUCT_CRITERIA,
-          page,
-        }),
+        storeApiPost<{ elements?: Schemas["Product"][] }>(
+          "/product",
+          { ...PRODUCT_CRITERIA, page },
+          { headers: { "sw-include-seo-urls": "true" } },
+        ),
       ),
       storeApi<{ businessHours?: Schemas["ShopbiteBusinessHour"][] }>(
         "/shopbite/business-hour",
@@ -95,7 +100,13 @@ export default defineEventHandler(async (event) => {
   const toSection = (category: Schemas["Category"]): LlmsMenuSection => ({
     name: category.translated?.name ?? category.name,
     url: category.seoUrl ? toAbsoluteUrl(siteUrl, category.seoUrl) : undefined,
-    items: (productsByCategory.get(category.id) ?? []).map(toMenuItem),
+    items: (productsByCategory.get(category.id) ?? []).map((product) => {
+      const deepLink = productDeepLink(product, category.seoUrl);
+      return {
+        ...toMenuItem(product),
+        url: deepLink ? toAbsoluteUrl(siteUrl, deepLink) : undefined,
+      };
+    }),
     sections: (category.children ?? [])
       .filter((child) => child.type === "page")
       .map(toSection),

@@ -17,7 +17,10 @@ const BASE_CRITERIA = {
       "cover",
       // "Ausverkauft" on the card (#325).
       "available",
+      // Product deep link (#289); the request sends `sw-include-seo-urls`.
+      "seoUrls",
     ],
+    seo_url: ["seoPathInfo", "isCanonical"],
     property: ["id", "name", "translated", "displayType", "options"],
     property_group_option: [
       "id",

@@ -275,6 +275,7 @@ describe("buildMenuSectionSchema", () => {
         items: [
           {
             name: "Pizza Salami",
+            url: "https://example.com/c/Pizza/?produkt=22",
             description: "mit Salami",
             price: 9.5,
             image: "https://cdn.example.com/salami.webp",
@@ -292,6 +293,7 @@ describe("buildMenuSectionSchema", () => {
         {
           "@type": "MenuItem",
           name: "Pizza Salami",
+          url: "https://example.com/c/Pizza/?produkt=22",
           description: "mit Salami",
           image: "https://cdn.example.com/salami.webp",
           offers: { "@type": "Offer", price: "9.50", priceCurrency: "EUR" },

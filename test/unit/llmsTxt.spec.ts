@@ -42,7 +42,11 @@ describe("buildLlmsTxt", () => {
               ingredients: ["Tomatensoße", "Mozzarella"],
               diets: ["vegetarian"],
             },
-            { name: "Pizza Salami", price: 8.5 },
+            {
+              name: "Pizza Salami",
+              price: 8.5,
+              url: "https://www.pizzeria-lafattoria.de/c/Pizza/?produkt=22",
+            },
           ],
         },
         {
@@ -117,7 +121,7 @@ Nach Obertshausen und Lämmerspiel.
 ### [Pizza](https://www.pizzeria-lafattoria.de/c/Pizza/)
 
 - Pizza Margherita: ab 7,00 € (Tomatensoße, Mozzarella; vegetarisch)
-- Pizza Salami: 8,50 €
+- [Pizza Salami](https://www.pizzeria-lafattoria.de/c/Pizza/?produkt=22): 8,50 €
 
 ### Nudeln
 

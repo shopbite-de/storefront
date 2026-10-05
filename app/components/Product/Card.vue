@@ -7,6 +7,10 @@ const props = defineProps<{
   // The whole card opens the product quick view (`select`), see
   // useProductQuickView (#325).
   selectable: boolean;
+  // Deep link of the product (#289). The name becomes a link stretched over
+  // the card, so crawlers find the URL; a plain click still opens the quick
+  // view in place, a modified click opens the link.
+  href?: string;
 }>();
 
 const emit = defineEmits<{
@@ -28,8 +32,27 @@ const { quantity: inCartQuantity } = useProductCartQuantity(
 const coverMedia = computed(() => product.value.cover?.media);
 const isAvailable = computed(() => productIsAvailable(product.value));
 
+const linked = computed(() => props.selectable && !!props.href);
+
 function select() {
   if (props.selectable) emit("select", product.value);
+}
+
+// Enter/Space on the card itself; a focused link handles Enter natively.
+function onKeydown(event: KeyboardEvent) {
+  if (linked.value) return;
+  event.preventDefault();
+  select();
+}
+
+function onLinkClick(event: MouseEvent) {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    // new tab or window: let the browser follow the link, no quick view
+    event.stopPropagation();
+    return;
+  }
+  // the card's click handler opens the quick view
+  event.preventDefault();
 }
 </script>
 
@@ -43,20 +66,23 @@ function select() {
     <article
       class="relative flex h-full flex-col overflow-hidden rounded-xl bg-default shadow-md ring ring-default transition-shadow"
       :class="{
-        'cursor-pointer hover:shadow-lg hover:ring-primary/40 focus-visible:outline-2 focus-visible:outline-primary':
-          selectable,
+        'cursor-pointer hover:shadow-lg hover:ring-primary/40': selectable,
+        'focus-visible:outline-2 focus-visible:outline-primary':
+          selectable && !linked,
+        'has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-primary':
+          linked,
       }"
-      :role="selectable ? 'button' : undefined"
-      :tabindex="selectable ? 0 : undefined"
-      :aria-haspopup="selectable ? 'dialog' : undefined"
+      :role="selectable && !linked ? 'button' : undefined"
+      :tabindex="selectable && !linked ? 0 : undefined"
+      :aria-haspopup="selectable && !linked ? 'dialog' : undefined"
       :aria-label="
-        selectable
+        selectable && !linked
           ? `${product.translated.name ?? product.name} auswählen`
           : undefined
       "
       @click="select"
-      @keydown.enter.prevent="select"
-      @keydown.space.prevent="select"
+      @keydown.enter="onKeydown"
+      @keydown.space="onKeydown"
     >
       <div v-if="coverMedia?.url" class="relative">
         <img
@@ -81,7 +107,7 @@ function select() {
       <!-- Stops the click so the wishlist toggle does not open the quick view. -->
       <div
         v-if="withFavoriteButton"
-        class="absolute top-2.5 right-2.5"
+        class="absolute top-2.5 right-2.5 z-10"
         @click.stop
         @keydown.stop
       >
@@ -105,7 +131,17 @@ function select() {
               <ProductCardKitchen :sorted-properties="sortedProperties" />
             </span>
             <h3 class="text-lg font-bold text-pretty text-highlighted">
-              {{ product.translated.name ?? product.name }}
+              <a
+                v-if="linked"
+                :href="href"
+                aria-haspopup="dialog"
+                class="after:absolute after:inset-0 focus-visible:outline-none"
+                @click="onLinkClick"
+                >{{ product.translated.name ?? product.name }}</a
+              >
+              <template v-else>
+                {{ product.translated.name ?? product.name }}
+              </template>
             </h3>
             <p v-if="product.description" class="text-sm text-default">
               {{ product.description }}
