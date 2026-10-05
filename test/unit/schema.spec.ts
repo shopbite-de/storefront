@@ -300,4 +300,44 @@ describe("buildMenuSectionSchema", () => {
       isPartOf: { "@type": "Menu", "@id": "https://example.com#menu" },
     });
   });
+
+  it("falls back to the ingredients and adds the diets", () => {
+    const schema = buildMenuSectionSchema({
+      name: "Pizza",
+      currency: "EUR",
+      items: [
+        {
+          name: "Pizza Margherita",
+          ingredients: ["Tomatensoße", "Mozzarella", "Basilikum"],
+          diets: ["vegetarian"],
+        },
+        {
+          name: "Pizza Verdure",
+          description: "mit Grillgemüse",
+          ingredients: ["Zucchini"],
+          diets: ["vegetarian", "vegan"],
+        },
+        { name: "Pizza Salami", ingredients: [], diets: [] },
+      ],
+    });
+
+    expect(schema.hasMenuItem).toEqual([
+      {
+        "@type": "MenuItem",
+        name: "Pizza Margherita",
+        description: "Tomatensoße, Mozzarella, Basilikum",
+        suitableForDiet: ["https://schema.org/VegetarianDiet"],
+      },
+      {
+        "@type": "MenuItem",
+        name: "Pizza Verdure",
+        description: "mit Grillgemüse",
+        suitableForDiet: [
+          "https://schema.org/VegetarianDiet",
+          "https://schema.org/VeganDiet",
+        ],
+      },
+      { "@type": "MenuItem", name: "Pizza Salami" },
+    ]);
+  });
 });

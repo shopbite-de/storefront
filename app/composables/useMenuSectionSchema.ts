@@ -1,12 +1,14 @@
 import type { Ref } from "vue";
 import type { Schemas } from "#shopware";
+import { getDiets, getMainIngredients } from "../utils/product";
 import { buildMenuSectionSchema } from "../utils/schema";
 import { toAbsoluteUrl } from "../utils/seo";
 
 /**
  * `MenuSection` JSON-LD for a category page (#272): the category with its
  * products as `MenuItem`s incl. prices, from the listing that is loaded for
- * the page anyway.
+ * the page anyway. Ingredients and diets come from the product properties
+ * (#400).
  */
 export function useMenuSectionSchema(
   category: Ref<Schemas["Category"] | undefined>,
@@ -29,13 +31,21 @@ export function useMenuSectionSchema(
       image: current.media?.url,
       currency: currencyCode.value,
       restaurantUrl: siteConfig.url,
-      items: products.value.map((product) => ({
-        name: product.translated?.name ?? product.name,
-        description:
-          product.translated?.description ?? product.description ?? undefined,
-        image: product.cover?.media?.url,
-        price: product.calculatedPrice?.unitPrice,
-      })),
+      items: products.value.map((product) => {
+        const properties = product.sortedProperties as
+          Schemas["PropertyGroup"][] | undefined;
+        return {
+          name: product.translated?.name ?? product.name,
+          description:
+            product.translated?.description ?? product.description ?? undefined,
+          ingredients: getMainIngredients(properties).map(
+            (option) => option.translated?.name ?? option.name,
+          ),
+          diets: getDiets(properties),
+          image: product.cover?.media?.url,
+          price: product.calculatedPrice?.unitPrice,
+        };
+      }),
     });
   });
 
