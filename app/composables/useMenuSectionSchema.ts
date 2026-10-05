@@ -1,6 +1,7 @@
 import type { Ref } from "vue";
 import type { Schemas } from "#shopware";
 import { getDiets, getMainIngredients } from "../utils/product";
+import { productDeepLink } from "../utils/productUrl";
 import { buildMenuSectionSchema } from "../utils/schema";
 import { toAbsoluteUrl } from "../utils/seo";
 
@@ -34,8 +35,10 @@ export function useMenuSectionSchema(
       items: products.value.map((product) => {
         const properties = product.sortedProperties as
           Schemas["PropertyGroup"][] | undefined;
+        const deepLink = productDeepLink(product, current.seoUrl);
         return {
           name: product.translated?.name ?? product.name,
+          url: deepLink ? toAbsoluteUrl(siteConfig.url, deepLink) : undefined,
           description:
             product.translated?.description ?? product.description ?? undefined,
           ingredients: getMainIngredients(properties).map(

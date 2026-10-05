@@ -215,6 +215,7 @@ async function openFilterDrawer() {
               :product="product"
               :with-favorite-button="true"
               :selectable="true"
+              :href="productDeepLink(product, category?.seoUrl)"
               @select="quickView.show"
             />
           </div>

@@ -56,6 +56,7 @@ const quickView = useProductQuickView(products);
         :product="product"
         :with-favorite-button="false"
         :selectable="true"
+        :href="productDeepLink(product)"
         @select="quickView.show"
       />
     </div>

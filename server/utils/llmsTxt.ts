@@ -6,6 +6,8 @@ import { groupOpeningHours } from "../../app/utils/openingHours";
 
 export type LlmsMenuItem = {
   name: string;
+  /** Quick view deep link (#289). */
+  url?: string;
   price?: number;
   /** The product has variants; `price` is the cheapest one. */
   fromPrice?: boolean;
@@ -78,7 +80,8 @@ function menuItemLine(item: LlmsMenuItem, currency: string) {
     diet,
   ].filter((line): line is string => Boolean(line));
 
-  return `- ${item.name}${price ? `: ${price}` : ""}${
+  const name = item.url ? `[${item.name}](${item.url})` : item.name;
+  return `- ${name}${price ? `: ${price}` : ""}${
     details.length ? ` (${details.join("; ")})` : ""
   }`;
 }

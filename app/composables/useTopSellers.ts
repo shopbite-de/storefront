@@ -14,7 +14,7 @@ export function useTopSellers(): useTopSellersReturn {
         // Variants marked as top sellers inherit name, cover and properties.
 
         // @ts-expect-error sw-inheritance is missing from the generated header type
-        headers: { "sw-inheritance": "true" },
+        headers: { "sw-inheritance": "true", "sw-include-seo-urls": "true" },
         body: {
           filter: [{ type: "equals", field: "markAsTopseller", value: true }],
           limit: TOP_SELLERS_LIMIT,
@@ -30,7 +30,10 @@ export function useTopSellers(): useTopSellersReturn {
               "available",
               "cover",
               "sortedProperties",
+              // Card link to the quick view deep link (#289).
+              "seoUrls",
             ],
+            seo_url: ["seoPathInfo", "isCanonical"],
             product_media: ["media"],
             media: ["url", "thumbnails"],
             media_thumbnail: ["width", "url"],

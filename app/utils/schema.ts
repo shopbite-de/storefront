@@ -55,6 +55,8 @@ export type MenuSectionInfo = {
 
 export type MenuItemInfo = {
   name: string;
+  /** The quick view deep link of the product (#289). */
+  url?: string;
   description?: string;
   /** Main ingredients, the description when the product has none (#400). */
   ingredients?: string[];
@@ -266,6 +268,7 @@ export function buildMenuSectionSchema(input: {
       compact({
         "@type": "MenuItem",
         name: item.name,
+        url: item.url,
         description: item.description || item.ingredients?.join(", "),
         image: item.image,
         suitableForDiet: buildSuitableForDiet(item.diets),
