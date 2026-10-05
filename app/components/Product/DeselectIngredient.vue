@@ -3,18 +3,23 @@ import type { Schemas } from "#shopware";
 
 const props = defineProps<{
   product: Schemas["Product"];
+  // Ingredient names deselected via the quick view URL (#411).
+  initialDeselected?: string[];
 }>();
 
 const emit = defineEmits<{
   "ingredients-deselected": [deselected: string[]];
 }>();
 
-const deselected = ref<string[]>([]);
-
 const ingredients = computed<string[]>(() =>
   ((props.product.properties ?? []) as Schemas["PropertyGroupOption"][])
     .filter((option) => option.group?.name === "Hauptzutaten")
     .map((option) => option.translated.name),
+);
+
+// Names that are no ingredient of the product (renamed, typo) are ignored.
+const deselected = ref<string[]>(
+  ingredients.value.filter((name) => props.initialDeselected?.includes(name)),
 );
 
 function toggle(ingredient: string) {
@@ -23,7 +28,9 @@ function toggle(ingredient: string) {
     : [...deselected.value, ingredient];
 }
 
-watch(deselected, () => emit("ingredients-deselected", deselected.value));
+watch(deselected, () => emit("ingredients-deselected", deselected.value), {
+  immediate: deselected.value.length > 0,
+});
 </script>
 
 <template>

@@ -12,6 +12,7 @@ const group = (label: string, count: number): AssociationItem => ({
   products: Array.from({ length: count }, (_, index) => ({
     label: `${label} ${index + 1}`,
     value: `${label}-${index + 1}`,
+    productNumber: `${label}-NR-${index + 1}`,
     price: "1.00 €",
     unitPrice: 1,
   })),
@@ -95,5 +96,24 @@ describe("ProductCrossSelling", () => {
     expect(wrapper.emitted("extras-selected")!.at(-1)![0]).toMatchObject([
       { value: "Extras-3" },
     ]);
+  });
+
+  it("preselects extras from the URL and emits them (#411)", async () => {
+    const wrapper = await mountSuspended(ProductCrossSelling, {
+      props: {
+        associations: [group("Extras", 3)],
+        initialExtras: ["Extras-NR-2", "unknown"],
+      },
+    });
+
+    const emitted = wrapper.emitted("extras-selected");
+    expect(emitted?.[0]?.[0]).toEqual([
+      expect.objectContaining({ productNumber: "Extras-NR-2" }),
+    ]);
+    const checked = rows(wrapper).map(
+      (row: { attributes: (name: string) => string | undefined }) =>
+        row.attributes("aria-checked"),
+    );
+    expect(checked).toEqual(["false", "true", "false"]);
   });
 });

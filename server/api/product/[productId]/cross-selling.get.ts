@@ -6,7 +6,8 @@ const criteria = {
   includes: {
     cross_selling_element: ["crossSelling", "products"],
     cross_selling: ["name"],
-    product: ["id", "name", "calculatedPrice", "translated"],
+    // productNumber: extras in the quick view URL (#411)
+    product: ["id", "productNumber", "name", "calculatedPrice", "translated"],
     calculated_price: ["unitPrice"],
   },
 };

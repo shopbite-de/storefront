@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 import type { AssociationItemProduct } from "~/types/Association";
+import type { QuickViewConfiguration } from "~/utils/productUrl";
 
 const props = defineProps<{
   productId: string;
+  // Configuration from the quick view URL (#411).
+  initialWithout?: string[];
+  initialExtras?: string[];
 }>();
 
-const emit = defineEmits(["product-added", "variant-selected"]);
+const emit = defineEmits<{
+  "product-added": [];
+  "variant-selected": [variant: Schemas["Product"]];
+  "configuration-changed": [configuration: QuickViewConfiguration];
+}>();
 
 const {
   productDetails,
@@ -24,10 +32,30 @@ const {
 const { getFormattedPrice } = useCommercePrice();
 
 const selectedExtras = ref<AssociationItemProduct[]>([]);
+const deselectedIngredients = ref<string[]>([]);
 
 function onExtras(extras: AssociationItemProduct[]) {
   selectedExtras.value = extras;
   onExtrasSelected(extras);
+  emitConfiguration();
+}
+
+function onIngredients(deselected: string[]) {
+  deselectedIngredients.value = deselected;
+  onIngredientsDeselected(deselected);
+  emitConfiguration();
+}
+
+function emitConfiguration() {
+  const productNumber = selectedProduct.value?.productNumber;
+  if (!productNumber) return;
+  emit("configuration-changed", {
+    productNumber,
+    without: deselectedIngredients.value,
+    extras: selectedExtras.value
+      .map((extra) => extra.productNumber)
+      .filter((number): number is string => !!number),
+  });
 }
 
 // Unit price plus extras, times the quantity: what the button will add.
@@ -47,6 +75,7 @@ const isAvailable = computed(() =>
 const onVariantSwitched = (variant: Schemas["Product"]) => {
   setSelectedProduct(variant);
   emit("variant-selected", variant);
+  emitConfiguration();
 };
 
 const onAddToCart = () => emit("product-added");
@@ -85,11 +114,13 @@ const onAddToCart = () => emit("product-added");
       <ProductDeselectIngredient
         v-if="selectedProduct"
         :product="selectedProduct"
-        @ingredients-deselected="onIngredientsDeselected"
+        :initial-deselected="initialWithout"
+        @ingredients-deselected="onIngredients"
       />
       <ProductCrossSelling
         v-if="associationItems.length > 0"
         :associations="associationItems"
+        :initial-extras="initialExtras"
         @extras-selected="onExtras"
       />
     </template>
