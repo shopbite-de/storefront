@@ -182,6 +182,66 @@ describe("buildRestaurantSchema", () => {
     });
   });
 
+  it("adds ordering, delivery areas, geo and payment", () => {
+    const schema = buildRestaurantSchema({
+      site: {
+        ...site,
+        deliveryAreas: ["63179 Obertshausen", "63165 Lämmerspiel"],
+        // strings: env values that are not plain numbers
+        geo: { latitude: "50.0716", longitude: 8.8483 },
+        acceptsReservations: "Nur telefonisch",
+      },
+      orderUrl: "https://www.pizzeria-lafattoria.de/speisekarte",
+      paymentMethods: ["Barzahlung", "EC-Karte"],
+      currency: "EUR",
+    });
+
+    expect(schema).toMatchObject({
+      geo: { "@type": "GeoCoordinates", latitude: 50.0716, longitude: 8.8483 },
+      areaServed: ["63179 Obertshausen", "63165 Lämmerspiel"],
+      acceptsReservations: "Nur telefonisch",
+      paymentAccepted: "Barzahlung, EC-Karte",
+      currenciesAccepted: "EUR",
+      potentialAction: {
+        "@type": "OrderAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: "https://www.pizzeria-lafattoria.de/speisekarte",
+          actionPlatform: [
+            "https://schema.org/DesktopWebPlatform",
+            "https://schema.org/MobileWebPlatform",
+          ],
+        },
+        deliveryMethod: [
+          "https://schema.org/OnSitePickup",
+          "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet",
+        ],
+      },
+    });
+  });
+
+  it("keeps acceptsReservations false and skips incomplete geo", () => {
+    const schema = buildRestaurantSchema({
+      site: {
+        name: "ShopBite",
+        url: "https://example.com",
+        geo: { latitude: "50.07", longitude: "" },
+        acceptsReservations: false,
+      },
+      orderUrl: "https://example.com/speisekarte",
+    });
+
+    expect(schema.geo).toBeUndefined();
+    expect(schema.acceptsReservations).toBe(false);
+    // no address and no delivery areas: no delivery method to state
+    expect(schema.potentialAction).toEqual({
+      "@type": "OrderAction",
+      target: expect.objectContaining({
+        urlTemplate: "https://example.com/speisekarte",
+      }),
+    });
+  });
+
   it("leaves empty values out", () => {
     const schema = buildRestaurantSchema({
       site: {

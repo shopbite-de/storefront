@@ -105,6 +105,15 @@ export default defineNuxtConfig({
         googleBusinessProfileUrl: "",
         // Restaurant schema only, e.g. "€€" (#272).
         priceRange: "",
+        // Restaurant schema only (#401): comma-separated delivery areas
+        // ("63179 Obertshausen, 63165 Lämmerspiel"), coordinates and
+        // "true"/"false" or a text for table reservations.
+        deliveryAreas: "",
+        geo: {
+          latitude: "",
+          longitude: "",
+        },
+        acceptsReservations: "",
       },
       storeUrl: "",
       // Matomo config, runtime-overridable via NUXT_PUBLIC_SCRIPTS_MATOMO_ANALYTICS_*
