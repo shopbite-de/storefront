@@ -41,6 +41,8 @@ export type LlmsTxtInput = {
   menuUrl?: string;
   menu?: LlmsMenuSection[];
   pages?: { title: string; url: string; description?: string }[];
+  /** FAQ of the home page (#404). */
+  faq?: { question: string; answer: string }[];
   currency?: string;
   /** Closing days that ended before this date are left out. */
   now: Date;
@@ -180,6 +182,17 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
       ? ["## Öffnungszeiten", "", ...hours, ...closingDays]
       : [],
     ordering.length ? ["## Bestellen", "", ...ordering] : [],
+    input.faq?.length
+      ? [
+          "## Häufige Fragen",
+          ...input.faq.flatMap((item) => [
+            "",
+            `### ${item.question}`,
+            "",
+            item.answer,
+          ]),
+        ]
+      : [],
     menu.length ? ["## Speisekarte", ...menu] : [],
     pages.length ? ["## Weitere Informationen", "", ...pages] : [],
   ];

@@ -71,6 +71,12 @@ describe("buildLlmsTxt", () => {
           description: "Zahlungs- und Lieferinformationen",
         },
       ],
+      faq: [
+        {
+          question: "Wohin liefern Sie?",
+          answer: "Nach Obertshausen und Lämmerspiel.",
+        },
+      ],
       currency: "EUR",
       now,
     });
@@ -99,6 +105,12 @@ Italienisch-deutsche Küche seit 1997.
 - Liefergebiet: 63179 Obertshausen, 63165 Lämmerspiel
 - Lieferzeit: ca. 30 Minuten
 - Abholung im Restaurant möglich
+
+## Häufige Fragen
+
+### Wohin liefern Sie?
+
+Nach Obertshausen und Lämmerspiel.
 
 ## Speisekarte
 

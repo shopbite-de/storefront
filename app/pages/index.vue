@@ -92,6 +92,13 @@ useRestaurantSchema();
       :images="page.gallery.images"
       :links="page.gallery.links"
     />
+    <HomeFaq
+      v-if="page.faq?.items?.length"
+      :title="page.faq.title"
+      :description="page.faq.description"
+      :headline="page.faq.headline"
+      :items="page.faq.items"
+    />
     <Cta
       :title="page.cta.title"
       :description="page.cta.description"

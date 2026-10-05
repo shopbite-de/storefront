@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildFaqPageSchema,
   buildMenuSectionSchema,
   buildOpeningHoursSpecification,
   buildRestaurantSchema,
@@ -339,5 +340,25 @@ describe("buildMenuSectionSchema", () => {
       },
       { "@type": "MenuItem", name: "Pizza Salami" },
     ]);
+  });
+});
+
+describe("buildFaqPageSchema", () => {
+  it("maps questions and answers", () => {
+    expect(
+      buildFaqPageSchema([
+        { question: "Wohin liefern Sie?", answer: "Nach Obertshausen." },
+      ]),
+    ).toEqual({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Wohin liefern Sie?",
+          acceptedAnswer: { "@type": "Answer", text: "Nach Obertshausen." },
+        },
+      ],
+    });
   });
 });

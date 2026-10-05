@@ -114,6 +114,24 @@ mittagstisch:
       color: neutral
       variant: subtle
       trailingIcon: i-lucide-phone
+faq:
+  headline: SHOPBITE
+  title: Häufige Fragen
+  items:
+    - question: Wohin liefern Sie?
+      answer: Wir liefern nach 63179 Obertshausen (Obertshausen und Hausen) und nach 63165 Mühlheim-Lämmerspiel.
+    - question: Was kostet die Lieferung?
+      answer: Ab 15 € Bestellwert liefern wir kostenlos. Darunter berechnen wir eine Liefergebühr von 2 €.
+    - question: Wie lange dauert die Lieferung?
+      answer: Etwa 30 Minuten. Bei der Bestellung können Sie auch eine spätere Lieferzeit wählen.
+    - question: Kann ich meine Bestellung abholen?
+      answer: Ja, Sie können Ihre Bestellung auch bei uns in der Kantstraße 6 in Obertshausen abholen.
+    - question: Wie kann ich bezahlen?
+      answer: Bei Lieferung bar, bei Abholung bar oder mit EC-Karte.
+    - question: Gibt es vegetarische und vegane Gerichte?
+      answer: Ja, vegetarische und vegane Gerichte sind auf der Speisekarte gekennzeichnet.
+    - question: Kann ich einen Tisch reservieren?
+      answer: Tischreservierungen nehmen wir nur telefonisch entgegen.
 cta:
   title: Jetzt bestellen!
   description: Genieße die italienische Küche, frisch zubereitet und direkt zu dir geliefert oder vor Ort genießen.
