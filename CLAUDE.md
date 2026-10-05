@@ -108,6 +108,7 @@ The storefront reads plain Shopware entities with fixed names; seed data must ma
 `server/api/address/autocomplete.get.ts` — Geoapify proxy (keeps API key server-side).
 `server/utils/shopware/adminApiClient.ts` — Admin API client for server-side Shopware operations requiring elevated credentials.
 `server/api/__sitemap__/urls.get.ts` — dynamic `@nuxtjs/sitemap` source (navigation categories from the Store API).
+`server/routes/llms.txt.ts` — `/llms.txt` for AI assistants (#402): shop, hours, ordering and the menu with prices, ingredients and diets as Markdown, built by the pure `server/utils/llmsTxt.ts`; `swr` 1 h. Every Store API source is optional (`Promise.allSettled`), content pages blocked in `robots.txt` are left out.
 `server/utils/storeApi.ts` — `storeApiPost()` and `MEDIA_INCLUDES` for the routes above. Always send Store API criteria as a POST body (also via `apiClient.invoke("… post …", { body })`): as `_criteria` query parameters Shopware ignores the `includes` projection and returns every field (#312).
 Pages without content throw `createNotFoundError()` (`app/utils/notFound.ts`): fatal only in the browser, because a fatal error makes Nitro log a `[request error] [fatal]` block per scanner request (#363).
 `modules/dev-tooling.ts` registers `@nuxt/eslint`, `@nuxt/hints` and `@nuxt/test-utils/module` only when the storefront itself is the project (not for shops extending the layer, not inside `node_modules`); they are devDependencies, so never add them to `modules` in `nuxt.config.ts` (#378).

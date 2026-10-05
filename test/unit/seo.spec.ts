@@ -3,6 +3,7 @@ import {
   buildHomeDescription,
   buildHomeTitle,
   formatPageTitle,
+  splitList,
   toAbsoluteUrl,
 } from "../../app/utils/seo";
 
@@ -103,5 +104,17 @@ describe("buildHomeDescription", () => {
     expect(
       buildHomeDescription({ name: "La Fattoria", city: "", cuisine: "" }),
     ).toBeUndefined();
+  });
+});
+
+describe("splitList", () => {
+  it("splits a comma-separated value and keeps arrays", () => {
+    expect(splitList("63179 Obertshausen, 63165 Lämmerspiel,")).toEqual([
+      "63179 Obertshausen",
+      "63165 Lämmerspiel",
+    ]);
+    expect(splitList(["A", "B"])).toEqual(["A", "B"]);
+    expect(splitList("")).toEqual([]);
+    expect(splitList(undefined)).toEqual([]);
   });
 });
