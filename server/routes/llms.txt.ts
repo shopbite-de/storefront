@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
       body,
     });
 
-  const [navigation, products, hours, holidays, config, context, pages] =
+  const [navigation, products, hours, holidays, config, context, pages, home] =
     await Promise.allSettled([
       storeApi<Schemas["Category"][]>(
         `/navigation/${menuRootId}/${menuRootId}`,
@@ -85,6 +85,7 @@ export default defineEventHandler(async (event) => {
       queryCollection(event, "landingpages")
         .select("path", "title", "description")
         .all(),
+      queryCollection(event, "home").select("faq").first(),
     ]);
 
   const value = <T>(result: PromiseSettledResult<T>) =>
@@ -137,6 +138,7 @@ export default defineEventHandler(async (event) => {
         url: toAbsoluteUrl(siteUrl, page.path),
         description: page.description,
       })),
+    faq: value(home)?.faq?.items,
     currency: value(context)?.currency?.isoCode,
     now: new Date(),
   });

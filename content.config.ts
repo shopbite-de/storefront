@@ -88,6 +88,19 @@ export default defineContentConfig({
         // (#388); the components carry German defaults.
         menu: createBaseSchema().partial().optional(),
         highlights: createBaseSchema().partial().optional(),
+        // Questions and answers above the call to action, also emitted as
+        // FAQPage JSON-LD and in /llms.txt (#404). Plain text answers.
+        faq: createBaseSchema()
+          .partial()
+          .extend({
+            items: z.array(
+              z.object({
+                question: z.string().nonempty(),
+                answer: z.string().nonempty(),
+              }),
+            ),
+          })
+          .optional(),
         gallery: createBaseSchema()
           .extend({
             images: z.array(

@@ -285,6 +285,21 @@ export function buildMenuSectionSchema(input: {
   });
 }
 
+/** Questions and answers as a `FAQPage` (#404). */
+export function buildFaqPageSchema(
+  items: { question: string; answer: string }[],
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}
+
 /** Drops `undefined`, empty strings and empty arrays. */
 function compact<T extends Record<string, unknown>>(object: T): T {
   return Object.fromEntries(
