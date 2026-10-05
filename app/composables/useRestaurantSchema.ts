@@ -1,6 +1,6 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 import { buildRestaurantSchema, type MenuSectionInfo } from "../utils/schema";
-import { toAbsoluteUrl } from "../utils/seo";
+import { splitList, toAbsoluteUrl } from "../utils/seo";
 
 /**
  * `Restaurant` JSON-LD for the home page (#272): shop data from
@@ -98,14 +98,4 @@ export function useRestaurantSchema() {
   }));
 
   return { schema };
-}
-
-/** A comma-separated env value; Nuxt parses a JSON array value already. */
-function splitList(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String);
-  if (typeof value !== "string") return [];
-  return value
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
 }

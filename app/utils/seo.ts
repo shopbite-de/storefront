@@ -54,3 +54,16 @@ export function buildHomeDescription({
   }
   return undefined;
 }
+
+/**
+ * A comma-separated env value as a list, e.g. the delivery areas (#401).
+ * Nuxt parses a JSON array value already.
+ */
+export function splitList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value !== "string") return [];
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}

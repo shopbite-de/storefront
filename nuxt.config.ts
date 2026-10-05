@@ -130,6 +130,11 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
+    // Rebuilt at most hourly: hours, closing days and the menu change rarely
+    // (#402).
+    "/llms.txt": {
+      swr: 3600,
+    },
     "/merkliste": {
       ssr: false,
     },
