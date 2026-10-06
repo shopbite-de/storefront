@@ -1,11 +1,14 @@
 import type { Schemas } from "#shopware";
 import { resolveSeoPath } from "~/utils/seoPath";
 
+const CATEGORY_ROUTE = "frontend.navigation.page";
+
 /**
- * Resolves the current route against the backend SEO URLs. Throws a 404 if
- * nothing matches and redirects (301) to the SEO URL if the visited path is
- * only an alias of it: missing or extra trailing slash (#291), different
- * casing (#244) or an old SEO URL of the same entity.
+ * Resolves the current route against the backend category SEO URLs. Throws a
+ * 404 if nothing matches and redirects (301) to the SEO URL if the visited
+ * path is only an alias of it: missing or extra trailing slash (#291),
+ * different casing (#244) or an old SEO URL of the same category. Product SEO
+ * URLs have no page (#289) and count as no match.
  */
 export async function useSeoUrlRoute() {
   const { resolvePath } = useNavigationSearch();
@@ -28,7 +31,7 @@ export async function useSeoUrlRoute() {
 
       const { match, redirectPath } = await resolveSeoPath(
         routePath,
-        resolvePath,
+        resolveCategoryPath,
         resolveOldPath,
       );
 
@@ -54,8 +57,15 @@ export async function useSeoUrlRoute() {
     );
   }
 
+  async function resolveCategoryPath(
+    path: string,
+  ): Promise<Schemas["SeoUrl"] | null> {
+    const match = await resolvePath(path);
+    return match?.routeName === CATEGORY_ROUTE ? match : null;
+  }
+
   /**
-   * The current SEO URL of the entity an old SEO URL belonged to. Shopware
+   * The current SEO URL of the category an old SEO URL belonged to. Shopware
    * keeps old SEO URLs with `isCanonical: null`; the Store API only returns
    * them when the criteria filter on `isCanonical` themselves.
    */
@@ -64,13 +74,14 @@ export async function useSeoUrlRoute() {
   ): Promise<Schemas["SeoUrl"] | null> {
     const old = await findSeoUrl([
       { type: "equals", field: "seoPathInfo", value: path.substring(1) },
+      { type: "equals", field: "routeName", value: CATEGORY_ROUTE },
       { type: "equals", field: "isCanonical", value: null },
     ]);
     if (!old) return null;
 
     return findSeoUrl([
       { type: "equals", field: "foreignKey", value: old.foreignKey },
-      { type: "equals", field: "routeName", value: old.routeName },
+      { type: "equals", field: "routeName", value: CATEGORY_ROUTE },
       { type: "equals", field: "languageId", value: old.languageId },
       { type: "equals", field: "isCanonical", value: true },
     ]);
