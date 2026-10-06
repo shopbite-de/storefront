@@ -99,6 +99,11 @@ describe("useSeoUrlRoute", () => {
         limit: 1,
         filter: [
           { type: "equals", field: "seoPathInfo", value: "c/Pizzen/" },
+          {
+            type: "equals",
+            field: "routeName",
+            value: "frontend.navigation.page",
+          },
           { type: "equals", field: "isCanonical", value: null },
         ],
       },
@@ -127,6 +132,18 @@ describe("useSeoUrlRoute", () => {
 
   it("throws a 404 when the path cannot be resolved", async () => {
     routeState.path = "/c/Unbekannt/";
+
+    await expect(useSeoUrlRoute()).rejects.toMatchObject({ statusCode: 404 });
+    expect(mockNavigateTo).not.toHaveBeenCalled();
+  });
+
+  it("throws a 404 for a product SEO URL (no product pages)", async () => {
+    routeState.path = "/Pizza-Margherita/21";
+    mockResolvePath.mockResolvedValue({
+      seoPathInfo: "Pizza-Margherita/21",
+      foreignKey: "p21",
+      routeName: "frontend.detail.page",
+    });
 
     await expect(useSeoUrlRoute()).rejects.toMatchObject({ statusCode: 404 });
     expect(mockNavigateTo).not.toHaveBeenCalled();

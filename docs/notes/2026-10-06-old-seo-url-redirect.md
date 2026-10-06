@@ -13,6 +13,18 @@ As of 2026-10-06, branch `feature/redirect-non-canonical-seo-urls`. Prompted by 
 - `useSeoUrlRoute` implements it as two Store API calls: the old record (`seoPathInfo` + `isCanonical: null`), then the canonical record of the same `foreignKey`, `routeName` and `languageId`. A match redirects with 301 (query kept); an old URL without a current one (deleted category) stays 404.
 - Up to four lookups for unknown paths below `/c/` and `/speisekarte/` (previously two). Other unknown paths go to the content catch-all and are unaffected.
 
+## One catch-all instead of `/c/` and `/speisekarte/`
+
+The category pages `pages/c/[...all].vue` and `pages/speisekarte/[...all].vue` were identical and only existed for the two URL prefixes in use. `pages/[...all].vue` now serves both kinds of pages, so the prefix is up to the Shopware SEO URL template:
+
+1. Markdown content page for the path (local, cheap), as before.
+2. Otherwise `useSeoUrlRoute`, restricted to `frontend.navigation.page`: product SEO URLs have no page (#289) and stay 404, also as old URLs. Technical `/navigation/<id>` paths now redirect to their SEO URL (planned in #244).
+3. Paths with a file extension (`/wp-login.php`, `/.env`) 404 before step 2, so scanner traffic causes no Store API requests.
+
+The category bar of the `listing` layout is rendered by the page itself (same markup) instead of switching layouts per result, which would need `setPageLayout` during SSR (hydration warning in Nuxt). A category page now costs one extra request to `/api/content/page`.
+
+Checked against the La Fattoria backend (dev server): `/c/Pizza/` 200 with 29 products, `/c/pizza` and `/navigation/<pizza id>` 301 to `/c/Pizza/`, `/agb` 200, `/c/Unbekannt/`, `/Schnitzel-Wiener-Art/103`, `/wp-login.php`, `/.env` 404. Client-side navigation content → category → category → alias → content → back renders the right page each time. The hydration warnings on a category page (`NavigationDesktopLeft`, `CategoryListing`) are the same with the old pages.
+
 ## Verification
 
 Unit tests (`seoPath.spec.ts`, `useSeoUrlRoute.test.ts`), typecheck, ESLint, Prettier. Both queries checked against the La Fattoria Store API with existing old product URLs: the `seoPathInfo` lookup without an `isCanonical` filter returns nothing, with `isCanonical: null` it returns the old record, and the canonical lookup returns `Schnitzel-Wiener-Art/103`.
