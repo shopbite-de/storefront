@@ -24,6 +24,8 @@ export type LlmsMenuSection = {
 
 export type LlmsTxtInput = {
   name: string;
+  /** Other names the shop is listed under on maps and directories. */
+  alternateNames?: string[];
   description?: string;
   url: string;
   cuisine?: string;
@@ -125,6 +127,9 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
     .join(" ");
 
   const contact = [
+    input.alternateNames?.length
+      ? `- Auch bekannt als: ${input.alternateNames.join(", ")}`
+      : undefined,
     input.address?.street || input.address?.postalCode || city
       ? `- Adresse: ${[
           input.address?.street,

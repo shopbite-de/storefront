@@ -135,9 +135,30 @@ Nach Obertshausen und Lämmerspiel.
 `);
   });
 
+  it("names other names of the shop under Kontakt", () => {
+    expect(
+      buildLlmsTxt({
+        name: "Pizzeria La Fattoria",
+        alternateNames: ["La Fattoria / Alte Schmiede", "Alte Schmiede"],
+        url: "https://www.pizzeria-lafattoria.de",
+        now,
+      }),
+    ).toContain(`## Kontakt
+
+- Auch bekannt als: La Fattoria / Alte Schmiede, Alte Schmiede
+- Website: https://www.pizzeria-lafattoria.de
+`);
+  });
+
   it("leaves out what is not configured", () => {
-    expect(buildLlmsTxt({ name: "ShopBite", url: "https://example.com", now }))
-      .toBe(`# ShopBite
+    expect(
+      buildLlmsTxt({
+        name: "ShopBite",
+        alternateNames: [],
+        url: "https://example.com",
+        now,
+      }),
+    ).toBe(`# ShopBite
 
 > ShopBite.
 

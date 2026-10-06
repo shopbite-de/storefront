@@ -63,6 +63,7 @@ export function useRestaurantSchema() {
     buildRestaurantSchema({
       site: {
         name: site.name,
+        alternateNames: splitList(site.alternateNames),
         description: site.description,
         url: siteConfig.url,
         image: site.ogImage

@@ -243,11 +243,27 @@ describe("buildRestaurantSchema", () => {
     });
   });
 
+  it("lists other names of the shop as alternateName", () => {
+    const schema = buildRestaurantSchema({
+      site: {
+        name: "Pizzeria La Fattoria",
+        url: "https://www.pizzeria-lafattoria.de",
+        alternateNames: ["La Fattoria / Alte Schmiede", "Alte Schmiede"],
+      },
+    });
+
+    expect(schema.alternateName).toEqual([
+      "La Fattoria / Alte Schmiede",
+      "Alte Schmiede",
+    ]);
+  });
+
   it("leaves empty values out", () => {
     const schema = buildRestaurantSchema({
       site: {
         name: "ShopBite",
         url: "https://example.com",
+        alternateNames: [],
         telephone: "",
         address: { street: "", postalCode: "", city: "", country: "DE" },
       },
