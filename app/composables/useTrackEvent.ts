@@ -64,6 +64,24 @@ export function useTrackEvent() {
     push(["trackEvent", "Cart", "UpsellAdd", product.productNumber, quantity]);
   }
 
+  // A shared product link: `Share` for the native share sheet, `CopyLink`
+  // for the clipboard. The shared path carries the quick view configuration
+  // (`ohne`, `extras`, #411) and becomes the event's page URL; router.replace
+  // does not trigger a page view, so the last tracked URL would lack it.
+  function trackShare(
+    method: "share" | "copy",
+    productNumber: string,
+    path: string,
+  ) {
+    push(["setCustomUrl", path]);
+    push([
+      "trackEvent",
+      "Product",
+      method === "share" ? "Share" : "CopyLink",
+      productNumber,
+    ]);
+  }
+
   function trackSearch(term: string, productNumbers: string[]) {
     push(["trackSiteSearch", term, false, productNumbers.length]);
   }
@@ -75,6 +93,7 @@ export function useTrackEvent() {
     trackAddToWishlist,
     trackAddToCart,
     trackUpsellAdd,
+    trackShare,
     trackSearch,
   };
 }

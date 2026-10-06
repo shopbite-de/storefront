@@ -70,7 +70,7 @@ function onVariantSelected(variant: Schemas["Product"]) {
         color="neutral"
         variant="ghost"
         :aria-label="canShare ? 'Teilen' : 'Link kopieren'"
-        @click="share({ title: label })"
+        @click="share({ title: label, productNumber })"
       />
     </template>
     <template v-if="description" #description>

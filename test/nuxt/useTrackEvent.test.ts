@@ -111,6 +111,22 @@ describe("useTrackEvent", () => {
     ]);
   });
 
+  it("tracks a shared product with the shared path as page URL", () => {
+    setMatomoConfig("https://analytics.example.com/", 3);
+    const path = "/Speisekarte/Pizza/?produkt=P1&ohne=Zwiebeln&extras=E1";
+
+    const { trackShare } = useTrackEvent();
+    trackShare("share", "P1", path);
+    trackShare("copy", "P1", path);
+
+    expect(matomoWindow._paq).toEqual([
+      ["setCustomUrl", path],
+      ["trackEvent", "Product", "Share", "P1"],
+      ["setCustomUrl", path],
+      ["trackEvent", "Product", "CopyLink", "P1"],
+    ]);
+  });
+
   it("appends to an existing _paq queue", () => {
     setMatomoConfig("https://analytics.example.com/", 3);
     matomoWindow._paq = [["setSiteId", "3"]];
