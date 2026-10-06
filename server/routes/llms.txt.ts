@@ -114,6 +114,7 @@ export default defineEventHandler(async (event) => {
 
   const body = buildLlmsTxt({
     name: site.name,
+    alternateNames: splitList(site.alternateNames),
     description: site.description,
     url: siteUrl,
     cuisine: site.cuisine,

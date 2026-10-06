@@ -26,6 +26,8 @@ type HolidayLike = {
 
 export type SiteInfo = {
   name: string;
+  /** Other names the shop is listed under, e.g. "Alte Schmiede". */
+  alternateNames?: string[];
   url: string;
   description?: string;
   image?: string;
@@ -199,6 +201,9 @@ export function buildRestaurantSchema(input: {
     "@type": "Restaurant",
     "@id": `${site.url}#restaurant`,
     name: site.name,
+    alternateName: site.alternateNames?.length
+      ? site.alternateNames
+      : undefined,
     description: site.description,
     url: site.url,
     image: site.image,
