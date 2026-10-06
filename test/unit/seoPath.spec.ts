@@ -105,6 +105,51 @@ describe("resolveSeoPath", () => {
     });
   });
 
+  describe("old SEO URLs", () => {
+    const newPizza = { seoPathInfo: "speisekarte/pizza/", foreignKey: "pizza" };
+    const resolve = resolverFor({ "/speisekarte/pizza/": newPizza });
+
+    it("redirects an old SEO URL to the current one", async () => {
+      const resolveOld = resolverFor({ "/c/Pizza/": newPizza });
+
+      await expect(
+        resolveSeoPath("/c/Pizza/", resolve, resolveOld),
+      ).resolves.toEqual({
+        match: newPizza,
+        redirectPath: "/speisekarte/pizza/",
+      });
+      expect(resolveOld).toHaveBeenCalledTimes(1);
+    });
+
+    it("redirects an old SEO URL without its trailing slash", async () => {
+      const resolveOld = resolverFor({ "/c/Pizza/": newPizza });
+
+      await expect(
+        resolveSeoPath("/c/pizza", resolve, resolveOld),
+      ).resolves.toEqual({
+        match: newPizza,
+        redirectPath: "/speisekarte/pizza/",
+      });
+      expect(resolveOld).toHaveBeenLastCalledWith("/c/pizza/");
+    });
+
+    it("asks for old SEO URLs only when the path is unknown", async () => {
+      const resolveOld = vi.fn();
+
+      await resolveSeoPath("/speisekarte/pizza", resolve, resolveOld);
+      expect(resolveOld).not.toHaveBeenCalled();
+    });
+
+    it("returns no match for paths that never were SEO URLs", async () => {
+      const resolveOld = resolverFor({});
+
+      await expect(
+        resolveSeoPath("/c/Unbekannt/", resolve, resolveOld),
+      ).resolves.toEqual({ match: null });
+      expect(resolveOld).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it("does not toggle the root path", async () => {
     const resolve = resolverFor({});
 
