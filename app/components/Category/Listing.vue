@@ -135,7 +135,20 @@ async function openFilterDrawer() {
 
 <template>
   <UContainer>
-    <UPage>
+    <!-- Presets: index, menu and cart panel need fixed column widths; the
+         ten-column grid left the cart panel ~190 px wide (#443). -->
+    <UPage
+      :ui="
+        hasPreset
+          ? {
+              root: 'lg:grid-cols-[200px_minmax(0,1fr)_340px] lg:gap-12',
+              left: 'lg:col-span-1',
+              center: 'lg:col-span-1',
+              right: 'lg:col-span-1',
+            }
+          : undefined
+      "
+    >
       <template #left>
         <UPageAside>
           <MenuCategoryIndex v-if="hasPreset" />
@@ -154,6 +167,7 @@ async function openFilterDrawer() {
             />
             <CategoryHeader v-else :category="category" />
           </template>
+          <MenuOrderMode v-if="hasPreset" class="mb-4 lg:hidden" />
           <CategorySearchInput class="mb-4 grow flex" />
           <div class="flex flex-row justify-between gap-4 mb-4">
             <UBadge
@@ -169,8 +183,10 @@ async function openFilterDrawer() {
               placeholder="Sortierung"
             />
             <template v-if="moreThanOneFilterAndOption">
+              <!-- With a preset the right column holds the cart, so the
+                   filters live in the drawer on every screen size. -->
               <UButton
-                class="lg:hidden"
+                :class="{ 'lg:hidden': !hasPreset }"
                 icon="i-lucide-sliders-horizontal"
                 :color="selectedPropertyFilters.length ? 'primary' : 'neutral'"
                 :variant="selectedPropertyFilters.length ? 'solid' : 'subtle'"
@@ -260,7 +276,10 @@ async function openFilterDrawer() {
       </UPageBody>
 
       <template #right>
-        <UPageAside>
+        <UPageAside v-if="hasPreset">
+          <MenuCartPanel />
+        </UPageAside>
+        <UPageAside v-else>
           <ClientOnly v-if="moreThanOneFilterAndOption">
             <div class="flex flex-col gap-4">
               <h2 class="text-3xl md:text-4xl mb-3 pb-2">Filter</h2>
