@@ -21,38 +21,7 @@ const props = withDefaults(
   },
 );
 
-const { apiClient } = useShopwareContext();
-const config = useRuntimeConfig();
-const rootId = config.public.shopBite.menuCategoryId || "main-navigation";
-
-const { data: categories } = await useAsyncData(
-  "home-menu-categories",
-  async () => {
-    const response = await apiClient.invoke(
-      "readNavigation post /navigation/{activeId}/{rootId}",
-      {
-        body: {
-          depth: 1,
-          // Sent as a POST body so the projection is honoured (#312).
-          includes: {
-            category: [
-              "id",
-              "name",
-              "translated",
-              "seoUrl",
-              "customFields",
-              "media",
-            ],
-            media: ["url", "thumbnails", "metaData"],
-            media_thumbnail: ["url", "width"],
-          },
-        },
-        pathParams: { activeId: "main-navigation", rootId },
-      },
-    );
-    return response.data;
-  },
-);
+const { categories } = await useHomeMenuCategories();
 
 const tiles = computed(() =>
   (categories.value ?? []).filter((category) => category.seoUrl),

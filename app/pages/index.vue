@@ -31,9 +31,43 @@ usePageSeo({
 });
 
 useRestaurantSchema();
+
+// Shops with a style preset get the home page of #444.
+const { hasPreset } = useThemePreset();
 </script>
 <template>
-  <div v-if="page" class="relative">
+  <div v-if="page && hasPreset">
+    <HomePresetHero
+      :title="page.hero.title || page.title"
+      :description="page.description"
+      :headline="page.hero.headline"
+      :poster="page.hero.poster"
+      :links="page.hero.links"
+      :usps="page.hero.usps"
+    />
+    <HomePresetFacts
+      v-if="page.features?.features?.length"
+      :features="page.features.features"
+    />
+    <HomePresetCategories :title="page.menu?.title" />
+    <HomePresetHighlights :title="page.highlights?.title" />
+    <HomePresetRestaurant
+      v-if="page.gallery"
+      :title="page.gallery.title"
+      :description="page.gallery.description"
+      :headline="page.gallery.headline"
+      :image="page.gallery.images?.[0]?.image"
+      :links="page.gallery.links"
+    />
+    <HomeFaq
+      v-if="page.faq?.items?.length"
+      :title="page.faq.title"
+      :description="page.faq.description"
+      :headline="page.faq.headline"
+      :items="page.faq.items"
+    />
+  </div>
+  <div v-else-if="page" class="relative">
     <Hero
       :title="page.hero.title || page.title"
       :background-video="page.hero.backgroundVideo"
