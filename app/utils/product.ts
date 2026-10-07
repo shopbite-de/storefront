@@ -13,6 +13,15 @@ export function productIsAvailable(product: Schemas["Product"]): boolean {
 }
 
 /**
+ * Whether the product needs a choice before it can go into the cart: a
+ * parent with variants (#441). Extras and deselected ingredients are
+ * optional, so a product without variants can be added from the menu.
+ */
+export function productNeedsChoice(product: Schemas["Product"]): boolean {
+  return (product.childCount ?? 0) > 0;
+}
+
+/**
  * Whether a cart line item holds the product, as a plain line item or as a
  * container item carrying extras (the product is the first child, #325).
  */

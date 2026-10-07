@@ -20,6 +20,9 @@ const BASE_CRITERIA = {
       "available",
       // Product deep link (#289); the request sends `sw-include-seo-urls`.
       "seoUrls",
+      // A parent with variants needs a choice in the quick view; the others
+      // can be added from the menu directly (#441).
+      "childCount",
     ],
     seo_url: ["seoPathInfo", "isCanonical"],
     // The entity is `property_group`: under `property` the groups came back
