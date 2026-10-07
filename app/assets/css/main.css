@@ -117,6 +117,7 @@ html {
   --sb-accent: var(--ui-primary);
   --sb-focus: var(--ui-primary);
   --sb-danger: #b42318;
+  --sb-star: #b87a00;
   --sb-band: #171717;
   --sb-on-band: #fff;
   --font-sb-display: var(--font-sans);
@@ -153,6 +154,7 @@ html {
   --color-sb-accent: var(--sb-accent);
   --color-sb-focus: var(--sb-focus);
   --color-sb-danger: var(--sb-danger);
+  --color-sb-star: var(--sb-star);
   --color-sb-band: var(--sb-band);
   --color-sb-on-band: var(--sb-on-band);
   --font-display: var(--font-sb-display);
