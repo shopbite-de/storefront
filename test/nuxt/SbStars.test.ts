@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import SbStars from "~/components/Sb/Stars.vue";
+import type { VueWrapper } from "@vue/test-utils";
 
-function fills(wrapper: Awaited<ReturnType<typeof mountSuspended>>) {
+function fills(wrapper: VueWrapper) {
   return wrapper.findAll("svg").map((svg) => {
     const filled = svg.findAll('path[fill="currentColor"]');
     if (filled.length === 0) return 0;
