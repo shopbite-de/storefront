@@ -128,6 +128,13 @@ Pages without content throw `createNotFoundError()` (`app/utils/notFound.ts`): f
 - Every family in the `--font-sans` stack costs a system font lookup per text style during the first layout. `fonts.defaults.fallbacks["sans-serif"]` is therefore limited to the phone system fonts (Roboto, Helvetica Neue); do not add desktop families back without measuring Style & Layout (`docs/notes/2026-09-12-issue-319-stylesheet-cost.md`).
 - `ui.colors.primary` in `app.config.ts` must be a colour alias defined in `main.css` (`brand`), not a hex value.
 
+### Style presets (#439)
+
+- `shopBite.preset` in nuxt.config.ts (or `NUXT_SHOPBITE_PRESET` at build time) picks `trattoria`, `grill` or `asia`; `shopBite.colors` overrides single tokens. Empty keeps the old Nuxt UI look, so shops opt in one by one. Presets, contrast pairs and the generated stylesheet live in `shared/theme/presets.ts`; `modules/theme.ts` writes `.nuxt/shopbite-theme.css`, sets `<html data-preset>` and the colour mode, and registers the fonts.
+- `modules/theme.ts` is listed in `modules` before `@nuxt/ui` on purpose: it sets `colorMode` and `fonts`, which Nuxt UI's module dependencies read. The same file in `modules/` is not registered twice.
+- New components style only with the `--sb-*` colour tokens and `--font-sb-display`/`--font-sb-body` (the `--font` prefix makes @nuxt/fonts resolve the family and add metric fallbacks). The preset CSS also maps Nuxt UI's `--ui-*` variables onto the tokens, so `<U…>` components follow the preset until they are replaced (#440, #445).
+- Every colour pair a component renders must be in `CONTRAST_PAIRS`; `test/unit/themePresets.spec.ts` fails if a preset misses WCAG AA, and the build warns for shop overrides that do. Accent red is for headlines only, never on controls (reads as negative).
+
 ### SEO
 
 - This repository, deployed as the app, is the demo shop (demo.shopbite.de) and must not be crawled: its Dokploy deployment sets `NUXT_SITE_INDEXABLE=false`. Never set `site.indexable` in `nuxt.config.ts`: shops extending the layer would inherit it and drop out of search engines.
