@@ -124,6 +124,8 @@ html {
   --font-sb-body: var(--font-sans);
   --sb-radius-card: 12px;
   --sb-radius-control: 10px;
+  /* content width of the preset pages, the same as UContainer (80rem) */
+  --sb-container: 80rem;
 }
 
 :root.dark {

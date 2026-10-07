@@ -39,7 +39,7 @@ const address = [
     class="bg-sb-band text-sb-on-band"
   >
     <div
-      class="mx-auto grid max-w-[1248px] items-center gap-10 px-5 py-14 sm:px-8 sm:py-28 lg:grid-cols-2 lg:gap-20"
+      class="mx-auto grid w-full max-w-(--sb-container) items-center gap-10 px-4 py-14 sm:px-6 lg:px-8 sm:py-28 lg:grid-cols-2 lg:gap-20"
     >
       <img
         v-if="image"

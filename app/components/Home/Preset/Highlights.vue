@@ -26,7 +26,7 @@ const { menuView } = useThemePreset();
     v-if="products.length"
     id="highlights"
     aria-labelledby="home-highlights-title"
-    class="mx-auto max-w-[1248px] px-5 py-14 sm:px-8 sm:py-24"
+    class="mx-auto w-full max-w-(--sb-container) px-4 py-14 sm:px-6 lg:px-8 sm:py-24"
   >
     <div class="mb-7 flex items-baseline justify-between gap-5">
       <h2

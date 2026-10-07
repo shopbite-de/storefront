@@ -12,6 +12,11 @@ const MenuBonCardWhenVisible = hydrateWhenVisible(MenuBonCard);
 // Shops with a style preset get the menu of #441 (word-list index, section
 // title, bon cards with quick add); the others keep the Nuxt UI cards.
 const { hasPreset, menuView } = useThemePreset();
+// The preset header is 80 px from 640 px (Nuxt UI assumes 64 px), and the
+// asides line up with the header and footer edges without inner padding.
+const presetAsideUi = {
+  root: "lg:top-20 lg:max-h-[calc(100vh-5rem)] lg:ps-0 lg:ms-0 lg:pe-0",
+};
 
 const props = defineProps<{
   id: string;
@@ -150,7 +155,7 @@ async function openFilterDrawer() {
       "
     >
       <template #left>
-        <UPageAside>
+        <UPageAside :ui="hasPreset ? presetAsideUi : undefined">
           <MenuCategoryIndex v-if="hasPreset" />
           <NavigationDesktopLeft v-else />
         </UPageAside>
@@ -276,7 +281,7 @@ async function openFilterDrawer() {
       </UPageBody>
 
       <template #right>
-        <UPageAside v-if="hasPreset">
+        <UPageAside v-if="hasPreset" :ui="presetAsideUi">
           <MenuCartPanel />
         </UPageAside>
         <UPageAside v-else>

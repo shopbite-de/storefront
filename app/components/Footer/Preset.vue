@@ -36,7 +36,7 @@ const columns = computed(() =>
     aria-labelledby="footer-title"
   >
     <div
-      class="mx-auto flex max-w-[1248px] flex-col gap-12 px-5 pt-14 pb-10 sm:px-8"
+      class="mx-auto flex w-full max-w-(--sb-container) flex-col gap-12 px-4 pt-14 pb-10 sm:px-6 lg:px-8"
     >
       <div
         class="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)]"
