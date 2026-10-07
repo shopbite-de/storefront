@@ -1,4 +1,6 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
+import { fileURLToPath } from "node:url";
+
 const storeName = process.env.NUXT_STORE_NAME || "ShopBite";
 const storeDescription =
   process.env.NUXT_STORE_DESCRIPTION ||
@@ -157,6 +159,13 @@ export default defineNuxtConfig({
     },
   },
 
+  // Style preset of the shop (#439, modules/theme.ts): "trattoria", "grill"
+  // or "asia", optionally with colour overrides (`colors: { primary: … }`).
+  // Empty keeps the Nuxt UI look. NUXT_SHOPBITE_PRESET overrides it.
+  shopBite: {
+    preset: "",
+  },
+
   css: ["~/assets/css/main.css"],
 
   fonts: {
@@ -201,6 +210,10 @@ export default defineNuxtConfig({
     "@nuxt/content",
     "@nuxtjs/robots",
     "@vite-pwa/nuxt",
+    // Style presets (#439). Listed here, before @nuxt/ui, because the module
+    // sets the colour mode and fonts that @nuxt/ui's module dependencies read;
+    // the same path in modules/ is not registered a second time.
+    fileURLToPath(new URL("./modules/theme.ts", import.meta.url)),
     "@nuxt/ui",
     "@nuxt/scripts",
     "nuxt-vitalizer",
