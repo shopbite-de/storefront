@@ -57,7 +57,7 @@ const BLANK =
 
 <template>
   <section
-    class="mx-auto grid max-w-[1248px] items-center gap-12 px-5 pt-8 pb-14 sm:px-8 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-[72px]"
+    class="mx-auto grid w-full max-w-(--sb-container) items-center gap-12 px-4 pt-8 pb-14 sm:px-6 lg:px-8 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-[72px]"
   >
     <div class="flex flex-col gap-5 font-body text-sb-ink sm:gap-7">
       <div v-if="headline" class="flex items-center gap-3.5">

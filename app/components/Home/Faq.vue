@@ -37,7 +37,7 @@ useHead(() => ({
     v-if="hasPreset"
     id="faq"
     aria-labelledby="home-faq-title"
-    class="mx-auto grid max-w-[1248px] gap-8 px-5 py-14 font-body text-sb-ink sm:px-8 sm:py-28 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20"
+    class="mx-auto grid w-full max-w-(--sb-container) gap-8 px-4 py-14 font-body text-sb-ink sm:px-6 lg:px-8 sm:py-28 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20"
   >
     <div class="flex flex-col gap-4">
       <span

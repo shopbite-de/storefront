@@ -85,7 +85,7 @@ function logoutHandler() {
     class="sticky top-0 z-40 border-b border-sb-line bg-sb-bg/95 font-body text-sb-ink backdrop-blur supports-[backdrop-filter]:bg-sb-bg/85"
   >
     <div
-      class="mx-auto flex h-16 max-w-[1376px] items-center justify-between gap-4 px-4 sm:h-20 sm:px-8"
+      class="mx-auto flex h-16 w-full max-w-(--sb-container) items-center justify-between gap-4 px-4 sm:h-20 sm:px-6 lg:px-8"
     >
       <NuxtLink
         to="/"

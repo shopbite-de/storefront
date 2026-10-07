@@ -28,7 +28,7 @@ const items = computed(() =>
 <template>
   <section
     aria-label="Auf einen Blick"
-    class="mx-auto max-w-[1248px] px-5 pb-16 sm:px-8 sm:pb-24"
+    class="mx-auto w-full max-w-(--sb-container) px-4 pb-16 sm:px-6 lg:px-8 sm:pb-24"
   >
     <ul
       class="grid grid-cols-1 gap-x-8 gap-y-6 font-body text-sb-ink sm:grid-cols-2 lg:grid-cols-4"

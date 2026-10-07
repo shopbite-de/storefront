@@ -41,7 +41,7 @@ function name(category: Schemas["Category"]) {
   >
     <div
       :class="[
-        'mx-auto grid max-w-[1248px] items-center gap-10 px-5 py-14 sm:px-8 sm:py-24 lg:gap-[72px]',
+        'mx-auto grid w-full max-w-(--sb-container) items-center gap-10 px-4 py-14 sm:px-6 lg:px-8 sm:py-24 lg:gap-[72px]',
         active?.media?.url
           ? 'lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]'
           : '',
