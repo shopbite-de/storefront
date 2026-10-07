@@ -136,10 +136,69 @@ function handleTimeInput(event: Event): void {
   selected.value = value;
   emit("update:modelValue", value || null);
 }
+
+// Presets: the base components and plain text instead of badges (#443).
+const { hasPreset } = useThemePreset();
 </script>
 
 <template>
-  <div v-if="hasOpeningHoursFailed" class="mt-4">
+  <div v-if="hasPreset" class="flex flex-col gap-3 font-body text-sb-ink">
+    <div
+      v-if="hasOpeningHoursFailed"
+      role="alert"
+      class="flex flex-col items-start gap-3 rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
+    >
+      <span>
+        <strong class="block"
+          >Öffnungszeiten konnten nicht geladen werden</strong
+        >
+        Ohne Öffnungszeiten können wir keine Lieferzeit anbieten.
+      </span>
+      <SbButton variant="secondary" @click="retryOpeningHours"
+        >Erneut versuchen</SbButton
+      >
+    </div>
+    <p
+      v-else-if="isOpeningHoursLoaded && isClosedHoliday(now) === true"
+      role="status"
+      class="rounded-sb-control bg-sb-muted p-4 font-semibold"
+    >
+      Wir haben Betriebsferien und nehmen gerade keine Bestellungen an.
+    </p>
+    <template v-else-if="isOpeningHoursLoaded">
+      <SbField
+        id="delivery-time"
+        v-slot="{ id, describedBy, invalid }"
+        label="Wunschzeit für Lieferung oder Abholung, frühestens"
+        :hint="validationError ? undefined : helperText"
+        :error="validationError ?? undefined"
+      >
+        <ClientOnly>
+          <input
+            :id="id"
+            type="time"
+            :min="minTime ?? undefined"
+            :max="maxTime ?? undefined"
+            step="300"
+            :value="selected"
+            :disabled="isClosedToday"
+            :aria-describedby="describedBy"
+            :aria-invalid="invalid || undefined"
+            class="min-h-[50px] w-full max-w-48 rounded-sb-control border-[1.5px] border-sb-control bg-sb-surface px-3.5 font-body text-lg font-semibold text-sb-ink tabular-nums focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-sb-focus disabled:opacity-60 aria-invalid:border-sb-danger"
+            @input="handleTimeInput"
+          />
+        </ClientOnly>
+      </SbField>
+      <p class="text-sm text-sb-ink-muted">
+        Lieferzeit ca. {{ deliveryTime }} Minuten, zu Stoßzeiten kann es etwas
+        länger dauern.
+      </p>
+    </template>
+    <p v-else class="text-sm text-sb-ink-muted" aria-busy="true">
+      Öffnungszeiten werden geladen …
+    </p>
+  </div>
+  <div v-else-if="hasOpeningHoursFailed" class="mt-4">
     <UAlert
       color="error"
       variant="subtle"

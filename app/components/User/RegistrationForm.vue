@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { createRegistrationSchema } from "~/validation/registrationSchema";
 import type { RegistrationSchema } from "~/validation/registrationSchema";
-import { ApiClientError } from "@shopware/api-client";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
 
@@ -19,160 +17,48 @@ const props = withDefaults(
   },
 );
 
-const config = useRuntimeConfig();
-// Where to go after a successful registration is the caller's decision: the
-// registration page sends the visitor to the account, the checkout continues
-// with the order.
-const { register } = useUser();
-
-const state = reactive({
-  accountType: "private" as "private" | "business",
-  salutationId: "",
-  firstName: "",
-  lastName: "",
-  email: "",
-  guest: props.allowGuest,
-  password: "",
-  passwordConfirm: "",
-  acceptedDataProtection: false,
-  isShippingAddressDifferent: false,
-  storefrontUrl: config.public.shopware.devStorefrontUrl,
-  billingAddress: {
-    company: "",
-    department: "",
-    salutationId: "",
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    additionalAddressLine1: "",
-    street: "",
-    zipcode: "",
-    city: "",
-    countryId: config.public.site.countryId,
-  },
-  shippingAddress: {
-    company: "",
-    department: "",
-    salutationId: "",
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    additionalAddressLine1: "",
-    street: "",
-    zipcode: "",
-    city: "",
-    countryId: config.public.site.countryId,
-  },
-});
-
-const schema = computed(() => createRegistrationSchema(state));
-
-// The API payload keeps the negated `guest` flag, the form asks the positive
-// question: a guest order is the default, creating an account is the opt-in.
-const createAccount = computed({
-  get: () => !state.guest,
-  set: (value: boolean) => {
-    state.guest = !value;
-  },
-});
-
-/**
- * With double opt-in enabled in Shopware the customer stays inactive until the
- * confirmation link is clicked, so there is no session to continue with.
- */
-function needsEmailConfirmation(customer: Schemas["Customer"] | undefined) {
-  return !!customer?.doubleOptInRegistration && !customer?.active;
-}
+const {
+  state,
+  schema,
+  createAccount,
+  billingAddressFields,
+  shippingAddressFields,
+  accountTypes,
+  submit,
+} = useRegistrationForm({ allowGuest: props.allowGuest });
 
 const toast = useToast();
 
-const billingAddressFields = ref();
-const shippingAddressFields = ref();
-
 async function onSubmit(event: FormSubmitEvent<RegistrationSchema>) {
-  billingAddressFields.value?.flushPendingCheck();
-  if (state.isShippingAddressDifferent) {
-    shippingAddressFields.value?.flushPendingCheck();
-  }
-
-  const registrationData = { ...event.data };
-
-  if (
-    !registrationData.billingAddress.firstName &&
-    registrationData.firstName
-  ) {
-    registrationData.billingAddress.firstName = registrationData.firstName;
-  }
-
-  if (!registrationData.billingAddress.lastName && registrationData.lastName) {
-    registrationData.billingAddress.lastName = registrationData.lastName;
-  }
-
-  if (!state.isShippingAddressDifferent) {
-    delete registrationData.shippingAddress;
-  }
-
-  if (registrationData.guest) {
-    delete registrationData.password;
-    delete registrationData.passwordConfirm;
-  }
-
-  try {
-    const customer: Schemas["Customer"] | undefined =
-      // @ts-expect-error - password is required in the API type but not for guests
-      await register(registrationData);
-
-    if (needsEmailConfirmation(customer)) {
-      toast.add({
-        title: "Fast geschafft!",
-        description:
-          "Wir haben dir eine E-Mail geschickt. Bitte bestätige den Link darin, um dein Konto zu aktivieren.",
-        color: "info",
-      });
-    } else {
-      toast.add({
-        title: registrationData.guest
-          ? "Erfolgreich Kundendaten erfasst"
-          : "Konto erfolgreich erstellt",
-        color: "success",
-      });
-    }
-
-    emit(
-      "registration-success",
-      registrationData as unknown as RegistrationSchema,
-      customer,
-    );
-  } catch (error) {
-    console.error("Registration failed:", error);
-    let description = "Bitte versuchen Sie es erneut.";
-    if (error instanceof ApiClientError) {
-      const errors = error.details?.errors;
-      if (Array.isArray(errors) && errors.length > 0) {
-        description = errors
-          .map((e) => e.detail || e.title)
-          .filter(Boolean)
-          .join("\n");
-      }
-    }
+  const result = await submit(event.data);
+  if (!result.ok) {
     toast.add({
       title: "Registrierung fehlgeschlagen",
-      description,
+      description: result.message,
       color: "error",
     });
+    return;
   }
+  if (result.needsConfirmation) {
+    toast.add({
+      title: "Fast geschafft!",
+      description:
+        "Wir haben dir eine E-Mail geschickt. Bitte bestätige den Link darin, um dein Konto zu aktivieren.",
+      color: "info",
+    });
+  } else {
+    toast.add({
+      title: result.data.guest
+        ? "Erfolgreich Kundendaten erfasst"
+        : "Konto erfolgreich erstellt",
+      color: "success",
+    });
+  }
+  emit("registration-success", result.data, result.customer);
 }
 
-const accountTypes = ref([
-  {
-    label: "Privatkunde",
-    value: "private",
-  },
-  {
-    label: "Geschäftskunde",
-    value: "business",
-  },
-]);
+// Presets render the form with the base components (#443).
+const { hasPreset } = useThemePreset();
 
 const emit = defineEmits<{
   "registration-success": [
@@ -183,7 +69,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
+  <UserRegistrationFormPreset
+    v-if="hasPreset"
+    :allow-guest="allowGuest"
+    @registration-success="
+      (data, customer) => emit('registration-success', data, customer)
+    "
+  />
   <UForm
+    v-else
     :schema="schema"
     :state="state"
     class="space-y-4"

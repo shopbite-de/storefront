@@ -44,10 +44,44 @@ async function handleAddressUpdate() {
 onMounted(() => {
   refreshUserAddresses();
 });
+
+// Presets: plain text in the checkout section instead of a card (#443).
+const { hasPreset } = useThemePreset();
 </script>
 
 <template>
-  <UCard class="mb-4">
+  <div v-if="hasPreset" class="flex flex-col gap-4 font-body text-sb-ink">
+    <p>
+      <strong class="block">{{ fullName }}</strong>
+      <span class="text-sb-ink-muted">{{ user?.email }}</span>
+    </p>
+    <div class="flex flex-col gap-2 border-t border-sb-line pt-4">
+      <h3 class="text-sm font-bold">
+        {{
+          areAddressesDifferent
+            ? "Lieferadresse"
+            : "Liefer- und Rechnungsadresse"
+        }}
+      </h3>
+      <AddressDetail
+        :address="userDefaultShippingAddress"
+        :with-edit-button="withEditButton"
+        @update:address="handleAddressUpdate"
+      />
+    </div>
+    <div
+      v-if="areAddressesDifferent"
+      class="flex flex-col gap-2 border-t border-sb-line pt-4"
+    >
+      <h3 class="text-sm font-bold">Rechnungsadresse</h3>
+      <AddressDetail
+        :address="userDefaultBillingAddress"
+        :with-edit-button="withEditButton"
+        @update:address="handleAddressUpdate"
+      />
+    </div>
+  </div>
+  <UCard v-else class="mb-4">
     <div>{{ fullName }}</div>
     <div>{{ user?.email }}</div>
     <USeparator
