@@ -240,7 +240,7 @@ async function openFilterDrawer() {
 
           <div
             v-else-if="hasPreset"
-            class="grid grid-cols-1 gap-3 transition-opacity duration-200 sm:grid-cols-2"
+            class="grid grid-cols-1 gap-3 transition-opacity duration-200"
             :class="{ 'opacity-40 pointer-events-none': loading }"
           >
             <MenuBonCardWhenVisible
