@@ -90,6 +90,9 @@ function summary(association: AssociationItem) {
 }
 
 const baseId = useId();
+
+// Presets render the list with the base components (#442).
+const { hasPreset } = useThemePreset();
 const groupId = (index: number) => `${baseId}-extras-${index}`;
 
 watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
@@ -98,96 +101,180 @@ watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
 </script>
 
 <template>
-  <div
-    v-for="(association, index) in associations"
-    :key="association.label"
-    class="flex flex-col"
-  >
-    <button
-      type="button"
-      class="flex items-center gap-2 py-1 text-start"
-      :aria-expanded="openGroups.includes(association.label)"
-      :aria-controls="groupId(index)"
-      @click="toggleGroup(association.label)"
-    >
-      <UIcon
-        name="i-lucide-chevron-down"
-        class="size-5 shrink-0 text-muted transition-transform"
-        :class="{ '-rotate-90': !openGroups.includes(association.label) }"
-      />
-      <span class="font-semibold text-highlighted">{{
-        association.label
-      }}</span>
-      <span
-        class="ms-auto text-xs"
-        :class="
-          association.products.some(isSelected)
-            ? 'font-medium text-primary'
-            : 'text-muted'
-        "
-      >
-        {{ summary(association) }}
-      </span>
-    </button>
-
+  <template v-if="hasPreset">
     <div
-      v-if="openGroups.includes(association.label)"
-      :id="groupId(index)"
-      class="flex flex-col gap-1 pt-2"
+      v-for="(association, index) in associations"
+      :key="association.label"
+      class="flex flex-col"
     >
-      <UInput
-        v-if="association.products.length > SEARCH_THRESHOLD"
-        v-model="queries[association.label]"
-        icon="i-lucide-search"
-        :placeholder="`${association.label} durchsuchen`"
-        :aria-label="`${association.label} durchsuchen`"
-        class="mb-1 w-full"
-      />
-      <div
-        class="flex flex-col divide-y divide-default"
-        role="group"
-        :aria-label="association.label"
+      <button
+        type="button"
+        class="flex min-h-11 items-center gap-2 text-start font-body text-sb-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-sb-focus"
+        :aria-expanded="openGroups.includes(association.label)"
+        :aria-controls="groupId(index)"
+        @click="toggleGroup(association.label)"
       >
-        <UCheckbox
-          v-for="extra in visibleProducts(association)"
-          :key="extra.value"
-          variant="card"
-          size="lg"
-          :model-value="isSelected(extra)"
-          :ui="{
-            root: 'items-center rounded-none border-0 px-1 py-2.5',
-            wrapper: 'ms-3',
-            label: 'flex items-baseline justify-between gap-3 font-normal',
-          }"
-          @update:model-value="setSelected(extra, $event === true)"
+        <SbIcon
+          name="chevron-down"
+          class="text-sb-ink-muted transition-transform motion-reduce:transition-none"
+          :class="{ '-rotate-90': !openGroups.includes(association.label) }"
+        />
+        <span class="font-bold">{{ association.label }}</span>
+        <span
+          class="ms-auto rounded-full px-2.5 py-0.5 text-xs font-semibold"
+          :class="
+            association.products.some(isSelected)
+              ? 'bg-sb-primary-tint text-sb-primary-ink'
+              : 'bg-sb-muted text-sb-ink-muted'
+          "
         >
-          <template #label>
-            <span>{{ extra.label }}</span>
-            <span class="shrink-0 text-sm text-muted tabular-nums">
-              +{{ extra.price }}
-            </span>
-          </template>
-        </UCheckbox>
+          {{ summary(association) }}
+        </span>
+      </button>
+
+      <div
+        v-if="openGroups.includes(association.label)"
+        :id="groupId(index)"
+        class="flex flex-col pt-1"
+      >
+        <SbField
+          v-if="association.products.length > SEARCH_THRESHOLD"
+          v-slot="{ id }"
+          :label="`${association.label} durchsuchen`"
+          hide-label
+          class="mb-1"
+        >
+          <SbInput
+            :id="id"
+            v-model="queries[association.label]"
+            type="search"
+            :placeholder="`${association.products.length} ${association.label} durchsuchen`"
+          />
+        </SbField>
+        <div role="group" :aria-label="association.label">
+          <SbCheckbox
+            v-for="extra in visibleProducts(association)"
+            :key="extra.value"
+            :label="extra.label"
+            :trailing="`+${extra.price}`"
+            :model-value="isSelected(extra)"
+            @update:model-value="setSelected(extra, $event)"
+          />
+        </div>
+        <p
+          v-if="
+            queries[association.label]?.trim() &&
+            visibleProducts(association).length === 0
+          "
+          class="py-2 text-sm text-sb-ink-muted"
+          role="status"
+        >
+          Keine Treffer
+        </p>
+        <SbButton
+          v-if="hiddenCount(association) > 0"
+          variant="ghost"
+          class="self-start"
+          @click="expandedGroups = [...expandedGroups, association.label]"
+        >
+          Alle {{ association.products.length }} anzeigen
+          <template #trailing><SbIcon name="chevron-down" /></template>
+        </SbButton>
       </div>
-      <p
-        v-if="
-          queries[association.label]?.trim() &&
-          visibleProducts(association).length === 0
-        "
-        class="py-2 text-sm text-muted"
-      >
-        Keine Treffer
-      </p>
-      <UButton
-        v-if="hiddenCount(association) > 0"
-        variant="link"
-        color="primary"
-        trailing-icon="i-lucide-chevron-down"
-        class="self-start px-1"
-        @click="expandedGroups = [...expandedGroups, association.label]"
-      >
-        Alle {{ association.products.length }} anzeigen
-      </UButton>
     </div>
-  </div>
+  </template>
+  <template v-else>
+    <div
+      v-for="(association, index) in associations"
+      :key="association.label"
+      class="flex flex-col"
+    >
+      <button
+        type="button"
+        class="flex items-center gap-2 py-1 text-start"
+        :aria-expanded="openGroups.includes(association.label)"
+        :aria-controls="groupId(index)"
+        @click="toggleGroup(association.label)"
+      >
+        <UIcon
+          name="i-lucide-chevron-down"
+          class="size-5 shrink-0 text-muted transition-transform"
+          :class="{ '-rotate-90': !openGroups.includes(association.label) }"
+        />
+        <span class="font-semibold text-highlighted">{{
+          association.label
+        }}</span>
+        <span
+          class="ms-auto text-xs"
+          :class="
+            association.products.some(isSelected)
+              ? 'font-medium text-primary'
+              : 'text-muted'
+          "
+        >
+          {{ summary(association) }}
+        </span>
+      </button>
+
+      <div
+        v-if="openGroups.includes(association.label)"
+        :id="groupId(index)"
+        class="flex flex-col gap-1 pt-2"
+      >
+        <UInput
+          v-if="association.products.length > SEARCH_THRESHOLD"
+          v-model="queries[association.label]"
+          icon="i-lucide-search"
+          :placeholder="`${association.label} durchsuchen`"
+          :aria-label="`${association.label} durchsuchen`"
+          class="mb-1 w-full"
+        />
+        <div
+          class="flex flex-col divide-y divide-default"
+          role="group"
+          :aria-label="association.label"
+        >
+          <UCheckbox
+            v-for="extra in visibleProducts(association)"
+            :key="extra.value"
+            variant="card"
+            size="lg"
+            :model-value="isSelected(extra)"
+            :ui="{
+              root: 'items-center rounded-none border-0 px-1 py-2.5',
+              wrapper: 'ms-3',
+              label: 'flex items-baseline justify-between gap-3 font-normal',
+            }"
+            @update:model-value="setSelected(extra, $event === true)"
+          >
+            <template #label>
+              <span>{{ extra.label }}</span>
+              <span class="shrink-0 text-sm text-muted tabular-nums">
+                +{{ extra.price }}
+              </span>
+            </template>
+          </UCheckbox>
+        </div>
+        <p
+          v-if="
+            queries[association.label]?.trim() &&
+            visibleProducts(association).length === 0
+          "
+          class="py-2 text-sm text-muted"
+        >
+          Keine Treffer
+        </p>
+        <UButton
+          v-if="hiddenCount(association) > 0"
+          variant="link"
+          color="primary"
+          trailing-icon="i-lucide-chevron-down"
+          class="self-start px-1"
+          @click="expandedGroups = [...expandedGroups, association.label]"
+        >
+          Alle {{ association.products.length }} anzeigen
+        </UButton>
+      </div>
+    </div>
+  </template>
 </template>

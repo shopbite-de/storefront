@@ -79,6 +79,11 @@ const onVariantSwitched = (variant: Schemas["Product"]) => {
 };
 
 const onAddToCart = () => emit("product-added");
+
+const { hasPreset } = useThemePreset();
+const productName = computed(
+  () => selectedProduct.value?.translated?.name ?? "Gericht",
+);
 </script>
 
 <template>
@@ -125,7 +130,33 @@ const onAddToCart = () => emit("product-added");
       />
     </template>
 
+    <!-- -bottom-5/-mb-5 cover the sheet body's bottom padding, which sticky
+         positioning keeps free and the list scrolled through (#442). -->
     <div
+      v-if="hasPreset"
+      class="sticky -bottom-5 -mx-5 -mb-5 mt-auto flex items-center gap-2.5 border-t border-sb-line bg-sb-surface px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+    >
+      <SbStepper
+        v-model="selectedQuantity"
+        :item-name="productName"
+        :max="100"
+        size="lg"
+      />
+      <SbButton
+        size="lg"
+        class="min-h-14 min-w-0 flex-1 justify-between px-5"
+        :disabled="pending || !isAvailable"
+        :loading="isLoading"
+        @click="addToCart(onAddToCart)"
+      >
+        <span>{{ isAvailable ? "In den Warenkorb" : "Ausverkauft" }}</span>
+        <span v-if="isAvailable && !pending" class="tabular-nums">
+          {{ getFormattedPrice(total) }}
+        </span>
+      </SbButton>
+    </div>
+    <div
+      v-else
       class="sticky bottom-0 mt-auto flex items-center gap-3 border-t border-default bg-default pt-4"
     >
       <UInputNumber
