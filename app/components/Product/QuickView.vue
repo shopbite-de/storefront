@@ -61,11 +61,18 @@ function onVariantSelected(variant: Schemas["Product"]) {
   >
     <template #header>
       <div
-        class="grid grid-cols-[minmax(56px,auto)_minmax(0,1fr)] overflow-hidden rounded-sb-card border border-sb-line bg-sb-surface"
+        class="grid grid-cols-[64px_minmax(0,1fr)] overflow-hidden rounded-sb-card border border-sb-line bg-sb-surface"
       >
         <span
           aria-hidden="true"
-          class="flex items-center justify-center border-r-2 border-dashed border-sb-line bg-sb-muted px-2 font-display text-xl whitespace-nowrap tabular-nums"
+          :class="[
+            'flex items-center justify-center border-r-2 border-dashed border-sb-line bg-sb-muted px-1.5 text-center font-display tabular-nums',
+            (productNumber?.length ?? 0) <= 3
+              ? 'text-xl whitespace-nowrap'
+              : (productNumber?.length ?? 0) <= 6
+                ? 'text-[15px] whitespace-nowrap'
+                : 'text-xs leading-tight [overflow-wrap:anywhere]',
+          ]"
           >{{ productNumber }}</span
         >
         <div class="flex min-w-0 flex-col gap-1 px-3.5 py-3">

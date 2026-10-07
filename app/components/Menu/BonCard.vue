@@ -37,13 +37,17 @@ const diets = computed(() =>
 );
 // Read before the name; the strip with the number is aria-hidden. Built in
 // script: a trailing space in the template would be condensed away.
-// Menu numbers are "21" in most shops, but can be "LF-30": shrink the
-// type instead of wrapping inside the strip.
+// The strip has a fixed width so the cards line up (#441); menu numbers
+// are "21" in most shops, but can be "LF-30" or "LF-35-normal": the type
+// shrinks, very long numbers wrap.
 const numberSize = computed(() => {
   const length = props.product.productNumber.length;
-  if (length <= 2) return "text-2xl sm:text-[28px]";
-  if (length === 3) return "text-xl sm:text-[22px]";
-  return "text-base sm:text-lg";
+  if (length <= 2) return "text-2xl sm:text-[28px] whitespace-nowrap";
+  if (length === 3) return "text-xl sm:text-[22px] whitespace-nowrap";
+  if (length <= 5) return "text-[15px] sm:text-lg whitespace-nowrap";
+  if (length === 6) return "text-[13px] sm:text-[15px] whitespace-nowrap";
+  // Variant numbers like "LF-35-normal": two lines, broken anywhere.
+  return "text-xs sm:text-[13px] leading-tight [overflow-wrap:anywhere]";
 });
 const numberLabel = computed(() => `Nr. ${props.product.productNumber} `);
 const cover = computed(() =>
@@ -109,12 +113,12 @@ function onLinkClick(event: MouseEvent) {
       class="aspect-[4/3] w-full object-cover"
     />
     <div
-      class="grid flex-1 grid-cols-[minmax(60px,auto)_minmax(0,1fr)] sm:grid-cols-[minmax(72px,auto)_minmax(0,1fr)]"
+      class="grid flex-1 grid-cols-[60px_minmax(0,1fr)] sm:grid-cols-[72px_minmax(0,1fr)]"
     >
       <span
         aria-hidden="true"
         :class="[
-          'flex items-center justify-center border-r-2 border-dashed border-sb-line bg-sb-muted px-2 font-display whitespace-nowrap tabular-nums',
+          'flex items-center justify-center border-r-2 border-dashed border-sb-line bg-sb-muted px-1.5 text-center font-display tabular-nums',
           numberSize,
         ]"
       >
