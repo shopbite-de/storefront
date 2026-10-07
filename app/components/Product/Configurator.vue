@@ -14,6 +14,9 @@ const { variants: selectableOptions } = useProductVariantsZwei(configurator);
 
 const selectedOptions = ref<Record<string, string>>({});
 
+// Presets show the options as a radio list, every option visible (#442).
+const { hasPreset } = useThemePreset();
+
 const options = product.value.options as Schemas["PropertyGroupOption"][];
 for (const option of options ?? []) {
   if (option.group && option.id) {
@@ -41,7 +44,17 @@ const emit = defineEmits<{
 }>();
 </script>
 <template>
-  <div class="flex flex-col gap-5">
+  <div v-if="hasPreset" class="flex flex-col gap-5">
+    <SbChoiceGroup
+      v-for="(variantGroup, propertyGroupId) in selectableOptions"
+      :key="propertyGroupId"
+      v-model="selectedOptions[propertyGroupId]"
+      :legend="variantGroup.name"
+      :options="variantGroup.options"
+      required
+    />
+  </div>
+  <div v-else class="flex flex-col gap-5">
     <div
       v-for="(variantGroup, propertyGroupId) in selectableOptions"
       :key="propertyGroupId"
