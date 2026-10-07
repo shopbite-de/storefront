@@ -11,23 +11,18 @@ const BASE_CRITERIA = {
       "description",
       "calculatedPrice",
       "translated",
-      "properties",
-      "propertyIds",
+      // The card reads the properties grouped (ingredients, diets, kitchen);
+      // `properties` would repeat every option with its group. The quick view
+      // loads its own product (/api/product/[productId]).
       "sortedProperties",
       "cover",
       // "Ausverkauft" on the card (#325).
       "available",
     ],
-    property: ["id", "name", "translated", "displayType", "options"],
-    property_group_option: [
-      "id",
-      "name",
-      "translated",
-      "group",
-      "media",
-      "mediaId",
-    ],
-    product_option: ["id", "groupId", "name", "translated", "group"],
+    // The entity is `property_group`: under `property` the groups came back
+    // with every field, nested once more in each option.
+    property_group: ["id", "name", "translated", "displayType", "options"],
+    property_group_option: ["id", "name", "translated", "media", "mediaId"],
   },
   associations: {
     cover: {
