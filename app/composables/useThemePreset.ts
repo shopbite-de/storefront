@@ -3,6 +3,7 @@ import type { ThemePreset, ThemePresetName } from "#shared/theme/presets";
 type ThemeRuntime = {
   preset: ThemePresetName | "";
   menuView: ThemePreset["menuView"] | "";
+  colorMode: ThemePreset["colorMode"] | "";
 };
 
 /**
@@ -18,5 +19,6 @@ export function useThemePreset() {
     preset,
     hasPreset: preset !== "",
     menuView: theme?.menuView || "bon",
+    colorMode: theme?.colorMode || "light",
   };
 }

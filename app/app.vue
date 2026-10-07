@@ -105,9 +105,15 @@ useSeoMeta({
 
   <UApp :toaster="appConfig.toaster">
     <!-- Lazy keeps UBanner out of the entry chunk of real shops (#314). -->
+    <!-- First focusable element: skips header and navigation (#455). -->
+    <a
+      href="#inhalt"
+      class="sr-only z-[60] rounded-md bg-neutral-950 px-4 py-3 font-semibold text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >Zum Inhalt springen</a
+    >
     <LazyDemoBanner v-if="shopBite.feature.demoBanner" />
     <Header />
-    <UMain>
+    <UMain id="inhalt" tabindex="-1" class="focus:outline-none">
       <NuxtLayout>
         <NuxtPage />
       </NuxtLayout>

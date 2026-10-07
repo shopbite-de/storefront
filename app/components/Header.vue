@@ -2,10 +2,13 @@
 const { mainMenu } = useNavigation(false);
 // The logo link's accessible name; Nuxt UI's default is "Nuxt UI" (#275).
 const { site, shopBite } = useRuntimeConfig().public;
+// Presets have their own header (#455).
+const { hasPreset } = useThemePreset();
 </script>
 
 <template>
-  <UHeader :title="site.name">
+  <HeaderPreset v-if="hasPreset" />
+  <UHeader v-else :title="site.name">
     <template #title>
       <HeaderTitle />
     </template>

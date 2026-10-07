@@ -77,7 +77,7 @@ export default defineNuxtModule<ShopBiteThemeOptions>({
       unknown
     >;
     // Read by useThemePreset(); empty without a preset (old look).
-    publicConfig.shopBiteTheme = { preset: "", menuView: "" };
+    publicConfig.shopBiteTheme = { preset: "", menuView: "", colorMode: "" };
     if (!name) return;
     if (!isThemePresetName(name)) {
       throw new Error(
@@ -86,7 +86,11 @@ export default defineNuxtModule<ShopBiteThemeOptions>({
     }
 
     const preset = resolvePreset(name, options.colors);
-    publicConfig.shopBiteTheme = { preset: name, menuView: preset.menuView };
+    publicConfig.shopBiteTheme = {
+      preset: name,
+      menuView: preset.menuView,
+      colorMode: preset.colorMode,
+    };
     for (const failure of contrastFailures(preset.colors)) {
       logger.warn(
         `Preset "${name}": ${failure.fg} on ${failure.bg} has a contrast of ${failure.ratio.toFixed(2)}:1, WCAG AA needs ${failure.min}:1. Check the colour overrides in shopBite.colors.`,
