@@ -30,7 +30,13 @@ const rating = computed(() => {
   const usp = props.usps?.find((item) => item.icon?.includes("google"));
   if (!usp) return null;
   const value = (usp.title ?? "").replace(/[^\d.,]/g, "").replace(".", ",");
-  return value ? { value, label: usp.subtitle ?? "", link: usp.link } : null;
+  if (!value) return null;
+  return {
+    value,
+    stars: Number(value.replace(",", ".")),
+    label: usp.subtitle ?? "",
+    link: usp.link,
+  };
 });
 
 const { status } = useStoreStatus();
@@ -120,10 +126,15 @@ const BLANK =
       </ClientOnly>
       <p
         v-if="rating"
-        class="flex items-center gap-2 border-t border-sb-line pt-3 text-sm sm:hidden"
+        class="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-sb-line pt-3 text-sm sm:hidden"
       >
-        <span class="font-bold">{{ rating.value }} von 5</span>
-        <span class="text-sb-ink-muted">· {{ rating.label }} bei Google</span>
+        <SbStars :value="rating.stars" />
+        <span class="font-bold whitespace-nowrap"
+          >{{ rating.value }} von 5</span
+        >
+        <span class="whitespace-nowrap text-sb-ink-muted"
+          >{{ rating.label }} bei Google</span
+        >
       </p>
     </div>
 
@@ -150,7 +161,8 @@ const BLANK =
         <span class="font-display text-4xl leading-none">{{
           rating.value
         }}</span>
-        <span class="flex flex-col gap-0.5 text-[13px]">
+        <span class="flex flex-col gap-1 text-[13px]">
+          <SbStars :value="rating.stars" />
           <span class="font-bold">von 5 bei Google</span>
           <span class="text-sb-ink-muted">{{ rating.label }}</span>
         </span>

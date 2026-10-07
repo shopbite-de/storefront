@@ -39,6 +39,8 @@ export type ColorToken =
   | "focus"
   /** error text and borders */
   | "danger"
+  /** rating stars, a graphic next to the rating in words (3:1) */
+  | "star"
   /** inverted band (restaurant section) */
   | "band"
   | "onBand";
@@ -83,6 +85,7 @@ export const THEME_PRESETS = {
       accent: "#B03A2E",
       focus: "#2F6418",
       danger: "#B42318",
+      star: "#B87A00",
       band: "#1F2A1B",
       onBand: "#FFFFFF",
     },
@@ -116,6 +119,7 @@ export const THEME_PRESETS = {
       accent: "#F2A93B",
       focus: "#F2A93B",
       danger: "#FF8A7A",
+      star: "#F2A93B",
       band: "#0F0C09",
       onBand: "#F5EFE6",
     },
@@ -153,6 +157,7 @@ export const THEME_PRESETS = {
       accent: "#B8391F",
       focus: "#0E6B52",
       danger: "#B42318",
+      star: "#B87A00",
       band: "#17201B",
       onBand: "#FFFFFF",
     },
@@ -203,6 +208,7 @@ export const CONTRAST_PAIRS: ContrastPair[] = [
   { fg: "control", bg: "bg", min: 3 },
   { fg: "focus", bg: "bg", min: 3 },
   { fg: "focus", bg: "surface", min: 3 },
+  { fg: "star", bg: "surface", min: 3 },
 ];
 
 function channel(value: number): number {
