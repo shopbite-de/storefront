@@ -6,6 +6,7 @@ import {
   hasYesOption,
   lineItemHoldsProduct,
   productIsAvailable,
+  productNeedsChoice,
 } from "../../app/utils/product";
 
 const product = (overrides: Partial<Schemas["Product"]> = {}) =>
@@ -28,6 +29,17 @@ describe("productIsAvailable", () => {
 
   it("is false when the flag is false", () => {
     expect(productIsAvailable(product({ available: false }))).toBe(false);
+  });
+});
+
+describe("productNeedsChoice", () => {
+  it("is true for a parent with variants", () => {
+    expect(productNeedsChoice(product({ childCount: 3 }))).toBe(true);
+  });
+
+  it("is false without variants or without the field", () => {
+    expect(productNeedsChoice(product({ childCount: 0 }))).toBe(false);
+    expect(productNeedsChoice(product())).toBe(false);
   });
 });
 

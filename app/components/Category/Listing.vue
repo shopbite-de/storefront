@@ -2,10 +2,16 @@
 import type { Schemas } from "#shopware";
 import Breadcrumb from "~/components/Category/Breadcrumb.vue";
 import ProductCard from "~/components/Product/Card.vue";
+import MenuBonCard from "~/components/Menu/BonCard.vue";
 
 // A menu category lists up to 100 products; hydrating every card up front
 // costs ~1 s of main-thread time on phones (#314).
 const ProductCardWhenVisible = hydrateWhenVisible(ProductCard);
+const MenuBonCardWhenVisible = hydrateWhenVisible(MenuBonCard);
+
+// Shops with a style preset get the menu of #441 (word-list index, section
+// title, bon cards with quick add); the others keep the Nuxt UI cards.
+const { hasPreset, menuView } = useThemePreset();
 
 const props = defineProps<{
   id: string;
@@ -132,17 +138,29 @@ async function openFilterDrawer() {
     <UPage>
       <template #left>
         <UPageAside>
-          <NavigationDesktopLeft />
+          <MenuCategoryIndex v-if="hasPreset" />
+          <NavigationDesktopLeft v-else />
         </UPageAside>
       </template>
 
       <UPageBody>
         <div>
           <Breadcrumb :category-id="category?.id" />
-          <CategoryHeader v-if="category" :category="category" />
+          <template v-if="category">
+            <MenuSectionHeader
+              v-if="hasPreset"
+              :category="category"
+              :count="elements.length"
+            />
+            <CategoryHeader v-else :category="category" />
+          </template>
           <CategorySearchInput class="mb-4 grow flex" />
           <div class="flex flex-row justify-between gap-4 mb-4">
-            <UBadge variant="subtle" :label="`${elements.length} Produkte`" />
+            <UBadge
+              v-if="!hasPreset"
+              variant="subtle"
+              :label="`${elements.length} Produkte`"
+            />
             <USelect
               v-model="currentSorting"
               icon="i-lucide-arrow-down-wide-narrow"
@@ -204,6 +222,20 @@ async function openFilterDrawer() {
             <LazyProductCardSkeleton v-for="i in 6" :key="i" />
           </div>
 
+          <div
+            v-else-if="hasPreset"
+            class="grid grid-cols-1 gap-3 transition-opacity duration-200 sm:grid-cols-2"
+            :class="{ 'opacity-40 pointer-events-none': loading }"
+          >
+            <MenuBonCardWhenVisible
+              v-for="product in elements"
+              :key="product.id"
+              :product="product"
+              :photo="menuView === 'bonPhoto'"
+              :href="productDeepLink(product, category?.seoUrl)"
+              @select="quickView.show"
+            />
+          </div>
           <div
             v-else
             class="grid grid-cols-1 gap-4 transition-opacity duration-200"
