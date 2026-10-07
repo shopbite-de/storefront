@@ -13,17 +13,26 @@ const props = withDefaults(
     /** marks the field as optional; required fields are not marked */
     optional?: boolean;
     hideLabel?: boolean;
+    /** fixed id of the control, e.g. for links from an error summary */
+    id?: string;
   }>(),
-  { hint: undefined, error: undefined, optional: false, hideLabel: false },
+  {
+    hint: undefined,
+    error: undefined,
+    optional: false,
+    hideLabel: false,
+    id: undefined,
+  },
 );
 
-const id = useId();
-const hintId = `${id}-hint`;
-const errorId = `${id}-error`;
+const generatedId = useId();
+const id = computed(() => props.id ?? generatedId);
+const hintId = computed(() => `${id.value}-hint`);
+const errorId = computed(() => `${id.value}-error`);
 
 const describedBy = computed(
   () =>
-    [props.error ? errorId : null, props.hint ? hintId : null]
+    [props.error ? errorId.value : null, props.hint ? hintId.value : null]
       .filter(Boolean)
       .join(" ") || undefined,
 );
