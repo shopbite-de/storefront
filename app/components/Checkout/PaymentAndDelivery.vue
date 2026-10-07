@@ -5,6 +5,13 @@ import type {
 } from "#ui/components/RadioGroup.vue";
 import type { Schemas } from "#shopware";
 
+// The one-page checkout of the presets shows shipping and payment as
+// separate numbered sections (#443).
+const props = withDefaults(
+  defineProps<{ part?: "both" | "shipping" | "payment" }>(),
+  { part: "both" },
+);
+
 const {
   paymentMethods,
   getPaymentMethods,
@@ -130,7 +137,38 @@ watch(
 </script>
 
 <template>
-  <div v-if="hasPreset" class="flex flex-col gap-8 font-body text-sb-ink">
+  <div
+    v-if="hasPreset && props.part !== 'both'"
+    class="flex flex-col gap-3 font-body text-sb-ink"
+  >
+    <SbChoiceGroup
+      v-if="props.part === 'shipping'"
+      v-model="shippingModel"
+      legend="Versandarten"
+      hide-legend
+      variant="cards"
+      :options="shippingOptions"
+    />
+    <SbChoiceGroup
+      v-else
+      v-model="paymentModel"
+      legend="Zahlungsarten"
+      hide-legend
+      variant="cards"
+      :options="paymentOptions"
+    />
+    <NuxtLink
+      to="/zahlung-und-versand"
+      class="inline-flex min-h-11 items-center self-start text-sm font-semibold text-sb-primary-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-sb-focus"
+    >
+      {{
+        props.part === "shipping"
+          ? "Liefergebiet und Versandkosten"
+          : "Mehr zu den Zahlungsarten"
+      }}
+    </NuxtLink>
+  </div>
+  <div v-else-if="hasPreset" class="flex flex-col gap-8 font-body text-sb-ink">
     <section class="flex flex-col gap-3" aria-labelledby="checkout-shipping">
       <div class="flex items-center justify-between gap-3">
         <h2 id="checkout-shipping" class="font-display text-[28px]">

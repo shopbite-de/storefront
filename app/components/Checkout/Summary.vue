@@ -23,6 +23,22 @@ const {
 
 const toast = useToast();
 
+// Presets: the one-page checkout (#443). Errors show in the form, next to
+// the order button, instead of a toast that disappears.
+const { hasPreset } = useThemePreset();
+const orderError = ref<{ title: string; description: string } | null>(null);
+
+function reportError(
+  message: { title: string; description: string },
+  toastOptions: { icon: string },
+) {
+  if (hasPreset) {
+    orderError.value = message;
+    return;
+  }
+  toast.add({ ...message, color: "error", progress: false, ...toastOptions });
+}
+
 onMounted(() => {
   refresh();
   refreshUser({
@@ -55,28 +71,29 @@ const { handlePayment, paymentUrl } = useOrderPayment(
 async function hasAvailableCheckoutMethods(): Promise<boolean> {
   try {
     if (await ensureAvailableCheckoutMethods()) return true;
-    toast.add({
-      title: `Keine ${blockedMethodLabel.value} verfügbar`,
-      description: `Für deine Bestellung ist aktuell keine ${blockedMethodLabel.value} verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.`,
-      color: "error",
-      icon: blockedMethodIcon.value,
-      progress: false,
-    });
+    reportError(
+      {
+        title: `Keine ${blockedMethodLabel.value} verfügbar`,
+        description: `Für deine Bestellung ist aktuell keine ${blockedMethodLabel.value} verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.`,
+      },
+      { icon: blockedMethodIcon.value },
+    );
   } catch (error) {
     console.error("[checkout][ensureAvailableCheckoutMethods]", error);
-    toast.add({
-      title: "Versand- und Zahlart konnten nicht geprüft werden",
-      description: "Bitte versuche es in einem Moment erneut.",
-      color: "error",
-      icon: "i-lucide-x-circle",
-      progress: false,
-    });
+    reportError(
+      {
+        title: "Versand- und Zahlart konnten nicht geprüft werden",
+        description: "Bitte versuche es in einem Moment erneut.",
+      },
+      { icon: "i-lucide-x-circle" },
+    );
   }
   return false;
 }
 
 async function handleCreateOrder() {
   isPlacingOrder.value = true;
+  orderError.value = null;
   try {
     if (!(await hasAvailableCheckoutMethods())) return;
 
@@ -107,14 +124,14 @@ async function handleCreateOrder() {
     navigateTo(`/bestellung/${order.id}/erfolg`);
   } catch (error) {
     console.error("[checkout][createOrder]", error);
-    toast.add({
-      title: "Bestellung fehlgeschlagen",
-      description:
-        "Deine Bestellung konnte nicht aufgegeben werden. Bitte prüfe deine Angaben und versuche es erneut.",
-      color: "error",
-      icon: "i-lucide-x-circle",
-      progress: false,
-    });
+    reportError(
+      {
+        title: "Bestellung fehlgeschlagen",
+        description:
+          "Deine Bestellung konnte nicht aufgegeben werden. Bitte prüfe deine Angaben und versuche es erneut.",
+      },
+      { icon: "i-lucide-x-circle" },
+    );
     await refreshCart().catch(() => {});
   } finally {
     isPlacingOrder.value = false;
@@ -153,12 +170,18 @@ const selectedDeliveryTime = ref("");
 // order button differently on the server and at hydration (#339).
 const isValidTime = ref(false);
 
-// Presets render the summary with the base components (#443).
-const { hasPreset } = useThemePreset();
+const checkoutSections = [
+  { id: "versand", number: 1, title: "Lieferung oder Abholung" },
+  { id: "zeit", number: 2, title: "Wann?" },
+  { id: "angaben", number: 3, title: "Ihre Angaben" },
+  { id: "bezahlung", number: 4, title: "Bezahlung" },
+] as const;
 
 const checkoutButtonLabel = computed<string>(() => {
   if (!customerDataAvailable.value) {
-    return "Bitte einloggen oder Kundendaten erfassen";
+    return hasPreset
+      ? "Bitte zuerst Ihre Angaben speichern"
+      : "Bitte einloggen oder Kundendaten erfassen";
   }
 
   // app.vue loads business hours and holidays after mounting. Until then (or
@@ -191,49 +214,61 @@ const checkoutButtonLabel = computed<string>(() => {
 <template>
   <div
     v-if="hasPreset"
-    class="grid grid-cols-1 gap-6 py-2 font-body text-sb-ink lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10"
+    class="grid grid-cols-1 gap-8 font-body text-sb-ink lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12"
   >
-    <div class="flex flex-col gap-6">
+    <div class="flex min-w-0 flex-col gap-4">
       <section
-        class="flex flex-col gap-3 rounded-sb-card border border-sb-line bg-sb-surface p-6"
-        aria-labelledby="summary-customer"
+        v-for="section in checkoutSections"
+        :key="section.id"
+        :aria-labelledby="`kasse-${section.id}`"
+        class="rounded-sb-card border border-sb-line bg-sb-surface p-5 sm:p-7"
       >
-        <h2 id="summary-customer" class="font-display text-2xl">
-          Ihre Angaben
+        <h2
+          :id="`kasse-${section.id}`"
+          class="mb-4 flex items-baseline gap-3 font-display text-2xl leading-tight sm:text-[28px]"
+        >
+          <span class="text-sb-accent">{{ section.number }}</span>
+          {{ section.title }}
         </h2>
-        <UserDetail v-if="customerDataAvailable" />
-        <p v-else class="text-sb-ink-muted">
-          Bitte vorher einloggen oder Kundendaten erfassen.
-        </p>
-      </section>
-      <section
-        class="flex flex-col gap-3 rounded-sb-card border border-sb-line bg-sb-surface p-6"
-        aria-labelledby="summary-delivery"
-      >
-        <h2 id="summary-delivery" class="font-display text-2xl">
-          Versand, Zahlung und Zeit
-        </h2>
-        <CheckoutShippingMethod :shipping-method="selectedShippingMethod" />
-        <CheckoutPaymentMethod :payment-method="selectedPaymentMethod" />
+        <CheckoutPaymentAndDelivery
+          v-if="section.id === 'versand'"
+          part="shipping"
+        />
         <CheckoutDeliveryTimeSelect
+          v-else-if="section.id === 'zeit'"
           v-model:valid="isValidTime"
           v-model="selectedDeliveryTime"
+        />
+        <template v-else-if="section.id === 'angaben'">
+          <UserDetail v-if="customerDataAvailable" :with-edit-button="true" />
+          <CheckoutLoginOrRegister v-else />
+        </template>
+        <CheckoutPaymentAndDelivery
+          v-else-if="section.id === 'bezahlung'"
+          part="payment"
         />
       </section>
     </div>
     <section
-      class="flex h-max flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6 lg:sticky lg:top-6"
-      aria-labelledby="summary-order"
+      class="flex h-max flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6 lg:sticky lg:top-24"
+      aria-labelledby="kasse-bestellung"
     >
-      <h2 id="summary-order" class="font-display text-[28px] leading-none">
+      <h2 id="kasse-bestellung" class="font-display text-[28px] leading-none">
         Ihre Bestellung
       </h2>
-      <QuickView
-        :with-quantity-input="false"
-        :with-delete-button="false"
-        :with-upsell="true"
-      />
+      <QuickView :with-upsell="true" />
       <CheckoutVoucherInput />
+      <div
+        v-if="orderError"
+        role="alert"
+        class="flex gap-3 rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
+      >
+        <span class="font-bold text-sb-danger">!</span>
+        <span>
+          <strong class="block">{{ orderError.title }}</strong>
+          {{ orderError.description }}
+        </span>
+      </div>
       <SbButton
         block
         size="lg"

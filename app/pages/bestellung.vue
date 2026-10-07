@@ -29,8 +29,12 @@ const step = computed<number>({
   },
 });
 
-// Presets: a numbered step list in the display font (#443).
+// Presets use the one-page checkout (#443): the step pages redirect there,
+// and the page sits in the plain container instead of UPageSection.
 const { hasPreset } = useThemePreset();
+if (hasPreset && (stepRoutes as readonly string[]).includes(route.path)) {
+  await navigateTo("/bestellung/kasse", { replace: true });
+}
 
 const items = computed(
   () =>
@@ -55,48 +59,16 @@ const items = computed(
 </script>
 
 <template>
-  <UPageSection>
+  <div
+    v-if="hasPreset && !isPaymentReturnRoute"
+    class="mx-auto w-full max-w-(--sb-container) px-4 pt-8 pb-16 sm:px-6 sm:pt-12 lg:px-8"
+  >
+    <NuxtPage />
+  </div>
+  <UPageSection v-else>
     <template v-if="isPaymentReturnRoute">
       <NuxtPage />
     </template>
-    <div
-      v-else-if="hasPreset"
-      class="flex flex-col gap-8 font-body text-sb-ink"
-    >
-      <nav aria-label="Bestellschritte">
-        <ol class="grid grid-cols-3 gap-2 sm:gap-4">
-          <li
-            v-for="(item, index) in items"
-            :key="item.title"
-            class="border-t-[1.5px] pt-3"
-            :class="index <= step ? 'border-sb-ink' : 'border-sb-line'"
-          >
-            <NuxtLink
-              v-if="index < step"
-              :to="stepRoutes[index]"
-              class="flex min-h-11 flex-col gap-0.5 text-sm hover:text-sb-primary-ink sm:flex-row sm:items-baseline sm:gap-3 sm:text-base focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-sb-focus"
-            >
-              <span class="font-display text-2xl">{{ index + 1 }}</span>
-              <span class="font-semibold underline underline-offset-4">{{
-                item.title
-              }}</span>
-            </NuxtLink>
-            <span
-              v-else
-              class="flex min-h-11 flex-col gap-0.5 text-sm sm:flex-row sm:items-baseline sm:gap-3 sm:text-base"
-              :class="index === step ? '' : 'text-sb-ink-muted'"
-              :aria-current="index === step ? 'step' : undefined"
-            >
-              <span class="font-display text-2xl">{{ index + 1 }}</span>
-              <span :class="index === step ? 'font-bold' : ''">{{
-                item.title
-              }}</span>
-            </span>
-          </li>
-        </ol>
-      </nav>
-      <NuxtPage />
-    </div>
     <UStepper v-else ref="stepper" v-model="step" :items="items" size="lg">
       <template #content>
         <NuxtPage />

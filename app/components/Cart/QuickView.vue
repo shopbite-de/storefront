@@ -70,7 +70,7 @@ const { hasPreset } = useThemePreset();
         v-if="withToCartButton"
         block
         size="lg"
-        to="/bestellung"
+        to="/bestellung/kasse"
         @click="emit('go-to-cart')"
       >
         Zur Kasse
