@@ -58,6 +58,7 @@
     "fflate": "^0.8.3",
     "nuxt": "^4.5.2",
     "nuxt-vitalizer": "3.0.0",
+    "reka-ui": "^2.10.5",
     "uuid": "^14.0.2"
   },
   "devDependencies": {
