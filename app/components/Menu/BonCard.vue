@@ -125,7 +125,9 @@ function onLinkClick(event: MouseEvent) {
         {{ product.productNumber }}
       </span>
       <div class="flex min-w-0 flex-col gap-1.5 py-4 pr-4 pl-4 sm:pl-[18px]">
-        <h3 class="font-body text-[16.5px] leading-snug font-bold">
+        <h3
+          class="font-body text-[16.5px] leading-snug font-bold hyphens-auto [overflow-wrap:anywhere]"
+        >
           <a
             v-if="href"
             :href="href"

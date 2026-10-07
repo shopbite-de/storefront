@@ -67,7 +67,7 @@ const open = defineModel<boolean>("open", { default: false });
           </DialogClose>
         </header>
         <div
-          class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5"
+          class="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-5"
         >
           <slot />
         </div>

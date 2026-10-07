@@ -59,6 +59,8 @@ function onVariantSelected(variant: Schemas["Product"]) {
     :title="label"
     :description="description ?? undefined"
   >
+    <!-- Long single words ("Camembertkäse") hyphenate (lang="de") or
+         break instead of being clipped by the card (#442). -->
     <template #header>
       <div
         class="grid grid-cols-[64px_minmax(0,1fr)] overflow-hidden rounded-sb-card border border-sb-line bg-sb-surface"
@@ -76,7 +78,9 @@ function onVariantSelected(variant: Schemas["Product"]) {
           >{{ productNumber }}</span
         >
         <div class="flex min-w-0 flex-col gap-1 px-3.5 py-3">
-          <DialogTitle class="font-display text-2xl leading-tight">
+          <DialogTitle
+            class="font-display text-xl leading-tight hyphens-auto [overflow-wrap:anywhere] sm:text-2xl"
+          >
             <span class="sr-only">{{ numberLabel }}</span
             >{{ label }}
           </DialogTitle>
