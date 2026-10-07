@@ -153,6 +153,9 @@ const selectedDeliveryTime = ref("");
 // order button differently on the server and at hydration (#339).
 const isValidTime = ref(false);
 
+// Presets render the summary with the base components (#443).
+const { hasPreset } = useThemePreset();
+
 const checkoutButtonLabel = computed<string>(() => {
   if (!customerDataAvailable.value) {
     return "Bitte einloggen oder Kundendaten erfassen";
@@ -186,7 +189,80 @@ const checkoutButtonLabel = computed<string>(() => {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-8">
+  <div
+    v-if="hasPreset"
+    class="grid grid-cols-1 gap-6 py-2 font-body text-sb-ink lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10"
+  >
+    <div class="flex flex-col gap-6">
+      <section
+        class="flex flex-col gap-3 rounded-sb-card border border-sb-line bg-sb-surface p-6"
+        aria-labelledby="summary-customer"
+      >
+        <h2 id="summary-customer" class="font-display text-2xl">
+          Ihre Angaben
+        </h2>
+        <UserDetail v-if="customerDataAvailable" />
+        <p v-else class="text-sb-ink-muted">
+          Bitte vorher einloggen oder Kundendaten erfassen.
+        </p>
+      </section>
+      <section
+        class="flex flex-col gap-3 rounded-sb-card border border-sb-line bg-sb-surface p-6"
+        aria-labelledby="summary-delivery"
+      >
+        <h2 id="summary-delivery" class="font-display text-2xl">
+          Versand, Zahlung und Zeit
+        </h2>
+        <CheckoutShippingMethod :shipping-method="selectedShippingMethod" />
+        <CheckoutPaymentMethod :payment-method="selectedPaymentMethod" />
+        <CheckoutDeliveryTimeSelect
+          v-model:valid="isValidTime"
+          v-model="selectedDeliveryTime"
+        />
+      </section>
+    </div>
+    <section
+      class="flex h-max flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6 lg:sticky lg:top-6"
+      aria-labelledby="summary-order"
+    >
+      <h2 id="summary-order" class="font-display text-[28px] leading-none">
+        Ihre Bestellung
+      </h2>
+      <QuickView
+        :with-quantity-input="false"
+        :with-delete-button="false"
+        :with-upsell="true"
+      />
+      <CheckoutVoucherInput />
+      <SbButton
+        block
+        size="lg"
+        class="min-h-14"
+        :disabled="!isValidToProceed || isPlacingOrder"
+        :loading="
+          isPlacingOrder || (customerDataAvailable && isLoadingOpeningHours)
+        "
+        @click="handleCreateOrder"
+      >
+        {{
+          isValidToProceed ? "Zahlungspflichtig bestellen" : checkoutButtonLabel
+        }}
+      </SbButton>
+      <p class="text-sm text-sb-ink-muted">
+        Mit der Bestellung akzeptieren Sie unsere
+        <NuxtLink to="/agb" class="font-semibold text-sb-primary-ink underline"
+          >AGB</NuxtLink
+        >
+        und die
+        <NuxtLink
+          to="/datenschutz"
+          class="font-semibold text-sb-primary-ink underline"
+          >Datenschutzerklärung</NuxtLink
+        >.
+      </p>
+    </section>
+  </div>
+  <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8 py-8">
     <div class="flex flex-col gap-6">
       <div class="flex flex-col gap-4">
         <h3 class="text-lg font-semibold">Kundendaten</h3>

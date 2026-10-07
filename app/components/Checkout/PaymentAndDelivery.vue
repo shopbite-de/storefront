@@ -21,6 +21,38 @@ const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
 
 const toast = useToast();
 
+// Presets: shipping first (payment rules can depend on it), as cards (#443).
+const { hasPreset } = useThemePreset();
+const shippingOptions = computed(() =>
+  (shippingMethods.value ?? []).map((method: Schemas["ShippingMethod"]) => ({
+    value: method.id,
+    label: method.translated?.name ?? method.name,
+    description:
+      method.translated?.description ?? method.description ?? undefined,
+  })),
+);
+const paymentOptions = computed(() =>
+  (paymentMethods.value ?? []).map((method: Schemas["PaymentMethod"]) => ({
+    value: method.id,
+    label: method.distinguishableName ?? method.name,
+    description:
+      method.translated?.description ?? method.description ?? undefined,
+  })),
+);
+const shippingModel = computed({
+  get: () =>
+    (selectedShippingMethodId.value as string | undefined) ?? undefined,
+  set: (value: string | undefined) => {
+    selectedShippingMethodId.value = value;
+  },
+});
+const paymentModel = computed({
+  get: () => (selectedPaymentMethodId.value as string | undefined) ?? undefined,
+  set: (value: string | undefined) => {
+    selectedPaymentMethodId.value = value;
+  },
+});
+
 onMounted(async () => {
   try {
     await Promise.all([getPaymentMethods(), getShippingMethods()]);
@@ -98,7 +130,43 @@ watch(
 </script>
 
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+  <div v-if="hasPreset" class="flex flex-col gap-8 font-body text-sb-ink">
+    <section class="flex flex-col gap-3" aria-labelledby="checkout-shipping">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="checkout-shipping" class="font-display text-[28px]">
+          Lieferung oder Abholung
+        </h2>
+        <SbButton variant="ghost" to="/zahlung-und-versand">
+          Versandarten erklärt
+        </SbButton>
+      </div>
+      <SbChoiceGroup
+        v-model="shippingModel"
+        legend="Versandarten"
+        hide-legend
+        variant="cards"
+        :options="shippingOptions"
+      />
+    </section>
+    <section class="flex flex-col gap-3" aria-labelledby="checkout-payment">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="checkout-payment" class="font-display text-[28px]">
+          Bezahlung
+        </h2>
+        <SbButton variant="ghost" to="/zahlung-und-versand">
+          Zahlungsarten erklärt
+        </SbButton>
+      </div>
+      <SbChoiceGroup
+        v-model="paymentModel"
+        legend="Zahlungsarten"
+        hide-legend
+        variant="cards"
+        :options="paymentOptions"
+      />
+    </section>
+  </div>
+  <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
     <div class="flex flex-col gap-4">
       <div class="flex items-center gap-2">
         <UIcon name="i-lucide-badge-euro" class="size-5 text-muted" />
