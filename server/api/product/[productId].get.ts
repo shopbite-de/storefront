@@ -22,10 +22,12 @@ const criteria = {
       "sortedProperties",
       "cover",
     ],
-    property: ["id", "name", "translated", "options"],
+    // The entity is `property_group`: under `property` the groups came back
+    // with every field. Options keep their group for the configurator and
+    // the ingredient selection (`option.group.name`).
+    property_group: ["id", "name", "translated", "options"],
     property_group_option: ["id", "name", "translated", "group"],
     product_configurator_setting: ["id", "optionId", "option", "productId"],
-    product_option: ["id", "groupId", "name", "translated", "group"],
     category: ["id", "name", "translated"],
     ...MEDIA_INCLUDES,
   },

@@ -73,8 +73,7 @@ export default defineCachedEventHandler(
               "properties",
               "calculatedPrice",
             ],
-            product_option: ["id", "groupId", "name", "translated", "group"],
-            property: ["id", "name", "translated", "options"],
+            property_group: ["id", "name", "translated", "options"],
             property_group_option: ["id", "name", "translated", "group"],
           },
           associations: {
