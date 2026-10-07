@@ -315,7 +315,7 @@ ${scope} :where(h1, h2, h3) {
   font-synthesis: none;
 }
 
-${scope} :focus-visible {
+${scope} :focus-visible:not([tabindex="-1"]) {
   outline: 3px solid var(--sb-focus);
   outline-offset: 2px;
 }

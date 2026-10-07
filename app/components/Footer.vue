@@ -25,48 +25,54 @@ const menuItemsToFooterColumns = (
     children: item.children?.map(menuItemToFooterColumnLink) ?? [],
   }));
 
+// Presets have their own footer (#455).
+const { hasPreset } = useThemePreset();
+
 const footerColumns = computed<FooterColumn[]>(() =>
   menuItemsToFooterColumns(footerMenu.value),
 );
 </script>
 
 <template>
-  <USeparator class="h-px" />
+  <FooterPreset v-if="hasPreset" :columns="footerMenu" />
+  <template v-else>
+    <USeparator class="h-px" />
 
-  <UFooter :ui="{ top: 'border-b border-default' }">
-    <template #top>
-      <UContainer>
-        <FooterContact />
-        <UFooterColumns :columns="footerColumns" />
-      </UContainer>
-    </template>
+    <UFooter :ui="{ top: 'border-b border-default' }">
+      <template #top>
+        <UContainer>
+          <FooterContact />
+          <UFooterColumns :columns="footerColumns" />
+        </UContainer>
+      </template>
 
-    <template #left>
-      <NuxtLink
-        to="https://shopbite.de"
-        class="text-sm text-muted"
-        target="_blank"
-      >
-        Bestellsystem von ShopBite • © {{ new Date().getFullYear() }}
-      </NuxtLink>
-    </template>
+      <template #left>
+        <NuxtLink
+          to="https://shopbite.de"
+          class="text-sm text-muted"
+          target="_blank"
+        >
+          Bestellsystem von ShopBite • © {{ new Date().getFullYear() }}
+        </NuxtLink>
+      </template>
 
-    <p class="text-muted text-sm">
-      Alle Preise inkl. gesetzlicher Mehrwertsteuer zzgl. Versandkosten, wenn
-      nicht anders beschrieben
-    </p>
+      <p class="text-muted text-sm">
+        Alle Preise inkl. gesetzlicher Mehrwertsteuer zzgl. Versandkosten, wenn
+        nicht anders beschrieben
+      </p>
 
-    <template #right>
-      <UColorModeButton />
+      <template #right>
+        <UColorModeButton />
 
-      <UButton
-        to="https://github.com/shopbite-de/storefront"
-        target="_blank"
-        icon="i-simple-icons-github"
-        aria-label="ShopBite on GitHub"
-        color="neutral"
-        variant="ghost"
-      />
-    </template>
-  </UFooter>
+        <UButton
+          to="https://github.com/shopbite-de/storefront"
+          target="_blank"
+          icon="i-simple-icons-github"
+          aria-label="ShopBite on GitHub"
+          color="neutral"
+          variant="ghost"
+        />
+      </template>
+    </UFooter>
+  </template>
 </template>

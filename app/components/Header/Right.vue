@@ -25,7 +25,6 @@ onCartItemAdded(() => {
 });
 const { count: wishListCount } = useWishlist();
 const { isCheckoutEnabled } = useShopBiteConfig();
-const { hasPreset } = useThemePreset();
 const { isLoggedIn, isGuestSession, logout } = useUser();
 const toast = useToast();
 // Shop phone number from the site config; the button is hidden without one (#251).
@@ -148,18 +147,8 @@ const dropDownMenu = computed<DropdownMenuItem[][]>(() => {
       @click="openCartQuickView"
     />
   </UChip>
-  <SbSheet
-    v-if="cartQuickViewMounted && hasPreset"
-    v-model:open="cartQuickViewOpen"
-    title="Ihre Bestellung"
-  >
-    <LazyCartQuickView
-      :with-to-cart-button="true"
-      @go-to-cart="cartQuickViewOpen = false"
-    />
-  </SbSheet>
   <LazyUDrawer
-    v-else-if="cartQuickViewMounted"
+    v-if="cartQuickViewMounted"
     v-model:open="cartQuickViewOpen"
     title="Warenkorb"
     :direction="cartDrawerDirection"
