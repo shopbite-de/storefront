@@ -93,3 +93,84 @@
 html {
   scroll-behavior: smooth;
 }
+
+/*
+ * Design tokens of the base components (#439, #440). A style preset
+ * (shared/theme/presets.ts) sets every --sb-* value on
+ * :root[data-preset=…]; without a preset they fall back to the Nuxt UI
+ * colours above, so the base components also fit shops that have not
+ * picked a preset yet.
+ */
+:root {
+  --sb-bg: var(--ui-bg);
+  --sb-surface: var(--ui-bg);
+  --sb-muted: var(--ui-bg-muted);
+  --sb-line: var(--ui-border);
+  --sb-control: #8a8a8a;
+  --sb-ink: var(--ui-text-accented);
+  --sb-ink-muted: var(--ui-text-muted);
+  --sb-primary: var(--ui-primary);
+  --sb-primary-hover: var(--color-brand-700);
+  --sb-on-primary: #fff;
+  --sb-primary-tint: var(--color-brand-50);
+  --sb-primary-ink: var(--ui-primary);
+  --sb-accent: var(--ui-primary);
+  --sb-focus: var(--ui-primary);
+  --sb-danger: #b42318;
+  --sb-band: #171717;
+  --sb-on-band: #fff;
+  --font-sb-display: var(--font-sans);
+  --font-sb-body: var(--font-sans);
+  --sb-radius-card: 12px;
+  --sb-radius-control: 10px;
+}
+
+:root.dark {
+  --sb-surface: var(--ui-bg-elevated);
+  --sb-control: #8c8c8c;
+  --sb-primary-hover: var(--color-brand-300);
+  --sb-on-primary: #171717;
+  --sb-primary-tint: #2a2a2a;
+  --sb-danger: #ff8a7a;
+  --sb-band: #000;
+}
+
+/* Tailwind utilities for the tokens: bg-sb-surface, text-sb-ink-muted,
+   font-display, rounded-sb-card, … */
+@theme inline {
+  --color-sb-bg: var(--sb-bg);
+  --color-sb-surface: var(--sb-surface);
+  --color-sb-muted: var(--sb-muted);
+  --color-sb-line: var(--sb-line);
+  --color-sb-control: var(--sb-control);
+  --color-sb-ink: var(--sb-ink);
+  --color-sb-ink-muted: var(--sb-ink-muted);
+  --color-sb-primary: var(--sb-primary);
+  --color-sb-primary-hover: var(--sb-primary-hover);
+  --color-sb-on-primary: var(--sb-on-primary);
+  --color-sb-primary-tint: var(--sb-primary-tint);
+  --color-sb-primary-ink: var(--sb-primary-ink);
+  --color-sb-accent: var(--sb-accent);
+  --color-sb-focus: var(--sb-focus);
+  --color-sb-danger: var(--sb-danger);
+  --color-sb-band: var(--sb-band);
+  --color-sb-on-band: var(--sb-on-band);
+  --font-display: var(--font-sb-display);
+  --font-body: var(--font-sb-body);
+  --radius-sb-card: var(--sb-radius-card);
+  --radius-sb-control: var(--sb-radius-control);
+}
+
+/* Sheet and overlay entry (SbSheet); skipped with prefers-reduced-motion. */
+@keyframes sb-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sb-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
