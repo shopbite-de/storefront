@@ -46,6 +46,13 @@ onMounted(() => {
 
 useIntervalFn(refresh, 10000);
 
+const shippingMethodName = computed(
+  () =>
+    selectedShippingMethod.value?.translated?.name ??
+    selectedShippingMethod.value?.name ??
+    "Die Versandart",
+);
+
 const createdOrder = ref<Awaited<ReturnType<typeof createOrder>> | null>(null);
 const { handlePayment, paymentUrl } = useOrderPayment(
   computed(() => createdOrder.value),
@@ -61,6 +68,13 @@ const { handlePayment, paymentUrl } = useOrderPayment(
 async function hasAvailableCheckoutMethods(): Promise<boolean> {
   try {
     if (await ensureAvailableCheckoutMethods()) return true;
+    if (isShippingMethodBlocked.value) {
+      reportError({
+        title: `${shippingMethodName.value} ist nicht möglich`,
+        description: `${shippingMethodName.value} ist für Ihre Adresse oder Ihren Warenkorb nicht möglich. Bitte wählen Sie oben eine andere Bestellart oder ändern Sie Ihre Adresse.`,
+      });
+      return false;
+    }
     reportError({
       title: `Keine ${blockedMethodLabel.value} verfügbar`,
       description: `Für deine Bestellung ist aktuell keine ${blockedMethodLabel.value} verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.`,
@@ -115,6 +129,18 @@ async function handleCreateOrder() {
 
 const customerDataAvailable = computed<boolean>(
   () => isLoggedIn.value || isGuestSession.value,
+);
+
+// Delivery rules need the shipping address: once the guest has saved it,
+// the cart tells whether the chosen method works there.
+watch(
+  () => customerDataAvailable.value,
+  (available, before) => {
+    if (!available || before) return;
+    ensureAvailableCheckoutMethods().catch((error) => {
+      console.error("[checkout][ensureAvailableCheckoutMethods]", error);
+    });
+  },
 );
 
 const shippingAndPaymentSet = computed(
@@ -173,7 +199,11 @@ const checkoutButtonLabel = computed<string>(() => {
     return "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen";
   }
 
-  if (isShippingMethodBlocked.value || isPaymentMethodBlocked.value) {
+  if (isShippingMethodBlocked.value) {
+    return `${shippingMethodName.value} ist hier nicht möglich`;
+  }
+
+  if (isPaymentMethodBlocked.value) {
     return `Aktuell ist keine ${blockedMethodLabel.value} verfügbar`;
   }
 
@@ -199,10 +229,28 @@ const checkoutButtonLabel = computed<string>(() => {
           <span class="text-sb-accent">{{ section.number }}</span>
           {{ section.title }}
         </h2>
-        <CheckoutPaymentAndDelivery
-          v-if="section.id === 'versand'"
-          part="shipping"
-        />
+        <template v-if="section.id === 'versand'">
+          <CheckoutPaymentAndDelivery part="shipping" />
+          <p
+            v-if="isShippingMethodBlocked && customerDataAvailable"
+            role="alert"
+            class="mt-3 flex gap-3 rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
+          >
+            <span class="font-bold text-sb-danger" aria-hidden="true">!</span>
+            <span
+              >{{ shippingMethodName }} ist für Ihre Adresse oder Ihren
+              Warenkorb leider nicht möglich. Bitte wählen Sie eine andere
+              Bestellart oder ändern Sie Ihre Adresse.</span
+            >
+          </p>
+          <p
+            v-else-if="isShippingMethodBlocked"
+            class="mt-3 text-sm text-sb-ink-muted"
+          >
+            Ob {{ shippingMethodName }} an Ihre Adresse möglich ist, sehen Sie,
+            sobald Sie Ihre Angaben gespeichert haben.
+          </p>
+        </template>
         <CheckoutDeliveryTimeSelect
           v-else-if="section.id === 'zeit'"
           v-model:valid="isValidTime"

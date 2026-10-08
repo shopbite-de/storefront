@@ -5,15 +5,13 @@ import type { Schemas } from "#shopware";
  * sales channel as a choice before the customer starts ordering. Which
  * methods exist and which payment methods they allow is decided by the
  * Shopware rules; after a switch the guard moves a payment method the new
- * shipping method blocks.
+ * shipping method blocks. All active methods are offered, also those whose
+ * rule needs an address the guest has not entered yet.
  */
 export function useOrderMode() {
-  const {
-    shippingMethods,
-    getShippingMethods,
-    selectedShippingMethod,
-    setShippingMethod,
-  } = useCheckout();
+  const { selectedShippingMethod, setShippingMethod } = useCheckout();
+  const { methods: shippingMethods, load: loadShippingMethods } =
+    useShippingMethodChoice();
   const { refreshCart } = useCart();
   const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
 
@@ -55,7 +53,7 @@ export function useOrderMode() {
 
   async function load() {
     try {
-      await getShippingMethods();
+      await loadShippingMethods();
     } catch (error) {
       console.error("[menu][useOrderMode] shipping methods", error);
     }

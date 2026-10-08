@@ -41,24 +41,24 @@ type MethodGuardConfig<M extends CheckoutMethod> = {
 };
 
 /**
- * Detects a blocked shipping or payment method in the cart and switches to
- * an available one (sales-channel default first, otherwise the first
+ * Detects a blocked payment method in the cart and switches to an
+ * available one (sales-channel default first, otherwise the first
  * available), mirroring what Shopware's own storefront does.
  *
  * The Store API does not perform this switch itself. Without it, order
- * creation fails with `CHECKOUT__CART_INVALID`
- * (`shipping-method-blocked` / `payment-method-blocked`).
+ * creation fails with `CHECKOUT__CART_INVALID` (`payment-method-blocked`).
+ *
+ * A blocked shipping method is only reported, never switched: its rule
+ * usually needs the shipping address (delivery area), which a guest enters
+ * after choosing delivery or pickup. Switching turned every delivery into
+ * a pickup before the address was known (La Fattoria, 2.0.2). With an
+ * address the checkout says the method is not possible and the customer
+ * picks another one.
  */
 export function useCheckoutMethodGuard() {
   const { cart, refreshCart } = useCart();
-  const {
-    getShippingMethods,
-    setShippingMethod,
-    selectedShippingMethod,
-    getPaymentMethods,
-    setPaymentMethod,
-    selectedPaymentMethod,
-  } = useCheckout();
+  const { getPaymentMethods, setPaymentMethod, selectedPaymentMethod } =
+    useCheckout();
   const { sessionContext } = useSessionContext();
 
   const isShippingMethodBlocked = computed(() =>
@@ -69,15 +69,6 @@ export function useCheckoutMethodGuard() {
   );
 
   const isResolving = ref(false);
-
-  const shippingConfig: MethodGuardConfig<Schemas["ShippingMethod"]> = {
-    isBlocked: () => isShippingMethodBlocked.value,
-    selected: () => selectedShippingMethod.value,
-    loadAvailable: async () =>
-      (await getShippingMethods({ forceReload: true })).value,
-    defaultId: () => sessionContext.value?.salesChannel?.shippingMethodId,
-    select: (id) => setShippingMethod({ id }),
-  };
 
   const paymentConfig: MethodGuardConfig<Schemas["PaymentMethod"]> = {
     isBlocked: () => isPaymentMethodBlocked.value,
@@ -137,11 +128,11 @@ export function useCheckoutMethodGuard() {
   }
 
   /**
-   * Refreshes the cart and, if the selected shipping method is blocked,
-   * switches to an available one.
+   * Refreshes the cart and tells whether the selected shipping method is
+   * available. Never switches it (see above).
    */
   function ensureAvailableShippingMethod(): Promise<boolean> {
-    return run(() => resolve(shippingConfig));
+    return run(async () => !isShippingMethodBlocked.value);
   }
 
   /**
@@ -153,17 +144,15 @@ export function useCheckoutMethodGuard() {
   }
 
   /**
-   * Refreshes the cart and resolves blocked shipping and payment methods.
-   * Shipping is handled first because payment availability rules may
-   * depend on the shipping method. If shipping cannot be resolved the
-   * checkout stays blocked anyway, so payment is left untouched to avoid
-   * a pointless switch.
+   * Refreshes the cart and resolves a blocked payment method. A blocked
+   * shipping method stays as it is; payment rules may depend on the
+   * shipping method, so payment is then left untouched as well.
    *
    * @returns `true` when both methods are available afterwards.
    */
   function ensureAvailableCheckoutMethods(): Promise<boolean> {
     return run(async () => {
-      if (!(await resolve(shippingConfig))) return false;
+      if (isShippingMethodBlocked.value) return false;
       return resolve(paymentConfig);
     });
   }

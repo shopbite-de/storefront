@@ -8,6 +8,8 @@ const { state } = vi.hoisted(() => ({
     isLoading: true,
     hasFailed: false,
     validTime: false,
+    shippingBlocked: false,
+    customer: true,
   },
 }));
 
@@ -19,7 +21,7 @@ mockNuxtImport("useOpeningHoursData", () => () => ({
 mockNuxtImport("useCheckout", () => () => ({
   createOrder: vi.fn(),
   selectedPaymentMethod: ref({ id: "pm1" }),
-  selectedShippingMethod: ref({ id: "sm1" }),
+  selectedShippingMethod: ref({ id: "sm1", name: "Lieferung" }),
 }));
 
 mockNuxtImport("useCart", () => () => ({
@@ -28,7 +30,7 @@ mockNuxtImport("useCart", () => () => ({
 
 mockNuxtImport("useUser", () => () => ({
   isLoggedIn: ref(false),
-  isGuestSession: ref(true),
+  isGuestSession: ref(state.customer),
   refreshUser: vi.fn(),
 }));
 
@@ -42,7 +44,7 @@ mockNuxtImport("useTrackEvent", () => () => ({
 }));
 
 mockNuxtImport("useCheckoutMethodGuard", () => () => ({
-  isShippingMethodBlocked: ref(false),
+  isShippingMethodBlocked: ref(state.shippingBlocked),
   isPaymentMethodBlocked: ref(false),
   ensureAvailableCheckoutMethods: vi.fn().mockResolvedValue(true),
 }));
@@ -84,6 +86,8 @@ describe("Checkout Summary order button", () => {
     state.isLoading = true;
     state.hasFailed = false;
     state.validTime = false;
+    state.shippingBlocked = false;
+    state.customer = true;
   });
 
   it("shows a loading state while the opening hours are not loaded", async () => {
@@ -123,5 +127,37 @@ describe("Checkout Summary order button", () => {
 
     expect(button.text()).toBe("Zahlungspflichtig bestellen");
     expect(button.attributes("disabled")).toBeUndefined();
+  });
+
+  // La Fattoria: "Lieferung" needs a shipping city in the delivery area
+  it("says delivery is not possible once the address is known", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    state.shippingBlocked = true;
+
+    const button = await mountSummary();
+    const page = button.element.closest(".grid")!;
+
+    expect(button.text()).toBe("Lieferung ist hier nicht möglich");
+    expect(button.attributes("disabled")).toBeDefined();
+    expect(page.textContent).toContain(
+      "Lieferung ist für Ihre Adresse oder Ihren Warenkorb leider nicht möglich",
+    );
+  });
+
+  it("only hints at the address check before the guest entered one", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    state.shippingBlocked = true;
+    state.customer = false;
+
+    const button = await mountSummary();
+    const page = button.element.closest(".grid")!;
+
+    expect(button.text()).toBe("Bitte zuerst Ihre Angaben speichern");
+    expect(page.textContent).toContain(
+      "Ob Lieferung an Ihre Adresse möglich ist",
+    );
+    expect(page.querySelector('[role="alert"]')).toBeNull();
   });
 });
