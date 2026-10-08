@@ -126,7 +126,7 @@ jobs:
 
   a11y:
     name: Accessibility (${{ matrix.preset }})
-    environment: test
+    # no test customer needed: the repository secrets (Store API key) suffice
     needs: [setup]
     timeout-minutes: 15
     runs-on: ubuntu-latest
