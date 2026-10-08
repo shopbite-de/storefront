@@ -66,13 +66,19 @@ test("menu page", async ({ page }) => {
 });
 
 test("product sheet", async ({ page }) => {
-  await gotoHydrated(page, await menuUrl(page));
+  const menu = await menuUrl(page);
+  await gotoHydrated(page, menu);
   const productHref = await page
     .locator('main a[href*="produkt="]')
     .first()
     .getAttribute("href");
   expect(productHref, "menu lists a product").toBeTruthy();
-  await gotoHydrated(page, productHref!);
+  // open it on the menu page, which lists every dish (the product's own
+  // category may be empty on the demo backend)
+  const number = new URL(productHref!, "http://shop").searchParams.get(
+    "produkt",
+  );
+  await gotoHydrated(page, `${menu}?produkt=${number}`);
   await expect(page.getByRole("dialog")).toBeVisible();
   await expectNoSeriousViolations(page, "product-sheet");
 });
