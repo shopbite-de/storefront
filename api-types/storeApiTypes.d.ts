@@ -5363,6 +5363,15 @@ export type Schemas = {
     /** Whether checkout is enabled for ShopBite */
     isCheckoutEnabled: boolean;
   };
+  ShopBiteWishlistItem: {
+    /** Format: date-time */
+    createdAt: string;
+    extras: string[];
+    id: string;
+    productId: string;
+    productNumber: string;
+    without: string[];
+  };
   ShopbiteBusinessHour: {
     closingTime: string;
     /** Format: date-time */
@@ -6631,8 +6640,10 @@ export type operations = {
       firstName?: string;
       /** Lastname. This field may be required depending on the system settings. */
       lastName?: string;
-      /** Identifier of the navigation page. Can be used to override the configuration.
-       *     Take a look at the settings of a category containing a concat form in the administration. */
+      /**
+       * Identifier of the navigation page. Can be used to override the configuration.
+       *     Take a look at the settings of a category containing a concat form in the administration.
+       */
       navigationId?: string;
       /** Phone. This field may be required depending on the system settings. */
       phone?: string;
@@ -8428,6 +8439,49 @@ export type operations = {
     contentType?: "application/json";
     accept?: "application/json";
     response: components["schemas"]["MultiChannelGroupStruct"];
+    responseCode: 200;
+  };
+  "shopbite.wishlist.list post /shopbite/wishlist": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    response: {
+      elements: components["schemas"]["ShopBiteWishlistItem"][];
+    };
+    responseCode: 200;
+  };
+  "shopbite.wishlist.delete delete /shopbite/wishlist/{id}": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    pathParams: {
+      id: string;
+    };
+    response: never;
+    responseCode: 204;
+  };
+  "shopbite.wishlist.add post /shopbite/wishlist/add": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    body: {
+      extras?: string[];
+      productId: string;
+      without?: string[];
+    };
+    response: components["schemas"]["ShopBiteWishlistItem"];
+    responseCode: 200;
+  };
+  "shopbite.wishlist.merge post /shopbite/wishlist/merge": {
+    contentType?: "application/json";
+    accept?: "application/json";
+    body: {
+      items: {
+        extras?: string[];
+        productId: string;
+        without?: string[];
+      }[];
+    };
+    response: {
+      elements: components["schemas"]["ShopBiteWishlistItem"][];
+    };
     responseCode: 200;
   };
   "readSitemap get /sitemap": {

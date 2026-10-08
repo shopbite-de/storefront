@@ -25,7 +25,7 @@ const {
   show: openCart,
 } = useCartQuickView();
 const { count: cartCount } = useCart();
-const { count: wishlistCount } = useWishlist();
+const { count: wishlistCount } = useWishlistEntries();
 const { isCheckoutEnabled } = useShopBiteConfig();
 const { isLoggedIn, isGuestSession, logout } = useUser();
 const { status } = useStoreStatus();

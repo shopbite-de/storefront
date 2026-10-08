@@ -10,7 +10,6 @@ const route = useRoute();
 const { apiClient } = useShopwareContext();
 const { refreshSessionContext } = useSessionContext();
 const { refreshCart } = useCart();
-const { mergeWishlistProducts } = useWishlist();
 
 type ConfirmError = "invalid" | "already-confirmed";
 
@@ -61,7 +60,6 @@ async function confirmRegistration() {
   // context token, so load the new session before opening the account.
   await refreshSessionContext();
   refreshCart();
-  mergeWishlistProducts();
   await navigateTo({ path: "/konto" });
 }
 

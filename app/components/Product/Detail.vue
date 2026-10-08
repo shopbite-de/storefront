@@ -2,6 +2,7 @@
 import type { Schemas } from "#shopware";
 import type { AssociationItemProduct } from "~/types/Association";
 import type { QuickViewConfiguration } from "~/utils/productUrl";
+import type { WishlistConfiguration } from "~/composables/useWishlistEntries";
 
 const props = defineProps<{
   productId: string;
@@ -14,6 +15,8 @@ const emit = defineEmits<{
   "product-added": [];
   "variant-selected": [variant: Schemas["Product"]];
   "configuration-changed": [configuration: QuickViewConfiguration];
+  // The dish as configured right now, for the save button (#467).
+  "selection-changed": [selection: WishlistConfiguration];
 }>();
 
 const {
@@ -57,6 +60,25 @@ function emitConfiguration() {
       .filter((number): number is string => !!number),
   });
 }
+
+watch(
+  () => {
+    const product = selectedProduct.value;
+    if (!product?.productNumber) return undefined;
+    return {
+      productId: product.id,
+      productNumber: product.productNumber,
+      without: [...deselectedIngredients.value],
+      extras: selectedExtras.value
+        .map((extra) => extra.productNumber)
+        .filter((number): number is string => !!number),
+    };
+  },
+  (selection) => {
+    if (selection) emit("selection-changed", selection);
+  },
+  { immediate: true, deep: true },
+);
 
 // Unit price plus extras, times the quantity: what the button will add.
 const total = computed(() => {

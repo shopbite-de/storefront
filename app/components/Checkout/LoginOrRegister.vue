@@ -3,12 +3,6 @@ import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 
 // Reka tabs with the base forms (#443).
 const presetTab = ref<"neu" | "kunde">("neu");
-
-const { mergeWishlistProducts } = useWishlist();
-
-async function handleLoginSuccess() {
-  mergeWishlistProducts();
-}
 </script>
 
 <template>
@@ -31,10 +25,10 @@ async function handleLoginSuccess() {
       </TabsTrigger>
     </TabsList>
     <TabsContent value="neu" class="focus-visible:outline-none">
-      <UserRegistrationForm @registration-success="handleLoginSuccess" />
+      <UserRegistrationForm />
     </TabsContent>
     <TabsContent value="kunde" class="focus-visible:outline-none">
-      <UserLoginForm @login-success="handleLoginSuccess" />
+      <UserLoginForm />
     </TabsContent>
   </TabsRoot>
 </template>

@@ -2,7 +2,6 @@
 import Footer from "~/components/Footer.vue";
 
 const { apiClient } = useShopwareContext();
-const router = useRouter();
 
 // The footer is below the fold on every page; its hydration waits until it
 // scrolls into view (#314).
@@ -40,17 +39,16 @@ const { refresh: refreshBusinessHours } = useBusinessHours();
 const { refresh: refreshHolidays } = useHolidays();
 
 const { refreshCart } = useCart();
-const { getWishlistProducts } = useWishlist();
-
-// The wishlist page (app/pages/merkliste.vue) loads the products itself.
-const WISHLIST_ROUTE_NAME = "merkliste";
-
-if (import.meta.client) {
-  // getting the wishlist products should not block SSR
-  if (router.currentRoute.value.name !== WISHLIST_ROUTE_NAME) {
-    getWishlistProducts(); // initial page loading
-  }
-}
+// Wishlist entries (#467): loaded in the browser, not during SSR. A login
+// moves the guest entries into the account, a logout shows the guest's.
+const { isLoggedIn } = useUser();
+const { load: loadWishlist, mergeGuestEntries } = useWishlistEntries();
+onMounted(loadWishlist);
+watch(isLoggedIn, (loggedIn, before) => {
+  if (loggedIn === before) return;
+  if (loggedIn) mergeGuestEntries();
+  else loadWishlist();
+});
 
 onMounted(async () => {
   await Promise.all([refreshHolidays(), refreshBusinessHours()]);
