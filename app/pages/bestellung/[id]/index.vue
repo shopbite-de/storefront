@@ -18,10 +18,12 @@ const { id } = route.params as OrderRouteParams;
 const { order, loadOrderDetails, status } = useOrderDetails(id);
 // Shop phone number for the "call us" card; hidden without one (#251).
 const { site } = useRuntimeConfig().public;
+const { hasPreset } = useThemePreset();
 
 const isLoadingData = ref(true);
 
 onMounted(async () => {
+  if (hasPreset) return;
   isLoadingData.value = true;
 
   await loadOrderDetails();
@@ -39,7 +41,8 @@ const links = ref<ButtonProps[]>([
 </script>
 
 <template>
-  <UContainer v-if="isLoadingData">
+  <OrderConfirmationPreset v-if="hasPreset" :order-id="id" />
+  <UContainer v-else-if="isLoadingData">
     <!-- Show loading spinner while fetching order data -->
     <UPageHeader headline="BESTELLUNG" title="Lädt..." />
     <UPageBody>
