@@ -57,6 +57,9 @@ const quickView = useProductQuickView(elements);
 // Derived from the listing data instead of snapshotted at setup time, which
 // would be a hydration mismatch (#239); see useSortingSelection.
 const { currentSorting } = useSortingSelection(currentSortingOrder);
+const presetSortingOptions = computed(() =>
+  toSortingOptions(sortingOrders.value),
+);
 
 const propertyFilters = computed<Schemas["PropertyGroup"][]>(
   () =>
@@ -180,7 +183,16 @@ async function openFilterDrawer() {
               variant="subtle"
               :label="`${elements.length} Produkte`"
             />
+            <SbSelect
+              v-if="hasPreset"
+              v-model="currentSorting"
+              label="Sortierung"
+              placeholder="Bitte wählen"
+              :options="presetSortingOptions"
+              class="max-w-72"
+            />
             <USelect
+              v-else
               v-model="currentSorting"
               icon="i-lucide-arrow-down-wide-narrow"
               value-key="key"
