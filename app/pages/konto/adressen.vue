@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAddress, useUser } from "@shopware/composables";
+import type { Schemas } from "#shopware";
 
 definePageMeta({
   layout: "account",
@@ -57,10 +58,124 @@ async function makeDefaultBillingAddress(addressId: string) {
 
 const openEditModal = ref(false);
 const openNewModal = ref(false);
+
+// Presets (#445): one sheet for editing and adding, results announced in
+// the page instead of toasts.
+const { hasPreset } = useThemePreset();
+const sheetOpen = ref(false);
+const editedAddress = ref<Schemas["CustomerAddress"] | undefined>();
+const notice = ref("");
+
+function openSheet(address?: Schemas["CustomerAddress"]) {
+  editedAddress.value = address;
+  sheetOpen.value = true;
+}
+
+async function onSaved() {
+  sheetOpen.value = false;
+  notice.value = editedAddress.value
+    ? "Die Adresse ist gespeichert."
+    : "Die Adresse ist angelegt.";
+  await reloadCustomerData();
+}
+
+async function setDefault(kind: "shipping" | "billing", addressId: string) {
+  if (kind === "shipping") await setDefaultCustomerShippingAddress(addressId);
+  else await setDefaultCustomerBillingAddress(addressId);
+  await reloadCustomerData();
+  notice.value =
+    kind === "shipping"
+      ? "Die Lieferadresse ist geändert."
+      : "Die Rechnungsadresse ist geändert.";
+}
 </script>
 
 <template>
-  <UContainer>
+  <div v-if="hasPreset" class="font-body text-sb-ink">
+    <UserAccountHeaderPreset title="Adressen" />
+    <p
+      role="status"
+      :class="
+        notice
+          ? 'mb-4 rounded-sb-control bg-sb-primary-tint p-4 text-sm text-sb-primary-ink'
+          : ''
+      "
+    >
+      {{ notice }}
+    </p>
+    <SbButton class="mb-6" @click="openSheet()">
+      <SbIcon name="plus" />
+      Neue Adresse
+    </SbButton>
+    <ul class="grid gap-4 md:grid-cols-2">
+      <li
+        v-for="address in customerAddresses ?? []"
+        :key="address.id"
+        class="flex flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-5"
+      >
+        <ul
+          v-if="
+            address.id === userDefaultShippingAddress?.id ||
+            address.id === userDefaultBillingAddress?.id
+          "
+          class="flex flex-wrap gap-2"
+          aria-label="Verwendung"
+        >
+          <li
+            v-if="address.id === userDefaultShippingAddress?.id"
+            class="rounded-sb-control bg-sb-primary-tint px-3 py-1 text-sm font-bold text-sb-primary-ink"
+          >
+            Lieferadresse
+          </li>
+          <li
+            v-if="address.id === userDefaultBillingAddress?.id"
+            class="rounded-sb-control bg-sb-muted px-3 py-1 text-sm font-bold"
+          >
+            Rechnungsadresse
+          </li>
+        </ul>
+        <AddressDetail :address="address" />
+        <div class="mt-auto flex flex-wrap gap-2">
+          <SbButton variant="secondary" @click="openSheet(address)">
+            Bearbeiten
+            <span class="sr-only"
+              >: {{ address.street }}, {{ address.city }}</span
+            >
+          </SbButton>
+          <SbButton
+            v-if="address.id !== userDefaultShippingAddress?.id"
+            variant="ghost"
+            @click="setDefault('shipping', address.id)"
+            >Als Lieferadresse
+            <span class="sr-only"
+              >: {{ address.street }}, {{ address.city }}</span
+            ></SbButton
+          >
+          <SbButton
+            v-if="address.id !== userDefaultBillingAddress?.id"
+            variant="ghost"
+            @click="setDefault('billing', address.id)"
+            >Als Rechnungsadresse
+            <span class="sr-only"
+              >: {{ address.street }}, {{ address.city }}</span
+            ></SbButton
+          >
+        </div>
+      </li>
+    </ul>
+    <SbSheet
+      v-if="sheetOpen"
+      v-model:open="sheetOpen"
+      :title="editedAddress ? 'Adresse bearbeiten' : 'Neue Adresse'"
+    >
+      <AddressFormPreset
+        :key="editedAddress?.id ?? 'neu'"
+        :address="editedAddress"
+        @submit-success="onSaved"
+      />
+    </SbSheet>
+  </div>
+  <UContainer v-else>
     <UPageHeader
       headline="KONTO"
       title="Adressen"

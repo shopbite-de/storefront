@@ -29,8 +29,10 @@ const order = computed(
 );
 
 const isLoadingData = ref(true);
+const { hasPreset } = useThemePreset();
 
 onMounted(async () => {
+  if (hasPreset) return;
   isLoadingData.value = true;
 
   await loadOrderDetails();
@@ -40,7 +42,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UContainer>
+  <div v-if="hasPreset" class="flex flex-col gap-4">
+    <NuxtLink
+      to="/konto/bestellungen"
+      class="inline-flex min-h-11 items-center self-start font-body font-semibold text-sb-primary-ink underline underline-offset-4"
+      >Alle Bestellungen</NuxtLink
+    >
+    <OrderConfirmationPreset :order-id="id" />
+  </div>
+  <UContainer v-else>
     <UPageHeader
       headline="BESTELLUNG"
       :title="order?.orderNumber"
