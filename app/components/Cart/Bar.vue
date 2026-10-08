@@ -85,11 +85,11 @@ onBeforeUnmount(() => clearTimeout(addedTimer));
                 class="size-4 shrink-0 self-center"
               />
               <span class="truncate font-semibold">{{ addedLabel }}</span>
-              <span class="shrink-0 text-sm opacity-90">hinzugefügt</span>
+              <span class="shrink-0 text-sm">hinzugefügt</span>
             </span>
             <span v-else key="cart" class="flex min-w-0 items-baseline gap-2">
               <span class="font-semibold">Warenkorb</span>
-              <span class="truncate text-sm opacity-90">
+              <span class="truncate text-sm">
                 {{ itemsLabel }} · {{ getFormattedPrice(subtotal) }}
               </span>
             </span>

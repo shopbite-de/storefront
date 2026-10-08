@@ -36,6 +36,17 @@ export default defineConfig<ConfigOptions>({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    /* Accessibility checks of the preset pages (#446), no login needed. */
+    {
+      name: "a11y",
+      testDir: "./test/a11y",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "a11y-mobile",
+      testDir: "./test/a11y",
+      use: { ...devices["Pixel 7"] },
+    },
 
     // {
     //   name: "firefox",

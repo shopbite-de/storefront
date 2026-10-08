@@ -186,6 +186,7 @@ async function openFilterDrawer() {
               value-key="key"
               :items="sortingOrders"
               placeholder="Sortierung"
+              aria-label="Sortierung"
             />
             <template v-if="moreThanOneFilterAndOption">
               <!-- With a preset the right column holds the cart, so the
