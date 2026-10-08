@@ -24,6 +24,7 @@ if ((error.value?.statusCode ?? 0) >= 500) {
 }
 
 let categoryId: Ref<string> | undefined;
+const { hasPreset } = useThemePreset();
 
 if (page.value) {
   usePageSeo({
@@ -50,7 +51,13 @@ if (page.value) {
 </script>
 
 <template>
-  <UContainer v-if="page">
+  <div
+    v-if="page && hasPreset"
+    class="mx-auto w-full max-w-3xl px-4 pt-8 pb-16 font-body text-sb-ink sm:px-6 sm:pt-12"
+  >
+    <ContentRenderer :value="page" class="content content-preset" />
+  </div>
+  <UContainer v-else-if="page">
     <ContentRenderer :value="page" class="content my-8" />
   </UContainer>
   <div v-else-if="categoryId">

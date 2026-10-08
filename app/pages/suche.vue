@@ -2,9 +2,11 @@
 import type { Schemas } from "#shopware";
 import type { NitroFetchRequest } from "nitropack";
 import ProductCard from "~/components/Product/Card.vue";
+import MenuBonCard from "~/components/Menu/BonCard.vue";
 
 // Cards hydrate as they scroll into view, see Category/Listing.vue (#314).
 const ProductCardWhenVisible = hydrateWhenVisible(ProductCard);
+const MenuBonCardWhenVisible = hydrateWhenVisible(MenuBonCard);
 
 definePageMeta({
   layout: "listing",
@@ -87,6 +89,15 @@ watch(currentSorting, async (val) => {
 
 const searchInput = ref(searchQuery.value);
 
+// Presets (#445): bon cards, a labelled search form and a native select.
+const { hasPreset, menuView } = useThemePreset();
+const sortingOptions = computed(() => toSortingOptions(sortingOrders.value));
+const resultLabel = computed(() =>
+  elements.value.length === 1
+    ? "1 Gericht gefunden"
+    : `${elements.value.length} Gerichte gefunden`,
+);
+
 function submitSearch() {
   const term = searchInput.value.trim();
   if (!term) return;
@@ -95,7 +106,93 @@ function submitSearch() {
 </script>
 
 <template>
-  <UContainer>
+  <div
+    v-if="hasPreset"
+    class="mx-auto flex w-full max-w-(--sb-container) flex-col gap-6 px-4 pt-8 pb-16 font-body text-sb-ink sm:px-6 sm:pt-12 lg:px-8"
+  >
+    <LazyProductQuickView
+      v-if="quickView.mounted.value"
+      v-model:open="quickView.open.value"
+      :product="quickView.product.value"
+    />
+    <h1 class="font-display text-4xl leading-tight sm:text-5xl">Suche</h1>
+    <form
+      role="search"
+      class="flex max-w-2xl flex-col gap-3 sm:flex-row sm:items-end"
+      @submit.prevent="submitSearch"
+    >
+      <SbField
+        v-slot="{ id, describedBy }"
+        label="Gericht oder Zutat"
+        class="flex-1"
+      >
+        <SbInput
+          :id="id"
+          v-model="searchInput"
+          name="search"
+          type="search"
+          enterkeyhint="search"
+          :aria-describedby="describedBy"
+        />
+      </SbField>
+      <SbButton type="submit" size="lg">
+        <SbIcon name="search" />
+        Suchen
+      </SbButton>
+    </form>
+
+    <div
+      v-if="searchQuery"
+      class="flex max-w-2xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p role="status" class="text-sb-ink-muted">
+        <template v-if="showSkeleton || loading">Suche läuft …</template>
+        <template v-else>{{ resultLabel }} für „{{ searchQuery }}“</template>
+      </p>
+      <SbSelect
+        v-if="sortingOptions.length > 1 && elements.length > 1"
+        v-model="currentSorting"
+        label="Sortierung"
+        placeholder="Bitte wählen"
+        :options="sortingOptions"
+        class="sm:w-72"
+      />
+    </div>
+
+    <div
+      v-if="elements.length > 0"
+      class="grid max-w-3xl grid-cols-1 gap-3"
+      :class="{ 'pointer-events-none opacity-40': loading }"
+    >
+      <MenuBonCardWhenVisible
+        v-for="product in elements"
+        :key="product.id"
+        :product="product"
+        :photo="menuView === 'bonPhoto'"
+        :href="productDeepLink(product)"
+        @select="quickView.show"
+      />
+    </div>
+    <template v-else-if="searchQuery && !showSkeleton && !loading">
+      <template v-if="showFallback && fallbackProducts?.length">
+        <h2 class="font-display text-2xl">Vielleicht schmeckt Ihnen das</h2>
+        <div class="grid max-w-3xl grid-cols-1 gap-3">
+          <MenuBonCardWhenVisible
+            v-for="product in fallbackProducts"
+            :key="product.id"
+            :product="product"
+            :photo="menuView === 'bonPhoto'"
+            :href="productDeepLink(product)"
+            @select="quickView.show"
+          />
+        </div>
+      </template>
+      <SbButton v-else variant="secondary" to="/" class="self-start"
+        >Zur Startseite</SbButton
+      >
+    </template>
+  </div>
+  <UContainer v-else>
     <UPage>
       <UPageBody>
         <LazyProductQuickView

@@ -1,33 +1,11 @@
 <script setup lang="ts">
-import { z } from "zod";
 import type { FormSubmitEvent } from "#ui/types";
-import { useSalutations } from "@shopware/composables";
+import type { ContactFormData } from "~/composables/useContactForm";
 
-const { apiClient } = useShopwareContext();
-const { getSalutations } = useSalutations();
+const { hasPreset } = useThemePreset();
+const { salutations, send } = useContactForm();
+const schema = contactFormSchema;
 const toast = useToast();
-
-const salutations = computed(() =>
-  getSalutations.value.map((salutation) => ({
-    label: salutation.displayName,
-    value: salutation.id,
-  })),
-);
-
-const schema = z.object({
-  salutationId: z.string().optional(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  email: z.string().email("Ungültige E-Mail-Adresse"),
-  phone: z.string().optional(),
-  subject: z.string().min(3, "Bitte gib einen Betreff an"),
-  comment: z
-    .string()
-    .min(10, "Die Nachricht muss mindestens 10 Zeichen lang sein"),
-  hp: z.string().optional(),
-});
-
-type Schema = z.output<typeof schema>;
 
 const state = reactive({
   salutationId: "",
@@ -44,40 +22,13 @@ const loading = ref(false);
 const submitted = ref(false);
 const successMessage = ref("");
 
-async function onSubmit(event: FormSubmitEvent<Schema>) {
-  if (event.data.hp) {
-    console.warn("Honeypot filled, submission ignored.");
-    successMessage.value = "Deine Nachricht wurde erfolgreich versendet.";
-    submitted.value = true;
-    return;
-  }
+async function onSubmit(event: FormSubmitEvent<ContactFormData>) {
   loading.value = true;
-  const salutation = event.data.salutationId || salutations.value.at(-1)?.value;
   try {
-    const result = await apiClient.invoke(
-      "sendContactMail post /contact-form",
-      {
-        body: {
-          salutationId: salutation,
-          firstName: event.data.firstName,
-          lastName: event.data.lastName,
-          email: event.data.email,
-          phone: event.data.phone,
-          subject: event.data.subject,
-          comment: event.data.comment,
-        },
-      },
+    successMessage.value = await send(
+      event.data,
+      "Deine Nachricht wurde erfolgreich versendet.",
     );
-
-    const resultData = result?.data as Record<string, unknown> | undefined;
-    const msg =
-      typeof resultData?.individualSuccessMessage === "string"
-        ? (resultData.individualSuccessMessage as string).trim()
-        : "";
-    successMessage.value =
-      msg && msg.length > 0
-        ? msg
-        : "Deine Nachricht wurde erfolgreich versendet.";
     submitted.value = true;
 
     toast.add({
@@ -110,7 +61,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-  <div v-if="submitted" class="space-y-4 text-center">
+  <ContactFormPreset v-if="hasPreset" />
+  <div v-else-if="submitted" class="space-y-4 text-center">
     <UAlert
       color="success"
       variant="soft"

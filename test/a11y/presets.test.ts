@@ -193,3 +193,33 @@ test("login, registration and password pages", async ({ page }) => {
   ).toBeVisible();
   await expectNoSeriousViolations(page, "password-reset");
 });
+
+test("search, contact, wishlist, content and error pages", async ({ page }) => {
+  await gotoHydrated(page, "/suche?q=pizza");
+  await expect(page.getByRole("search")).toBeVisible();
+  await expectNoSeriousViolations(page, "search");
+
+  // the contact page exists only with the contact form feature
+  const contact = await page.goto("/kontakt");
+  if (contact?.ok()) {
+    await gotoHydrated(page, "/kontakt");
+    await page.getByRole("button", { name: "Nachricht senden" }).click();
+    await expect(
+      page.getByText("Bitte geben Sie einen Betreff an."),
+    ).toBeVisible();
+    await expectNoSeriousViolations(page, "contact");
+  }
+
+  await gotoHydrated(page, "/merkliste");
+  await expectNoSeriousViolations(page, "wishlist");
+
+  await gotoHydrated(page, "/impressum");
+  await expectNoSeriousViolations(page, "content-page");
+
+  const missing = await page.goto("/diese-seite-gibt-es-nicht");
+  expect(missing?.status()).toBe(404);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Diese Seite gibt es nicht",
+  );
+  await expectNoSeriousViolations(page, "not-found");
+});
