@@ -13,12 +13,12 @@ const {
   getPaymentMethods,
   selectedPaymentMethod,
   setPaymentMethod,
-  shippingMethods,
-  getShippingMethods,
   selectedShippingMethod,
   setShippingMethod,
 } = useCheckout();
 
+const { methods: shippingMethods, load: loadShippingMethods } =
+  useShippingMethodChoice();
 const { refreshCart } = useCart();
 const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
 
@@ -55,7 +55,7 @@ const paymentModel = computed({
 
 onMounted(async () => {
   try {
-    await Promise.all([getPaymentMethods(), getShippingMethods()]);
+    await Promise.all([getPaymentMethods(), loadShippingMethods()]);
     await ensureAvailableCheckoutMethods();
   } catch (error) {
     console.error("[checkout][PaymentAndDelivery][onMounted]", error);

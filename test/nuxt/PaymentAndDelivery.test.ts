@@ -28,16 +28,19 @@ mockNuxtImport("useCheckout", () => () => ({
     { id: "pm1", distinguishableName: "Payment 1" },
     { id: "pm2", distinguishableName: "Payment 2" },
   ]),
-  shippingMethods: ref([
-    { id: "sm1", name: "Shipping 1" },
-    { id: "sm2", name: "Shipping 2" },
-  ]),
   selectedPaymentMethod,
   selectedShippingMethod,
   setPaymentMethod: mockSetPaymentMethod,
   setShippingMethod: mockSetShippingMethod,
   getPaymentMethods: vi.fn(),
-  getShippingMethods: vi.fn(),
+}));
+
+mockNuxtImport("useShippingMethodChoice", () => () => ({
+  methods: ref([
+    { id: "sm1", name: "Shipping 1" },
+    { id: "sm2", name: "Shipping 2" },
+  ]),
+  load: vi.fn(),
 }));
 
 mockNuxtImport("useCart", () => () => ({

@@ -40,16 +40,19 @@ mockNuxtImport("useCheckout", () => () => ({
     { id: "cash", distinguishableName: "Bar" },
     { id: "ec", distinguishableName: "EC-Karte" },
   ]),
-  shippingMethods: ref([
-    { id: "delivery", name: "Lieferung" },
-    { id: "pickup", name: "Abholung" },
-  ]),
   selectedPaymentMethod,
   selectedShippingMethod,
   setPaymentMethod: mocks.setPaymentMethod,
   setShippingMethod: mocks.setShippingMethod,
   getPaymentMethods: vi.fn(),
-  getShippingMethods: vi.fn(),
+}));
+// all active methods, also those whose rule needs an address
+mockNuxtImport("useShippingMethodChoice", () => () => ({
+  methods: ref([
+    { id: "delivery", name: "Lieferung" },
+    { id: "pickup", name: "Abholung" },
+  ]),
+  load: vi.fn(),
 }));
 mockNuxtImport("useCart", () => () => ({
   refreshCart: mocks.refreshCart,

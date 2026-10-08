@@ -154,65 +154,20 @@ describe("useCheckoutMethodGuard", () => {
       expect(isShippingMethodBlocked.value).toBe(false);
     });
 
-    it("switches to the sales-channel default shipping method when blocked", async () => {
+    it("never switches a blocked shipping method, it only reports it", async () => {
+      // La Fattoria: "Lieferung" is blocked until the guest has entered an
+      // address in the delivery area; switching made every order a pickup
       cart.value = cartWith({ [shippingBlocked.key]: shippingBlocked });
-      mockRefreshCart.mockImplementationOnce(async () => {});
-      nextRefreshSets({});
-      const extra = {
-        id: "sm-extra",
-        name: "Express",
-        position: 0,
-      } as Schemas["ShippingMethod"];
-      mockGetShippingMethods.mockResolvedValue(ref([extra, delivery, pickup]));
-
-      const { ensureAvailableShippingMethod } = useCheckoutMethodGuard();
-
-      await expect(ensureAvailableShippingMethod()).resolves.toBe(true);
-
-      expect(mockGetShippingMethods).toHaveBeenCalledWith({
-        forceReload: true,
-      });
-      expect(mockSetShippingMethod).toHaveBeenCalledWith({ id: pickup.id });
-      expect(mockRefreshCart).toHaveBeenCalledTimes(2);
-    });
-
-    it("falls back to the first available method when the default is not available", async () => {
-      cart.value = cartWith({ [shippingBlocked.key]: shippingBlocked });
-      sessionContext.value = {
-        salesChannel: { shippingMethodId: delivery.id },
-      };
-      mockRefreshCart.mockImplementationOnce(async () => {});
-      nextRefreshSets({});
-      // The blocked method is still returned by the API in some setups
-      mockGetShippingMethods.mockResolvedValue(ref([delivery, pickup]));
-
-      const { ensureAvailableShippingMethod } = useCheckoutMethodGuard();
-
-      await expect(ensureAvailableShippingMethod()).resolves.toBe(true);
-      expect(mockSetShippingMethod).toHaveBeenCalledWith({ id: pickup.id });
-    });
-
-    it("returns false when no alternative shipping method exists", async () => {
-      cart.value = cartWith({ [shippingBlocked.key]: shippingBlocked });
-      mockGetShippingMethods.mockResolvedValue(ref([delivery]));
 
       const { ensureAvailableShippingMethod, isShippingMethodBlocked } =
         useCheckoutMethodGuard();
 
       await expect(ensureAvailableShippingMethod()).resolves.toBe(false);
 
+      expect(mockRefreshCart).toHaveBeenCalledTimes(1);
+      expect(mockGetShippingMethods).not.toHaveBeenCalled();
       expect(mockSetShippingMethod).not.toHaveBeenCalled();
       expect(isShippingMethodBlocked.value).toBe(true);
-    });
-
-    it("returns false when the cart is still blocked after switching", async () => {
-      cart.value = cartWith({ [shippingBlocked.key]: shippingBlocked });
-
-      const { ensureAvailableShippingMethod } = useCheckoutMethodGuard();
-
-      await expect(ensureAvailableShippingMethod()).resolves.toBe(false);
-
-      expect(mockSetShippingMethod).toHaveBeenCalledWith({ id: pickup.id });
     });
   });
 
@@ -260,40 +215,17 @@ describe("useCheckoutMethodGuard", () => {
       expect(mockSetPaymentMethod).not.toHaveBeenCalled();
     });
 
-    it("resolves shipping first, then payment, when both are blocked", async () => {
+    it("keeps a blocked shipping method and leaves payment untouched", async () => {
       cart.value = cartWith({
         [shippingBlocked.key]: shippingBlocked,
         [paymentBlocked.key]: paymentBlocked,
       });
-      mockRefreshCart.mockImplementationOnce(async () => {});
-      // after shipping switch: only payment still blocked
-      nextRefreshSets({ [paymentBlocked.key]: paymentBlocked });
-      // after payment switch: clean
-      nextRefreshSets({});
-
-      const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
-
-      await expect(ensureAvailableCheckoutMethods()).resolves.toBe(true);
-
-      expect(mockSetShippingMethod).toHaveBeenCalledWith({ id: pickup.id });
-      expect(mockSetPaymentMethod).toHaveBeenCalledWith({ id: paypal.id });
-      expect(mockSetShippingMethod.mock.invocationCallOrder[0]).toBeLessThan(
-        mockSetPaymentMethod.mock.invocationCallOrder[0] as number,
-      );
-      expect(mockRefreshCart).toHaveBeenCalledTimes(3);
-    });
-
-    it("leaves the payment method untouched when shipping cannot be resolved", async () => {
-      cart.value = cartWith({
-        [shippingBlocked.key]: shippingBlocked,
-        [paymentBlocked.key]: paymentBlocked,
-      });
-      mockGetShippingMethods.mockResolvedValue(ref([delivery]));
 
       const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
 
       await expect(ensureAvailableCheckoutMethods()).resolves.toBe(false);
 
+      expect(mockSetShippingMethod).not.toHaveBeenCalled();
       expect(mockGetPaymentMethods).not.toHaveBeenCalled();
       expect(mockSetPaymentMethod).not.toHaveBeenCalled();
     });
@@ -310,18 +242,18 @@ describe("useCheckoutMethodGuard", () => {
     });
 
     it("serializes concurrent calls so the switch happens only once", async () => {
-      cart.value = cartWith({ [shippingBlocked.key]: shippingBlocked });
+      cart.value = cartWith({ [paymentBlocked.key]: paymentBlocked });
       let releaseFirstRefresh: () => void = () => {};
       mockRefreshCart.mockImplementationOnce(
         () => new Promise<void>((r) => (releaseFirstRefresh = r)),
       );
       nextRefreshSets({});
 
-      const { ensureAvailableCheckoutMethods, ensureAvailableShippingMethod } =
+      const { ensureAvailableCheckoutMethods, ensureAvailablePaymentMethod } =
         useCheckoutMethodGuard();
 
       const first = ensureAvailableCheckoutMethods();
-      const second = ensureAvailableShippingMethod();
+      const second = ensureAvailablePaymentMethod();
       await Promise.resolve();
       expect(mockRefreshCart).toHaveBeenCalledTimes(1);
 
@@ -329,11 +261,11 @@ describe("useCheckoutMethodGuard", () => {
       await expect(first).resolves.toBe(true);
       await expect(second).resolves.toBe(true);
 
-      expect(mockSetShippingMethod).toHaveBeenCalledTimes(1);
+      expect(mockSetPaymentMethod).toHaveBeenCalledTimes(1);
       // second call re-checked after the first one finished
       expect(mockRefreshCart).toHaveBeenCalledTimes(3);
       expect(mockRefreshCart.mock.invocationCallOrder[2]).toBeGreaterThan(
-        mockSetShippingMethod.mock.invocationCallOrder[0] as number,
+        mockSetPaymentMethod.mock.invocationCallOrder[0] as number,
       );
     });
 
