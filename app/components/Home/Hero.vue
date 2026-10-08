@@ -17,7 +17,9 @@ const props = defineProps<{
   title: string;
   description?: string;
   headline?: string;
-  poster?: string;
+  image?: string;
+  // CSS object-position of the 4:5 crop, e.g. "50% 30%"
+  imagePosition?: string;
   links?: HeroLink[];
   usps?: HeroUsp[];
 }>();
@@ -138,9 +140,9 @@ const BLANK =
       </p>
     </div>
 
-    <div v-if="poster" class="relative hidden sm:block">
+    <div v-if="image" class="relative hidden sm:block">
       <picture>
-        <source media="(min-width: 640px)" :srcset="poster" />
+        <source media="(min-width: 640px)" :srcset="image" />
         <img
           :src="BLANK"
           alt=""
@@ -148,6 +150,7 @@ const BLANK =
           height="1100"
           fetchpriority="high"
           class="block aspect-[4/5] w-full rounded-[999px_999px_20px_20px] object-cover"
+          :style="imagePosition ? { objectPosition: imagePosition } : undefined"
         />
       </picture>
       <component

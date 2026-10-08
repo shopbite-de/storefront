@@ -5,7 +5,9 @@ import type { Schemas } from "#shopware";
  * Menu sections of the presets on the home page (#444): a word list in the
  * display font on the darker band, no dish counts. On desktop one photo
  * follows the hovered or focused section (category media from Shopware);
- * phones get the words stacked and no photo.
+ * phones get the words stacked and no photo. Wide category banners (as in
+ * La Fattoria) do not fit the 4:5 column: then the photo spans the width
+ * below the words in the banner's own aspect ratio.
  */
 withDefaults(
   defineProps<{
@@ -27,6 +29,31 @@ const active = computed<Schemas["Category"] | undefined>(
     sections.value.find((category) => category.media?.url),
 );
 
+function aspect(media: Schemas["Media"] | null | undefined) {
+  const size =
+    mediaSize(media) ??
+    [...(media?.thumbnails ?? [])].sort(
+      (a, b) => (b.width ?? 0) - (a.width ?? 0),
+    )[0];
+  return size?.width && size?.height ? size.width / size.height : null;
+}
+
+// decided once by the first photo, so hovering does not change the layout
+const bannerAspect = computed(() => {
+  const ratio = aspect(
+    sections.value.find((category) => category.media?.url)?.media,
+  );
+  return ratio && ratio > 1.2 ? ratio : null;
+});
+
+// the browser picks the thumbnail by width, so a crop has to ask for the
+// width the photo needs to fill the box in height
+const sizes = computed(() => {
+  if (bannerAspect.value) return "min(76rem, calc(100vw - 4rem))";
+  const ratio = aspect(active.value?.media) ?? 0.8;
+  return `${Math.round(500 * Math.max(ratio, 0.8))}px`;
+});
+
 function name(category: Schemas["Category"]) {
   return category.translated?.name ?? category.name;
 }
@@ -42,7 +69,7 @@ function name(category: Schemas["Category"]) {
     <div
       :class="[
         'mx-auto grid w-full max-w-(--sb-container) items-center gap-10 px-4 py-14 sm:px-6 lg:px-8 sm:py-24 lg:gap-[72px]',
-        active?.media?.url
+        active?.media?.url && !bannerAspect
           ? 'lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]'
           : '',
       ]"
@@ -101,11 +128,15 @@ function name(category: Schemas["Category"]) {
         <img
           :src="active.media.url"
           :srcset="mediaSrcSet(active.media)"
-          sizes="400px"
+          :sizes="sizes"
           alt=""
           loading="lazy"
           decoding="async"
-          class="aspect-[4/5] w-full rounded-[20px] object-cover"
+          :class="[
+            'w-full rounded-[20px] object-cover',
+            bannerAspect ? '' : 'aspect-[4/5]',
+          ]"
+          :style="bannerAspect ? { aspectRatio: bannerAspect } : undefined"
         />
         <figcaption class="font-body text-sm font-bold text-sb-ink">
           {{ name(active) }}
