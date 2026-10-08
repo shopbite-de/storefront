@@ -68,6 +68,11 @@ export default defineContentConfig({
         hero: z.object({
           backgroundVideo: z.string().optional(),
           poster: z.string().optional(),
+          // Photo of the hero (#444), portrait 4:5 at about 1200×1500 px;
+          // `poster` (a frame of the video) is the fallback. imagePosition
+          // is the CSS object-position of the crop, e.g. "50% 30%".
+          image: z.string().optional(),
+          imagePosition: z.string().optional(),
           headline: z.string().optional(),
           // Hero title; the page title (shop name) is the fallback (#327).
           title: z.string().optional(),

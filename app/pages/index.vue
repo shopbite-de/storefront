@@ -40,7 +40,8 @@ useRestaurantSchema();
       :title="page.hero.title || page.title"
       :description="page.description"
       :headline="page.hero.headline"
-      :poster="page.hero.poster"
+      :image="page.hero.image || page.hero.poster"
+      :image-position="page.hero.imagePosition"
       :links="page.hero.links"
       :usps="page.hero.usps"
     />
