@@ -39,25 +39,43 @@ const open = defineModel<boolean>("open", { default: false });
         <div class="flex justify-center pt-2.5 md:hidden" aria-hidden="true">
           <span class="h-1 w-9 rounded-full bg-sb-line" />
         </div>
-        <header class="flex items-start gap-3 px-5 pt-3 pb-2 md:pt-6">
+        <!-- A custom header (the product sheet's bon card) gets the full
+             width below a toolbar with the actions and the close button:
+             next to three 44 px buttons a long dish name broke after four
+             letters on a 393 px phone. -->
+        <header
+          v-if="$slots.header"
+          class="flex flex-col gap-2 px-5 pt-2 pb-2 md:pt-4"
+        >
+          <div class="flex items-center justify-end gap-2">
+            <slot name="actions" />
+            <DialogClose as-child>
+              <SbIconButton label="Schließen">
+                <SbIcon name="close" />
+              </SbIconButton>
+            </DialogClose>
+          </div>
+          <div class="min-w-0">
+            <slot name="header" />
+          </div>
+        </header>
+        <header v-else class="flex items-start gap-3 px-5 pt-3 pb-2 md:pt-6">
           <div class="min-w-0 flex-1">
-            <slot name="header">
-              <DialogTitle
-                :class="
-                  hideTitle
-                    ? 'sr-only'
-                    : 'font-display text-2xl leading-tight text-sb-ink'
-                "
-              >
-                {{ title }}
-              </DialogTitle>
-              <DialogDescription
-                v-if="description"
-                class="mt-1 text-sm text-sb-ink-muted"
-              >
-                {{ description }}
-              </DialogDescription>
-            </slot>
+            <DialogTitle
+              :class="
+                hideTitle
+                  ? 'sr-only'
+                  : 'font-display text-2xl leading-tight text-sb-ink'
+              "
+            >
+              {{ title }}
+            </DialogTitle>
+            <DialogDescription
+              v-if="description"
+              class="mt-1 text-sm text-sb-ink-muted"
+            >
+              {{ description }}
+            </DialogDescription>
           </div>
           <slot name="actions" />
           <DialogClose as-child>
