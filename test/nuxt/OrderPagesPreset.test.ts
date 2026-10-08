@@ -118,7 +118,9 @@ describe("order pages with a preset (#445)", () => {
     });
     await flushPromises();
     const alert = wrapper.find('[role="alert"]');
-    expect(alert.text()).toContain("Die Bestellung konnte nicht geladen werden");
+    expect(alert.text()).toContain(
+      "Die Bestellung konnte nicht geladen werden",
+    );
     expect(alert.text()).toContain("trotzdem bei uns eingegangen");
   });
 

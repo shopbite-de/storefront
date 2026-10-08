@@ -107,3 +107,60 @@ test("cart and checkout", async ({ page }) => {
   await expect(page.getByText("Ihr Warenkorb ist noch leer.")).toBeHidden();
   await expectNoSeriousViolations(page, "checkout");
 });
+
+/** An order as the Store API returns it, so no real order is placed. */
+const ORDER_ID = "0123456789abcdef0123456789abcdef";
+const sampleOrder = {
+  id: ORDER_ID,
+  orderNumber: "10042",
+  createdAt: "2026-10-08T17:30:00.000Z",
+  taxStatus: "gross",
+  customerComment: "Wunschlieferzeit: 19:15",
+  shippingTotal: 1,
+  amountTotal: 21.5,
+  price: { calculatedTaxes: [{ taxRate: 7, tax: 1.41 }] },
+  stateMachineState: { name: "Offen", translated: { name: "Offen" } },
+  deliveries: [{ shippingMethod: { name: "Lieferung" } }],
+  transactions: [
+    {
+      paymentMethodId: "cash",
+      paymentMethod: { distinguishableName: "Bar" },
+      stateMachineState: { name: "Fehlgeschlagen" },
+    },
+  ],
+  lineItems: [
+    {
+      id: "li-1",
+      parentId: null,
+      quantity: 2,
+      label: "Pizza Margherita",
+      totalPrice: 17,
+      payload: { productNumber: "LF-4" },
+    },
+  ],
+};
+
+async function mockOrder(page: Page) {
+  await page.route("**/store-api/order", (route) =>
+    route.fulfill({
+      json: {
+        orders: { elements: [sampleOrder], total: 1 },
+        paymentChangeable: {},
+      },
+    }),
+  );
+}
+
+test("order confirmation", async ({ page }) => {
+  await mockOrder(page);
+  await gotoHydrated(page, `/bestellung/${ORDER_ID}/erfolg`);
+  await expect(page.getByText("Ihre Bestellnummer ist 10042")).toBeVisible();
+  await expectNoSeriousViolations(page, "order-confirmation");
+});
+
+test("payment failure", async ({ page }) => {
+  await mockOrder(page);
+  await gotoHydrated(page, `/bestellung/${ORDER_ID}/fehler`);
+  await expect(page.getByRole("radiogroup")).toBeVisible();
+  await expectNoSeriousViolations(page, "payment-failure");
+});
