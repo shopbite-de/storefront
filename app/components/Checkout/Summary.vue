@@ -207,7 +207,7 @@ const checkoutButtonLabel = computed<string>(() => {
     return `Aktuell ist keine ${blockedMethodLabel.value} verfügbar`;
   }
 
-  return "Jetzt bestellen!";
+  return "Zahlungspflichtig bestellen";
 });
 </script>
 
@@ -338,7 +338,7 @@ const checkoutButtonLabel = computed<string>(() => {
         @click="handleCreateOrder"
       />
       <p class="text-sm text-muted">
-        Mit Klick auf "Jetzt bestellen!" erklärst du dich mit unseren
+        Mit Klick auf „Zahlungspflichtig bestellen“ erklärst du dich mit unseren
         <ULink to="/agb" class="text-primary font-medium">AGB</ULink> und
         <ULink to="/datenschutz" class="text-primary font-medium"
           >Datenschutzbestimmungen</ULink

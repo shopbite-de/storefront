@@ -121,7 +121,7 @@ describe("Checkout Summary order button", () => {
 
     const button = await mountSummary();
 
-    expect(button.text()).toBe("Jetzt bestellen!");
+    expect(button.text()).toBe("Zahlungspflichtig bestellen");
     expect(button.attributes("disabled")).toBeUndefined();
   });
 });
