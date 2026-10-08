@@ -1,7 +1,7 @@
 // schemas/registrationSchema.ts
 import * as z from "zod";
 
-const baseAddressSchema = z.object({
+export const baseAddressSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   company: z.string().optional(),

@@ -11,6 +11,7 @@ const emit = defineEmits<{
 }>();
 
 const editMode = ref(false);
+const { hasPreset } = useThemePreset();
 
 function onSubmit(updatedAddress: Schemas["CustomerAddress"] | undefined) {
   if (!updatedAddress) return;
@@ -21,7 +22,34 @@ function onSubmit(updatedAddress: Schemas["CustomerAddress"] | undefined) {
 </script>
 
 <template>
-  <div v-if="address" class="flex flex-col gap-2">
+  <div v-if="address && hasPreset" class="font-body text-sb-ink">
+    <div v-if="!editMode" class="flex flex-col items-start gap-3">
+      <address class="flex flex-col not-italic">
+        <span>{{ address.firstName }} {{ address.lastName }}</span>
+        <span v-if="address.company">{{ address.company }}</span>
+        <span v-if="address.department">{{ address.department }}</span>
+        <span>{{ address.street }}</span>
+        <span v-if="address.additionalAddressLine1">{{
+          address.additionalAddressLine1
+        }}</span>
+        <span v-if="address.additionalAddressLine2">{{
+          address.additionalAddressLine2
+        }}</span>
+        <span>{{ address.zipcode }} {{ address.city }}</span>
+        <span v-if="address.phoneNumber" class="text-sb-ink-muted"
+          >Tel. {{ address.phoneNumber }}</span
+        >
+      </address>
+      <SbButton
+        v-if="withEditButton"
+        variant="secondary"
+        @click="editMode = true"
+        >Adresse bearbeiten</SbButton
+      >
+    </div>
+    <AddressFormPreset v-else :address="address" @submit-success="onSubmit" />
+  </div>
+  <div v-else-if="address" class="flex flex-col gap-2">
     <div v-if="!editMode" class="flex flex-col gap-2">
       <div>{{ address.firstName }} {{ address.lastName }}</div>
       <div>{{ address.phoneNumber }}</div>

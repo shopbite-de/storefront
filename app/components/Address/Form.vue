@@ -11,6 +11,7 @@ const props = defineProps<{
 }>();
 
 const config = useRuntimeConfig();
+const { hasPreset } = useThemePreset();
 const { updateCustomerAddress, createCustomerAddress } = useAddress();
 
 const state = reactive({
@@ -66,7 +67,13 @@ const emit = defineEmits<{
 </script>
 
 <template>
+  <AddressFormPreset
+    v-if="hasPreset"
+    :address="address"
+    @submit-success="(data) => emit('submit-success', data)"
+  />
   <UForm
+    v-else
     :schema="schema"
     :state="state"
     class="space-y-4"
