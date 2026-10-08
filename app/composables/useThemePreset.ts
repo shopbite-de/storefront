@@ -1,4 +1,4 @@
-import { isThemePresetName, THEME_PRESETS } from "#shared/theme/presets";
+import { isThemePresetName, THEME_PRESETS } from "../../shared/theme/presets";
 
 /**
  * The active style preset (#439, #445): `runtimeConfig.public.shopBite
