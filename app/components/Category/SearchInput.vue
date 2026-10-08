@@ -1,7 +1,9 @@
 <script setup lang="ts">
+/** Search from the menu page; results open on /suche. */
 const router = useRouter();
 
 const query = ref("");
+const id = useId();
 
 function submit() {
   const term = query.value.trim();
@@ -11,23 +13,24 @@ function submit() {
 </script>
 
 <template>
-  <UInput
-    v-model="query"
-    name="search"
-    size="md"
-    icon="i-lucide-search"
-    placeholder="Produkte suchen..."
-    @keyup.enter="submit"
-  >
-    <template v-if="query" #trailing>
-      <UButton
-        color="neutral"
-        variant="link"
-        size="sm"
-        icon="i-lucide-circle-x"
-        aria-label="Suche leeren"
-        @click="query = ''"
-      />
-    </template>
-  </UInput>
+  <form role="search" class="flex gap-2 font-body" @submit.prevent="submit">
+    <label :for="id" class="sr-only">Speisekarte durchsuchen</label>
+    <SbInput
+      :id="id"
+      v-model="query"
+      name="search"
+      type="search"
+      enterkeyhint="search"
+      placeholder="Gericht oder Zutat suchen"
+      class="flex-1"
+    />
+    <SbIconButton
+      label="Suchen"
+      type="submit"
+      variant="tint"
+      class="size-[50px]"
+    >
+      <SbIcon name="search" />
+    </SbIconButton>
+  </form>
 </template>

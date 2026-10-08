@@ -64,7 +64,8 @@ describe("ProductCrossSelling", () => {
       props: { associations: [group("Extras", 20)] },
     });
 
-    const search = wrapper.find('input[aria-label="Extras durchsuchen"]');
+    const search = wrapper.find('input[type="search"]');
+    expect(search.attributes("placeholder")).toBe("20 Extras durchsuchen");
     await search.setValue("extras 1");
     // "Extras 1" and "Extras 10" … "Extras 19"
     expect(rows(wrapper)).toHaveLength(11);

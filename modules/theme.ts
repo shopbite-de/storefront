@@ -13,11 +13,11 @@ import {
 
 export interface ShopBiteThemeOptions {
   /**
-   * Style preset of the shop (#439): "trattoria", "grill" or "asia". Empty
-   * keeps the current Nuxt UI look, so shops opt in one by one. The
-   * `NUXT_SHOPBITE_PRESET` build environment variable takes precedence.
+   * Style preset of the shop (#439): "trattoria" (default), "grill" or
+   * "asia". The `NUXT_SHOPBITE_PRESET` build environment variable takes
+   * precedence.
    */
-  preset?: ThemePresetName | "";
+  preset?: ThemePresetName;
   /** Colour tokens the shop overrides, e.g. `{ primary: "#3F7D20" }`. */
   colors?: Partial<ThemeColors>;
 }
@@ -61,61 +61,55 @@ function registerFonts(preset: ThemePreset, nuxt: Nuxt) {
 }
 
 /**
- * Applies the style preset chosen in `shopBite.preset` (#439): writes the
- * preset's stylesheet into the build, sets `data-preset` on `<html>` and the
- * colour mode, and registers the preset fonts with @nuxt/fonts. It must run
- * before @nuxt/ui, which reads the colour mode options when it installs
- * @nuxtjs/color-mode, so nuxt.config.ts lists it before "@nuxt/ui".
+ * Style presets (#439, #445): writes the stylesheets of all presets into the
+ * build (each scoped to `:root[data-preset=…]`, the `shopBite.colors`
+ * overrides only on the configured one), registers their fonts with
+ * @nuxt/fonts (so nuxt.config.ts lists this module before "@nuxt/fonts";
+ * browsers download only the faces the active preset uses) and makes the
+ * configured preset the default of `runtimeConfig.public.shopBite.themePreset`.
+ * One build can so serve every preset: `NUXT_PUBLIC_SHOP_BITE_THEME_PRESET`
+ * switches it at runtime (the lead demos run one image for all restaurants),
+ * plugins/theme-preset.ts sets `data-preset` on `<html>`.
  */
 export default defineNuxtModule<ShopBiteThemeOptions>({
   meta: { name: "shopbite-theme", configKey: "shopBite" },
-  defaults: { preset: "", colors: {} },
+  defaults: { preset: "trattoria", colors: {} },
   setup(options, nuxt) {
-    const name = process.env.NUXT_SHOPBITE_PRESET || options.preset;
-    const publicConfig = nuxt.options.runtimeConfig.public as Record<
-      string,
-      unknown
-    >;
-    // Read by useThemePreset(); empty without a preset (old look).
-    publicConfig.shopBiteTheme = { preset: "", menuView: "", colorMode: "" };
-    if (!name) return;
+    const name =
+      process.env.NUXT_SHOPBITE_PRESET || options.preset || "trattoria";
     if (!isThemePresetName(name)) {
       throw new Error(
         `[shopbite:theme] Unknown preset "${name}". Available: ${Object.keys(THEME_PRESETS).join(", ")}`,
       );
     }
 
-    const preset = resolvePreset(name, options.colors);
-    publicConfig.shopBiteTheme = {
-      preset: name,
-      menuView: preset.menuView,
-      colorMode: preset.colorMode,
-    };
-    for (const failure of contrastFailures(preset.colors)) {
+    const presets = (Object.keys(THEME_PRESETS) as ThemePresetName[]).map(
+      (key) => resolvePreset(key, key === name ? options.colors : {}),
+    );
+    for (const failure of contrastFailures(
+      resolvePreset(name, options.colors).colors,
+    )) {
       logger.warn(
         `Preset "${name}": ${failure.fg} on ${failure.bg} has a contrast of ${failure.ratio.toFixed(2)}:1, WCAG AA needs ${failure.min}:1. Check the colour overrides in shopBite.colors.`,
       );
     }
 
+    const publicConfig = nuxt.options.runtimeConfig.public as Record<
+      string,
+      unknown
+    >;
+    const shopBite = (publicConfig.shopBite ??= {}) as Record<string, unknown>;
+    shopBite.themePreset = name;
+    // optional logo URL instead of public/light|dark/Logo.png
+    shopBite.logoUrl ??= "";
+
     const template = addTemplate({
       filename: "shopbite-theme.css",
-      getContents: () => presetCss(preset),
+      getContents: () => presets.map((preset) => presetCss(preset)).join("\n"),
       write: true,
     });
     nuxt.options.css.push(template.dst);
 
-    const head = nuxt.options.app.head;
-    head.htmlAttrs = { ...head.htmlAttrs, "data-preset": name };
-
-    const config = nuxt.options as unknown as {
-      colorMode?: Record<string, unknown>;
-    };
-    config.colorMode = {
-      ...config.colorMode,
-      preference: preset.colorMode,
-      fallback: preset.colorMode,
-    };
-
-    registerFonts(preset, nuxt);
+    for (const preset of presets) registerFonts(preset, nuxt);
   },
 });

@@ -18,11 +18,6 @@ mockNuxtImport("useCart", () => () => ({
   removeItem: mockRemoveItem,
 }));
 
-const mockToastAdd = vi.fn();
-mockNuxtImport("useToast", () => () => ({
-  add: mockToastAdd,
-}));
-
 describe("CheckoutVoucherInput", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -63,14 +58,12 @@ describe("CheckoutVoucherInput", () => {
     await wrapper.find("input").setValue("SAVE10");
     await nextTick();
 
-    // First invocation — in-flight
-    wrapper.find("button").trigger("click");
+    // First invocation, in flight
+    wrapper.find("form").trigger("submit");
     await nextTick();
 
     // Second invocation while still loading
-    wrapper.find("button").trigger("click");
-    await nextTick();
-    await wrapper.find("input").trigger("keyup.enter");
+    await wrapper.find("form").trigger("submit");
     await nextTick();
 
     resolvePromotion();
@@ -92,7 +85,7 @@ describe("CheckoutVoucherInput", () => {
     await wrapper.find("input").setValue("SAVE10");
     await nextTick();
 
-    wrapper.find("button").trigger("click");
+    wrapper.find("form").trigger("submit");
     await nextTick();
 
     // While the request is in-flight both button and input must be disabled
@@ -109,15 +102,15 @@ describe("CheckoutVoucherInput", () => {
     expect(wrapper.find("input").attributes("disabled")).toBeUndefined();
   });
 
-  it("clears the input and does not show a toast on successful voucher apply", async () => {
+  it("clears the input and shows no error on successful voucher apply", async () => {
     mockCart.value = { errors: {} };
     const wrapper = await mountSuspended(CheckoutVoucherInput);
     await wrapper.find("input").setValue("SAVE10");
-    await wrapper.find("button").trigger("click");
+    await wrapper.find("form").trigger("submit");
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(mockAddPromotionCode).toHaveBeenCalledWith("SAVE10");
-    expect(mockToastAdd).not.toHaveBeenCalled();
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.find("input").element.value).toBe("");
   });
 
@@ -132,39 +125,34 @@ describe("CheckoutVoucherInput", () => {
     };
     const wrapper = await mountSuspended(CheckoutVoucherInput);
     await wrapper.find("input").setValue("INVALID");
-    await wrapper.find("button").trigger("click");
+    await wrapper.find("form").trigger("submit");
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Gutschein ungültig",
-        description: 'Gutscheincode "INVALID" existiert nicht.',
-        color: "error",
-      }),
+    const alert = wrapper.find('[role="alert"]');
+    expect(alert.text()).toBe('Gutscheincode "INVALID" existiert nicht.');
+    expect(wrapper.find("input").attributes("aria-describedby")).toBe(
+      alert.attributes("id"),
     );
     expect(wrapper.find("input").element.value).toBe("INVALID");
   });
 
-  it("shows a generic error toast when addPromotionCode throws", async () => {
+  it("shows a generic error at the field when addPromotionCode throws", async () => {
     mockAddPromotionCode.mockRejectedValueOnce(new Error("network error"));
     const wrapper = await mountSuspended(CheckoutVoucherInput);
     await wrapper.find("input").setValue("SAVE10");
-    await wrapper.find("button").trigger("click");
+    await wrapper.find("form").trigger("submit");
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Gutschein ungültig",
-        color: "error",
-      }),
+    expect(wrapper.find('[role="alert"]').text()).toBe(
+      "Der Gutscheincode ist ungültig oder abgelaufen.",
     );
   });
 
-  it("submits on Enter key", async () => {
+  it("submits the trimmed code with the form", async () => {
     mockCart.value = { errors: {} };
     const wrapper = await mountSuspended(CheckoutVoucherInput);
-    await wrapper.find("input").setValue("ENTER10");
-    await wrapper.find("input").trigger("keyup.enter");
+    await wrapper.find("input").setValue(" ENTER10 ");
+    await wrapper.find("form").trigger("submit");
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(mockAddPromotionCode).toHaveBeenCalledWith("ENTER10");
@@ -186,7 +174,7 @@ describe("CheckoutVoucherInput", () => {
     const wrapper = await mountSuspended(CheckoutVoucherInput);
 
     const removeButtons = wrapper.findAll(
-      'button[aria-label="Gutschein entfernen"]',
+      'button[aria-label="Gutschein 10% Rabatt entfernen"]',
     );
     expect(removeButtons).toHaveLength(1);
     await removeButtons[0]!.trigger("click");

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
 import { ref } from "vue";
-import AddressFormPreset from "~/components/Address/FormPreset.vue";
+import AddressForm from "~/components/Address/Form.vue";
 import AddressesPage from "~/pages/konto/adressen.vue";
 import ProfilePage from "~/pages/konto/profil.vue";
 import type { Schemas } from "#shopware";
@@ -69,7 +69,6 @@ vi.mock("@shopware/composables", async (importOriginal) => ({
 mockNuxtImport("useUser", () => () => userApi());
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
-  hasPreset: true,
   menuView: "bon",
 }));
 mockNuxtImport("useShopwareContext", () => () => ({
@@ -88,7 +87,7 @@ describe("account pages with a preset (#445)", () => {
 
   it("checks a new address before creating it", async () => {
     mocks.createCustomerAddress.mockResolvedValue({ id: "new" });
-    const wrapper = await mountSuspended(AddressFormPreset);
+    const wrapper = await mountSuspended(AddressForm);
     await wrapper.find("form").trigger("submit");
     await flushPromises();
     expect(wrapper.text()).toContain("Bitte geben Sie den Vornamen an.");
@@ -113,7 +112,7 @@ describe("account pages with a preset (#445)", () => {
 
   it("updates an existing address and keeps its company", async () => {
     mocks.updateCustomerAddress.mockResolvedValue(office);
-    const wrapper = await mountSuspended(AddressFormPreset, {
+    const wrapper = await mountSuspended(AddressForm, {
       props: { address: office },
     });
     expect(
@@ -131,7 +130,7 @@ describe("account pages with a preset (#445)", () => {
 
   it("shows a failed save in the form", async () => {
     mocks.updateCustomerAddress.mockRejectedValue(new Error("400"));
-    const wrapper = await mountSuspended(AddressFormPreset, {
+    const wrapper = await mountSuspended(AddressForm, {
       props: { address: home },
     });
     await wrapper.find("form").trigger("submit");

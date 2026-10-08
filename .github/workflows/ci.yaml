@@ -155,13 +155,6 @@ jobs:
             .output
           key: workspace-${{ runner.os }}-${{ github.sha }}
 
-      # The preset is chosen at build time.
-      - name: Build with preset
-        env:
-          NODE_OPTIONS: "--max_old_space_size=4096"
-          NUXT_SHOPBITE_PRESET: ${{ matrix.preset }}
-        run: pnpm run build
-
       - name: Cache Playwright browsers
         uses: actions/cache@v6
         with:
@@ -172,7 +165,10 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       # playwright.config.ts starts .output/server/index.mjs (webServer)
+      # one build serves every preset, chosen at runtime
       - name: axe checks
+        env:
+          NUXT_PUBLIC_SHOP_BITE_THEME_PRESET: ${{ matrix.preset }}
         run: pnpm test:a11y --reporter=list,html
 
       - uses: actions/upload-artifact@v7

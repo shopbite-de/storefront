@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import * as z from "zod";
-import type { FormSubmitEvent } from "@nuxt/ui";
 
 useHead({
   title: "Passwort vergessen",
@@ -10,50 +9,11 @@ useHead({
   ],
 });
 
-// Constants
-const SUCCESS_TOAST_CONFIG = {
-  title: "Erfolgreich abgesendet!",
-  description: "Bitte überprüfen Sie Ihre Postfach.",
-  icon: "i-lucide-check",
-  color: "success" as const,
-  duration: 0,
-  close: true,
-};
-
-const ERROR_TOAST_CONFIG = {
-  title: "Fehler beim Senden",
-  icon: "i-lucide-x",
-  description: "Bitte versuchen Sie es später erneut.",
-  color: "error" as const,
-};
-
 const { apiClient } = useShopwareContext();
-const toast = useToast();
 
 const schema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse"),
 });
-
-type Schema = z.output<typeof schema>;
-
-const fields = [
-  {
-    name: "email",
-    type: "text" as const,
-    label: "Email",
-    placeholder: "Email-Adresse eingeben",
-    required: true,
-  },
-];
-
-// Extract toast creation functions
-function showSuccessToast(): void {
-  toast.add(SUCCESS_TOAST_CONFIG);
-}
-
-function showErrorToast(): void {
-  toast.add(ERROR_TOAST_CONFIG);
-}
 
 async function sendRecoveryMail(email: string) {
   await apiClient.invoke("sendRecoveryMail post /account/recovery-password", {
@@ -64,25 +24,14 @@ async function sendRecoveryMail(email: string) {
   });
 }
 
-async function handlePasswordRecovery(payload: FormSubmitEvent<Schema>) {
-  try {
-    await sendRecoveryMail(payload.data.email);
-    showSuccessToast();
-  } catch (error) {
-    showErrorToast();
-    console.error("Password recovery error:", error);
-  }
-}
-
-// Presets (#445): errors and the result show in the form, not as toasts.
-const { hasPreset } = useThemePreset();
+// Errors and the result show in the form (#445).
 const email = ref("");
 const emailError = ref<string>();
 const result = ref<"sent" | "failed" | null>(null);
 const sending = ref(false);
 const resultBox = ref<HTMLElement | null>(null);
 
-async function onPresetSubmit() {
+async function onSubmit() {
   result.value = null;
   const parsed = schema.safeParse({ email: email.value });
   if (!parsed.success) {
@@ -105,7 +54,7 @@ async function onPresetSubmit() {
 }
 </script>
 <template>
-  <UserAuthPanelPreset v-if="hasPreset" title="Passwort vergessen">
+  <UserAuthPanel title="Passwort vergessen">
     <template #intro>
       <p>
         Geben Sie die E-Mail-Adresse Ihres Kundenkontos ein. Gibt es dazu ein
@@ -130,7 +79,7 @@ async function onPresetSubmit() {
       v-else
       novalidate
       class="flex flex-col gap-4"
-      @submit.prevent="onPresetSubmit"
+      @submit.prevent="onSubmit"
     >
       <div
         v-if="result === 'failed'"
@@ -168,35 +117,5 @@ async function onPresetSubmit() {
         >Zurück zur Anmeldung</NuxtLink
       >
     </template>
-  </UserAuthPanelPreset>
-  <UContainer v-else class="max-w-xl mx-auto mt-18">
-    <UAuthForm
-      :schema="schema"
-      title="Password vergessen"
-      icon="i-lucide-shield-user"
-      :fields="fields"
-      :submit="{
-        label: 'Senden',
-      }"
-      @submit="handlePasswordRecovery"
-    >
-      <template #description>
-        <p>
-          Geben Sie Ihre E-Mail-Adresse ein um Ihr Passwort zurück zusetzten.
-        </p>
-        <p>
-          Wenn Sie bei uns ein Kundenkonto mit dieser Adresse angelegt haben
-          bekommen Sie in den nächsten Minuten eine E-Mail zugesendet mit
-          weiteren Anweisungen.
-        </p>
-      </template>
-      <template #footer>
-        Beim absenden stimmst du unseren
-        <ULink to="datenschutz" class="text-primary font-medium"
-          >Datenschutzbestimmungen</ULink
-        >
-        zu.
-      </template>
-    </UAuthForm>
-  </UContainer>
+  </UserAuthPanel>
 </template>

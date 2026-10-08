@@ -1,15 +1,18 @@
 export function useVoucherCode() {
   const { cart, addPromotionCode, appliedPromotionCodes, removeItem } =
     useCart();
-  const toast = useToast();
 
   const voucherCode = ref("");
   const voucherLoading = ref(false);
+  // shown at the field (#445), no toast
+  const voucherError = ref<string | null>(null);
+  const INVALID = "Der Gutscheincode ist ungültig oder abgelaufen.";
 
   async function applyVoucher() {
     const code = voucherCode.value.trim();
     if (!code || voucherLoading.value) return;
     voucherLoading.value = true;
+    voucherError.value = null;
     try {
       await addPromotionCode(code);
       const errors = cart.value?.errors ?? {};
@@ -17,25 +20,12 @@ export function useVoucherCode() {
         (e) => (e as { promotionCode?: string }).promotionCode === code,
       ) as { translatedMessage?: string } | undefined;
       if (promotionError) {
-        toast.add({
-          title: "Gutschein ungültig",
-          description:
-            promotionError.translatedMessage ??
-            "Der eingegebene Gutscheincode ist ungültig oder abgelaufen.",
-          color: "error",
-          icon: "i-lucide-x-circle",
-        });
+        voucherError.value = promotionError.translatedMessage ?? INVALID;
       } else {
         voucherCode.value = "";
       }
     } catch {
-      toast.add({
-        title: "Gutschein ungültig",
-        description:
-          "Der eingegebene Gutscheincode ist ungültig oder abgelaufen.",
-        color: "error",
-        icon: "i-lucide-x-circle",
-      });
+      voucherError.value = INVALID;
     } finally {
       voucherLoading.value = false;
     }
@@ -44,6 +34,7 @@ export function useVoucherCode() {
   return {
     voucherCode,
     voucherLoading,
+    voucherError,
     applyVoucher,
     appliedPromotionCodes,
     removeItem,

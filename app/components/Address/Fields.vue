@@ -1,16 +1,22 @@
 <script setup lang="ts">
 import type { AddressSchema } from "~/validation/registrationSchema";
 
+/**
+ * Address fields of the presets (#443): the same model, autocomplete
+ * check and correction as Address/Fields.vue, with the base components.
+ * `errors` maps "<prefix>.<field>" to the message of the failed check;
+ * every input carries its `autocomplete` token, so browsers can fill it.
+ */
 const model = defineModel<AddressSchema>({ required: true });
 
-defineProps<{
+const props = defineProps<{
   prefix: string;
   accountType?: string;
   showNames?: boolean;
+  errors?: Record<string, string>;
 }>();
 
 const { getSuggestions } = useAddressAutocomplete();
-
 const {
   showCorrection,
   correction,
@@ -19,93 +25,189 @@ const {
   applyCorrection,
 } = useAddressValidation(model, { getSuggestions });
 
-defineExpose({
-  checkAddress,
-  flushPendingCheck,
-  showCorrection,
-});
+defineExpose({ checkAddress, flushPendingCheck, showCorrection });
+
+// The address group for autocomplete: "shipping" or "billing".
+const section = computed(() =>
+  props.prefix === "shippingAddress" ? "shipping" : "billing",
+);
+const fieldId = (name: string) => `${props.prefix}-${name}`;
+const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
 </script>
 
 <template>
-  <div class="space-y-4">
-    <UFormField
-      v-if="accountType === 'business'"
-      label="Unternehmen"
-      :name="`${prefix}.company`"
-    >
-      <UInput v-model="model.company" type="text" class="w-full" />
-    </UFormField>
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-6">
+    <template v-if="accountType === 'business'">
+      <SbField
+        :id="fieldId('company')"
+        v-slot="{ id, describedBy, invalid }"
+        label="Unternehmen"
+        :error="error('company')"
+        class="sm:col-span-3"
+      >
+        <SbInput
+          :id="id"
+          v-model="model.company"
+          :name="`${prefix}.company`"
+          :autocomplete="`${section} organization`"
+          :aria-describedby="describedBy"
+          :invalid="invalid"
+        />
+      </SbField>
+      <SbField
+        :id="fieldId('department')"
+        v-slot="{ id, describedBy, invalid }"
+        label="Abteilung"
+        optional
+        :error="error('department')"
+        class="sm:col-span-3"
+      >
+        <SbInput
+          :id="id"
+          v-model="model.department"
+          :name="`${prefix}.department`"
+          :aria-describedby="describedBy"
+          :invalid="invalid"
+        />
+      </SbField>
+    </template>
 
-    <UFormField
-      v-if="accountType === 'business'"
-      label="Abteilung"
-      :name="`${prefix}.department`"
-    >
-      <UInput v-model="model.department" type="text" class="w-full" />
-    </UFormField>
-
-    <div v-if="showNames" class="flex flex-row justify-between gap-4">
-      <UFormField
+    <template v-if="showNames">
+      <SbField
+        :id="fieldId('firstName')"
+        v-slot="{ id, describedBy, invalid }"
         label="Vorname"
-        :name="`${prefix}.firstName`"
-        required
-        class="w-full"
+        :error="error('firstName')"
+        class="sm:col-span-3"
       >
-        <UInput v-model="model.firstName" type="text" class="w-full" />
-      </UFormField>
-
-      <UFormField
+        <SbInput
+          :id="id"
+          v-model="model.firstName"
+          :name="`${prefix}.firstName`"
+          :autocomplete="`${section} given-name`"
+          :aria-describedby="describedBy"
+          :invalid="invalid"
+        />
+      </SbField>
+      <SbField
+        :id="fieldId('lastName')"
+        v-slot="{ id, describedBy, invalid }"
         label="Nachname"
-        :name="`${prefix}.lastName`"
-        required
-        class="w-full"
+        :error="error('lastName')"
+        class="sm:col-span-3"
       >
-        <UInput v-model="model.lastName" type="text" class="w-full" />
-      </UFormField>
-    </div>
+        <SbInput
+          :id="id"
+          v-model="model.lastName"
+          :name="`${prefix}.lastName`"
+          :autocomplete="`${section} family-name`"
+          :aria-describedby="describedBy"
+          :invalid="invalid"
+        />
+      </SbField>
+    </template>
 
-    <UFormField label="Straße und Hausnr." :name="`${prefix}.street`" required>
-      <UInput v-model="model.street" type="text" class="w-full" />
-    </UFormField>
-
-    <div class="flex flex-row gap-4">
-      <UFormField label="PLZ" :name="`${prefix}.zipcode`" class="w-24">
-        <UInput v-model="model.zipcode" type="text" class="w-full" />
-      </UFormField>
-
-      <UFormField label="Ort" :name="`${prefix}.city`" required class="flex-1">
-        <UInput v-model="model.city" type="text" class="w-full" />
-      </UFormField>
-    </div>
-
-    <div v-if="showCorrection" class="flex flex-col items-center gap-2">
-      <UAlert
-        color="info"
-        variant="soft"
-        icon="i-lucide-info"
-        :title="`Meinten Sie: ${correction?.label}?`"
-        class="flex-1"
+    <SbField
+      :id="fieldId('street')"
+      v-slot="{ id, describedBy, invalid }"
+      label="Straße und Hausnummer"
+      :error="error('street')"
+      class="sm:col-span-6"
+    >
+      <SbInput
+        :id="id"
+        v-model="model.street"
+        :name="`${prefix}.street`"
+        :autocomplete="`${section} address-line1`"
+        :aria-describedby="describedBy"
+        :invalid="invalid"
       />
-      <UButton
-        label="Korrigieren"
-        color="info"
-        variant="solid"
-        size="sm"
-        block
-        @click="applyCorrection"
+    </SbField>
+
+    <SbField
+      :id="fieldId('zipcode')"
+      v-slot="{ id, describedBy, invalid }"
+      label="PLZ"
+      :error="error('zipcode')"
+      class="sm:col-span-2"
+    >
+      <SbInput
+        :id="id"
+        v-model="model.zipcode"
+        :name="`${prefix}.zipcode`"
+        inputmode="numeric"
+        :autocomplete="`${section} postal-code`"
+        :aria-describedby="describedBy"
+        :invalid="invalid"
       />
+    </SbField>
+    <SbField
+      :id="fieldId('city')"
+      v-slot="{ id, describedBy, invalid }"
+      label="Ort"
+      :error="error('city')"
+      class="sm:col-span-4"
+    >
+      <SbInput
+        :id="id"
+        v-model="model.city"
+        :name="`${prefix}.city`"
+        :autocomplete="`${section} address-level2`"
+        :aria-describedby="describedBy"
+        :invalid="invalid"
+      />
+    </SbField>
+
+    <div
+      v-if="showCorrection"
+      role="status"
+      class="flex flex-col gap-3 rounded-sb-control bg-sb-primary-tint p-4 font-body text-sb-ink sm:col-span-6 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <span>
+        Meinten Sie: <strong>{{ correction?.label }}</strong
+        >?
+      </span>
+      <SbButton variant="secondary" @click="applyCorrection"
+        >Übernehmen</SbButton
+      >
     </div>
 
-    <UFormField label="Adresszusatz" :name="`${prefix}.additionalAddressLine1`">
-      <UInput
+    <SbField
+      :id="fieldId('additionalAddressLine1')"
+      v-slot="{ id, describedBy, invalid }"
+      label="Adresszusatz"
+      hint="z. B. Hinterhaus, 2. Stock, Name am Klingelschild"
+      optional
+      :error="error('additionalAddressLine1')"
+      class="sm:col-span-6"
+    >
+      <SbInput
+        :id="id"
         v-model="model.additionalAddressLine1"
-        type="text"
-        class="w-full"
+        :name="`${prefix}.additionalAddressLine1`"
+        :autocomplete="`${section} address-line2`"
+        :aria-describedby="describedBy"
+        :invalid="invalid"
       />
-    </UFormField>
+    </SbField>
 
-    <UFormField label="Telefon" :name="`${prefix}.phoneNumber`" required>
-      <UInput v-model="model.phoneNumber" type="text" class="w-full" />
-    </UFormField>
+    <SbField
+      :id="fieldId('phoneNumber')"
+      v-slot="{ id, describedBy, invalid }"
+      label="Telefon"
+      hint="Nur für Rückfragen zur Bestellung"
+      :error="error('phoneNumber')"
+      class="sm:col-span-6"
+    >
+      <SbInput
+        :id="id"
+        v-model="model.phoneNumber"
+        :name="`${prefix}.phoneNumber`"
+        type="tel"
+        :autocomplete="`${section} tel`"
+        :aria-describedby="describedBy"
+        :invalid="invalid"
+      />
+    </SbField>
   </div>
 </template>

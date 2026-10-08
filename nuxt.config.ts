@@ -1,5 +1,6 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 
 const storeName = process.env.NUXT_STORE_NAME || "ShopBite";
 const storeDescription =
@@ -31,9 +32,6 @@ export default defineNuxtConfig({
       ],
       link: [{ rel: "icon", href: "/favicon.ico", type: "image/png" }],
     },
-  },
-  colorMode: {
-    preference: "light",
   },
   robots: {
     disallow: [
@@ -154,16 +152,24 @@ export default defineNuxtConfig({
     "/registrierung/bestaetigen": {
       ssr: false,
     },
-    "/bestellung": {
-      redirect: "/bestellung/warenkorb",
+    // One-page checkout (#443): the old step routes lead there.
+    "/bestellung": { redirect: { to: "/bestellung/kasse", statusCode: 301 } },
+    "/bestellung/warenkorb": {
+      redirect: { to: "/bestellung/kasse", statusCode: 301 },
+    },
+    "/bestellung/zahlung-versand": {
+      redirect: { to: "/bestellung/kasse", statusCode: 301 },
+    },
+    "/bestellung/bestaetigen": {
+      redirect: { to: "/bestellung/kasse", statusCode: 301 },
     },
   },
 
-  // Style preset of the shop (#439, modules/theme.ts): "trattoria", "grill"
-  // or "asia", optionally with colour overrides (`colors: { primary: … }`).
-  // Empty keeps the Nuxt UI look. NUXT_SHOPBITE_PRESET overrides it.
+  // Style preset of the shop (#439, modules/theme.ts): "trattoria" (the
+  // default), "grill" or "asia", optionally with colour overrides
+  // (`colors: { primary: … }`). NUXT_SHOPBITE_PRESET overrides it.
   shopBite: {
-    preset: "",
+    preset: "trattoria",
   },
 
   css: ["~/assets/css/main.css"],
@@ -178,14 +184,6 @@ export default defineNuxtConfig({
       fallbacks: {
         "sans-serif": ["Roboto", "Helvetica Neue"],
       },
-    },
-  },
-
-  ui: {
-    experimental: {
-      // Only the theme files of the Nuxt UI components the layers render
-      // become Tailwind sources (instead of all 120 components), see #319.
-      componentDetection: true,
     },
   },
 
@@ -210,11 +208,10 @@ export default defineNuxtConfig({
     "@nuxt/content",
     "@nuxtjs/robots",
     "@vite-pwa/nuxt",
-    // Style presets (#439). Listed here, before @nuxt/ui, because the module
-    // sets the colour mode and fonts that @nuxt/ui's module dependencies read;
-    // the same path in modules/ is not registered a second time.
+    // Style presets (#439); registers the preset fonts, so it comes before
+    // @nuxt/fonts. The same path in modules/ is not registered a second time.
     fileURLToPath(new URL("./modules/theme.ts", import.meta.url)),
-    "@nuxt/ui",
+    "@nuxt/fonts",
     "@nuxt/scripts",
     "nuxt-vitalizer",
     // @nuxt/eslint, @nuxt/hints and @nuxt/test-utils: modules/dev-tooling.ts
@@ -306,6 +303,8 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
 
   vite: {
+    // Tailwind CSS v4 (came with @nuxt/ui before #445)
+    plugins: [tailwindcss()],
     build: {
       // Vite 8 bundles with Rolldown; `rollupOptions` would drop this key.
       rolldownOptions: {
@@ -323,7 +322,7 @@ export default defineNuxtConfig({
               },
               {
                 name: "ui",
-                test: /node_modules\/(\.pnpm\/)?(reka-ui|@nuxt\+ui|@nuxt\/ui|tailwind-variants|tailwind-merge|@floating-ui|@vueuse|vaul-vue|@internationalized|@tanstack|@nuxt\+icon|@nuxt\/icon|@iconify)[@/]/,
+                test: /node_modules\/(\.pnpm\/)?(reka-ui|@floating-ui|@vueuse|@internationalized)[@/]/,
                 minShareCount: 2,
                 priority: 10,
               },

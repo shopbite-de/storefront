@@ -1,18 +1,14 @@
 <template>
+  <!-- placeholder of a bon card while the menu loads -->
   <div
-    class="flex flex-col gap-3 rounded-xl bg-default p-4 shadow-md ring ring-default"
+    class="flex h-28 overflow-hidden rounded-sb-card bg-sb-surface motion-safe:animate-pulse"
+    aria-hidden="true"
   >
-    <div class="flex items-start justify-between gap-3">
-      <div class="flex flex-col gap-2">
-        <USkeleton class="h-3 w-8" />
-        <USkeleton class="h-5 w-40" />
-      </div>
-      <USkeleton class="h-5 w-14" />
-    </div>
-    <div class="flex gap-1.5">
-      <USkeleton class="h-6 w-24 rounded-full" />
-      <USkeleton class="h-6 w-20 rounded-full" />
-      <USkeleton class="h-6 w-16 rounded-full" />
+    <div class="w-[60px] shrink-0 bg-sb-muted sm:w-[72px]" />
+    <div class="flex flex-1 flex-col gap-2 p-4">
+      <div class="h-5 w-40 rounded bg-sb-muted" />
+      <div class="h-4 w-56 max-w-full rounded bg-sb-muted" />
+      <div class="mt-auto h-4 w-14 rounded bg-sb-muted" />
     </div>
   </div>
 </template>

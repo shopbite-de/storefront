@@ -2,7 +2,6 @@
 import Footer from "~/components/Footer.vue";
 
 const { apiClient } = useShopwareContext();
-const appConfig = useAppConfig();
 const router = useRouter();
 
 // The footer is below the fold on every page; its hydration waits until it
@@ -103,8 +102,7 @@ useSeoMeta({
   <VitePwaManifest />
   <NuxtLoadingIndicator />
 
-  <UApp :toaster="appConfig.toaster">
-    <!-- Lazy keeps UBanner out of the entry chunk of real shops (#314). -->
+  <div>
     <!-- First focusable element: skips header and navigation (#455). -->
     <a
       href="#inhalt"
@@ -113,12 +111,12 @@ useSeoMeta({
     >
     <LazyDemoBanner v-if="shopBite.feature.demoBanner" />
     <Header />
-    <UMain id="inhalt" tabindex="-1" class="focus:outline-none">
+    <main id="inhalt" tabindex="-1" class="min-h-[60vh] focus:outline-none">
       <NuxtLayout>
         <NuxtPage />
       </NuxtLayout>
-    </UMain>
+    </main>
     <FooterWhenVisible />
     <CartBar />
-  </UApp>
+  </div>
 </template>

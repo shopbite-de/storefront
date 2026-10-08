@@ -92,7 +92,6 @@ function summary(association: AssociationItem) {
 const baseId = useId();
 
 // Presets render the list with the base components (#442).
-const { hasPreset } = useThemePreset();
 const groupId = (index: number) => `${baseId}-extras-${index}`;
 
 watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
@@ -101,7 +100,7 @@ watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
 </script>
 
 <template>
-  <template v-if="hasPreset">
+  <div>
     <div
       v-for="(association, index) in associations"
       :key="association.label"
@@ -182,99 +181,5 @@ watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
         </SbButton>
       </div>
     </div>
-  </template>
-  <template v-else>
-    <div
-      v-for="(association, index) in associations"
-      :key="association.label"
-      class="flex flex-col"
-    >
-      <button
-        type="button"
-        class="flex items-center gap-2 py-1 text-start"
-        :aria-expanded="openGroups.includes(association.label)"
-        :aria-controls="groupId(index)"
-        @click="toggleGroup(association.label)"
-      >
-        <UIcon
-          name="i-lucide-chevron-down"
-          class="size-5 shrink-0 text-muted transition-transform"
-          :class="{ '-rotate-90': !openGroups.includes(association.label) }"
-        />
-        <span class="font-semibold text-highlighted">{{
-          association.label
-        }}</span>
-        <span
-          class="ms-auto text-xs"
-          :class="
-            association.products.some(isSelected)
-              ? 'font-medium text-primary'
-              : 'text-muted'
-          "
-        >
-          {{ summary(association) }}
-        </span>
-      </button>
-
-      <div
-        v-if="openGroups.includes(association.label)"
-        :id="groupId(index)"
-        class="flex flex-col gap-1 pt-2"
-      >
-        <UInput
-          v-if="association.products.length > SEARCH_THRESHOLD"
-          v-model="queries[association.label]"
-          icon="i-lucide-search"
-          :placeholder="`${association.label} durchsuchen`"
-          :aria-label="`${association.label} durchsuchen`"
-          class="mb-1 w-full"
-        />
-        <div
-          class="flex flex-col divide-y divide-default"
-          role="group"
-          :aria-label="association.label"
-        >
-          <UCheckbox
-            v-for="extra in visibleProducts(association)"
-            :key="extra.value"
-            variant="card"
-            size="lg"
-            :model-value="isSelected(extra)"
-            :ui="{
-              root: 'items-center rounded-none border-0 px-1 py-2.5',
-              wrapper: 'ms-3',
-              label: 'flex items-baseline justify-between gap-3 font-normal',
-            }"
-            @update:model-value="setSelected(extra, $event === true)"
-          >
-            <template #label>
-              <span>{{ extra.label }}</span>
-              <span class="shrink-0 text-sm text-muted tabular-nums">
-                +{{ extra.price }}
-              </span>
-            </template>
-          </UCheckbox>
-        </div>
-        <p
-          v-if="
-            queries[association.label]?.trim() &&
-            visibleProducts(association).length === 0
-          "
-          class="py-2 text-sm text-muted"
-        >
-          Keine Treffer
-        </p>
-        <UButton
-          v-if="hiddenCount(association) > 0"
-          variant="link"
-          color="primary"
-          trailing-icon="i-lucide-chevron-down"
-          class="self-start px-1"
-          @click="expandedGroups = [...expandedGroups, association.label]"
-        >
-          Alle {{ association.products.length }} anzeigen
-        </UButton>
-      </div>
-    </div>
-  </template>
+  </div>
 </template>

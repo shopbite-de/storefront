@@ -18,10 +18,10 @@ const text = computed(() => {
     <p v-if="status" role="status" class="flex items-center gap-2 text-sm">
       <span
         class="size-2 shrink-0 rounded-full"
-        :class="status.open ? 'bg-success' : 'bg-dimmed'"
+        :class="status.open ? 'bg-sb-primary' : 'bg-sb-danger'"
         aria-hidden="true"
       />
-      <span class="text-default">{{ text }}</span>
+      <span class="text-sb-ink">{{ text }}</span>
     </p>
     <template #fallback>
       <p class="h-5" aria-hidden="true" />

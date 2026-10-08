@@ -17,7 +17,9 @@ describe("ProductDeselectIngredient", () => {
     });
 
     expect(wrapper.emitted("ingredients-deselected")).toBeUndefined();
-    expect(wrapper.findAll('[aria-pressed="true"]')).toHaveLength(0);
+    // A pressed chip is an included ingredient.
+    expect(wrapper.findAll('[aria-pressed="true"]')).toHaveLength(3);
+    expect(wrapper.findAll('[aria-pressed="false"]')).toHaveLength(0);
   });
 
   it("deselects ingredients from the URL and ignores unknown names (#411)", async () => {
@@ -28,7 +30,7 @@ describe("ProductDeselectIngredient", () => {
     expect(wrapper.emitted("ingredients-deselected")?.[0]).toEqual([
       ["Zwiebeln"],
     ]);
-    const pressed = wrapper.findAll('[aria-pressed="true"]');
-    expect(pressed.map((button) => button.text())).toEqual(["Zwiebeln"]);
+    const removed = wrapper.findAll('[aria-pressed="false"]');
+    expect(removed.map((button) => button.text())).toEqual(["ohne Zwiebeln"]);
   });
 });

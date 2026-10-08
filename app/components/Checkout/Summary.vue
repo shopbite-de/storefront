@@ -21,22 +21,12 @@ const {
   public: { storeUrl },
 } = useRuntimeConfig();
 
-const toast = useToast();
-
-// Presets: the one-page checkout (#443). Errors show in the form, next to
-// the order button, instead of a toast that disappears.
-const { hasPreset } = useThemePreset();
+// The one-page checkout (#443): errors show in the form, next to the order
+// button.
 const orderError = ref<{ title: string; description: string } | null>(null);
 
-function reportError(
-  message: { title: string; description: string },
-  toastOptions: { icon: string },
-) {
-  if (hasPreset) {
-    orderError.value = message;
-    return;
-  }
-  toast.add({ ...message, color: "error", progress: false, ...toastOptions });
+function reportError(message: { title: string; description: string }) {
+  orderError.value = message;
 }
 
 onMounted(() => {
@@ -71,22 +61,16 @@ const { handlePayment, paymentUrl } = useOrderPayment(
 async function hasAvailableCheckoutMethods(): Promise<boolean> {
   try {
     if (await ensureAvailableCheckoutMethods()) return true;
-    reportError(
-      {
-        title: `Keine ${blockedMethodLabel.value} verfügbar`,
-        description: `Für deine Bestellung ist aktuell keine ${blockedMethodLabel.value} verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.`,
-      },
-      { icon: blockedMethodIcon.value },
-    );
+    reportError({
+      title: `Keine ${blockedMethodLabel.value} verfügbar`,
+      description: `Für deine Bestellung ist aktuell keine ${blockedMethodLabel.value} verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.`,
+    });
   } catch (error) {
     console.error("[checkout][ensureAvailableCheckoutMethods]", error);
-    reportError(
-      {
-        title: "Versand- und Zahlart konnten nicht geprüft werden",
-        description: "Bitte versuche es in einem Moment erneut.",
-      },
-      { icon: "i-lucide-x-circle" },
-    );
+    reportError({
+      title: "Versand- und Zahlart konnten nicht geprüft werden",
+      description: "Bitte versuche es in einem Moment erneut.",
+    });
   }
   return false;
 }
@@ -115,26 +99,14 @@ async function handleCreateOrder() {
     }
 
     await refreshCart();
-    // the preset confirmation page says it in its heading
-    if (!hasPreset) {
-      toast.add({
-        title: "Bestellung aufgegeben!",
-        icon: "i-lucide-shopping-cart",
-        color: "success",
-        progress: false,
-      });
-    }
     navigateTo(`/bestellung/${order.id}/erfolg`);
   } catch (error) {
     console.error("[checkout][createOrder]", error);
-    reportError(
-      {
-        title: "Bestellung fehlgeschlagen",
-        description:
-          "Deine Bestellung konnte nicht aufgegeben werden. Bitte prüfe deine Angaben und versuche es erneut.",
-      },
-      { icon: "i-lucide-x-circle" },
-    );
+    reportError({
+      title: "Bestellung fehlgeschlagen",
+      description:
+        "Deine Bestellung konnte nicht aufgegeben werden. Bitte prüfe deine Angaben und versuche es erneut.",
+    });
     await refreshCart().catch(() => {});
   } finally {
     isPlacingOrder.value = false;
@@ -162,9 +134,6 @@ const isValidToProceed = computed(
 const blockedMethodLabel = computed(() =>
   isShippingMethodBlocked.value ? "Versandart" : "Zahlart",
 );
-const blockedMethodIcon = computed(() =>
-  isShippingMethodBlocked.value ? "i-lucide-truck" : "i-lucide-badge-euro",
-);
 
 const isPlacingOrder = ref(false);
 const selectedDeliveryTime = ref("");
@@ -182,9 +151,7 @@ const checkoutSections = [
 
 const checkoutButtonLabel = computed<string>(() => {
   if (!customerDataAvailable.value) {
-    return hasPreset
-      ? "Bitte zuerst Ihre Angaben speichern"
-      : "Bitte einloggen oder Kundendaten erfassen";
+    return "Bitte zuerst Ihre Angaben speichern";
   }
 
   // app.vue loads business hours and holidays after mounting. Until then (or
@@ -216,7 +183,6 @@ const checkoutButtonLabel = computed<string>(() => {
 
 <template>
   <div
-    v-if="hasPreset"
     class="grid grid-cols-1 gap-8 font-body text-sb-ink lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12"
   >
     <div class="flex min-w-0 flex-col gap-4">
@@ -299,55 +265,5 @@ const checkoutButtonLabel = computed<string>(() => {
         >.
       </p>
     </section>
-  </div>
-  <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8 py-8">
-    <div class="flex flex-col gap-6">
-      <div class="flex flex-col gap-4">
-        <h3 class="text-lg font-semibold">Kundendaten</h3>
-        <UserDetail v-if="customerDataAvailable" />
-        <p v-else class="text-muted">
-          Bitte vorher einloggen oder Kundendaten erfassen
-        </p>
-      </div>
-      <div class="flex flex-col gap-4">
-        <h3 class="text-lg font-semibold">Versand & Zahlung</h3>
-        <CheckoutPaymentMethod :payment-method="selectedPaymentMethod" />
-        <CheckoutShippingMethod :shipping-method="selectedShippingMethod" />
-        <CheckoutDeliveryTimeSelect
-          v-model:valid="isValidTime"
-          v-model="selectedDeliveryTime"
-        />
-      </div>
-    </div>
-    <div class="flex flex-col gap-4">
-      <h3 class="text-lg font-semibold">Warenkorb</h3>
-      <UCard>
-        <QuickView
-          :with-quantity-input="false"
-          :with-delete-button="false"
-          :with-upsell="true"
-        />
-      </UCard>
-      <CheckoutVoucherInput />
-      <UButton
-        :icon="isValidToProceed ? 'i-lucide-shopping-cart' : 'i-lucide-lock'"
-        :disabled="!isValidToProceed || isPlacingOrder"
-        :loading="
-          isPlacingOrder || (customerDataAvailable && isLoadingOpeningHours)
-        "
-        :label="checkoutButtonLabel"
-        size="xl"
-        block
-        @click="handleCreateOrder"
-      />
-      <p class="text-sm text-muted">
-        Mit Klick auf „Zahlungspflichtig bestellen“ erklärst du dich mit unseren
-        <ULink to="/agb" class="text-primary font-medium">AGB</ULink> und
-        <ULink to="/datenschutz" class="text-primary font-medium"
-          >Datenschutzbestimmungen</ULink
-        >
-        einverstanden.
-      </p>
-    </div>
   </div>
 </template>

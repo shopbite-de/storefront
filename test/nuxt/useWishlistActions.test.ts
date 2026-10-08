@@ -6,14 +6,12 @@ import type { Schemas } from "#shopware";
 const {
   mockAddProducts,
   mockRefreshCart,
-  mockToastAdd,
   mockTriggerProductAdded,
   mockClearWishlist,
   mockTrackEvent,
 } = vi.hoisted(() => ({
   mockAddProducts: vi.fn(),
   mockRefreshCart: vi.fn(),
-  mockToastAdd: vi.fn(),
   mockTriggerProductAdded: vi.fn(),
   mockClearWishlist: vi.fn(),
   mockTrackEvent: vi.fn(),
@@ -22,10 +20,6 @@ const {
 mockNuxtImport("useCart", () => () => ({
   addProducts: mockAddProducts,
   refreshCart: mockRefreshCart,
-}));
-
-mockNuxtImport("useToast", () => () => ({
-  add: mockToastAdd,
 }));
 
 mockNuxtImport("useProductEvents", () => () => ({
@@ -55,9 +49,6 @@ describe("useWishlistActions", () => {
     const { clearWishlistHandler, isLoading } = useWishlistActions();
     await clearWishlistHandler();
     expect(mockClearWishlist).toHaveBeenCalled();
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Merkliste geleert" }),
-    );
     expect(isLoading.value).toBe(false);
   });
 
@@ -72,22 +63,16 @@ describe("useWishlistActions", () => {
     ]);
     expect(mockRefreshCart).toHaveBeenCalled();
     expect(mockTriggerProductAdded).toHaveBeenCalled();
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "In den Warenkorb gelegt" }),
-    );
     expect(mockTrackEvent).toHaveBeenCalledWith(mockProduct, 1);
   });
 
-  it("should warn when adding a base product with variants", async () => {
+  it("should not add a base product with variants", async () => {
     const baseProduct = { ...mockProduct, childCount: 2 };
     const { addSingleItemToCart } = useWishlistActions();
 
     await addSingleItemToCart(baseProduct);
 
     expect(mockAddProducts).not.toHaveBeenCalled();
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Variante erforderlich" }),
-    );
   });
 
   it("should add all items to cart", async () => {
@@ -104,9 +89,7 @@ describe("useWishlistActions", () => {
       { id: "p1", quantity: 1, type: "product" },
       { id: "p2", quantity: 1, type: "product" },
     ]);
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Produkte hinzugefügt" }),
-    );
+    expect(mockRefreshCart).toHaveBeenCalledWith({ id: "cart-1" });
     expect(isAddingToCart.value).toBe(false);
   });
 
@@ -129,12 +112,6 @@ describe("useWishlistActions", () => {
     expect(mockAddProducts).toHaveBeenCalledWith([
       { id: "p1", quantity: 1, type: "product" },
     ]);
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        description: expect.stringContaining(
-          "1 Produkte hinzugefügt. 1 Produkt(e) übersprungen",
-        ),
-      }),
-    );
+    expect(mockTriggerProductAdded).toHaveBeenCalled();
   });
 });

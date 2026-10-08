@@ -10,7 +10,6 @@ useSeoMeta({
 });
 
 const { orders, loadOrders } = useCustomerOrders();
-const { hasPreset } = useThemePreset();
 const loaded = ref(false);
 
 onMounted(async () => {
@@ -25,8 +24,8 @@ const { getFormattedPrice } = useCommercePrice();
 </script>
 
 <template>
-  <div v-if="hasPreset" class="font-body text-sb-ink">
-    <UserAccountHeaderPreset title="Bestellungen" />
+  <div class="font-body text-sb-ink">
+    <UserAccountHeader title="Bestellungen" />
     <p v-if="!loaded" role="status" class="text-sb-ink-muted">
       Bestellungen werden geladen …
     </p>
@@ -74,36 +73,4 @@ const { getFormattedPrice } = useCommercePrice();
       </li>
     </ul>
   </div>
-  <UContainer v-else>
-    <UPageHeader
-      headline="KONTO"
-      title="Meine Bestellungen"
-      description="Historie deiner Bestellungen."
-    />
-    <UPageBody>
-      <UPageList divide>
-        <UPageCard
-          v-for="order in orders"
-          :key="order.id"
-          variant="ghost"
-          :to="'/konto/bestellung/' + order.id"
-          :ui="{
-            root: 'shadow-md rounded-md',
-            footer: 'w-full',
-          }"
-        >
-          <template #default>
-            <div class="flex flex-row justify-between">
-              <div>Bestellung: {{ order.orderNumber }}</div>
-              <div>vom: {{ formatDate(order.createdAt) }}</div>
-              <div>
-                Gesamtbetrag: {{ getFormattedPrice(order.amountTotal) }}
-              </div>
-              <UIcon name="i-lucide-eye" class="size-6" />
-            </div>
-          </template>
-        </UPageCard>
-      </UPageList>
-    </UPageBody>
-  </UContainer>
 </template>

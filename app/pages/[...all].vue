@@ -24,7 +24,6 @@ if ((error.value?.statusCode ?? 0) >= 500) {
 }
 
 let categoryId: Ref<string> | undefined;
-const { hasPreset } = useThemePreset();
 
 if (page.value) {
   usePageSeo({
@@ -52,17 +51,15 @@ if (page.value) {
 
 <template>
   <div
-    v-if="page && hasPreset"
+    v-if="page"
     class="mx-auto w-full max-w-3xl px-4 pt-8 pb-16 font-body text-sb-ink sm:px-6 sm:pt-12"
   >
     <ContentRenderer :value="page" class="content content-preset" />
   </div>
-  <UContainer v-else-if="page">
-    <ContentRenderer :value="page" class="content my-8" />
-  </UContainer>
+
   <div v-else-if="categoryId">
     <!-- the listing layout's category bar, without switching layouts -->
-    <div class="sticky top-16 left-0 z-20 w-full backdrop-blur-md rounded-md">
+    <div class="sticky top-16 z-20 sm:top-20 lg:hidden">
       <NavigationMobileTop />
     </div>
     <CategoryListing :id="categoryId" :key="categoryId" />

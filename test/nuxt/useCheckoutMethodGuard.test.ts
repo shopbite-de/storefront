@@ -15,14 +15,12 @@ const {
   mockSetShippingMethod,
   mockGetPaymentMethods,
   mockSetPaymentMethod,
-  mockToastAdd,
 } = vi.hoisted(() => ({
   mockRefreshCart: vi.fn(),
   mockGetShippingMethods: vi.fn(),
   mockSetShippingMethod: vi.fn(),
   mockGetPaymentMethods: vi.fn(),
   mockSetPaymentMethod: vi.fn(),
-  mockToastAdd: vi.fn(),
 }));
 
 // Reactive state shared with the mocked composables. Only read lazily
@@ -48,10 +46,6 @@ mockNuxtImport("useCheckout", () => () => ({
 
 mockNuxtImport("useSessionContext", () => () => ({
   sessionContext,
-}));
-
-mockNuxtImport("useToast", () => () => ({
-  add: mockToastAdd,
 }));
 
 const delivery = {
@@ -157,7 +151,6 @@ describe("useCheckoutMethodGuard", () => {
       expect(mockRefreshCart).toHaveBeenCalledTimes(1);
       expect(mockGetShippingMethods).not.toHaveBeenCalled();
       expect(mockSetShippingMethod).not.toHaveBeenCalled();
-      expect(mockToastAdd).not.toHaveBeenCalled();
       expect(isShippingMethodBlocked.value).toBe(false);
     });
 
@@ -181,13 +174,6 @@ describe("useCheckoutMethodGuard", () => {
       });
       expect(mockSetShippingMethod).toHaveBeenCalledWith({ id: pickup.id });
       expect(mockRefreshCart).toHaveBeenCalledTimes(2);
-      expect(mockToastAdd).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: "Versandart geändert",
-          description:
-            "Lieferung ist nicht mehr verfügbar. Abholung wurde ausgewählt.",
-        }),
-      );
     });
 
     it("falls back to the first available method when the default is not available", async () => {
@@ -216,7 +202,6 @@ describe("useCheckoutMethodGuard", () => {
       await expect(ensureAvailableShippingMethod()).resolves.toBe(false);
 
       expect(mockSetShippingMethod).not.toHaveBeenCalled();
-      expect(mockToastAdd).not.toHaveBeenCalled();
       expect(isShippingMethodBlocked.value).toBe(true);
     });
 
@@ -228,7 +213,6 @@ describe("useCheckoutMethodGuard", () => {
       await expect(ensureAvailableShippingMethod()).resolves.toBe(false);
 
       expect(mockSetShippingMethod).toHaveBeenCalledWith({ id: pickup.id });
-      expect(mockToastAdd).not.toHaveBeenCalled();
     });
   });
 
@@ -249,13 +233,6 @@ describe("useCheckoutMethodGuard", () => {
       expect(mockSetPaymentMethod).toHaveBeenCalledWith({ id: paypal.id });
       expect(mockSetShippingMethod).not.toHaveBeenCalled();
       expect(isPaymentMethodBlocked.value).toBe(false);
-      expect(mockToastAdd).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: "Zahlart geändert",
-          description:
-            "Barzahlung ist nicht mehr verfügbar. PayPal wurde ausgewählt.",
-        }),
-      );
     });
 
     it("returns false when no alternative payment method exists", async () => {
@@ -268,7 +245,6 @@ describe("useCheckoutMethodGuard", () => {
       await expect(ensureAvailablePaymentMethod()).resolves.toBe(false);
 
       expect(mockSetPaymentMethod).not.toHaveBeenCalled();
-      expect(mockToastAdd).not.toHaveBeenCalled();
       expect(isPaymentMethodBlocked.value).toBe(true);
     });
   });
@@ -305,7 +281,6 @@ describe("useCheckoutMethodGuard", () => {
         mockSetPaymentMethod.mock.invocationCallOrder[0] as number,
       );
       expect(mockRefreshCart).toHaveBeenCalledTimes(3);
-      expect(mockToastAdd).toHaveBeenCalledTimes(2);
     });
 
     it("leaves the payment method untouched when shipping cannot be resolved", async () => {
@@ -321,7 +296,6 @@ describe("useCheckoutMethodGuard", () => {
 
       expect(mockGetPaymentMethods).not.toHaveBeenCalled();
       expect(mockSetPaymentMethod).not.toHaveBeenCalled();
-      expect(mockToastAdd).not.toHaveBeenCalled();
     });
 
     it("returns false when the payment method cannot be resolved", async () => {
@@ -356,7 +330,6 @@ describe("useCheckoutMethodGuard", () => {
       await expect(second).resolves.toBe(true);
 
       expect(mockSetShippingMethod).toHaveBeenCalledTimes(1);
-      expect(mockToastAdd).toHaveBeenCalledTimes(1);
       // second call re-checked after the first one finished
       expect(mockRefreshCart).toHaveBeenCalledTimes(3);
       expect(mockRefreshCart.mock.invocationCallOrder[2]).toBeGreaterThan(

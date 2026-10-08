@@ -80,7 +80,6 @@ const onVariantSwitched = (variant: Schemas["Product"]) => {
 
 const onAddToCart = () => emit("product-added");
 
-const { hasPreset } = useThemePreset();
 const productName = computed(
   () => selectedProduct.value?.translated?.name ?? "Gericht",
 );
@@ -91,23 +90,31 @@ const productName = computed(
     <!-- One placeholder in the shape of the loaded body (options,
          ingredients, extras), shown until product and extras are both
          loaded. -->
-    <div v-if="pending" class="flex flex-col gap-5" aria-busy="true">
+    <div
+      v-if="pending"
+      class="flex flex-col gap-5 motion-safe:animate-pulse"
+      aria-busy="true"
+    >
       <div class="flex flex-col gap-2">
-        <USkeleton class="h-5 w-24" />
-        <USkeleton class="h-11 w-full" />
+        <div class="h-5 w-24 rounded bg-sb-muted" />
+        <div class="h-11 w-full rounded bg-sb-muted" />
       </div>
       <div class="flex flex-col gap-2">
-        <USkeleton class="h-5 w-20" />
+        <div class="h-5 w-20 rounded bg-sb-muted" />
         <div class="flex flex-wrap gap-2">
-          <USkeleton class="h-8 w-20 rounded-full" />
-          <USkeleton class="h-8 w-24 rounded-full" />
-          <USkeleton class="h-8 w-16 rounded-full" />
-          <USkeleton class="h-8 w-28 rounded-full" />
+          <div class="h-8 w-20 rounded-full rounded bg-sb-muted" />
+          <div class="h-8 w-24 rounded-full rounded bg-sb-muted" />
+          <div class="h-8 w-16 rounded-full rounded bg-sb-muted" />
+          <div class="h-8 w-28 rounded-full rounded bg-sb-muted" />
         </div>
       </div>
       <div class="flex flex-col gap-3">
-        <USkeleton class="h-5 w-28" />
-        <USkeleton v-for="row in 4" :key="row" class="h-7 w-full" />
+        <div class="h-5 w-28 rounded bg-sb-muted" />
+        <div
+          v-for="row in 4"
+          :key="row"
+          class="h-7 w-full rounded bg-sb-muted"
+        />
       </div>
     </div>
     <template v-else-if="productDetails?.configurator">
@@ -133,7 +140,6 @@ const productName = computed(
     <!-- -bottom-5/-mb-5 cover the sheet body's bottom padding, which sticky
          positioning keeps free and the list scrolled through (#442). -->
     <div
-      v-if="hasPreset"
       class="sticky -bottom-5 -mx-5 -mb-5 mt-auto flex items-center gap-2.5 border-t border-sb-line bg-sb-surface px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
     >
       <SbStepper
@@ -154,35 +160,6 @@ const productName = computed(
           {{ getFormattedPrice(total) }}
         </span>
       </SbButton>
-    </div>
-    <div
-      v-else
-      class="sticky bottom-0 mt-auto flex items-center gap-3 border-t border-default bg-default pt-4"
-    >
-      <UInputNumber
-        v-model="selectedQuantity"
-        size="xl"
-        aria-label="Anzahl"
-        :min="1"
-        :max="100"
-        :disabled="pending"
-        class="w-28 shrink-0"
-      />
-      <!-- Short label: "In den Warenkorb" wrapped next to the total on phones. -->
-      <UButton
-        class="flex-1 justify-between whitespace-nowrap"
-        size="xl"
-        icon="i-lucide-shopping-cart"
-        :disabled="isLoading || pending || !isAvailable"
-        :loading="isLoading"
-        aria-label="In den Warenkorb"
-        @click="addToCart(onAddToCart)"
-      >
-        <span>{{ isAvailable ? "Hinzufügen" : "Ausverkauft" }}</span>
-        <span v-if="isAvailable && !pending" class="font-bold">
-          {{ getFormattedPrice(total) }}
-        </span>
-      </UButton>
     </div>
   </div>
 </template>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useUser } from "@shopware/composables";
-import type { FormSubmitEvent } from "@nuxt/ui";
 import * as z from "zod";
 
 definePageMeta({
@@ -15,15 +14,7 @@ const { apiClient } = useShopwareContext();
 const loading = ref(true);
 const { user, refreshUser, updatePersonalInfo, updateEmail, logout } =
   useUser();
-const toast = useToast();
 const open = ref(false);
-
-const schema = z.object({
-  email: z.string().email("Keine gültige Emailadresse"),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-});
-type Schema = z.output<typeof schema>;
 
 function initializeFormState() {
   return reactive({
@@ -52,60 +43,6 @@ async function handlePersonalInfoUpdate(firstName: string, lastName: string) {
   });
 }
 
-function showSuccessMessage(message: string) {
-  toast.add({
-    title: message,
-    color: "success",
-  });
-}
-
-function showErrorMessage(title: string, description: string) {
-  toast.add({
-    title,
-    description,
-    icon: "i-lucide-x",
-    color: "error" as const,
-  });
-}
-
-async function onSubmit(event: FormSubmitEvent<Schema>) {
-  try {
-    loading.value = true;
-    const eventData = event.data;
-
-    await handleEmailUpdate(eventData.email);
-    await handlePersonalInfoUpdate(eventData.firstName, eventData.lastName);
-    await refreshUser();
-
-    showSuccessMessage("Erfolgreich gespeichert");
-  } catch (error) {
-    console.error("Profile update error:", error);
-    showErrorMessage("Fehler!", "Bitte versuchen Sie es später erneut.");
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function deleteCustomerAccount() {
-  await apiClient.invoke("deleteCustomer delete /account/customer");
-  toast.add({
-    title: "Tschüss!",
-    icon: "i-lucide-check",
-    color: "success" as const,
-  });
-  await logout();
-  navigateTo("/");
-}
-
-async function onDeleteProfile() {
-  try {
-    await deleteCustomerAccount();
-  } catch (error) {
-    console.error("Customer delete error:", error);
-    showErrorMessage("Fehler!", "Bitte versuchen Sie es später erneut.");
-  }
-}
-
 onMounted(async () => {
   await refreshUser();
   Object.assign(state, {
@@ -116,13 +53,13 @@ onMounted(async () => {
   loading.value = false;
 });
 
-// Presets (#445): validation, result and errors in the page, no toasts.
-const { hasPreset } = useThemePreset();
-const presetSchema = z.object({
+// Validation, result and errors in the page (#445).
+const schema = z.object({
   firstName: z.string().min(1, "Bitte geben Sie Ihren Vornamen an."),
   lastName: z.string().min(1, "Bitte geben Sie Ihren Nachnamen an."),
   email: z.string().email("Bitte geben Sie eine gültige E-Mail-Adresse ein."),
 });
+type Schema = z.output<typeof schema>;
 const errors = ref<Partial<Record<keyof Schema, string>>>({});
 const saveResult = ref<"saved" | "failed" | null>(null);
 const saving = ref(false);
@@ -131,9 +68,9 @@ const deleteFailed = ref(false);
 const resultBox = ref<HTMLElement | null>(null);
 const form = ref<HTMLFormElement | null>(null);
 
-async function onPresetSubmit() {
+async function onSubmit() {
   saveResult.value = null;
-  const parsed = presetSchema.safeParse(state);
+  const parsed = schema.safeParse(state);
   if (!parsed.success) {
     const next: typeof errors.value = {};
     for (const issue of parsed.error.issues) {
@@ -162,7 +99,7 @@ async function onPresetSubmit() {
   resultBox.value?.focus();
 }
 
-async function onPresetDelete() {
+async function onDelete() {
   deleting.value = true;
   deleteFailed.value = false;
   try {
@@ -180,8 +117,8 @@ async function onPresetDelete() {
 </script>
 
 <template>
-  <div v-if="hasPreset" class="font-body text-sb-ink">
-    <UserAccountHeaderPreset title="Profil" />
+  <div class="font-body text-sb-ink">
+    <UserAccountHeader title="Profil" />
     <p v-if="loading" role="status" class="text-sb-ink-muted">
       Profil wird geladen …
     </p>
@@ -190,7 +127,7 @@ async function onPresetDelete() {
         ref="form"
         novalidate
         class="flex max-w-xl flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6"
-        @submit.prevent="onPresetSubmit"
+        @submit.prevent="onSubmit"
       >
         <div
           v-if="saveResult"
@@ -281,7 +218,7 @@ async function onPresetDelete() {
         description="Das lässt sich nicht rückgängig machen. Sie werden danach abgemeldet."
         confirm-label="Endgültig löschen"
         :loading="deleting"
-        @confirm="onPresetDelete"
+        @confirm="onDelete"
       >
         <p v-if="deleteFailed" role="alert" class="text-sm font-semibold">
           Das Konto konnte nicht gelöscht werden. Bitte versuchen Sie es später
@@ -290,56 +227,4 @@ async function onPresetDelete() {
       </SbConfirmDialog>
     </template>
   </div>
-  <UContainer v-else>
-    <UPageHeader
-      headline="KONTO"
-      title="Mein Profil"
-      description="Ändere hier deine prerönlichen Daten."
-    />
-    <UPageBody v-if="!loading">
-      <UForm
-        :schema="schema"
-        :state="state"
-        class="space-y-4"
-        @submit="onSubmit"
-        @error="(error) => console.log('Form validation error:', error)"
-      >
-        <UFormField label="Vorname" name="firstName">
-          <UInput v-model="state.firstName" type="text" class="w-full" />
-        </UFormField>
-        <UFormField label="Nachname" name="lastName">
-          <UInput v-model="state.lastName" type="text" class="w-full" />
-        </UFormField>
-        <UFormField label="Emailadresse" name="email">
-          <UInput v-model="state.email" type="email" class="w-full" />
-        </UFormField>
-        <div class="flex flex-row justify-between">
-          <UButton label="Speichern" type="submit" />
-          <UButton label="Konto löschen" color="error" @click="open = !open" />
-        </div>
-      </UForm>
-      <UModal
-        v-model:open="open"
-        title="Konto löschen"
-        description="Ihre Daten werden unwiederruflich gelöscht."
-        :ui="{ footer: 'justify-end' }"
-      >
-        <template #body>
-          <p>
-            Löscht unwiederuflich ihr Kundenkonto zusammen mit Ihren Adressen,
-            Merklisten und verknüpften Daten.
-          </p>
-        </template>
-        <template #footer="{ close }">
-          <UButton
-            label="Abbrechen"
-            color="neutral"
-            variant="outline"
-            @click="close"
-          />
-          <UButton label="Löschen" color="error" @click="onDeleteProfile" />
-        </template>
-      </UModal>
-    </UPageBody>
-  </UContainer>
 </template>

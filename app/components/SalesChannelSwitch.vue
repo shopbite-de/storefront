@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { SelectMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
 
-type StoreSelectItem = SelectMenuItem & { value: string };
+type StoreSelectItem = { label: string; value: string };
 
 const { apiClient } = useShopwareContext();
 
@@ -12,7 +11,7 @@ const isMultiChannel = useRuntimeConfig().public.shopBite.feature.multiChannel;
 
 const storeUrl = computed(() => config.public.storeUrl);
 
-const { data: salesChannels, pending: status } = useAsyncData(
+const { data: salesChannels } = useAsyncData(
   "multi-channel-group",
   async () => {
     const response = await apiClient.invoke(
@@ -50,38 +49,25 @@ function transform(
 
   const salesChannels = group.salesChannels ?? [];
   return salesChannels.map((channel) => ({
-    label: channel.name,
+    label: channel.name ?? "",
     value: getBestDomainUrl(channel.domains, storeUrlValue),
   }));
 }
 
-const selectedStore = ref<StoreSelectItem>();
-
-watchEffect(() => {
-  const scValue = salesChannels?.value as StoreSelectItem[] | undefined;
-  if (Array.isArray(scValue) && storeUrl.value && !selectedStore.value) {
-    const matchingChannel = scValue.find(
-      (channel) => channel?.value === storeUrl.value,
-    );
-    if (matchingChannel) {
-      selectedStore.value = matchingChannel;
-    }
-  }
-});
-
-watch(selectedStore, (newStore, oldStore) => {
-  if (newStore && oldStore && newStore.value !== oldStore.value) {
-    window.location.href = newStore.value;
-  }
+// The shop of this storefront; picking another one opens its domain.
+const selectedUrl = computed({
+  get: () => storeUrl.value,
+  set: (url: string) => {
+    if (url && url !== storeUrl.value) window.location.href = url;
+  },
 });
 </script>
 
 <template>
-  <USelectMenu
-    v-if="isMultiChannel"
-    v-model="selectedStore"
-    :items="salesChannels"
-    :loading="status"
-    icon="i-lucide-store"
+  <SbSelect
+    v-if="isMultiChannel && salesChannels?.length"
+    v-model="selectedUrl"
+    label="Filiale"
+    :options="salesChannels"
   />
 </template>

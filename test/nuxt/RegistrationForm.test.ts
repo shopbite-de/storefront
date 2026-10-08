@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ref, nextTick } from "vue";
+import { nextTick } from "vue";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
-import { DOMWrapper, type VueWrapper } from "@vue/test-utils";
+import { flushPromises, type VueWrapper } from "@vue/test-utils";
 import RegistrationForm from "~/components/User/RegistrationForm.vue";
 import { ApiClientError } from "@shopware/api-client";
 
@@ -15,195 +15,114 @@ vi.mock("@shopware/api-client", () => ({
   },
 }));
 
-const { mockRegister, mockIsLoggedIn, mockGetSuggestions } = vi.hoisted(() => {
-  return {
-    mockRegister: vi.fn(),
-    mockIsLoggedIn: { value: false },
-    mockGetSuggestions: vi.fn().mockResolvedValue([]),
-  };
-});
+const { mockRegister, mockGetSuggestions } = vi.hoisted(() => ({
+  mockRegister: vi.fn(),
+  mockGetSuggestions: vi.fn().mockResolvedValue([]),
+}));
 
 mockNuxtImport("useUser", () => () => ({
   register: mockRegister,
-  isLoggedIn: ref(mockIsLoggedIn.value),
 }));
 
 mockNuxtImport("useAddressAutocomplete", () => () => ({
   getSuggestions: mockGetSuggestions,
 }));
 
-const mockToastAdd = vi.fn();
-mockNuxtImport("useToast", () => () => ({
-  add: mockToastAdd,
-}));
+type FormVm = {
+  state: {
+    guest: boolean;
+    accountType: string;
+    isShippingAddressDifferent: boolean;
+  };
+};
+const vmOf = (wrapper: VueWrapper) => wrapper.vm as unknown as FormVm;
 
-// Mock useRuntimeConfig
-mockNuxtImport("useRuntimeConfig", () => () => ({
-  app: { baseURL: "/" },
-  public: {
-    shopware: {
-      devStorefrontUrl: "http://localhost:3000",
-    },
-    site: {
-      countryId: "default-country-id",
-    },
-    shopBite: {
-      addressAutocomplete: { boundingBox: "" },
-    },
-  },
-}));
-
-// UCheckbox renders the clickable control as `button[role="checkbox"]` next to
-// an aria-hidden native input that only mirrors the state, so the button is
-// what has to be clicked to toggle the v-model.
-async function toggleCheckbox(wrapper: VueWrapper, name: string) {
-  const hiddenInput = wrapper.find(`input[name="${name}"]`);
-  const button = hiddenInput.element.parentElement!.querySelector(
-    'button[role="checkbox"]',
-  )!;
-  await new DOMWrapper(button).trigger("click");
-  await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-async function acceptDataProtection(wrapper: VueWrapper) {
-  await toggleCheckbox(wrapper, "acceptedDataProtection");
+// SbCheckbox renders a Reka `button[role="checkbox"]` that its <label> points
+// to; the button is what toggles the v-model.
+async function toggleCheckbox(wrapper: VueWrapper, label: string) {
+  const labelElement = wrapper
+    .findAll("label")
+    .find((element) => element.text().includes(label));
+  await wrapper
+    .get(`[id="${labelElement!.attributes("for")}"]`)
+    .trigger("click");
+  await nextTick();
 }
 
 // Fills everything the schema requires except the password fields.
-async function fillRequiredFields(wrapper: VueWrapper) {
-  await wrapper.find('input[name="firstName"]').setValue("John");
-  await wrapper.find('input[name="lastName"]').setValue("Doe");
-  await wrapper.find('input[name="email"]').setValue("john@example.com");
-  const state = (
-    wrapper.vm as unknown as {
-      state: {
-        billingAddress: { street: string; zipcode: string; city: string };
-      };
-    }
-  ).state;
-  state.billingAddress.street = "Musterstr 1";
-  state.billingAddress.zipcode = "12345";
-  state.billingAddress.city = "Musterstadt";
-  await wrapper
-    .find('input[name="billingAddress.phoneNumber"]')
-    .setValue("12345678");
-  await acceptDataProtection(wrapper);
+async function fillRequiredFields(
+  wrapper: VueWrapper,
+  email = "john@example.com",
+) {
+  await wrapper.get("#firstName").setValue("John");
+  await wrapper.get("#lastName").setValue("Doe");
+  await wrapper.get("#email").setValue(email);
+  await wrapper.get("#billingAddress-street").setValue("Musterstr 1");
+  await wrapper.get("#billingAddress-zipcode").setValue("12345");
+  await wrapper.get("#billingAddress-city").setValue("Musterstadt");
+  await wrapper.get("#billingAddress-phoneNumber").setValue("12345678");
+  await wrapper.get("#acceptedDataProtection").trigger("click");
+}
+
+async function submit(wrapper: VueWrapper) {
+  await wrapper.find("form").trigger("submit");
+  await flushPromises();
 }
 
 describe("RegistrationForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsLoggedIn.value = false;
+    vi.spyOn(console, "error").mockImplementation(() => {});
     mockGetSuggestions.mockResolvedValue([]);
+    useRuntimeConfig().public.site.countryId = "default-country-id";
   });
 
   it("renders correctly", async () => {
     const wrapper = await mountSuspended(RegistrationForm);
-    expect(wrapper.exists()).toBeTruthy();
     expect(wrapper.find('input[name="email"]').exists()).toBe(true);
   });
 
   it("shows company field only for business account", async () => {
     const wrapper = await mountSuspended(RegistrationForm);
 
-    // Initially private, so company field should NOT be in billing address
-    expect(wrapper.find('input[name="billingAddress.company"]').exists()).toBe(
-      false,
-    );
+    expect(wrapper.find("#billingAddress-company").exists()).toBe(false);
 
-    // Switch to business (without using ts-ignore)
-    (
-      wrapper.vm as unknown as { state: { accountType: string } }
-    ).state.accountType = "business";
+    vmOf(wrapper).state.accountType = "business";
     await nextTick();
-    await new Promise((resolve) => setTimeout(resolve, 50));
 
-    // Try to find by name again
-    expect(wrapper.find('input[name="billingAddress.company"]').exists()).toBe(
-      true,
-    );
+    expect(wrapper.find("#billingAddress-company").exists()).toBe(true);
   });
 
   it("shows shipping address fields when checkbox is checked", async () => {
     const wrapper = await mountSuspended(RegistrationForm);
+    expect(wrapper.find("#shippingAddress-street").exists()).toBe(false);
 
-    // Initial count of street inputs
-    const initialStreets = wrapper.findAll(
-      'input[name="billingAddress.street"]',
-    ).length;
+    await toggleCheckbox(wrapper, "Lieferadresse weicht");
 
-    (
-      wrapper.vm as unknown as {
-        state: { isShippingAddressDifferent: boolean };
-      }
-    ).state.isShippingAddressDifferent = true;
-    await nextTick();
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    // Should have more street inputs now (billing street + shipping street)
-    expect(wrapper.findAll('input[name$=".street"]').length).toBeGreaterThan(
-      initialStreets,
-    );
+    expect(vmOf(wrapper).state.isShippingAddressDifferent).toBe(true);
+    expect(wrapper.find("#shippingAddress-street").exists()).toBe(true);
   });
 
   it("submits the form with correct data", async () => {
+    mockRegister.mockResolvedValueOnce({ id: "customer-id", active: true });
     const wrapper = await mountSuspended(RegistrationForm);
 
-    // Register as guest to avoid password requirements
-    (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest = true;
-    await nextTick();
-
-    // Fill required fields
-    await wrapper.find('input[name="firstName"]').setValue("John");
-    await wrapper.find('input[name="lastName"]').setValue("Doe");
-    await wrapper.find('input[name="email"]').setValue("john@example.com");
-
-    // Billing address fields (AddressFields component): set values directly on state
-    (
-      wrapper.vm as unknown as {
-        state: {
-          billingAddress: { street: string; zipcode: string; city: string };
-        };
-      }
-    ).state.billingAddress.street = "Musterstr 1";
-    (
-      wrapper.vm as unknown as {
-        state: {
-          billingAddress: { street: string; zipcode: string; city: string };
-        };
-      }
-    ).state.billingAddress.zipcode = "12345";
-    (
-      wrapper.vm as unknown as {
-        state: {
-          billingAddress: { street: string; zipcode: string; city: string };
-        };
-      }
-    ).state.billingAddress.city = "Musterstadt";
-
-    await wrapper
-      .find('input[name="billingAddress.phoneNumber"]')
-      .setValue("12345678");
-
-    // Accept data protection
-    await acceptDataProtection(wrapper);
-
-    // Submit
-    await wrapper.find("form").trigger("submit");
-
-    // Wait for async validation and submission
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await fillRequiredFields(wrapper);
+    await submit(wrapper);
 
     expect(mockRegister).toHaveBeenCalled();
     const calledData = mockRegister.mock.calls[0]![0];
+    expect(calledData.guest).toBe(true);
     expect(calledData.email).toBe("john@example.com");
     expect(calledData.billingAddress.street).toBe("Musterstr 1");
-    // Check if firstName/lastName were copied to billing address as per logic in onSubmit
+    // The names are copied to the billing address
     expect(calledData.billingAddress.firstName).toBe("John");
     expect(calledData.billingAddress.lastName).toBe("Doe");
+    expect(calledData.password).toBeUndefined();
+    expect(wrapper.emitted("registration-success")).toHaveLength(1);
   });
 
-  it("shows detailed error toast on ApiClientError during registration", async () => {
+  it("shows the API error details in the form on ApiClientError", async () => {
     const apiClientError = new ApiClientError({
       errors: [
         {
@@ -214,39 +133,15 @@ describe("RegistrationForm", () => {
     mockRegister.mockRejectedValueOnce(apiClientError);
     const wrapper = await mountSuspended(RegistrationForm);
 
-    // Register as guest to avoid password requirements
-    (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest = true;
-    await nextTick();
+    await fillRequiredFields(wrapper, "lirim@veliu.net");
+    await submit(wrapper);
 
-    // Fill minimum required fields to trigger onSubmit
-    await wrapper.find('input[name="firstName"]').setValue("John");
-    await wrapper.find('input[name="lastName"]').setValue("Doe");
-    await wrapper.find('input[name="email"]').setValue("lirim@veliu.net");
-    (
-      wrapper.vm as unknown as {
-        state: { billingAddress: { street: string; city: string } };
-      }
-    ).state.billingAddress.street = "Musterstr 1";
-    (
-      wrapper.vm as unknown as {
-        state: { billingAddress: { street: string; city: string } };
-      }
-    ).state.billingAddress.city = "Musterstadt";
-    await wrapper
-      .find('input[name="billingAddress.phoneNumber"]')
-      .setValue("12345678");
-    await acceptDataProtection(wrapper);
-
-    await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Registrierung fehlgeschlagen",
-        description: 'The email address "lirim@veliu.net" is already in use',
-        color: "error",
-      }),
+    const alert = wrapper.get('[role="alert"]');
+    expect(alert.text()).toContain("Das hat nicht geklappt");
+    expect(alert.text()).toContain(
+      'The email address "lirim@veliu.net" is already in use',
     );
+    expect(wrapper.emitted("registration-success")).toBeUndefined();
   });
 
   it("handles ApiClientError with missing errors gracefully", async () => {
@@ -256,38 +151,11 @@ describe("RegistrationForm", () => {
     mockRegister.mockRejectedValueOnce(apiClientError);
     const wrapper = await mountSuspended(RegistrationForm);
 
-    // Register as guest to avoid password requirements
-    (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest = true;
-    await nextTick();
+    await fillRequiredFields(wrapper, "lirim@veliu.net");
+    await submit(wrapper);
 
-    // Fill minimum required fields to trigger onSubmit
-    await wrapper.find('input[name="firstName"]').setValue("John");
-    await wrapper.find('input[name="lastName"]').setValue("Doe");
-    await wrapper.find('input[name="email"]').setValue("lirim@veliu.net");
-    (
-      wrapper.vm as unknown as {
-        state: { billingAddress: { street: string; city: string } };
-      }
-    ).state.billingAddress.street = "Musterstr 1";
-    (
-      wrapper.vm as unknown as {
-        state: { billingAddress: { street: string; city: string } };
-      }
-    ).state.billingAddress.city = "Musterstadt";
-    await wrapper
-      .find('input[name="billingAddress.phoneNumber"]')
-      .setValue("12345678");
-    await acceptDataProtection(wrapper);
-
-    await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Registrierung fehlgeschlagen",
-        description: "Bitte versuchen Sie es erneut.",
-        color: "error",
-      }),
+    expect(wrapper.get('[role="alert"]').text()).toContain(
+      "Bitte versuchen Sie es erneut.",
     );
   });
 
@@ -300,43 +168,13 @@ describe("RegistrationForm", () => {
         label: "Corrected Street 123, 54321 Corrected City",
       },
     ]);
+    mockRegister.mockResolvedValueOnce({ id: "customer-id", active: true });
 
     const wrapper = await mountSuspended(RegistrationForm);
 
-    (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest = true;
-    await nextTick();
-
-    await wrapper.find('input[name="firstName"]').setValue("John");
-    await wrapper.find('input[name="lastName"]').setValue("Doe");
-    await wrapper.find('input[name="email"]').setValue("john@example.com");
-    (
-      wrapper.vm as unknown as {
-        state: {
-          billingAddress: { street: string; zipcode: string; city: string };
-        };
-      }
-    ).state.billingAddress.street = "Musterstr 1";
-    (
-      wrapper.vm as unknown as {
-        state: {
-          billingAddress: { street: string; zipcode: string; city: string };
-        };
-      }
-    ).state.billingAddress.zipcode = "12345";
-    (
-      wrapper.vm as unknown as {
-        state: {
-          billingAddress: { street: string; zipcode: string; city: string };
-        };
-      }
-    ).state.billingAddress.city = "Musterstadt";
-    await wrapper
-      .find('input[name="billingAddress.phoneNumber"]')
-      .setValue("12345678");
-    await acceptDataProtection(wrapper);
-
-    await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await fillRequiredFields(wrapper);
+    await submit(wrapper);
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Registration must not be blocked by the correction suggestion
     expect(mockRegister).toHaveBeenCalled();
@@ -351,17 +189,12 @@ describe("RegistrationForm", () => {
     const wrapper = await mountSuspended(RegistrationForm);
 
     expect(wrapper.text()).toContain("Kundenkonto anlegen");
-    expect(
-      (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest,
-    ).toBe(true);
+    expect(vmOf(wrapper).state.guest).toBe(true);
     expect(wrapper.find('input[name="password"]').exists()).toBe(false);
 
-    await toggleCheckbox(wrapper, "guest");
-    await nextTick();
+    await toggleCheckbox(wrapper, "Kundenkonto anlegen");
 
-    expect(
-      (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest,
-    ).toBe(false);
+    expect(vmOf(wrapper).state.guest).toBe(false);
     expect(wrapper.find('input[name="password"]').exists()).toBe(true);
     expect(wrapper.find('input[name="passwordConfirm"]').exists()).toBe(true);
   });
@@ -372,9 +205,7 @@ describe("RegistrationForm", () => {
     });
 
     expect(wrapper.text()).not.toContain("Kundenkonto anlegen");
-    expect(
-      (wrapper.vm as unknown as { state: { guest: boolean } }).state.guest,
-    ).toBe(false);
+    expect(vmOf(wrapper).state.guest).toBe(false);
     expect(wrapper.find('input[name="password"]').exists()).toBe(true);
     expect(wrapper.find('input[name="passwordConfirm"]').exists()).toBe(true);
   });
@@ -385,13 +216,13 @@ describe("RegistrationForm", () => {
     });
 
     await fillRequiredFields(wrapper);
-    await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await submit(wrapper);
 
     expect(mockRegister).not.toHaveBeenCalled();
     expect(wrapper.text()).toContain(
       "Das Passwort muss mindestens 8 Zeichen lang sein.",
     );
+    expect(wrapper.get("#password").attributes("aria-invalid")).toBe("true");
   });
 
   it("registers a real customer account when allowGuest is false", async () => {
@@ -405,22 +236,17 @@ describe("RegistrationForm", () => {
     });
 
     await fillRequiredFields(wrapper);
-    await wrapper.find('input[name="password"]').setValue("supersecret");
-    await wrapper.find('input[name="passwordConfirm"]').setValue("supersecret");
-
-    await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await wrapper.get("#password").setValue("supersecret");
+    await wrapper.get("#passwordConfirm").setValue("supersecret");
+    await submit(wrapper);
 
     expect(mockRegister).toHaveBeenCalled();
     const calledData = mockRegister.mock.calls[0]![0];
     expect(calledData.guest).toBe(false);
     expect(calledData.password).toBe("supersecret");
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Konto erfolgreich erstellt",
-        color: "success",
-      }),
-    );
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
+    expect(wrapper.emitted("registration-success")).toHaveLength(1);
   });
 
   it("asks for the e-mail confirmation on double opt-in registrations", async () => {
@@ -435,18 +261,11 @@ describe("RegistrationForm", () => {
     });
 
     await fillRequiredFields(wrapper);
-    await wrapper.find('input[name="password"]').setValue("supersecret");
-    await wrapper.find('input[name="passwordConfirm"]').setValue("supersecret");
+    await wrapper.get("#password").setValue("supersecret");
+    await wrapper.get("#passwordConfirm").setValue("supersecret");
+    await submit(wrapper);
 
-    await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Fast geschafft!",
-        color: "info",
-      }),
-    );
+    expect(wrapper.get('[role="status"]').text()).toContain("Fast geschafft");
     const emitted = wrapper.emitted("registration-success");
     expect(emitted).toBeTruthy();
     expect(emitted![0]![1]).toEqual(customer);

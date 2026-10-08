@@ -1,22 +1,14 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 import Breadcrumb from "~/components/Category/Breadcrumb.vue";
-import ProductCard from "~/components/Product/Card.vue";
 import MenuBonCard from "~/components/Menu/BonCard.vue";
 
 // A menu category lists up to 100 products; hydrating every card up front
 // costs ~1 s of main-thread time on phones (#314).
-const ProductCardWhenVisible = hydrateWhenVisible(ProductCard);
 const MenuBonCardWhenVisible = hydrateWhenVisible(MenuBonCard);
 
-// Shops with a style preset get the menu of #441 (word-list index, section
-// title, bon cards with quick add); the others keep the Nuxt UI cards.
-const { hasPreset, menuView } = useThemePreset();
-// The preset header is 80 px from 640 px (Nuxt UI assumes 64 px), and the
-// asides line up with the header and footer edges without inner padding.
-const presetAsideUi = {
-  root: "lg:top-20 lg:max-h-[calc(100vh-5rem)] lg:ps-0 lg:ms-0 lg:pe-0",
-};
+// Menu of #441: word-list index, section title, bon cards with quick add.
+const { menuView } = useThemePreset();
 
 const props = defineProps<{
   id: string;
@@ -127,8 +119,8 @@ const moreThanOneFilterAndOption = computed<boolean>(
   () => propertyFilters.value.length > 0,
 );
 
-// The mobile filter drawer (vaul) is created on first use; mounting it with
-// the page forced a layout of the whole listing (#314).
+// The filter sheet is created on first use; mounting it with the page
+// forced a layout of the whole listing (#314).
 const filterDrawerMounted = ref(false);
 const filterDrawerOpen = ref(false);
 
@@ -142,197 +134,106 @@ async function openFilterDrawer() {
 </script>
 
 <template>
-  <UContainer>
-    <!-- Presets: index, menu and cart panel need fixed column widths; the
-         ten-column grid left the cart panel ~190 px wide (#443). -->
-    <UPage
-      :ui="
-        hasPreset
-          ? {
-              root: 'lg:grid-cols-[200px_minmax(0,1fr)_340px] lg:gap-12',
-              left: 'lg:col-span-1',
-              center: 'lg:col-span-1',
-              right: 'lg:col-span-1',
-            }
-          : undefined
-      "
+  <div
+    class="mx-auto grid w-full max-w-(--sb-container) gap-x-12 px-4 pt-4 pb-16 font-body text-sb-ink sm:px-6 lg:grid-cols-[200px_minmax(0,1fr)_340px] lg:px-8 lg:pt-8"
+  >
+    <aside
+      class="hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto"
     >
-      <template #left>
-        <UPageAside :ui="hasPreset ? presetAsideUi : undefined">
-          <MenuCategoryIndex v-if="hasPreset" />
-          <NavigationDesktopLeft v-else />
-        </UPageAside>
-      </template>
+      <MenuCategoryIndex />
+    </aside>
 
-      <UPageBody>
-        <div>
-          <Breadcrumb :category-id="category?.id" />
-          <template v-if="category">
-            <MenuSectionHeader
-              v-if="hasPreset"
-              :category="category"
-              :count="elements.length"
-            />
-            <CategoryHeader v-else :category="category" />
-          </template>
-          <MenuOrderMode v-if="hasPreset" class="mb-4 lg:hidden" />
-          <CategorySearchInput class="mb-4 grow flex" />
-          <div class="flex flex-row justify-between gap-4 mb-4">
-            <UBadge
-              v-if="!hasPreset"
-              variant="subtle"
-              :label="`${elements.length} Produkte`"
-            />
-            <SbSelect
-              v-if="hasPreset"
-              v-model="currentSorting"
-              label="Sortierung"
-              placeholder="Bitte wählen"
-              :options="presetSortingOptions"
-              class="max-w-72"
-            />
-            <USelect
-              v-else
-              v-model="currentSorting"
-              icon="i-lucide-arrow-down-wide-narrow"
-              value-key="key"
-              :items="sortingOrders"
-              placeholder="Sortierung"
-              aria-label="Sortierung"
-            />
-            <template v-if="moreThanOneFilterAndOption">
-              <!-- With a preset the right column holds the cart, so the
-                   filters live in the drawer on every screen size. -->
-              <UButton
-                :class="{ 'lg:hidden': !hasPreset }"
-                icon="i-lucide-sliders-horizontal"
-                :color="selectedPropertyFilters.length ? 'primary' : 'neutral'"
-                :variant="selectedPropertyFilters.length ? 'solid' : 'subtle'"
-                aria-haspopup="dialog"
-                @click="openFilterDrawer"
-              >
-                Filter
-                <UBadge
-                  v-if="selectedPropertyFilters.length"
-                  :label="String(selectedPropertyFilters.length)"
-                  size="sm"
-                  color="neutral"
-                  variant="solid"
-                  class="ml-1"
-                />
-              </UButton>
-              <LazyUDrawer
-                v-if="filterDrawerMounted"
-                v-model:open="filterDrawerOpen"
-                title="Filter"
-                direction="right"
-              >
-                <template #body>
-                  <div class="flex flex-col gap-4">
-                    <CategoryFilterGroup
-                      v-for="filter in propertyFilters"
-                      :key="filter.id"
-                      v-model="selectedPropertyFilters"
-                      :filter="filter"
-                    />
-                    <UButton
-                      label="Zurücksetzen"
-                      variant="outline"
-                      block
-                      @click="resetFilters"
-                    />
-                  </div>
-                </template>
-              </LazyUDrawer>
-            </template>
-          </div>
-
-          <div
-            v-if="showSkeleton"
-            class="grid grid-cols-1 gap-4"
-            aria-busy="true"
-            aria-label="Produkte werden geladen"
+    <div class="min-w-0">
+      <Breadcrumb :category-id="category?.id" />
+      <MenuSectionHeader
+        v-if="category"
+        :category="category"
+        :count="elements.length"
+      />
+      <MenuOrderMode class="mb-4 lg:hidden" />
+      <CategorySearchInput class="mb-4" />
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <SbSelect
+          v-model="currentSorting"
+          label="Sortierung"
+          placeholder="Bitte wählen"
+          :options="presetSortingOptions"
+          class="max-w-72"
+        />
+        <template v-if="moreThanOneFilterAndOption">
+          <!-- The right column holds the cart, so the filters live in a
+               sheet on every screen size. -->
+          <SbButton
+            :variant="selectedPropertyFilters.length ? 'primary' : 'secondary'"
+            aria-haspopup="dialog"
+            @click="openFilterDrawer"
           >
-            <LazyProductCardSkeleton v-for="i in 6" :key="i" />
-          </div>
-
-          <div
-            v-else-if="hasPreset"
-            class="grid grid-cols-1 gap-3 transition-opacity duration-200"
-            :class="{ 'opacity-40 pointer-events-none': loading }"
+            Filter
+            <span v-if="selectedPropertyFilters.length" class="tabular-nums"
+              >({{ selectedPropertyFilters.length }}
+              <span class="sr-only">aktiv</span>)</span
+            >
+          </SbButton>
+          <SbSheet
+            v-if="filterDrawerMounted"
+            v-model:open="filterDrawerOpen"
+            title="Filter"
           >
-            <MenuBonCardWhenVisible
-              v-for="product in elements"
-              :key="product.id"
-              :product="product"
-              :photo="menuView === 'bonPhoto'"
-              :href="productDeepLink(product, category?.seoUrl)"
-              @select="quickView.show"
-            />
-          </div>
-          <div
-            v-else
-            class="grid grid-cols-1 gap-4 transition-opacity duration-200"
-            :class="{ 'opacity-40 pointer-events-none': loading }"
-          >
-            <ProductCardWhenVisible
-              v-for="product in elements"
-              :key="product.id"
-              :product="product"
-              :with-favorite-button="true"
-              :selectable="true"
-              :href="productDeepLink(product, category?.seoUrl)"
-              @select="quickView.show"
-            />
-          </div>
-          <LazyProductQuickView
-            v-if="quickView.mounted.value"
-            v-model:open="quickView.open.value"
-            :product="quickView.product.value"
-          />
-        </div>
-      </UPageBody>
-
-      <template #right>
-        <UPageAside v-if="hasPreset" :ui="presetAsideUi">
-          <MenuCartPanel />
-        </UPageAside>
-        <UPageAside v-else>
-          <ClientOnly v-if="moreThanOneFilterAndOption">
             <div class="flex flex-col gap-4">
-              <h2 class="text-3xl md:text-4xl mb-3 pb-2">Filter</h2>
               <CategoryFilterGroup
                 v-for="filter in propertyFilters"
                 :key="filter.id"
                 v-model="selectedPropertyFilters"
                 :filter="filter"
               />
-              <UButton
-                label="Zurücksetzen"
-                variant="outline"
-                block
-                @click="resetFilters"
-              />
             </div>
-            <template #fallback>
-              <div class="flex flex-col gap-4">
-                <USkeleton class="h-9 w-20" />
-                <div class="flex flex-col gap-2">
-                  <USkeleton class="h-8 w-48" />
-                  <USkeleton class="h-4 w-36" />
-                  <USkeleton class="h-4 w-32" />
-                  <USkeleton class="h-4 w-40" />
-                </div>
-                <div class="flex flex-col gap-2">
-                  <USkeleton class="h-8 w-48" />
-                  <USkeleton class="h-4 w-36" />
-                  <USkeleton class="h-4 w-32" />
-                </div>
+            <template #footer>
+              <div class="flex gap-3">
+                <SbButton variant="secondary" block @click="resetFilters"
+                  >Zurücksetzen</SbButton
+                >
+                <SbButton block @click="filterDrawerOpen = false"
+                  >{{ elements.length }} Gerichte zeigen</SbButton
+                >
               </div>
             </template>
-          </ClientOnly>
-        </UPageAside>
-      </template>
-    </UPage>
-  </UContainer>
+          </SbSheet>
+        </template>
+      </div>
+
+      <div
+        v-if="showSkeleton"
+        class="grid grid-cols-1 gap-3"
+        aria-busy="true"
+        aria-label="Gerichte werden geladen"
+      >
+        <LazyProductCardSkeleton v-for="i in 6" :key="i" />
+      </div>
+      <div
+        v-else
+        class="grid grid-cols-1 gap-3 transition-opacity duration-200"
+        :class="{ 'pointer-events-none opacity-40': loading }"
+      >
+        <MenuBonCardWhenVisible
+          v-for="product in elements"
+          :key="product.id"
+          :product="product"
+          :photo="menuView === 'bonPhoto'"
+          :href="productDeepLink(product, category?.seoUrl)"
+          @select="quickView.show"
+        />
+      </div>
+      <LazyProductQuickView
+        v-if="quickView.mounted.value"
+        v-model:open="quickView.open.value"
+        :product="quickView.product.value"
+      />
+    </div>
+
+    <aside
+      class="hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto"
+    >
+      <MenuCartPanel />
+    </aside>
+  </div>
 </template>

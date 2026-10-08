@@ -1,4 +1,4 @@
-import type { NavigationMenuItem } from "@nuxt/ui";
+import type { NavigationMenuItem } from "./useNavigation";
 import { buildRestaurantSchema, type MenuSectionInfo } from "../utils/schema";
 import { splitList, toAbsoluteUrl } from "../utils/seo";
 

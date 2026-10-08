@@ -10,13 +10,11 @@ useSeoMeta({
   title: "Kontakt",
 });
 
-const { hasPreset } = useThemePreset();
 const { site } = config.public;
 </script>
 
 <template>
   <div
-    v-if="hasPreset"
     class="mx-auto grid w-full max-w-(--sb-container) gap-8 px-4 pt-8 pb-16 font-body text-sb-ink sm:px-6 sm:pt-12 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-16 lg:px-8"
   >
     <header class="flex flex-col gap-4">
@@ -42,13 +40,4 @@ const { site } = config.public;
       <ContactForm />
     </div>
   </div>
-  <UPageSection
-    v-else
-    title="Sie haben eine Frage oder Anregung? Wir freuen uns auf Ihre Nachricht."
-    description="Bitte beachten Sie, dass wir Tischreservierung oder Tischstornierung nur telefonisch entgegennehmen können."
-    icon="i-lucide-mail"
-    orientation="horizontal"
-  >
-    <ContactForm />
-  </UPageSection>
 </template>

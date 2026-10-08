@@ -33,11 +33,10 @@ usePageSeo({
 useRestaurantSchema();
 
 // Shops with a style preset get the home page of #444.
-const { hasPreset } = useThemePreset();
 </script>
 <template>
-  <div v-if="page && hasPreset">
-    <HomePresetHero
+  <div v-if="page">
+    <HomeHero
       :title="page.hero.title || page.title"
       :description="page.description"
       :headline="page.hero.headline"
@@ -45,13 +44,13 @@ const { hasPreset } = useThemePreset();
       :links="page.hero.links"
       :usps="page.hero.usps"
     />
-    <HomePresetFacts
+    <HomeFacts
       v-if="page.features?.features?.length"
       :features="page.features.features"
     />
-    <HomePresetCategories :title="page.menu?.title" />
-    <HomePresetHighlights :title="page.highlights?.title" />
-    <HomePresetRestaurant
+    <HomeCategories :title="page.menu?.title" />
+    <HomeHighlights :title="page.highlights?.title" />
+    <HomeRestaurant
       v-if="page.gallery"
       :title="page.gallery.title"
       :description="page.gallery.description"
@@ -65,79 +64,6 @@ const { hasPreset } = useThemePreset();
       :description="page.faq.description"
       :headline="page.faq.headline"
       :items="page.faq.items"
-    />
-  </div>
-  <div v-else-if="page" class="relative">
-    <Hero
-      :title="page.hero.title || page.title"
-      :background-video="page.hero.backgroundVideo"
-      :poster="page.hero.poster"
-      :description="page.description"
-      :headline="page.hero.headline"
-      :links="page.hero.links"
-      :usps="page.hero.usps"
-    />
-
-    <HomeMenuCategories
-      :title="page.menu?.title"
-      :description="page.menu?.description"
-      :headline="page.menu?.headline"
-    />
-
-    <HomeHighlights
-      :title="page.highlights?.title"
-      :description="page.highlights?.description"
-      :headline="page.highlights?.headline"
-    />
-
-    <USeparator :ui="{ border: 'border-primary/30' }" />
-
-    <Features
-      :title="page.features.title"
-      :description="page.features.description"
-      :headline="page.features.headline"
-      :features="page.features.features"
-    />
-
-    <UPageSection
-      v-if="page.mittagstisch"
-      :reverse="page.mittagstisch.reverse"
-      :headline="page.mittagstisch.headline"
-      :title="page.mittagstisch.title"
-      :description="page.mittagstisch.description"
-      :orientation="page.mittagstisch.orientation"
-      :features="page.mittagstisch.features"
-      :links="page.mittagstisch.links"
-    >
-      <img
-        :src="page.mittagstisch.image"
-        width="352"
-        height="647"
-        :alt="page.mittagstisch.imageAlt"
-        class="w-full rounded-lg"
-      />
-    </UPageSection>
-
-    <ImageGallery
-      v-if="page.gallery?.images?.length"
-      :title="page.gallery.title"
-      :description="page.gallery.description"
-      :headline="page.gallery.headline"
-      :images="page.gallery.images"
-      :links="page.gallery.links"
-    />
-    <HomeFaq
-      v-if="page.faq?.items?.length"
-      :title="page.faq.title"
-      :description="page.faq.description"
-      :headline="page.faq.headline"
-      :items="page.faq.items"
-    />
-    <Cta
-      :title="page.cta.title"
-      :description="page.cta.description"
-      :background-image="page.cta.backgroundImage"
-      :links="page.cta.links"
     />
   </div>
 </template>

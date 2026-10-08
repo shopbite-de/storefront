@@ -1,55 +1,34 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 
-defineProps<{
+/** One property group of the menu filter (#445), as a checkbox list. */
+const props = defineProps<{
   filter: Schemas["PropertyGroup"];
   modelValue: string[];
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   "update:modelValue": [value: string[]];
 }>();
+
+function toggle(id: string, checked: boolean) {
+  const next = props.modelValue.filter((value) => value !== id);
+  if (checked) next.push(id);
+  emit("update:modelValue", next);
+}
 </script>
 
 <template>
-  <UCollapsible class="flex flex-col gap-2 w-48" :default-open="true">
-    <UButton
-      :label="filter.translated.name"
-      color="neutral"
-      variant="subtle"
-      trailing-icon="i-lucide-chevron-down"
-      block
-      :ui="{
-        trailingIcon:
-          'group-data-[state=open]:rotate-180 transition-transform duration-200',
-      }"
+  <fieldset class="flex flex-col font-body text-sb-ink">
+    <legend class="mb-1 font-bold">
+      {{ filter.translated?.name ?? filter.name }}
+    </legend>
+    <SbCheckbox
+      v-for="option in filter.options ?? []"
+      :key="option.id"
+      :model-value="modelValue.includes(option.id)"
+      :label="option.translated?.name ?? option.name ?? ''"
+      @update:model-value="(checked: boolean) => toggle(option.id, checked)"
     />
-
-    <template #content>
-      <UCheckboxGroup
-        :model-value="modelValue"
-        :items="filter.options"
-        value-key="id"
-        label-key="translated.name"
-        @update:model-value="$emit('update:modelValue', $event)"
-      >
-        <template
-          v-if="
-            (filter.displayType ?? filter.translated.displayType) === 'media'
-          "
-          #label="{ item }"
-        >
-          <div class="flex items-center gap-1.5">
-            <NuxtImg
-              v-if="item.media?.url"
-              :src="item.media.url"
-              :alt="item.translated.name"
-              class="h-4 w-4 object-contain"
-            />
-            <span>{{ item.translated.name }}</span>
-          </div>
-        </template>
-      </UCheckboxGroup>
-    </template>
-  </UCollapsible>
+  </fieldset>
 </template>

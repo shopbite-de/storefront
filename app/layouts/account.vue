@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from "@nuxt/ui";
 import { useUser } from "@shopware/composables";
-const toast = useToast();
-const { hasPreset } = useThemePreset();
 const route = useRoute();
 
-// Account navigation of the presets (#445).
-const presetLinks = [
+// Account navigation (#445).
+const links = [
   { label: "Übersicht", to: "/konto" },
   { label: "Bestellungen", to: "/konto/bestellungen" },
   { label: "Profil", to: "/konto/profil" },
@@ -35,53 +32,17 @@ watch(isLoggedIn, (newValue) => {
 
 const logoutHandler = () => {
   logout();
-  toast.add({
-    title: "Tschüss!",
-    description: "Erfolreich abgemeldet.",
-    color: "success",
-  });
 };
-
-const items = ref<NavigationMenuItem[][]>([
-  [
-    {
-      label: "Übersicht",
-      icon: "i-lucide-grip",
-      to: "/konto",
-    },
-    {
-      label: "Bestellungen",
-      icon: "i-lucide-book-open",
-      to: "/konto/bestellungen",
-    },
-    {
-      label: "Persönliches Profil",
-      icon: "i-lucide-user",
-      to: "/konto/profil",
-    },
-    {
-      label: "Adressen",
-      icon: "i-lucide-house",
-      to: "/konto/adressen",
-    },
-    {
-      label: "Abmelden",
-      icon: "i-lucide-log-out",
-      onSelect: logoutHandler,
-    },
-  ],
-]);
 </script>
 <template>
   <div
-    v-if="hasPreset"
     class="mx-auto w-full max-w-(--sb-container) px-4 pt-8 pb-16 font-body text-sb-ink sm:px-6 sm:pt-12 lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-12 lg:px-8"
   >
     <nav aria-label="Kundenkonto" class="mb-8 lg:mb-0">
       <ul
         class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:sticky lg:top-24 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0"
       >
-        <li v-for="link in presetLinks" :key="link.to" class="shrink-0">
+        <li v-for="link in links" :key="link.to" class="shrink-0">
           <NuxtLink
             :to="link.to"
             :aria-current="isCurrent(link.to) ? 'page' : undefined"
@@ -104,18 +65,4 @@ const items = ref<NavigationMenuItem[][]>([
       <slot />
     </div>
   </div>
-  <UContainer v-else>
-    <UPage>
-      <template #left>
-        <UNavigationMenu
-          highlight
-          highlight-color="primary"
-          orientation="vertical"
-          :items="items"
-          class="data-[orientation=vertical] py-8"
-        />
-      </template>
-      <slot />
-    </UPage>
-  </UContainer>
 </template>

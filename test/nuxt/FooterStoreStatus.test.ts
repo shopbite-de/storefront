@@ -24,7 +24,7 @@ describe("FooterStoreStatus", () => {
     const status = wrapper.find('[role="status"]');
 
     expect(status.text()).toBe("Geöffnet bis 23:00 Uhr");
-    expect(status.find(".bg-success").exists()).toBe(true);
+    expect(status.find(".bg-sb-primary").exists()).toBe(true);
   });
 
   it("shows the next opening while closed", async () => {
@@ -36,7 +36,7 @@ describe("FooterStoreStatus", () => {
     expect(status.text()).toBe(
       "Geschlossen, wir öffnen wieder morgen um 11:30 Uhr",
     );
-    expect(status.find(".bg-success").exists()).toBe(false);
+    expect(status.find(".bg-sb-danger").exists()).toBe(true);
   });
 
   it("renders a placeholder while the status is unknown", async () => {
