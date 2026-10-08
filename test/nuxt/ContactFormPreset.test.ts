@@ -4,16 +4,15 @@ import { flushPromises } from "@vue/test-utils";
 import ContactFormPreset from "~/components/Contact/FormPreset.vue";
 
 // Contact form of the presets (#445).
-const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
+const SEND = "sendContactMail post /contact-form";
+const mocks = vi.hoisted(() => ({ invoke: vi.fn(), send: vi.fn() }));
 
 mockNuxtImport("useShopwareContext", () => () => ({
   apiClient: { invoke: mocks.invoke },
 }));
 
 const sendCalls = () =>
-  mocks.invoke.mock.calls.filter(
-    ([operation]) => operation === "sendContactMail post /contact-form",
-  );
+  mocks.invoke.mock.calls.filter(([operation]) => operation === SEND);
 
 async function fill(wrapper: Awaited<ReturnType<typeof mountSuspended>>) {
   await wrapper.find('input[name="email"]').setValue("gast@example.de");
@@ -26,6 +25,13 @@ async function fill(wrapper: Awaited<ReturnType<typeof mountSuspended>>) {
 describe("contact form with a preset (#445)", () => {
   beforeEach(() => {
     mocks.invoke.mockReset();
+    mocks.send.mockReset();
+    // the salutations load on mount; only the send is controlled per test
+    mocks.invoke.mockImplementation((operation: string, ...args: unknown[]) =>
+      operation === SEND
+        ? mocks.send(...args)
+        : Promise.resolve({ data: { elements: [] } }),
+    );
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -40,7 +46,7 @@ describe("contact form with a preset (#445)", () => {
   });
 
   it("sends the message and shows the shop's success text", async () => {
-    mocks.invoke.mockResolvedValue({
+    mocks.send.mockResolvedValue({
       data: { individualSuccessMessage: "Danke, wir melden uns." },
     });
     const wrapper = await mountSuspended(ContactFormPreset);
@@ -72,7 +78,7 @@ describe("contact form with a preset (#445)", () => {
   });
 
   it("reports a failed send in the form", async () => {
-    mocks.invoke.mockRejectedValue(new Error("500"));
+    mocks.send.mockRejectedValue(new Error("500"));
     const wrapper = await mountSuspended(ContactFormPreset);
     await fill(wrapper);
     await wrapper.find("form").trigger("submit");
