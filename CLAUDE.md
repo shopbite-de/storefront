@@ -155,7 +155,7 @@ Pages without content throw `createNotFoundError()` (`app/utils/notFound.ts`): f
 
 ### Layer imports
 
-Shops extend the storefront as a Nuxt layer, so paths must resolve from the storefront itself: `~`, `@` and `#shared` point to the shop's folders there. Use relative imports for `shared/` and `fileURLToPath(new URL("./…", import.meta.url))` for files in `nuxt.config.ts` (`css`, local modules); type-only `#shared` imports are fine (erased). `test/layer/` is a minimal shop (`extends: ["../.."]`) that the CI job `layer-build` builds (`pnpm nuxt build test/layer`); 2.0.0 broke every shop because only the storefront itself was built.
+Shops extend the storefront as a Nuxt layer, so paths must resolve from the storefront itself: `~`, `@` and `#shared` point to the shop's folders there. App code imports nothing from `shared/` (only types; a relative import breaks the Nitro server bundle), so `modules/theme.ts` passes what the app needs through runtime config (`shopBite.themePresets`). Files in `nuxt.config.ts` use `fileURLToPath(new URL("./…", import.meta.url))` (`css`, local modules). `main.css` lists `@source "../.."`, because Tailwind's automatic detection only scans the shop. `test/layer/` is a minimal shop (`extends: ["../.."]`) that the CI job `layer-build` builds (`pnpm nuxt build test/layer`); 2.0.0 broke every shop because only the storefront itself was built.
 
 ### Testing setup
 

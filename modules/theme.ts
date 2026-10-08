@@ -100,6 +100,14 @@ export default defineNuxtModule<ShopBiteThemeOptions>({
     >;
     const shopBite = (publicConfig.shopBite ??= {}) as Record<string, unknown>;
     shopBite.themePreset = name;
+    // what the app needs to know about each preset, so app code imports
+    // nothing from shared/ (a layer import would resolve in the shop)
+    shopBite.themePresets = Object.fromEntries(
+      presets.map((preset) => [
+        preset.name,
+        { menuView: preset.menuView, colorMode: preset.colorMode },
+      ]),
+    );
     // optional logo URL instead of public/light|dark/Logo.png
     shopBite.logoUrl ??= "";
 
