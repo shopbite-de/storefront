@@ -164,3 +164,32 @@ test("payment failure", async ({ page }) => {
   await expect(page.getByRole("radiogroup")).toBeVisible();
   await expectNoSeriousViolations(page, "payment-failure");
 });
+
+test("login, registration and password pages", async ({ page }) => {
+  await gotoHydrated(page, "/anmelden");
+  await page.getByRole("button", { name: "Anmelden" }).click();
+  await expect(
+    page.getByText("Bitte geben Sie eine gültige E-Mail"),
+  ).toBeVisible();
+  await expectNoSeriousViolations(page, "login");
+
+  await gotoHydrated(page, "/registrierung");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Registrieren",
+  );
+  await expectNoSeriousViolations(page, "registration");
+
+  await gotoHydrated(page, "/passwort-vergessen");
+  await page.getByRole("button", { name: "Link senden" }).click();
+  await expect(
+    page.getByText("Bitte geben Sie eine gültige E-Mail"),
+  ).toBeVisible();
+  await expectNoSeriousViolations(page, "password-forgotten");
+
+  await gotoHydrated(page, "/account/recover/password?hash=test");
+  await page.getByRole("button", { name: "Passwort speichern" }).click();
+  await expect(
+    page.getByText("Das Passwort braucht mindestens 8 Zeichen.").first(),
+  ).toBeVisible();
+  await expectNoSeriousViolations(page, "password-reset");
+});

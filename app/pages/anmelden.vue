@@ -7,6 +7,7 @@ useSeoMeta({
 
 const { isLoggedIn } = useUser();
 const { mergeWishlistProducts } = useWishlist();
+const { hasPreset } = useThemePreset();
 
 onBeforeMount(async () => {
   if (import.meta.client && isLoggedIn.value) {
@@ -27,7 +28,18 @@ function handleLoginSuccess() {
 </script>
 
 <template>
-  <UContainer>
+  <UserAuthPanelPreset v-if="hasPreset" title="Anmelden">
+    <UserLoginFormPreset @login-success="handleLoginSuccess" />
+    <template #footer>
+      Noch kein Kundenkonto?
+      <NuxtLink
+        to="/registrierung"
+        class="font-semibold text-sb-primary-ink underline underline-offset-4"
+        >Jetzt registrieren</NuxtLink
+      >
+    </template>
+  </UserAuthPanelPreset>
+  <UContainer v-else>
     <div class="max-w-xl mx-auto mt-16">
       <UserLoginForm
         title="Anmelden"

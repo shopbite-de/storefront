@@ -6,6 +6,7 @@ useSeoMeta({
 });
 
 const { isLoggedIn } = useUser();
+const { hasPreset } = useThemePreset();
 
 if (import.meta.client && isLoggedIn.value) {
   navigateTo({ path: "/konto" });
@@ -33,7 +34,28 @@ function onRegistrationSuccess(
 </script>
 
 <template>
+  <UserAuthPanelPreset v-if="hasPreset" title="Registrieren" wide>
+    <template #intro>
+      <p>
+        Mit einem Kundenkonto bestellen Sie schneller, Ihre Adressen sind
+        gespeichert.
+      </p>
+    </template>
+    <UserRegistrationForm
+      :allow-guest="false"
+      @registration-success="onRegistrationSuccess"
+    />
+    <template #footer>
+      Schon registriert?
+      <NuxtLink
+        to="/anmelden"
+        class="font-semibold text-sb-primary-ink underline underline-offset-4"
+        >Anmelden</NuxtLink
+      >
+    </template>
+  </UserAuthPanelPreset>
   <UPageSection
+    v-else
     class="max-w-2xl mx-auto"
     headline="KONTO"
     title="Registrieren"
