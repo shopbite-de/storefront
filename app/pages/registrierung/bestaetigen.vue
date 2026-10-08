@@ -16,6 +16,23 @@ const { mergeWishlistProducts } = useWishlist();
 type ConfirmError = "invalid" | "already-confirmed";
 
 const error = ref<ConfirmError | null>(null);
+const { hasPreset } = useThemePreset();
+
+// Presets (#445) address the guest formally.
+const presetMessages: Record<
+  ConfirmError,
+  { title: string; description: string }
+> = {
+  invalid: {
+    title: "Bestätigung fehlgeschlagen",
+    description:
+      "Der Bestätigungslink ist ungültig oder unvollständig. Bitte öffnen Sie den Link aus der E-Mail noch einmal oder schreiben Sie uns.",
+  },
+  "already-confirmed": {
+    title: "Konto bereits bestätigt",
+    description: "Ihr Konto ist schon bestätigt. Sie können sich anmelden.",
+  },
+};
 
 const errorMessages: Record<
   ConfirmError,
@@ -81,7 +98,26 @@ confirmRegistration();
 </script>
 
 <template>
-  <UContainer>
+  <UserAuthPanelPreset v-if="hasPreset" title="Registrierung bestätigen">
+    <p v-if="!error" role="status">Registrierung wird bestätigt …</p>
+    <div
+      v-else
+      :role="error === 'invalid' ? 'alert' : 'status'"
+      class="flex flex-col items-start gap-4"
+    >
+      <p>
+        <strong class="block">{{ presetMessages[error].title }}</strong>
+        {{ presetMessages[error].description }}
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <SbButton to="/anmelden">Zur Anmeldung</SbButton>
+        <SbButton v-if="error === 'invalid'" variant="secondary" to="/kontakt"
+          >Kontakt</SbButton
+        >
+      </div>
+    </div>
+  </UserAuthPanelPreset>
+  <UContainer v-else>
     <div class="max-w-xl mx-auto mt-16">
       <div
         v-if="!error"
