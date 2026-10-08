@@ -124,6 +124,69 @@ jobs:
       - name: Unit tests
         run: pnpm test:unit
 
+  a11y:
+    name: Accessibility (${{ matrix.preset }})
+    environment: test
+    needs: [setup]
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [trattoria, grill, asia]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.9.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Restore workspace from cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules
+            .nuxt
+            .output
+          key: workspace-${{ runner.os }}-${{ github.sha }}
+
+      # The preset is chosen at build time.
+      - name: Build with preset
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+          NUXT_SHOPBITE_PRESET: ${{ matrix.preset }}
+        run: pnpm run build
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start storefront
+        run: |
+          node .output/server/index.mjs > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3005/ && exit 0; sleep 1; done
+          cat server.log; exit 1
+
+      - name: axe checks
+        run: pnpm test:a11y --reporter=list,html
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: a11y-report-${{ matrix.preset }}
+          path: playwright-report/
+          retention-days: 14
+
 #  e2e-test:
 #    name: E2E tests
 #    environment: test
