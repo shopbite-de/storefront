@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 import { DialogDescription, DialogTitle } from "reka-ui";
+import type { WishlistConfiguration } from "~/composables/useWishlistEntries";
 
 const props = defineProps<{
   product: Schemas["Product"] | undefined;
@@ -19,6 +20,8 @@ const label = ref(props.product?.translated.name ?? props.product?.name ?? "");
 const description = ref(props.product?.description);
 // Follows the selected variant, like the URL (#411).
 const productNumber = ref(props.product?.productNumber);
+// The dish as configured right now, for the save button (#467).
+const selection = ref<WishlistConfiguration>();
 // Built in script: a trailing space in the template would be condensed away.
 const numberLabel = computed(() => `Nr. ${productNumber.value} `);
 
@@ -29,6 +32,7 @@ watch(
     label.value = product.translated.name ?? product.name;
     description.value = product.description;
     productNumber.value = product.productNumber;
+    selection.value = undefined;
   },
 );
 
@@ -89,6 +93,7 @@ function onVariantSelected(variant: Schemas["Product"]) {
       </div>
     </template>
     <template #actions>
+      <WishlistSaveButton :selection="selection" :name="label" />
       <SbIconButton
         :label="canShare ? 'Teilen' : 'Link kopieren'"
         @click="share({ title: label, productNumber })"
@@ -118,6 +123,7 @@ function onVariantSelected(variant: Schemas["Product"]) {
       @product-added="open = false"
       @variant-selected="onVariantSelected"
       @configuration-changed="updateConfiguration"
+      @selection-changed="selection = $event"
     />
   </SbSheet>
   <!-- Only the body scrolls: header and footer stay in place without sticky

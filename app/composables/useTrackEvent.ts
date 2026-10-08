@@ -50,7 +50,9 @@ export function useTrackEvent() {
     push(["trackEcommerceOrder", order.orderNumber, order.price.totalPrice]);
   }
 
-  function trackAddToWishlist(product: Schemas["Product"]) {
+  function trackAddToWishlist(
+    product: Pick<Schemas["Product"], "productNumber">,
+  ) {
     push(["trackEvent", "Product", "AddToWishlist", product.productNumber]);
   }
 

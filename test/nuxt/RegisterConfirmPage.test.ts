@@ -33,11 +33,6 @@ mockNuxtImport("useSessionContext", () => () => ({
 const refreshCartMock = vi.fn();
 mockNuxtImport("useCart", () => () => ({ refreshCart: refreshCartMock }));
 
-const mergeWishlistProductsMock = vi.fn();
-mockNuxtImport("useWishlist", () => () => ({
-  mergeWishlistProducts: mergeWishlistProductsMock,
-}));
-
 const { navigateToMock } = vi.hoisted(() => ({ navigateToMock: vi.fn() }));
 mockNuxtImport("navigateTo", () => navigateToMock);
 
@@ -64,7 +59,7 @@ describe("registrierung/bestaetigen", () => {
     );
     expect(refreshSessionContextMock).toHaveBeenCalled();
     expect(refreshCartMock).toHaveBeenCalled();
-    expect(mergeWishlistProductsMock).toHaveBeenCalled();
+    // the wishlist moves into the account in app.vue (login watch, #467)
     expect(navigateToMock).toHaveBeenCalledWith({ path: "/konto" });
   });
 

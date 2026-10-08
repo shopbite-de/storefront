@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { useWishlist } from "@shopware/composables";
-
 useSeoMeta({
   title: "Anmelden",
 });
 
 const { isLoggedIn } = useUser();
-const { mergeWishlistProducts } = useWishlist();
 
 onBeforeMount(async () => {
   if (import.meta.client && isLoggedIn.value) {
@@ -20,8 +17,8 @@ watch(isLoggedIn, (newValue) => {
   }
 });
 
+// app.vue moves the guest's wishlist into the account (#467).
 function handleLoginSuccess() {
-  mergeWishlistProducts();
   navigateTo("/");
 }
 </script>

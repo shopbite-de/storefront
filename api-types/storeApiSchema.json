@@ -10637,6 +10637,44 @@
         "type": "array",
         "items": { "$ref": "#/components/schemas/Breadcrumb" }
       },
+      "ShopBiteWishlistItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "productId",
+          "productNumber",
+          "without",
+          "extras",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productNumber": {
+            "type": "string"
+          },
+          "without": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extras": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ShopBiteConfig": {
         "type": "object",
         "description": "ShopBite configuration data",
@@ -11409,6 +11447,195 @@
   },
   "security": [{ "ApiKey": [] }],
   "paths": {
+    "/shopbite/wishlist": {
+      "post": {
+        "tags": ["ShopBite"],
+        "summary": "Wishlist with configured dishes",
+        "description": "Entries of the logged-in customer (sw-context-token) in this sales channel, newest first.",
+        "operationId": "shopbite.wishlist.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Wishlist entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["elements"],
+                  "properties": {
+                    "elements": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ShopBiteWishlistItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "StoreApiKey": []
+          }
+        ]
+      }
+    },
+    "/shopbite/wishlist/add": {
+      "post": {
+        "tags": ["ShopBite"],
+        "summary": "Save a configured dish",
+        "description": "Saves a product with deselected ingredients and extras for the logged-in customer. Returns the existing entry when the same configuration is saved already.",
+        "operationId": "shopbite.wishlist.add",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["productId"],
+                "properties": {
+                  "productId": {
+                    "type": "string"
+                  },
+                  "without": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "extras": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopBiteWishlistItem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "StoreApiKey": []
+          }
+        ]
+      }
+    },
+    "/shopbite/wishlist/{id}": {
+      "delete": {
+        "tags": ["ShopBite"],
+        "summary": "Remove a wishlist entry",
+        "description": "Removes an entry of the logged-in customer.",
+        "operationId": "shopbite.wishlist.delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          }
+        },
+        "security": [
+          {
+            "StoreApiKey": []
+          }
+        ]
+      }
+    },
+    "/shopbite/wishlist/merge": {
+      "post": {
+        "tags": ["ShopBite"],
+        "summary": "Merge guest wishlist entries",
+        "description": "Adds entries saved as a guest to the logged-in customer's wishlist and returns the full list.",
+        "operationId": "shopbite.wishlist.merge",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["items"],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["productId"],
+                      "properties": {
+                        "productId": {
+                          "type": "string"
+                        },
+                        "without": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "extras": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wishlist entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["elements"],
+                  "properties": {
+                    "elements": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ShopBiteWishlistItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "StoreApiKey": []
+          }
+        ]
+      }
+    },
     "/cms/{id}": {
       "post": {
         "tags": ["Content"],
