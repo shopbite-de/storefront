@@ -30,7 +30,7 @@ const step = computed<number>({
 });
 
 // Presets use the one-page checkout (#443): the step pages redirect there,
-// and the page sits in the plain container instead of UPageSection.
+// and every order page sits in the plain container instead of UPageSection.
 const { hasPreset } = useThemePreset();
 if (hasPreset && (stepRoutes as readonly string[]).includes(route.path)) {
   await navigateTo("/bestellung/kasse", { replace: true });
@@ -60,7 +60,7 @@ const items = computed(
 
 <template>
   <div
-    v-if="hasPreset && !isPaymentReturnRoute"
+    v-if="hasPreset"
     class="mx-auto w-full max-w-(--sb-container) px-4 pt-8 pb-16 sm:px-6 sm:pt-12 lg:px-8"
   >
     <NuxtPage />

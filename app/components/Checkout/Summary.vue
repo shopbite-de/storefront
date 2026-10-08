@@ -115,12 +115,15 @@ async function handleCreateOrder() {
     }
 
     await refreshCart();
-    toast.add({
-      title: "Bestellung aufgegeben!",
-      icon: "i-lucide-shopping-cart",
-      color: "success",
-      progress: false,
-    });
+    // the preset confirmation page says it in its heading
+    if (!hasPreset) {
+      toast.add({
+        title: "Bestellung aufgegeben!",
+        icon: "i-lucide-shopping-cart",
+        color: "success",
+        progress: false,
+      });
+    }
     navigateTo(`/bestellung/${order.id}/erfolg`);
   } catch (error) {
     console.error("[checkout][createOrder]", error);
