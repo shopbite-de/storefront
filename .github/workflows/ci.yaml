@@ -171,12 +171,7 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Start storefront
-        run: |
-          node .output/server/index.mjs > server.log 2>&1 &
-          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3005/ && exit 0; sleep 1; done
-          cat server.log; exit 1
-
+      # playwright.config.ts starts .output/server/index.mjs (webServer)
       - name: axe checks
         run: pnpm test:a11y --reporter=list,html
 
