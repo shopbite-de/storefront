@@ -1,15 +1,24 @@
-import { isThemePresetName, THEME_PRESETS } from "../../shared/theme/presets";
+type PresetInfo = {
+  menuView: "bon" | "bonPhoto" | "listPhoto";
+  colorMode: "light" | "dark";
+};
 
 /**
  * The active style preset (#439, #445): `runtimeConfig.public.shopBite
  * .themePreset` (`NUXT_PUBLIC_SHOP_BITE_THEME_PRESET`), by default the
- * `shopBite.preset` of the build (modules/theme.ts), else `trattoria`.
+ * `shopBite.preset` of the build, else `trattoria`. modules/theme.ts puts
+ * the menu view and colour mode of every preset into the runtime config.
  */
 export function useThemePreset() {
-  const configured = (
-    useRuntimeConfig().public.shopBite as { themePreset?: string } | undefined
-  )?.themePreset;
-  const preset = isThemePresetName(configured) ? configured : "trattoria";
-  const { menuView, colorMode } = THEME_PRESETS[preset];
+  const shopBite = useRuntimeConfig().public.shopBite as
+    | { themePreset?: string; themePresets?: Record<string, PresetInfo> }
+    | undefined;
+  const presets = shopBite?.themePresets ?? {};
+  const configured = shopBite?.themePreset ?? "";
+  const preset = Object.hasOwn(presets, configured) ? configured : "trattoria";
+  const { menuView, colorMode } = presets[preset] ?? {
+    menuView: "bon",
+    colorMode: "light",
+  };
   return { preset, menuView, colorMode };
 }

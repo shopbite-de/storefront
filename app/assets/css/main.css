@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @source "../../../content/**/*";
+/* the storefront's own components: Tailwind's automatic detection only
+   scans the shop that extends this layer (2.0.1) */
+@source "../..";
 
 @theme {
   /* This is important because apple devices will zoom in when the font size is below 16px */
