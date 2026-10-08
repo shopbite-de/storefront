@@ -172,7 +172,9 @@ export default defineNuxtConfig({
     preset: "trattoria",
   },
 
-  css: ["~/assets/css/main.css"],
+  // Absolute: `~` would point to the app/ folder of a shop extending this
+  // layer, which may have no main.css (2.0.1).
+  css: [fileURLToPath(new URL("./app/assets/css/main.css", import.meta.url))],
 
   fonts: {
     defaults: {

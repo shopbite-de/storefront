@@ -153,6 +153,10 @@ Pages without content throw `createNotFoundError()` (`app/utils/notFound.ts`): f
 - `server/plugins/ai-crawlers.ts` adds two named robots.txt groups via the `robots:config` hook (#403): AI search/assistant bots and AI training bots (lists with sources in `server/utils/aiCrawlers.ts`), toggled by `runtimeConfig.aiCrawlers.search`/`.training`. A crawler matching a named group ignores `*`, so allowed groups repeat the `robots.disallow` paths.
 - Shop contact data (NAP) lives in `runtimeConfig.public.site` (`address.*`, `telephone`, `googleBusinessProfileUrl`; `alternateNames` lists other names the shop is listed under, for the Restaurant schema `alternateName` and `/llms.txt`) and is rendered by `components/Footer/Contact.vue`. `useBusinessHours`/`useHolidays` use `immediate: false` (app.vue loads them on mount); a component that needs them in the SSR HTML calls `onServerPrefetch(() => refresh())`. In the browser both requests are retried twice (`withRetries`); `useOpeningHoursData` gives components the combined loading/failed state and `retry()`, and reports a failure only after mounting (a failed server prefetch would otherwise break hydration, #355). Anything that depends on the current time (open/closed status, "today") is computed after mounting: `useStoreStatus` starts its clock in `onMounted`, because the home page prefetches the hours on the server and the server's clock and time zone differ from the visitor's (hydration mismatch, #365).
 
+### Layer imports
+
+Shops extend the storefront as a Nuxt layer, so paths must resolve from the storefront itself: `~`, `@` and `#shared` point to the shop's folders there. Use relative imports for `shared/` and `fileURLToPath(new URL("./…", import.meta.url))` for files in `nuxt.config.ts` (`css`, local modules); type-only `#shared` imports are fine (erased). `test/layer/` is a minimal shop (`extends: ["../.."]`) that the CI job `layer-build` builds (`pnpm nuxt build test/layer`); 2.0.0 broke every shop because only the storefront itself was built.
+
 ### Testing setup
 
 Two Vitest projects in `vitest.config.ts`:

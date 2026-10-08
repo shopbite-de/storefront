@@ -124,6 +124,39 @@ jobs:
       - name: Unit tests
         run: pnpm test:unit
 
+  layer-build:
+    name: Build as a layer
+    needs: [setup]
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.9.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Restore workspace from cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules
+            .nuxt
+            .output
+          key: workspace-${{ runner.os }}-${{ github.sha }}
+
+      # test/layer extends the storefront like a shop does; imports that only
+      # resolve inside the storefront itself break here (2.0.1)
+      - name: Build test/layer
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+        run: pnpm nuxt build test/layer
+
   a11y:
     name: Accessibility (${{ matrix.preset }})
     # no test customer needed: the repository secrets (Store API key) suffice

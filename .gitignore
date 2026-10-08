@@ -38,3 +38,8 @@ scripts/perf/exp
 scripts/perf/*.pem
 test/visual/__snapshots__
 test/visual/results
+
+# build output of the layer fixture (CI job layer-build)
+test/layer/.nuxt
+test/layer/.output
+test/layer/.data
