@@ -204,7 +204,7 @@ importers:
         version: 1.6.0
       '@shopware/api-gen':
         specifier: ^1.5.2
-        version: 1.5.2
+        version: 1.5.3
       '@shopware/composables':
         specifier: ^1.13.0
         version: 1.13.0(vue@3.5.43(typescript@6.0.3))
@@ -3090,8 +3090,11 @@ packages:
   '@shopware/api-client@1.6.0':
     resolution: {integrity: sha512-PfD9P4jP+pbm89Sj8/sggf0s9sw2AUI0U2vgPzrjTVaMOc2/5L95YP8ia5ce5O9P2PIQ4cVkyMjaCT7qlxrAfg==}
 
-  '@shopware/api-gen@1.5.2':
-    resolution: {integrity: sha512-NOI9T0juF6AFB/vvGTlp6eyNiW6mm7XALxR1YXeAW1fWoq1m5HKhJJ4m8lHf6VIkc42ktzvMq5C986zkAqGr5Q==}
+  '@shopware/api-client@1.7.0':
+    resolution: {integrity: sha512-sIFhq6Ef+B/cCSUq8TAt+PLfKuDzNoYwVYGAkT+HAm33ww/hVHn+E9dQgANxU84BuIZA8S4Jojtg2vMz3FQYxg==}
+
+  '@shopware/api-gen@1.5.3':
+    resolution: {integrity: sha512-RlHO7jwuFbXTWwVgkmIkFurW3DCY7T+liJswRY2fyAixm6hwNJiST2rzGp6oJyor96pDh6J7Q9ZX9mkkIBf4eg==}
     hasBin: true
 
   '@shopware/composables@1.13.0':
@@ -12049,9 +12052,15 @@ snapshots:
       hookable: 5.5.3
       ofetch: 1.5.1
 
-  '@shopware/api-gen@1.5.2':
+  '@shopware/api-client@1.7.0':
     dependencies:
-      '@shopware/api-client': 1.6.0
+      defu: 6.1.7
+      hookable: 5.5.3
+      ofetch: 1.5.1
+
+  '@shopware/api-gen@1.5.3':
+    dependencies:
+      '@shopware/api-client': 1.7.0
       ofetch: 1.5.1
       openapi-typescript: 7.13.0(typescript@5.9.3)
       oxfmt: 0.65.0
