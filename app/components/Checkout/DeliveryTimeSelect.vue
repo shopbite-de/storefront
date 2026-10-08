@@ -61,10 +61,6 @@ const isValid = computed<boolean>(() => {
   return validate(selected.value) === null;
 });
 
-const deliveryTimeInfo = computed(() => {
-  return "Geschätzte Lieferzeit beträgt " + deliveryTime.value + " min.";
-});
-
 watch(
   isValid,
   (v) => {
@@ -138,11 +134,10 @@ function handleTimeInput(event: Event): void {
 }
 
 // Presets: the base components and plain text instead of badges (#443).
-const { hasPreset } = useThemePreset();
 </script>
 
 <template>
-  <div v-if="hasPreset" class="flex flex-col gap-3 font-body text-sb-ink">
+  <div class="flex flex-col gap-3 font-body text-sb-ink">
     <div
       v-if="hasOpeningHoursFailed"
       role="alert"
@@ -197,81 +192,5 @@ const { hasPreset } = useThemePreset();
     <p v-else class="text-sm text-sb-ink-muted" aria-busy="true">
       Öffnungszeiten werden geladen …
     </p>
-  </div>
-  <div v-else-if="hasOpeningHoursFailed" class="mt-4">
-    <UAlert
-      color="error"
-      variant="subtle"
-      icon="i-lucide-circle-alert"
-      title="Öffnungszeiten konnten nicht geladen werden"
-      description="Ohne Öffnungszeiten können wir keine Lieferzeit anbieten."
-      :actions="[
-        {
-          label: 'Erneut versuchen',
-          icon: 'i-lucide-refresh-cw',
-          color: 'error',
-          variant: 'outline',
-          onClick: retryOpeningHours,
-        },
-      ]"
-    />
-  </div>
-  <div
-    v-else-if="isOpeningHoursLoaded && isClosedHoliday(now) === false"
-    class="flex flex-col gap-2 mt-4"
-  >
-    <div class="flex flex-row items-center justify-between gap-4">
-      <label for="delivery-time" class="flex-1">
-        Wunschlieferung- oder Abholzeit ab:
-      </label>
-      <client-only>
-        <UInput
-          id="delivery-time"
-          type="time"
-          :min="minTime ?? undefined"
-          :max="maxTime ?? undefined"
-          :disabled="isClosedToday || isClosedHoliday(now) === true"
-          :model-value="selected"
-          step="300"
-          @input="handleTimeInput"
-        />
-      </client-only>
-    </div>
-    <p v-if="validationError" class="text-sm text-error">
-      {{ validationError }}
-    </p>
-    <p v-else class="text-sm text-muted">{{ helperText }}</p>
-    <UBadge
-      :label="deliveryTimeInfo"
-      icon="i-lucide-clock"
-      size="xl"
-      color="neutral"
-      variant="subtle"
-    />
-    <UBadge
-      label="Lieferzeiten können zu Stoßzeiten variieren."
-      icon="i-lucide-info"
-      size="xl"
-      color="warning"
-      variant="subtle"
-    />
-  </div>
-  <div v-else-if="isOpeningHoursLoaded && isClosedHoliday(now) === true">
-    <UBadge
-      variant="subtle"
-      class="w-full"
-      icon="i-lucide-info"
-      color="error"
-      label="Geschlossen wegen Betriebsferien"
-    />
-  </div>
-  <div v-else>
-    <UBadge
-      variant="subtle"
-      class="w-full"
-      icon="i-lucide-loader"
-      color="neutral"
-      label="Lade Öffnungszeiten..."
-    />
   </div>
 </template>

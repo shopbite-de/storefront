@@ -48,7 +48,6 @@ const selectablePaymentMethods = computed(() =>
 );
 
 const isRetrying = ref(false);
-const { hasPreset } = useThemePreset();
 
 const retryError = ref(false);
 
@@ -81,7 +80,6 @@ async function retryPayment() {
 
 <template>
   <div
-    v-if="hasPreset"
     class="mx-auto flex w-full max-w-2xl flex-col gap-6 font-body text-sb-ink"
   >
     <header class="flex flex-col gap-3">
@@ -135,60 +133,8 @@ async function retryPayment() {
         <h2 id="bestellung-details" class="mb-4 font-display text-2xl">
           Bestellung <span class="tabular-nums">{{ order.orderNumber }}</span>
         </h2>
-        <OrderDetailPreset :order="order" :status="status ?? undefined" />
+        <OrderDetail :order="order" :status="status ?? undefined" />
       </section>
     </template>
   </div>
-  <UPageSection v-else>
-    <div class="flex flex-col gap-8">
-      <UPageHero
-        icon="i-lucide-circle-x"
-        title="Zahlung fehlgeschlagen"
-        description="Bei der Verarbeitung deiner Zahlung ist ein Fehler aufgetreten. Wähle eine Zahlungsmethode und versuche es erneut."
-      />
-
-      <USeparator />
-
-      <div v-if="order" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="flex flex-col gap-4">
-          <p class="text-sm font-semibold text-muted uppercase tracking-wide">
-            Bestellung {{ order.orderNumber }}
-          </p>
-          <UCard>
-            <OrderDetail :order="order" :status="status ?? ''" />
-          </UCard>
-        </div>
-
-        <div class="flex flex-col gap-6">
-          <div class="flex flex-col gap-3">
-            <p class="text-sm font-semibold text-muted uppercase tracking-wide">
-              Zahlungsmethode
-            </p>
-            <URadioGroup
-              v-model="selectedPaymentMethodId"
-              :items="selectablePaymentMethods"
-              variant="card"
-            />
-          </div>
-
-          <UButton
-            label="Jetzt bezahlen"
-            icon="i-lucide-refresh-cw"
-            size="xl"
-            block
-            :loading="isRetrying"
-            :disabled="!selectedPaymentMethodId"
-            @click="retryPayment"
-          />
-        </div>
-      </div>
-
-      <div v-else class="flex justify-center py-16">
-        <UIcon
-          name="i-lucide-loader-circle"
-          class="size-10 animate-spin text-primary"
-        />
-      </div>
-    </div>
-  </UPageSection>
 </template>

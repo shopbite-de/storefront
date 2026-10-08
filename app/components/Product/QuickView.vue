@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
-import { useMediaQuery } from "@vueuse/core";
 import { DialogDescription, DialogTitle } from "reka-ui";
 
 const props = defineProps<{
@@ -11,10 +10,6 @@ const open = defineModel<boolean>("open", { required: true });
 
 const { initial, update: updateConfiguration } = useQuickViewConfiguration();
 const { share, canShare } = useShareLink();
-
-// Bottom sheet on phones, side panel from the lg breakpoint (64rem).
-const isDesktop = useMediaQuery("(min-width: 64rem)");
-const direction = computed(() => (isDesktop.value ? "right" : "bottom"));
 
 const sortedProperties = computed(
   () =>
@@ -37,8 +32,7 @@ watch(
   },
 );
 
-// Presets use the base sheet with a bon header (#442).
-const { hasPreset } = useThemePreset();
+// The base sheet with a bon header (#442).
 const diets = computed(() =>
   getDiets(sortedProperties.value).map((diet) =>
     diet === "vegan" ? "Vegan" : "Vegetarisch",
@@ -54,7 +48,6 @@ function onVariantSelected(variant: Schemas["Product"]) {
 
 <template>
   <SbSheet
-    v-if="hasPreset"
     v-model:open="open"
     :title="label"
     :description="description ?? undefined"
@@ -130,54 +123,4 @@ function onVariantSelected(variant: Schemas["Product"]) {
   <!-- Only the body scrolls: header and footer stay in place without sticky
        positioning, and shrink-0 keeps the flex column from squeezing the
        header to its min-height (#325). -->
-  <UDrawer
-    v-else
-    v-model:open="open"
-    :direction="direction"
-    :close="true"
-    :ui="{
-      content: direction === 'right' ? 'w-full max-w-md' : 'max-h-[92vh]',
-      container: 'overflow-hidden',
-      header: 'shrink-0 items-start border-b border-default pb-3',
-      body: 'flex min-h-0 flex-col gap-5 overflow-y-auto',
-    }"
-  >
-    <template #title>
-      <span class="flex flex-col gap-0.5">
-        <span class="text-xs font-semibold text-primary">
-          #{{ productNumber }}
-        </span>
-        <span class="text-xl font-bold text-highlighted">{{ label }}</span>
-      </span>
-    </template>
-    <template #actions>
-      <UButton
-        :icon="canShare ? 'i-lucide-share-2' : 'i-lucide-link'"
-        color="neutral"
-        variant="ghost"
-        :aria-label="canShare ? 'Teilen' : 'Link kopieren'"
-        @click="share({ title: label, productNumber })"
-      />
-    </template>
-    <template v-if="description" #description>
-      {{ description }}
-    </template>
-    <template #body>
-      <!-- Diet badges only: the ingredients are listed once, in the
-           deselectable "Zutaten" section of ProductDetail. -->
-      <div class="flex flex-wrap gap-1.5 empty:hidden">
-        <ProductCardDietBadges :sorted-properties="sortedProperties" />
-      </div>
-      <ProductDetail
-        v-if="product"
-        :key="product.id"
-        :product-id="product.id"
-        :initial-without="initial.without"
-        :initial-extras="initial.extras"
-        @product-added="open = false"
-        @variant-selected="onVariantSelected"
-        @configuration-changed="updateConfiguration"
-      />
-    </template>
-  </UDrawer>
 </template>

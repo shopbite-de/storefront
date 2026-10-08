@@ -18,15 +18,10 @@ withDefaults(
 
 const { getFormattedPrice } = useCommercePrice();
 const emit = defineEmits(["go-to-cart"]);
-
-const { hasPreset } = useThemePreset();
 </script>
 
 <template>
-  <div
-    v-if="hasPreset"
-    class="flex h-full flex-col justify-between gap-5 font-body text-sb-ink"
-  >
+  <div class="flex h-full flex-col justify-between gap-5 font-body text-sb-ink">
     <div v-if="isEmpty" class="flex flex-col items-start gap-3 py-2">
       <p class="text-sb-ink-muted">Der Warenkorb ist noch leer.</p>
       <SbButton variant="secondary" to="/" @click="emit('go-to-cart')"
@@ -76,45 +71,6 @@ const { hasPreset } = useThemePreset();
         Zur Kasse
         <template #trailing><SbIcon name="chevron-right" /></template>
       </SbButton>
-    </div>
-  </div>
-  <div v-else class="flex flex-col gap-4 h-full justify-between">
-    <div class="flex flex-col gap-4">
-      <CartItem
-        v-for="lineItem in cart?.lineItems ?? []"
-        :key="lineItem.id"
-        :cart-item="lineItem"
-        :with-quantity-input="withQuantityInput"
-        :with-delete-button="withDeleteButton"
-      />
-    </div>
-    <div class="flex flex-col gap-4">
-      <!-- Suggestions right above the total, on the confirmation step only (#338). -->
-      <LazyCartUpsell v-if="withUpsell && !isEmpty" />
-      <div class="flex flex-row justify-between">
-        <template v-if="shippingTotal === 0">
-          <div class="text-success font-medium">
-            Versandkostenfreie Lieferung
-          </div>
-        </template>
-        <template v-else>
-          <div>Versandkosten:</div>
-          <div>{{ getFormattedPrice(shippingTotal) }}</div>
-        </template>
-      </div>
-      <div class="flex flex-row justify-between font-bold">
-        <div>Summe:</div>
-        <div>{{ getFormattedPrice(cart?.price.totalPrice) }}</div>
-      </div>
-      <UButton
-        v-if="withToCartButton"
-        :disabled="isEmpty"
-        block
-        size="lg"
-        label="Bestellung aufgeben"
-        to="/bestellung"
-        @click="emit('go-to-cart')"
-      />
     </div>
   </div>
 </template>

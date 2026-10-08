@@ -94,7 +94,7 @@ describe("useCartUpsell", () => {
   });
 
   it("reports nothing when the add failed", async () => {
-    // useCartMutations shows the error toast itself and resolves undefined.
+    // useCartMutations re-syncs the cart itself and resolves undefined.
     mockAddLineItems.mockResolvedValue(undefined);
 
     await useCartUpsell().addUpsellProduct(tiramisu);

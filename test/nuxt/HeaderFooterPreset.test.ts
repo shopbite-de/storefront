@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { computed, reactive, ref } from "vue";
-import HeaderPreset from "~/components/Header/Preset.vue";
-import FooterPreset from "~/components/Footer/Preset.vue";
+import Header from "~/components/Header.vue";
+import Footer from "~/components/Footer.vue";
 
 // Header and footer of a shop with a style preset (#455).
 const mocks = vi.hoisted(() => ({
@@ -13,7 +13,6 @@ const state = reactive({ cartCount: 2, wishlistCount: 0, loggedIn: false });
 
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
-  hasPreset: true,
   menuView: "bon",
   colorMode: "light",
 }));
@@ -21,6 +20,16 @@ mockNuxtImport("useNavigation", () => () => ({
   mainMenu: ref([
     { label: "Speisekarte", to: "/speisekarte/" },
     { label: "Kontakt", to: "/kontakt" },
+  ]),
+  footerMenu: ref([
+    {
+      label: "Rechtliches",
+      children: [
+        { label: "Impressum", to: "/impressum" },
+        { label: "Datenschutz", to: "/datenschutz" },
+      ],
+    },
+    { label: "Leer", children: [] },
   ]),
 }));
 mockNuxtImport("useCartQuickView", () => () => ({
@@ -68,7 +77,7 @@ describe("header and footer with a preset (#455)", () => {
   });
 
   it("names the logo link and the icon-only controls", async () => {
-    const wrapper = await mountSuspended(HeaderPreset);
+    const wrapper = await mountSuspended(Header);
     expect(
       wrapper.find('a[aria-label="La Fattoria, zur Startseite"]').exists(),
     ).toBe(true);
@@ -84,7 +93,7 @@ describe("header and footer with a preset (#455)", () => {
   });
 
   it("lists the main navigation in a labelled nav", async () => {
-    const wrapper = await mountSuspended(HeaderPreset);
+    const wrapper = await mountSuspended(Header);
     const nav = wrapper.find('nav[aria-label="Hauptnavigation"]');
     expect(nav.findAll("a").map((link) => link.text())).toEqual([
       "Speisekarte",
@@ -93,7 +102,7 @@ describe("header and footer with a preset (#455)", () => {
   });
 
   it("opens the cart sheet from the cart button with the count in its name", async () => {
-    const wrapper = await mountSuspended(HeaderPreset);
+    const wrapper = await mountSuspended(Header);
     const cart = wrapper.find('button[aria-label="Warenkorb, 2 Artikel"]');
     expect(cart.attributes("aria-haspopup")).toBe("dialog");
     await cart.trigger("click");
@@ -102,27 +111,14 @@ describe("header and footer with a preset (#455)", () => {
 
   it("links the account button to the account when logged in", async () => {
     state.loggedIn = true;
-    const wrapper = await mountSuspended(HeaderPreset);
+    const wrapper = await mountSuspended(Header);
     expect(wrapper.find('a[href="/konto"]').attributes("aria-label")).toBe(
       "Mein Konto",
     );
   });
 
   it("shows contact data and the footer columns without a colour switch", async () => {
-    const wrapper = await mountSuspended(FooterPreset, {
-      props: {
-        columns: [
-          {
-            label: "Rechtliches",
-            children: [
-              { label: "Impressum", to: "/impressum" },
-              { label: "Datenschutz", to: "/datenschutz" },
-            ],
-          },
-          { label: "Leer", children: [] },
-        ],
-      },
-    });
+    const wrapper = await mountSuspended(Footer);
     expect(wrapper.find("address").text()).toContain("Kantstraße 6");
     expect(wrapper.find("address").text()).toContain("63179 Obertshausen");
     const navs = wrapper.findAll("nav");

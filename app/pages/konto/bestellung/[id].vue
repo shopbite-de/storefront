@@ -1,10 +1,4 @@
 <script setup lang="ts">
-import { useOrderDetails } from "@shopware/composables";
-import { formatDate } from "~/utils/formatDate";
-import type { Schemas } from "#shopware";
-
-import type { RouteParams } from "vue-router";
-
 definePageMeta({
   layout: "account",
 });
@@ -13,55 +7,17 @@ useSeoMeta({
   title: "Bestellung",
 });
 
-interface OrderRouteParams extends RouteParams {
-  id: string;
-}
-
 const route = useRoute();
-const { id } = route.params as OrderRouteParams;
-const {
-  order: orderRaw,
-  loadOrderDetails,
-  status,
-} = useOrderDetails(id as string);
-const order = computed(
-  () => orderRaw.value as Schemas["Order"] | undefined | null,
-);
-
-const isLoadingData = ref(true);
-const { hasPreset } = useThemePreset();
-
-onMounted(async () => {
-  if (hasPreset) return;
-  isLoadingData.value = true;
-
-  await loadOrderDetails();
-
-  isLoadingData.value = false;
-});
+const orderId = route.params.id as string;
 </script>
 
 <template>
-  <div v-if="hasPreset" class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4">
     <NuxtLink
       to="/konto/bestellungen"
       class="inline-flex min-h-11 items-center self-start font-body font-semibold text-sb-primary-ink underline underline-offset-4"
       >Alle Bestellungen</NuxtLink
     >
-    <OrderConfirmationPreset :order-id="id" />
+    <OrderConfirmation :order-id="orderId" />
   </div>
-  <UContainer v-else>
-    <UPageHeader
-      headline="BESTELLUNG"
-      :title="order?.orderNumber"
-      :description="formatDate(order?.createdAt)"
-    />
-    <UPageBody>
-      <OrderDetail
-        v-if="order"
-        :order="order as Schemas['Order']"
-        :status="status ?? 'laden...'"
-      />
-    </UPageBody>
-  </UContainer>
 </template>

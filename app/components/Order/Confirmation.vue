@@ -91,7 +91,7 @@ onMounted(async () => {
       <h2 id="bestellung-details" class="mb-4 font-display text-2xl">
         Ihre Bestellung
       </h2>
-      <OrderDetailPreset :order="order" :status="status" />
+      <OrderDetail :order="order" :status="status" />
     </section>
 
     <section

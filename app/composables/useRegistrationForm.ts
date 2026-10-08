@@ -15,7 +15,7 @@ export type RegistrationResult =
 /**
  * State, schema and submit of the customer registration (#443), shared by
  * the Nuxt UI form (User/RegistrationForm.vue) and the form of the presets
- * (User/RegistrationFormPreset.vue). `submit()` reports the outcome; the
+ * (User/RegistrationForm.vue). `submit()` reports the outcome; the
  * form decides how to show it (toast or inline).
  */
 export function useRegistrationForm(options: { allowGuest: boolean }) {

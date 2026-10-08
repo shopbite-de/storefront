@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import type { FeatureCardProps } from "~/components/Feature/Card.vue";
+/** One entry of `features.features` in content/index.yml. */
+export type FeatureCardProps = {
+  title: string;
+  description: string;
+  icon?: string;
+  kind?: "hours" | "delivery" | "reservation";
+  lead?: string;
+  link?: { label: string; to: string };
+};
 
 /**
  * Facts row under the hero of the presets (#444): the `features` of

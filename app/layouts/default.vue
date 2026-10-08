@@ -1,6 +1,5 @@
-<script setup lang="ts"></script>
 <template>
-  <UPage>
+  <div>
     <slot />
-  </UPage>
+  </div>
 </template>

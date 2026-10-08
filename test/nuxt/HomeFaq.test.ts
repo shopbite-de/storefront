@@ -8,12 +8,13 @@ const items = [
 ];
 
 describe("HomeFaq", () => {
-  it("renders every answer in the markup, collapsed", async () => {
+  it("renders every answer in the markup, only the first one open", async () => {
     const wrapper = await mountSuspended(HomeFaq, { props: { items } });
 
     const details = wrapper.findAll("details");
     expect(details).toHaveLength(2);
-    expect(details.every((d) => d.attributes("open") === undefined)).toBe(true);
+    expect(details[0]!.attributes("open")).toBeDefined();
+    expect(details[1]!.attributes("open")).toBeUndefined();
     expect(wrapper.find("summary").text()).toBe("Wohin liefern Sie?");
     expect(wrapper.text()).toContain("Bar oder mit EC-Karte.");
     expect(wrapper.text()).toContain("Häufige Fragen");

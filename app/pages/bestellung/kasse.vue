@@ -1,16 +1,10 @@
 <script setup lang="ts">
-// One-page checkout of the presets (#443): delivery or pickup, time,
-// customer data, payment and the order on one page. Shops without a
-// preset keep the three steps.
+// One-page checkout (#443): delivery or pickup, time, customer data,
+// payment and the order on one page.
 useSeoMeta({
   title: "Kasse",
   robots: "noindex, nofollow",
 });
-
-const { hasPreset } = useThemePreset();
-if (!hasPreset) {
-  await navigateTo("/bestellung/warenkorb", { replace: true });
-}
 
 const { isEmpty } = useCart();
 </script>

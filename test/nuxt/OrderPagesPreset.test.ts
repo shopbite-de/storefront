@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
 import { ref } from "vue";
-import ConfirmationPreset from "~/components/Order/ConfirmationPreset.vue";
-import DetailPreset from "~/components/Order/DetailPreset.vue";
+import ConfirmationPreset from "~/components/Order/Confirmation.vue";
+import DetailPreset from "~/components/Order/Detail.vue";
 import type { Schemas } from "#shopware";
 
 // Order confirmation and order page of the presets (#445).
@@ -22,7 +22,6 @@ vi.mock("@shopware/composables", async (importOriginal) => ({
 }));
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
-  hasPreset: true,
   menuView: "bon",
 }));
 mockNuxtImport("useCommercePrice", () => () => ({

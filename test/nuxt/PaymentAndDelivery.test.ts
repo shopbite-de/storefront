@@ -53,10 +53,6 @@ mockNuxtImport("useCheckoutMethodGuard", () => () => ({
   isResolving: ref(false),
 }));
 
-mockNuxtImport("useToast", () => () => ({
-  add: vi.fn(),
-}));
-
 describe("PaymentAndDelivery", () => {
   beforeEach(() => {
     vi.clearAllMocks();

@@ -6,7 +6,6 @@ useSeoMeta({
 });
 
 const route = useRoute();
-const toast = useToast();
 
 const { apiClient } = useShopwareContext();
 const { refreshSessionContext } = useSessionContext();
@@ -16,13 +15,8 @@ const { mergeWishlistProducts } = useWishlist();
 type ConfirmError = "invalid" | "already-confirmed";
 
 const error = ref<ConfirmError | null>(null);
-const { hasPreset } = useThemePreset();
 
-// Presets (#445) address the guest formally.
-const presetMessages: Record<
-  ConfirmError,
-  { title: string; description: string }
-> = {
+const messages: Record<ConfirmError, { title: string; description: string }> = {
   invalid: {
     title: "Bestätigung fehlgeschlagen",
     description:
@@ -31,22 +25,6 @@ const presetMessages: Record<
   "already-confirmed": {
     title: "Konto bereits bestätigt",
     description: "Ihr Konto ist schon bestätigt. Sie können sich anmelden.",
-  },
-};
-
-const errorMessages: Record<
-  ConfirmError,
-  { title: string; description: string }
-> = {
-  invalid: {
-    title: "Bestätigung fehlgeschlagen",
-    description:
-      "Der Bestätigungslink ist ungültig oder unvollständig. Bitte öffne den Link aus der Bestätigungs-E-Mail erneut oder kontaktiere uns.",
-  },
-  "already-confirmed": {
-    title: "Konto bereits bestätigt",
-    description:
-      "Dein Konto ist schon bestätigt. Du kannst dich jetzt anmelden.",
   },
 };
 
@@ -84,11 +62,6 @@ async function confirmRegistration() {
   await refreshSessionContext();
   refreshCart();
   mergeWishlistProducts();
-  toast.add({
-    title: "Bestätigung erfolgreich!",
-    description: "Willkommen, dein Konto ist jetzt aktiv.",
-    color: "success",
-  });
   await navigateTo({ path: "/konto" });
 }
 
@@ -98,7 +71,7 @@ confirmRegistration();
 </script>
 
 <template>
-  <UserAuthPanelPreset v-if="hasPreset" title="Registrierung bestätigen">
+  <UserAuthPanel title="Registrierung bestätigen">
     <p v-if="!error" role="status">Registrierung wird bestätigt …</p>
     <div
       v-else
@@ -106,8 +79,8 @@ confirmRegistration();
       class="flex flex-col items-start gap-4"
     >
       <p>
-        <strong class="block">{{ presetMessages[error].title }}</strong>
-        {{ presetMessages[error].description }}
+        <strong class="block">{{ messages[error].title }}</strong>
+        {{ messages[error].description }}
       </p>
       <div class="flex flex-wrap gap-3">
         <SbButton to="/anmelden">Zur Anmeldung</SbButton>
@@ -116,42 +89,5 @@ confirmRegistration();
         >
       </div>
     </div>
-  </UserAuthPanelPreset>
-  <UContainer v-else>
-    <div class="max-w-xl mx-auto mt-16">
-      <div
-        v-if="!error"
-        class="flex items-center justify-center gap-2 text-muted"
-        role="status"
-      >
-        <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin" />
-        Registrierung wird bestätigt …
-      </div>
-      <UAlert
-        v-else
-        :color="error === 'already-confirmed' ? 'info' : 'error'"
-        variant="subtle"
-        :icon="
-          error === 'already-confirmed'
-            ? 'i-lucide-circle-check'
-            : 'i-lucide-circle-alert'
-        "
-        :title="errorMessages[error].title"
-        :description="errorMessages[error].description"
-        :actions="[
-          { label: 'Zur Anmeldung', to: '/anmelden', color: 'neutral' },
-          ...(error === 'invalid'
-            ? [
-                {
-                  label: 'Kontakt',
-                  to: '/kontakt',
-                  color: 'neutral' as const,
-                  variant: 'outline' as const,
-                },
-              ]
-            : []),
-        ]"
-      />
-    </div>
-  </UContainer>
+  </UserAuthPanel>
 </template>

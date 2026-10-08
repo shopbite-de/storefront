@@ -2,11 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { defineComponent, h } from "vue";
 
-const { add, trackShare } = vi.hoisted(() => ({
-  add: vi.fn(),
+const { trackShare } = vi.hoisted(() => ({
   trackShare: vi.fn(),
 }));
-mockNuxtImport("useToast", () => () => ({ add }));
 mockNuxtImport("useTrackEvent", () => () => ({ trackShare }));
 
 const sharedPath = () =>
@@ -28,7 +26,6 @@ async function mountShare() {
 describe("useShareLink", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    add.mockReset();
     trackShare.mockReset();
   });
 
@@ -44,7 +41,6 @@ describe("useShareLink", () => {
       title: "Pizza",
       url: window.location.href,
     });
-    expect(add).not.toHaveBeenCalled();
     expect(trackShare).toHaveBeenCalledWith("share", "P1", sharedPath());
   });
 
@@ -60,9 +56,6 @@ describe("useShareLink", () => {
     await api.share({ productNumber: "P1" });
 
     expect(writeText).toHaveBeenCalledWith(window.location.href);
-    expect(add).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Link kopiert" }),
-    );
     expect(trackShare).toHaveBeenCalledWith("copy", "P1", sharedPath());
   });
 
@@ -97,7 +90,6 @@ describe("useShareLink", () => {
     await api.share({ productNumber: "P1" });
 
     expect(writeText).not.toHaveBeenCalled();
-    expect(add).not.toHaveBeenCalled();
     expect(trackShare).not.toHaveBeenCalled();
   });
 });

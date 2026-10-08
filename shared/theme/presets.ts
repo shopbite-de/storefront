@@ -262,10 +262,8 @@ function fontStack(font: { family: string; fallback: string }): string {
 /**
  * The stylesheet of a preset: the `--sb-*` colour tokens, the fonts as
  * `--font-sb-*` (the `--font` prefix makes @nuxt/fonts resolve the families
- * and add metric fallback faces, which a `--sb-font-*` name would not get)
- * plus a bridge that maps
- * Nuxt UI's variables onto them, so components that still use Nuxt UI take
- * the preset's colours until they are replaced (#440, #445).
+ * and add metric fallback faces, which a `--sb-font-*` name would not get),
+ * the page ground and the focus ring.
  */
 export function presetCss(preset: ThemePreset): string {
   const scope = `:root[data-preset="${preset.name}"]`;
@@ -281,24 +279,6 @@ ${tokens.join("\n")}
   color-scheme: ${preset.colorMode};
 
   --font-sans: var(--font-sb-body);
-  --ui-primary: var(--sb-primary);
-  --ui-bg: var(--sb-bg);
-  --ui-bg-muted: var(--sb-muted);
-  --ui-bg-elevated: var(--sb-surface);
-  --ui-bg-accented: var(--sb-muted);
-  --ui-bg-inverted: var(--sb-ink);
-  --ui-border: var(--sb-line);
-  --ui-border-muted: var(--sb-line);
-  --ui-border-accented: var(--sb-control);
-  --ui-border-inverted: var(--sb-ink);
-  --ui-text: var(--sb-ink);
-  --ui-text-highlighted: var(--sb-ink);
-  --ui-text-toned: var(--sb-ink);
-  --ui-text-muted: var(--sb-ink-muted);
-  --ui-text-dimmed: var(--sb-ink-muted);
-  --ui-text-inverted: var(--sb-surface);
-  --ui-text-default: var(--sb-ink);
-  --ui-text-accented: var(--sb-ink);
 }
 
 ${scope} body {

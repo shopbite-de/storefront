@@ -75,12 +75,27 @@ describe("CartItem", () => {
     expect(wrapper.vm.quantity).toBe(3);
   });
 
-  it("removes the item through the mutation queue and disables the button while mutating", async () => {
+  it("removes the item from the stepper at quantity 1", async () => {
     const wrapper = await mountSuspended(CartItem, {
-      props: { cartItem: lineItem },
+      props: { cartItem: { ...lineItem, quantity: 1 } },
     });
 
-    const button = wrapper.find('button[aria-label="Artikel entfernen"]');
+    await wrapper
+      .find('button[aria-label="Pizza Margherita entfernen"]')
+      .trigger("click");
+    expect(mockRemoveLineItem).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "li-1" }),
+    );
+  });
+
+  it("removes the item through the mutation queue and disables the button while mutating", async () => {
+    const wrapper = await mountSuspended(CartItem, {
+      props: { cartItem: lineItem, withQuantityInput: false },
+    });
+
+    const button = wrapper.find(
+      'button[aria-label="Pizza Margherita entfernen"]',
+    );
     await button.trigger("click");
     expect(mockRemoveLineItem).toHaveBeenCalledWith(lineItem);
 
@@ -88,7 +103,7 @@ describe("CartItem", () => {
     await nextTick();
     expect(
       wrapper
-        .find('button[aria-label="Artikel entfernen"]')
+        .find('button[aria-label="Pizza Margherita entfernen"]')
         .attributes("disabled"),
     ).toBeDefined();
   });

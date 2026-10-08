@@ -66,8 +66,8 @@ async function mountSummary() {
     global: {
       stubs: {
         UserDetail: true,
-        CheckoutPaymentMethod: true,
-        CheckoutShippingMethod: true,
+        CheckoutLoginOrRegister: true,
+        CheckoutPaymentAndDelivery: true,
         CheckoutDeliveryTimeSelect: DeliveryTimeSelectStub,
         CheckoutVoucherInput: true,
         QuickView: true,
@@ -91,7 +91,7 @@ describe("Checkout Summary order button", () => {
 
     expect(button.text()).toBe("Lade Öffnungszeiten …");
     expect(button.attributes("disabled")).toBeDefined();
-    expect(button.find(".animate-spin").exists()).toBe(true);
+    expect(button.attributes("aria-busy")).toBe("true");
   });
 
   it("says the opening hours could not be loaded when loading failed", async () => {
@@ -102,7 +102,7 @@ describe("Checkout Summary order button", () => {
 
     expect(button.text()).toBe("Öffnungszeiten konnten nicht geladen werden");
     expect(button.attributes("disabled")).toBeDefined();
-    expect(button.find(".animate-spin").exists()).toBe(false);
+    expect(button.attributes("aria-busy")).toBeUndefined();
   });
 
   it("says the shop is closed once loaded without a valid time", async () => {
@@ -112,7 +112,7 @@ describe("Checkout Summary order button", () => {
 
     expect(button.text()).toBe("Wir haben aktuell leider geschlossen");
     expect(button.attributes("disabled")).toBeDefined();
-    expect(button.find(".animate-spin").exists()).toBe(false);
+    expect(button.attributes("aria-busy")).toBeUndefined();
   });
 
   it("allows ordering once loaded with a valid time", async () => {

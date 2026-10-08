@@ -38,13 +38,12 @@ const queuedQuantityTasks = new Map<string, Promise<void>>();
  * concurrently (e.g. quick +/- clicks) yields `CHECKOUT__CART_LOCKED`
  * conflicts. Every write goes through one queue, a quantity change made
  * while another is in flight only sends the latest value, a lock conflict
- * is retried once, and a final failure is reported to the customer and
- * the cart re-synced. See issue #241.
+ * is retried once, and a final failure leaves the cart as it was:
+ * it is re-synced. See issue #241.
  */
 export function useCartMutations() {
   const { cart, refreshCart, addProducts, changeProductQuantity, removeItem } =
     useCart();
-  const toast = useToast();
 
   const pendingCount = useState("cart-mutations-pending", () => 0);
   const isMutating = computed(() => pendingCount.value > 0);
@@ -75,25 +74,15 @@ export function useCartMutations() {
 
   /**
    * Runs `task` after every previously queued cart write. Resolves with
-   * `undefined` when the write failed; the failure is already reported.
+   * `undefined` when the write failed.
    */
-  function enqueue<T>(
-    task: () => Promise<T>,
-    failureTitle: string,
-  ): Promise<T | undefined> {
+  function enqueue<T>(task: () => Promise<T>): Promise<T | undefined> {
     pendingCount.value++;
     const run = async (): Promise<T | undefined> => {
       try {
         return await task();
       } catch (error) {
         console.error("[cart][mutation]", error);
-        toast.add({
-          title: failureTitle,
-          description: "Bitte versuche es erneut.",
-          color: "error",
-          icon: "i-lucide-x-circle",
-          progress: false,
-        });
         await refreshCart().catch(() => {});
         return undefined;
       } finally {
@@ -115,9 +104,8 @@ export function useCartMutations() {
    */
   function setQuantity(lineItemId: string, quantity: number): Promise<void> {
     if (import.meta.server) {
-      return enqueue(
-        () => write(() => changeProductQuantity({ id: lineItemId, quantity })),
-        "Menge konnte nicht geändert werden",
+      return enqueue(() =>
+        write(() => changeProductQuantity({ id: lineItemId, quantity })),
       ).then(() => undefined);
     }
 
@@ -139,24 +127,18 @@ export function useCartMutations() {
       await write(() =>
         changeProductQuantity({ id: lineItemId, quantity: target }),
       );
-    }, "Menge konnte nicht geändert werden").then(() => undefined);
+    }).then(() => undefined);
 
     queuedQuantityTasks.set(lineItemId, task);
     return task;
   }
 
   function removeLineItem(lineItem: Schemas["LineItem"]) {
-    return enqueue(
-      () => write(() => removeItem(lineItem)),
-      "Artikel konnte nicht entfernt werden",
-    );
+    return enqueue(() => write(() => removeItem(lineItem)));
   }
 
   function addLineItems(items: LineItems) {
-    return enqueue(
-      () => write(() => addProducts(items)),
-      "Artikel konnte nicht in den Warenkorb gelegt werden",
-    );
+    return enqueue(() => write(() => addProducts(items)));
   }
 
   return {

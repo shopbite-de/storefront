@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
-import RegistrationFormPreset from "~/components/User/RegistrationFormPreset.vue";
-import LoginFormPreset from "~/components/User/LoginFormPreset.vue";
+import RegistrationFormPreset from "~/components/User/RegistrationForm.vue";
+import LoginFormPreset from "~/components/User/LoginForm.vue";
 
 // Forms of the one-page checkout with a style preset (#443).
 const mocks = vi.hoisted(() => ({

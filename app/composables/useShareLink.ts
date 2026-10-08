@@ -1,14 +1,13 @@
 /**
  * Shares the current page (#411): the native share sheet where the browser
- * has one (phones: WhatsApp, messages …), otherwise the link is copied and
- * a toast confirms it. `canShare` is false during SSR and the first render,
+ * has one (phones: WhatsApp, messages …), otherwise the link is copied.
+ * `canShare` is false during SSR and the first render,
  * so the button's icon does not cause a hydration mismatch.
  *
  * With a `productNumber`, a completed share or copy is tracked in Matomo
  * together with the shared path (`useTrackEvent().trackShare`).
  */
 export function useShareLink() {
-  const toast = useToast();
   const { trackShare } = useTrackEvent();
   const canShare = ref(false);
 
@@ -43,17 +42,8 @@ export function useShareLink() {
     try {
       await navigator.clipboard.writeText(url);
       track("copy");
-      toast.add({
-        title: "Link kopiert",
-        icon: "i-lucide-check",
-        color: "success",
-      });
     } catch {
-      toast.add({
-        title: "Link konnte nicht kopiert werden",
-        description: url,
-        color: "error",
-      });
+      // clipboard blocked (permissions, insecure context): nothing to copy
     }
   }
 

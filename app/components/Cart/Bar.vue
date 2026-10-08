@@ -59,14 +59,14 @@ onBeforeUnmount(() => clearTimeout(addedTimer));
       <button
         :key="popKey"
         type="button"
-        class="flex h-14 w-full items-center gap-3 rounded-xl bg-primary px-4 text-inverted shadow-lg transition-colors hover:bg-primary/90 active:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        class="flex h-14 w-full items-center gap-3 rounded-sb-card bg-sb-primary px-4 font-body text-sb-on-primary shadow-lg transition-colors hover:bg-sb-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-sb-focus"
         :class="{ 'motion-safe:animate-cart-pop': popKey > 0 }"
         aria-haspopup="dialog"
         aria-live="polite"
         data-testid="cart-bar"
         @click="show"
       >
-        <UIcon name="i-lucide-shopping-bag" class="size-6 shrink-0" />
+        <SbIcon name="bag" :size="24" />
         <span class="flex min-w-0 flex-1 items-baseline gap-2 text-left">
           <Transition
             mode="out-in"
@@ -80,10 +80,7 @@ onBeforeUnmount(() => clearTimeout(addedTimer));
               key="added"
               class="flex min-w-0 items-baseline gap-2"
             >
-              <UIcon
-                name="i-lucide-check"
-                class="size-4 shrink-0 self-center"
-              />
+              <SbIcon name="check" :size="16" class="self-center" />
               <span class="truncate font-semibold">{{ addedLabel }}</span>
               <span class="shrink-0 text-sm">hinzugefügt</span>
             </span>
@@ -95,7 +92,7 @@ onBeforeUnmount(() => clearTimeout(addedTimer));
             </span>
           </Transition>
         </span>
-        <UIcon name="i-lucide-chevron-up" class="size-5 shrink-0" />
+        <SbIcon name="chevron-up" :size="20" />
       </button>
     </div>
   </Transition>

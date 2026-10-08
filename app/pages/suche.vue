@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 import type { NitroFetchRequest } from "nitropack";
-import ProductCard from "~/components/Product/Card.vue";
 import MenuBonCard from "~/components/Menu/BonCard.vue";
 
 // Cards hydrate as they scroll into view, see Category/Listing.vue (#314).
-const ProductCardWhenVisible = hydrateWhenVisible(ProductCard);
 const MenuBonCardWhenVisible = hydrateWhenVisible(MenuBonCard);
 
 definePageMeta({
@@ -90,7 +88,7 @@ watch(currentSorting, async (val) => {
 const searchInput = ref(searchQuery.value);
 
 // Presets (#445): bon cards, a labelled search form and a native select.
-const { hasPreset, menuView } = useThemePreset();
+const { menuView } = useThemePreset();
 const sortingOptions = computed(() => toSortingOptions(sortingOrders.value));
 const resultLabel = computed(() =>
   elements.value.length === 1
@@ -107,7 +105,6 @@ function submitSearch() {
 
 <template>
   <div
-    v-if="hasPreset"
     class="mx-auto flex w-full max-w-(--sb-container) flex-col gap-6 px-4 pt-8 pb-16 font-body text-sb-ink sm:px-6 sm:pt-12 lg:px-8"
   >
     <LazyProductQuickView
@@ -192,99 +189,4 @@ function submitSearch() {
       >
     </template>
   </div>
-  <UContainer v-else>
-    <UPage>
-      <UPageBody>
-        <LazyProductQuickView
-          v-if="quickView.mounted.value"
-          v-model:open="quickView.open.value"
-          :product="quickView.product.value"
-        />
-        <div class="flex flex-col gap-4">
-          <div class="flex flex-col sm:flex-row gap-4">
-            <UInput
-              v-model="searchInput"
-              name="search"
-              class="flex-1"
-              size="md"
-              icon="i-lucide-search"
-              placeholder="Produkte suchen..."
-              @keyup.enter="submitSearch"
-            >
-              <template v-if="searchInput" #trailing>
-                <UButton
-                  color="neutral"
-                  variant="link"
-                  size="sm"
-                  icon="i-lucide-circle-x"
-                  aria-label="Suche leeren"
-                  @click="searchInput = ''"
-                />
-              </template>
-            </UInput>
-            <USelect
-              v-model="currentSorting"
-              icon="i-lucide-arrow-down-wide-narrow"
-              value-key="key"
-              :items="sortingOrders"
-              placeholder="Sortierung"
-            />
-          </div>
-
-          <div
-            v-if="searchQuery && !showSkeleton"
-            class="flex items-center gap-2"
-          >
-            <p class="text-sm text-muted">
-              Suchergebnisse für „{{ searchQuery }}"
-            </p>
-            <UBadge variant="subtle" :label="`${elements.length} Produkte`" />
-          </div>
-
-          <div
-            v-if="showSkeleton"
-            class="grid grid-cols-1 gap-4 xl:grid-cols-2"
-            aria-busy="true"
-            aria-label="Produkte werden geladen"
-          >
-            <LazyProductCardSkeleton v-for="i in 6" :key="i" />
-          </div>
-
-          <div
-            v-else-if="elements.length > 0"
-            class="grid grid-cols-1 gap-4 transition-opacity duration-200 xl:grid-cols-2"
-            :class="{ 'opacity-40 pointer-events-none': loading }"
-          >
-            <ProductCardWhenVisible
-              v-for="product in elements"
-              :key="product.id"
-              :product="product"
-              :with-favorite-button="true"
-              :selectable="true"
-              @select="quickView.show"
-            />
-          </div>
-
-          <template v-else-if="searchQuery && !showSkeleton && !loading">
-            <p class="text-muted">
-              Keine Produkte für „{{ searchQuery }}" gefunden.
-            </p>
-            <template v-if="showFallback && fallbackProducts?.length">
-              <p class="text-sm font-medium mt-2">Das könnte dir gefallen:</p>
-              <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                <ProductCardWhenVisible
-                  v-for="product in fallbackProducts"
-                  :key="product.id"
-                  :product="product"
-                  :with-favorite-button="true"
-                  :selectable="true"
-                  @select="quickView.show"
-                />
-              </div>
-            </template>
-          </template>
-        </div>
-      </UPageBody>
-    </UPage>
-  </UContainer>
 </template>

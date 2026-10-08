@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
-import type { BreadcrumbItem } from "#ui/components/Breadcrumb.vue";
 
 const props = defineProps<{
   categoryId: string | undefined;
@@ -38,7 +37,7 @@ const { data } = await useAsyncData(cacheKey, async () => {
   return response.data;
 });
 
-const items = computed<BreadcrumbItem[]>(() => {
+const items = computed<{ label?: string; to: string }[]>(() => {
   if (!data.value) return [{ label: "Kategorie", to: "#" }];
   return data.value?.map((item: Schemas["Breadcrumb"]) => {
     return {
@@ -69,5 +68,32 @@ watchEffect(() => {
 </script>
 
 <template>
-  <UBreadcrumb :items="items" />
+  <nav aria-label="Brotkrumen" class="mb-2 font-body text-sm">
+    <ol class="flex flex-wrap items-center gap-1 text-sb-ink-muted">
+      <li
+        v-for="(item, index) in items"
+        :key="item.to"
+        class="flex items-center gap-1"
+      >
+        <SbIcon
+          v-if="index > 0"
+          name="chevron-right"
+          :size="14"
+          class="text-sb-ink-muted"
+        />
+        <NuxtLink
+          v-if="index < items.length - 1"
+          :to="item.to"
+          class="inline-flex min-h-11 items-center font-semibold text-sb-primary-ink underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-sb-focus"
+          >{{ item.label }}</NuxtLink
+        >
+        <span
+          v-else
+          aria-current="page"
+          class="inline-flex min-h-11 items-center font-semibold text-sb-ink"
+          >{{ item.label }}</span
+        >
+      </li>
+    </ol>
+  </nav>
 </template>

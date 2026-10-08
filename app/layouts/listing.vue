@@ -1,10 +1,8 @@
-<script setup lang="ts"></script>
-
 <template>
-  <UPage>
-    <div class="sticky top-16 left-0 z-20 w-full backdrop-blur-md rounded-md">
+  <div>
+    <div class="sticky top-16 z-20 sm:top-20 lg:hidden">
       <NavigationMobileTop />
     </div>
     <slot />
-  </UPage>
+  </div>
 </template>

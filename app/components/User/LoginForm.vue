@@ -1,123 +1,117 @@
 <script setup lang="ts">
 import * as z from "zod";
 import { ApiClientError } from "@shopware/api-client";
-import type { FormSubmitEvent } from "@nuxt/ui";
 
-const { isLoggedIn, login, user } = useUser();
-const toast = useToast();
+/**
+ * Login of the presets (#443), same checks and call as User/LoginForm.vue
+ * with the base components; errors show at the fields and above the form.
+ */
+const emit = defineEmits<{ "login-success": [email: string] }>();
 
-const props = withDefaults(
-  defineProps<{
-    title?: string;
-    icon?: string;
-    withRegisterHint?: boolean;
-  }>(),
-  {
-    title: "",
-    icon: "",
-    withRegisterHint: false,
-  },
-);
-
-const emit = defineEmits<{
-  "login-success": [data: string];
-}>();
-
-const { title, icon } = toRefs(props);
-
-if (isLoggedIn.value) {
-  navigateTo({ path: "/konto" });
-}
-
-const fields = [
-  {
-    name: "email",
-    type: "text" as const,
-    label: "Email",
-    placeholder: "Email-Adresse eingeben",
-    required: true,
-  },
-  {
-    name: "password",
-    label: "Passwort",
-    type: "password" as const,
-    placeholder: "Passwort eingeben",
-    required: true,
-  },
-];
+const { login } = useUser();
 
 const schema = z.object({
-  email: z.string().email("Email Adresse nicht gültig"),
-  password: z.string().min(8, "Mindestens 8 Zeichen"),
+  email: z.string().email("Bitte geben Sie eine gültige E-Mail-Adresse ein."),
+  password: z.string().min(8, "Das Passwort hat mindestens 8 Zeichen."),
 });
 
-type Schema = z.output<typeof schema>;
+const state = reactive({ email: "", password: "" });
+const errors = ref<Partial<Record<"email" | "password", string>>>({});
+const loginError = ref<string | null>(null);
+const submitting = ref(false);
+const alertBox = ref<HTMLElement | null>(null);
 
-async function onSubmit(payload: FormSubmitEvent<Schema>) {
+async function onSubmit() {
+  loginError.value = null;
+  const result = schema.safeParse(state);
+  if (!result.success) {
+    const next: typeof errors.value = {};
+    for (const issue of result.error.issues) {
+      const key = issue.path[0] as "email" | "password";
+      next[key] ??= issue.message;
+    }
+    errors.value = next;
+    return;
+  }
+  errors.value = {};
+  submitting.value = true;
   try {
-    await login({
-      username: payload.data.email,
-      password: payload.data.password,
-    });
-    toast.add({
-      title:
-        "Hallo " + user.value?.firstName + " " + user.value?.lastName + "!",
-      description: "Erfolgreich angemeldet.",
-      color: "success",
-    });
-    emit("login-success", payload.data.email);
+    await login({ username: state.email, password: state.password });
+    emit("login-success", state.email);
   } catch (error) {
     console.error("Login failed:", error);
-    let description = "Bitte überprüfen Sie Ihre Zugangsdaten.";
+    let message = "Bitte überprüfen Sie Ihre Zugangsdaten.";
     if (error instanceof ApiClientError) {
-      const errors = error.details?.errors;
-      if (Array.isArray(errors) && errors.length > 0) {
-        description = errors
-          .map((e) => e.detail || e.title)
+      const details = error.details?.errors;
+      if (Array.isArray(details) && details.length > 0) {
+        message = details
+          .map((detail) => detail.detail || detail.title)
           .filter(Boolean)
           .join("\n");
       }
     }
-    toast.add({
-      title: "Login fehlgeschlagen",
-      description,
-      color: "error",
-    });
+    loginError.value = message;
+    await nextTick();
+    alertBox.value?.focus();
+  } finally {
+    submitting.value = false;
   }
 }
 </script>
 
 <template>
-  <UAuthForm
-    :schema="schema"
-    :title="title"
-    :icon="icon"
-    :fields="fields"
-    :submit="{
-      label: 'Anmelden',
-    }"
-    @submit="onSubmit"
+  <form
+    novalidate
+    class="flex flex-col gap-4 font-body text-sb-ink"
+    @submit.prevent="onSubmit"
   >
-    <template v-if="withRegisterHint" #description>
-      Noch kein Konto erstellt?
-      <ULink to="registrierung" class="text-primary font-medium"
-        >Jetzt erstellen</ULink
-      >.
-    </template>
-    <template #password-hint>
-      <ULink
-        to="passwort-vergessen"
-        class="text-primary font-medium"
-        tabindex="-1"
-        >Passwort vergessen?</ULink
-      >
-    </template>
-    <template #footer>
-      Bei Anmeldung stimmst du unseren
-      <ULink to="datenschutz" class="text-primary font-medium"
-        >Datenschutzbestimmungen</ULink
-      >
-      zu.
-    </template>
-  </UAuthForm>
+    <div
+      v-if="loginError"
+      ref="alertBox"
+      role="alert"
+      tabindex="-1"
+      class="rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm whitespace-pre-line"
+    >
+      <strong class="block text-base">Anmeldung fehlgeschlagen</strong>
+      {{ loginError }}
+    </div>
+    <SbField
+      v-slot="{ id, describedBy, invalid }"
+      label="E-Mail"
+      :error="errors.email"
+    >
+      <SbInput
+        :id="id"
+        v-model="state.email"
+        name="email"
+        type="email"
+        autocomplete="username"
+        :aria-describedby="describedBy"
+        :invalid="invalid"
+      />
+    </SbField>
+    <SbField
+      v-slot="{ id, describedBy, invalid }"
+      label="Passwort"
+      :error="errors.password"
+    >
+      <SbInput
+        :id="id"
+        v-model="state.password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        :aria-describedby="describedBy"
+        :invalid="invalid"
+      />
+    </SbField>
+    <NuxtLink
+      to="/passwort-vergessen"
+      class="inline-flex min-h-11 items-center self-start text-sm font-semibold text-sb-primary-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-sb-focus"
+      >Passwort vergessen?</NuxtLink
+    >
+    <SbButton type="submit" size="lg" block :loading="submitting"
+      >Anmelden</SbButton
+    >
+  </form>
 </template>

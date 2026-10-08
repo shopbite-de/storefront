@@ -1,30 +1,13 @@
 @import "tailwindcss";
-@import "@nuxt/ui";
 
 @source "../../../content/**/*";
 
 @theme {
-  --font-sans: "Public Sans", sans-serif;
-  --color-brand-50: #fff4ed;
-  --color-brand-100: #ffe4d1;
-  --color-brand-200: #ffc8a3;
-  --color-brand-300: #ffa169;
-  --color-brand-400: #ff7a2d;
-  --color-brand-500: #ff5b00;
-  /* primary colour of the light mode: 5.3:1 on white, 4.6:1 on its own
-     10 % tint (subtle buttons and badges), see #275 */
-  --color-brand-600: #c23d00;
-  --color-brand-700: #a83500;
-  --color-brand-800: #9a3200;
-  --color-brand-900: #7a2800;
-  --color-brand-950: #471500;
-  --color-neutral-950: #171717;
-
   /* This is important because apple devices will zoom in when the font size is below 16px */
   --text-sm: 16px;
 
   /* Feedback after adding to the cart: the cart bar and the header badge
-     pop instead of a toast (#325). */
+     pop (#325). */
   --animate-cart-pop: cart-pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
   @keyframes cart-pop {
@@ -40,102 +23,18 @@
   }
 }
 
-/*
- * Primary and success colours per colour mode, the Nuxt UI convention: a
- * dark step on light backgrounds, the 400 step on dark ones. Text in these
- * colours and text on solid buttons need a contrast of at least 4.5:1
- * (WCAG AA), which the 500 step of most scales misses (#275). Subtle
- * buttons and badges put the colour on a 10 % tint of itself, so aim for
- * 5:1 on white. A brand scale must keep 600 >= 5:1 on white and
- * 400 >= 4.5:1 on #171717.
- */
-:root {
-  --ui-primary: var(--color-brand-600);
-  --ui-success: var(--color-green-800);
-
-  --ui-bg: #fff;
-  --ui-bg-muted: #f5f5f5;
-  --ui-bg-elevated: var(--color-brand-50);
-  --ui-bg-accented: var(--color-brand-200);
-  --ui-bg-inverted: #171717;
-
-  --ui-border-accented: var(--color-brand-200);
-  --ui-border: #e5e5e5;
-
-  --ui-text-accented: #171717;
-  --ui-text-default: #404040;
-  /* 4.9:1 on --ui-bg-elevated (#737373 was 4.38, #275) */
-  --ui-text-muted: #6b6b6b;
-  --ui-text-dimmed: #a3a3a3;
-  --ui-text-inverted: #fff;
-}
-
-:root.dark {
-  --ui-primary: var(--color-brand-400);
-  --ui-success: var(--color-green-400);
-
-  --ui-bg: #171717;
-  --ui-bg-muted: #1f1f1f;
-  --ui-bg-elevated: #2a2a2a;
-  --ui-bg-accented: #333333;
-  --ui-bg-inverted: #fff;
-
-  --ui-border-accented: #333333;
-  --ui-border: #333333;
-
-  --ui-text-accented: #ffffff;
-  --ui-text-default: #cccccc;
-  --ui-text-muted: #999999;
-  --ui-text-dimmed: #666666;
-  --ui-text-inverted: #171717;
-}
-
 html {
   scroll-behavior: smooth;
 }
 
 /*
- * Design tokens of the base components (#439, #440). A style preset
- * (shared/theme/presets.ts) sets every --sb-* value on
- * :root[data-preset=…]; without a preset they fall back to the Nuxt UI
- * colours above, so the base components also fit shops that have not
- * picked a preset yet.
+ * Design tokens of the base components (#439, #440). The shop's style
+ * preset (shared/theme/presets.ts, `trattoria` by default) sets every
+ * --sb-* value on :root[data-preset=…].
  */
 :root {
-  --sb-bg: var(--ui-bg);
-  --sb-surface: var(--ui-bg);
-  --sb-muted: var(--ui-bg-muted);
-  --sb-line: var(--ui-border);
-  --sb-control: #8a8a8a;
-  --sb-ink: var(--ui-text-accented);
-  --sb-ink-muted: var(--ui-text-muted);
-  --sb-primary: var(--ui-primary);
-  --sb-primary-hover: var(--color-brand-700);
-  --sb-on-primary: #fff;
-  --sb-primary-tint: var(--color-brand-50);
-  --sb-primary-ink: var(--ui-primary);
-  --sb-accent: var(--ui-primary);
-  --sb-focus: var(--ui-primary);
-  --sb-danger: #b42318;
-  --sb-star: #b87a00;
-  --sb-band: #171717;
-  --sb-on-band: #fff;
-  --font-sb-display: var(--font-sans);
-  --font-sb-body: var(--font-sans);
-  --sb-radius-card: 12px;
-  --sb-radius-control: 10px;
-  /* content width of the preset pages, the same as UContainer (80rem) */
+  /* content width of the pages */
   --sb-container: 80rem;
-}
-
-:root.dark {
-  --sb-surface: var(--ui-bg-elevated);
-  --sb-control: #8c8c8c;
-  --sb-primary-hover: var(--color-brand-300);
-  --sb-on-primary: #171717;
-  --sb-primary-tint: #2a2a2a;
-  --sb-danger: #ff8a7a;
-  --sb-band: #000;
 }
 
 /* Tailwind utilities for the tokens: bg-sb-surface, text-sb-ink-muted,
@@ -177,4 +76,59 @@ html {
     opacity: 0;
     transform: translateY(24px);
   }
+}
+
+/* Markdown content pages (Impressum, AGB, …), rendered as plain HTML by
+   @nuxt/content since #445. */
+.content-preset {
+  line-height: 1.75;
+}
+.content-preset :where(h1) {
+  margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  line-height: 1.1;
+}
+.content-preset :where(h2) {
+  margin: 2.5rem 0 1rem;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+.content-preset :where(h3) {
+  margin: 2rem 0 0.75rem;
+  font-size: 1.375rem;
+  line-height: 1.25;
+}
+.content-preset :where(p, ul, ol, table, blockquote) {
+  margin-bottom: 1rem;
+}
+.content-preset :where(ul) {
+  padding-inline-start: 1.25rem;
+  list-style: disc;
+}
+.content-preset :where(ol) {
+  padding-inline-start: 1.25rem;
+  list-style: decimal;
+}
+.content-preset :where(a) {
+  color: var(--sb-primary-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.content-preset :where(strong) {
+  font-weight: 700;
+}
+.content-preset :where(table) {
+  width: 100%;
+  border-collapse: collapse;
+}
+.content-preset :where(th, td) {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--sb-line);
+  text-align: start;
+}
+.content-preset :where(h1, h2, h3) a {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
 }

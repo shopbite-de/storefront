@@ -38,9 +38,6 @@ mockNuxtImport("useWishlist", () => () => ({
   mergeWishlistProducts: mergeWishlistProductsMock,
 }));
 
-const toastAddMock = vi.fn();
-mockNuxtImport("useToast", () => () => ({ add: toastAddMock }));
-
 const { navigateToMock } = vi.hoisted(() => ({ navigateToMock: vi.fn() }));
 mockNuxtImport("navigateTo", () => navigateToMock);
 
@@ -68,9 +65,6 @@ describe("registrierung/bestaetigen", () => {
     expect(refreshSessionContextMock).toHaveBeenCalled();
     expect(refreshCartMock).toHaveBeenCalled();
     expect(mergeWishlistProductsMock).toHaveBeenCalled();
-    expect(toastAddMock).toHaveBeenCalledWith(
-      expect.objectContaining({ color: "success" }),
-    );
     expect(navigateToMock).toHaveBeenCalledWith({ path: "/konto" });
   });
 
@@ -86,7 +80,6 @@ describe("registrierung/bestaetigen", () => {
     expect(wrapper.text()).toContain("Bestätigung fehlgeschlagen");
     expect(wrapper.text()).toContain("Kontakt");
     expect(refreshSessionContextMock).not.toHaveBeenCalled();
-    expect(toastAddMock).not.toHaveBeenCalled();
     expect(navigateToMock).not.toHaveBeenCalled();
   });
 
@@ -101,7 +94,6 @@ describe("registrierung/bestaetigen", () => {
 
     expect(wrapper.text()).toContain("Konto bereits bestätigt");
     expect(wrapper.text()).toContain("Zur Anmeldung");
-    expect(toastAddMock).not.toHaveBeenCalled();
     expect(navigateToMock).not.toHaveBeenCalled();
   });
 

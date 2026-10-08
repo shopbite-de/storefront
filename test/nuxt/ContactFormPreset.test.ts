@@ -1,18 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
-import ContactFormPreset from "~/components/Contact/FormPreset.vue";
+import ContactForm from "~/components/Contact/Form.vue";
 
 // Contact form of the presets (#445).
-const SEND = "sendContactMail post /contact-form";
-const mocks = vi.hoisted(() => ({ invoke: vi.fn(), send: vi.fn() }));
+const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
 
 mockNuxtImport("useShopwareContext", () => () => ({
   apiClient: { invoke: mocks.invoke },
 }));
 
+const salutations = {
+  data: { elements: [{ id: "sal-none", displayName: "Keine Angabe" }] },
+};
+
+/** Answers the salutation request and lets `send` handle the contact mail. */
+function mockSend(send: () => Promise<unknown>) {
+  mocks.invoke.mockImplementation(async (operation: string) =>
+    operation.includes("salutation") ? salutations : send(),
+  );
+}
+
 const sendCalls = () =>
-  mocks.invoke.mock.calls.filter(([operation]) => operation === SEND);
+  mocks.invoke.mock.calls.filter(
+    ([operation]) => operation === "sendContactMail post /contact-form",
+  );
 
 async function fill(wrapper: Awaited<ReturnType<typeof mountSuspended>>) {
   await wrapper.find('input[name="email"]').setValue("gast@example.de");
@@ -25,18 +37,12 @@ async function fill(wrapper: Awaited<ReturnType<typeof mountSuspended>>) {
 describe("contact form with a preset (#445)", () => {
   beforeEach(() => {
     mocks.invoke.mockReset();
-    mocks.send.mockReset();
-    // the salutations load on mount; only the send is controlled per test
-    mocks.invoke.mockImplementation((operation: string, ...args: unknown[]) =>
-      operation === SEND
-        ? mocks.send(...args)
-        : Promise.resolve({ data: { elements: [] } }),
-    );
+    mockSend(async () => ({ data: {} }));
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   it("checks the fields before sending", async () => {
-    const wrapper = await mountSuspended(ContactFormPreset);
+    const wrapper = await mountSuspended(ContactForm);
     await wrapper.find("form").trigger("submit");
     await flushPromises();
     expect(wrapper.text()).toContain("Bitte geben Sie eine gültige E-Mail");
@@ -46,10 +52,10 @@ describe("contact form with a preset (#445)", () => {
   });
 
   it("sends the message and shows the shop's success text", async () => {
-    mocks.send.mockResolvedValue({
+    mockSend(async () => ({
       data: { individualSuccessMessage: "Danke, wir melden uns." },
-    });
-    const wrapper = await mountSuspended(ContactFormPreset);
+    }));
+    const wrapper = await mountSuspended(ContactForm);
     await fill(wrapper);
     await wrapper.find("form").trigger("submit");
     await flushPromises();
@@ -67,8 +73,27 @@ describe("contact form with a preset (#445)", () => {
     );
   });
 
+  it("falls back to the default text and offers another message", async () => {
+    mockSend(async () => ({ data: { individualSuccessMessage: " " } }));
+    const wrapper = await mountSuspended(ContactForm);
+    await fill(wrapper);
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+    const status = wrapper.find('[role="status"]');
+    expect(status.text()).toContain(
+      "Vielen Dank, Ihre Nachricht ist bei uns angekommen.",
+    );
+    expect(wrapper.find("form").exists()).toBe(false);
+
+    await status.find("button").trigger("click");
+    expect(wrapper.find("form").exists()).toBe(true);
+    expect(
+      (wrapper.find('input[name="email"]').element as HTMLInputElement).value,
+    ).toBe("");
+  });
+
   it("ignores a filled honeypot without sending", async () => {
-    const wrapper = await mountSuspended(ContactFormPreset);
+    const wrapper = await mountSuspended(ContactForm);
     await fill(wrapper);
     await wrapper.find('input[name="hp"]').setValue("bot");
     await wrapper.find("form").trigger("submit");
@@ -78,8 +103,8 @@ describe("contact form with a preset (#445)", () => {
   });
 
   it("reports a failed send in the form", async () => {
-    mocks.send.mockRejectedValue(new Error("500"));
-    const wrapper = await mountSuspended(ContactFormPreset);
+    mockSend(() => Promise.reject(new Error("500")));
+    const wrapper = await mountSuspended(ContactForm);
     await fill(wrapper);
     await wrapper.find("form").trigger("submit");
     await flushPromises();

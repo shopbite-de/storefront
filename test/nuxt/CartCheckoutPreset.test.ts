@@ -24,7 +24,6 @@ const selectedPaymentMethod = ref({ id: "cash", distinguishableName: "Bar" });
 
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
-  hasPreset: true,
   menuView: "bon",
 }));
 mockNuxtImport("useCartMutations", () => () => ({
@@ -63,7 +62,6 @@ mockNuxtImport("useCheckoutMethodGuard", () => () => ({
   isPaymentMethodBlocked: ref(false),
   isResolving: ref(false),
 }));
-mockNuxtImport("useToast", () => () => ({ add: vi.fn() }));
 
 const lineItem = {
   id: "li-1",

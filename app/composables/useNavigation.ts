@@ -1,5 +1,13 @@
-import type { NavigationMenuItem } from "@nuxt/ui";
 import type { Schemas } from "#shopware";
+
+/** A navigation entry of the header, footer and menu navigation. */
+export interface NavigationMenuItem {
+  label?: string;
+  to?: string;
+  target?: "_blank";
+  icon?: string;
+  children?: NavigationMenuItem[];
+}
 
 export function useNavigation(withChildren: boolean | undefined) {
   const { apiClient } = useShopwareContext();
@@ -44,7 +52,7 @@ export function useNavigation(withChildren: boolean | undefined) {
     category: Schemas["Category"],
   ): NavigationMenuItem => ({
     label: category.translated?.name ?? category.name,
-    to: category.translated?.seoUrl ?? category.seoUrl,
+    to: category.translated?.seoUrl ?? category.seoUrl ?? undefined,
     target: category.linkNewTab ? "_blank" : undefined,
     icon: (category.customFields as Record<string, string> | null)
       ?.shopbite_category_icon,

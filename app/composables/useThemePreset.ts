@@ -1,24 +1,15 @@
-import type { ThemePreset, ThemePresetName } from "#shared/theme/presets";
-
-type ThemeRuntime = {
-  preset: ThemePresetName | "";
-  menuView: ThemePreset["menuView"] | "";
-  colorMode: ThemePreset["colorMode"] | "";
-};
+import { isThemePresetName, THEME_PRESETS } from "#shared/theme/presets";
 
 /**
- * The style preset the shop was built with (#439, modules/theme.ts).
- * `hasPreset` is false for shops without one: they keep the Nuxt UI
- * screens until they opt in.
+ * The active style preset (#439, #445): `runtimeConfig.public.shopBite
+ * .themePreset` (`NUXT_PUBLIC_SHOP_BITE_THEME_PRESET`), by default the
+ * `shopBite.preset` of the build (modules/theme.ts), else `trattoria`.
  */
 export function useThemePreset() {
-  const theme = useRuntimeConfig().public.shopBiteTheme as
-    ThemeRuntime | undefined;
-  const preset = theme?.preset ?? "";
-  return {
-    preset,
-    hasPreset: preset !== "",
-    menuView: theme?.menuView || "bon",
-    colorMode: theme?.colorMode || "light",
-  };
+  const configured = (
+    useRuntimeConfig().public.shopBite as { themePreset?: string } | undefined
+  )?.themePreset;
+  const preset = isThemePresetName(configured) ? configured : "trattoria";
+  const { menuView, colorMode } = THEME_PRESETS[preset];
+  return { preset, menuView, colorMode };
 }

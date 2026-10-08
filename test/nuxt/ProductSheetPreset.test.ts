@@ -8,7 +8,6 @@ import type { AssociationItem } from "~/types/Association";
 // The product sheet of a shop with a style preset (#442).
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
-  hasPreset: true,
   menuView: "bon",
 }));
 mockNuxtImport("useCommercePrice", () => () => ({

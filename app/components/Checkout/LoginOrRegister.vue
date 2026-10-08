@@ -1,38 +1,18 @@
 <script setup lang="ts">
-import type { TabsItem } from "@nuxt/ui";
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 
-// Presets: Reka tabs with the base forms (#443).
-const { hasPreset } = useThemePreset();
+// Reka tabs with the base forms (#443).
 const presetTab = ref<"neu" | "kunde">("neu");
-
-const items = [
-  {
-    label: "Daten erfassen",
-    slot: "register" as const,
-  },
-  {
-    label: "Einloggen",
-    slot: "login" as const,
-  },
-] satisfies TabsItem[];
-
-const toast = useToast();
 
 const { mergeWishlistProducts } = useWishlist();
 
 async function handleLoginSuccess() {
   mergeWishlistProducts();
-  toast.add({
-    title: "Wilkommen!",
-    color: "success",
-    progress: false,
-  });
 }
 </script>
 
 <template>
-  <TabsRoot v-if="hasPreset" v-model="presetTab" class="flex flex-col gap-5">
+  <TabsRoot v-model="presetTab" class="flex flex-col gap-5">
     <TabsList
       aria-label="Kundendaten"
       class="grid grid-cols-2 gap-1 rounded-sb-control bg-sb-muted p-1 font-body"
@@ -51,21 +31,10 @@ async function handleLoginSuccess() {
       </TabsTrigger>
     </TabsList>
     <TabsContent value="neu" class="focus-visible:outline-none">
-      <UserRegistrationFormPreset @registration-success="handleLoginSuccess" />
+      <UserRegistrationForm @registration-success="handleLoginSuccess" />
     </TabsContent>
     <TabsContent value="kunde" class="focus-visible:outline-none">
-      <UserLoginFormPreset @login-success="handleLoginSuccess" />
+      <UserLoginForm @login-success="handleLoginSuccess" />
     </TabsContent>
   </TabsRoot>
-  <div v-else>
-    <UTabs :items="items" :ui="{ trigger: 'grow' }" class="gap-4 w-full">
-      <template #register>
-        <UserRegistrationForm @registration-success="handleLoginSuccess" />
-      </template>
-
-      <template #login>
-        <UserLoginForm />
-      </template>
-    </UTabs>
-  </div>
 </template>

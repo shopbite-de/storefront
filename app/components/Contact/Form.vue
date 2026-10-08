@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from "#ui/types";
-import type { ContactFormData } from "~/composables/useContactForm";
+import { z } from "zod";
 
-const { hasPreset } = useThemePreset();
-const { salutations, send } = useContactForm();
-const schema = contactFormSchema;
-const toast = useToast();
+/**
+ * Contact form of the presets (#445): the same call as Contact/Form.vue
+ * (useContactForm), checked on submit with errors at the fields; the
+ * first invalid field gets focus, the result shows in the page.
+ */
+const { send } = useContactForm();
 
-const state = reactive({
-  salutationId: "",
+const schema = contactFormSchema.extend({
+  email: z.string().email("Bitte geben Sie eine gültige E-Mail-Adresse ein."),
+  subject: z.string().min(3, "Bitte geben Sie einen Betreff an."),
+  comment: z.string().min(10, "Die Nachricht braucht mindestens 10 Zeichen."),
+});
+type Field = keyof z.output<typeof schema>;
+
+const empty = () => ({
   firstName: "",
   lastName: "",
   email: "",
@@ -17,157 +24,170 @@ const state = reactive({
   comment: "",
   hp: "",
 });
+const state = reactive(empty());
+const errors = ref<Partial<Record<Field, string>>>({});
+const sending = ref(false);
+const result = ref<{ ok: boolean; message: string } | null>(null);
+const form = ref<HTMLFormElement | null>(null);
+const resultBox = ref<HTMLElement | null>(null);
 
-const loading = ref(false);
-const submitted = ref(false);
-const successMessage = ref("");
-
-async function onSubmit(event: FormSubmitEvent<ContactFormData>) {
-  loading.value = true;
+async function onSubmit() {
+  result.value = null;
+  const parsed = schema.safeParse(state);
+  if (!parsed.success) {
+    const next: typeof errors.value = {};
+    for (const issue of parsed.error.issues) {
+      next[issue.path[0] as Field] ??= issue.message;
+    }
+    errors.value = next;
+    await nextTick();
+    form.value?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    return;
+  }
+  errors.value = {};
+  sending.value = true;
   try {
-    successMessage.value = await send(
-      event.data,
-      "Deine Nachricht wurde erfolgreich versendet.",
+    const message = await send(
+      parsed.data,
+      "Vielen Dank, Ihre Nachricht ist bei uns angekommen.",
     );
-    submitted.value = true;
-
-    toast.add({
-      title: "Erfolg!",
-      description: successMessage.value,
-      color: "success",
-    });
-
-    // Reset form
-    state.salutationId = "";
-    state.firstName = "";
-    state.lastName = "";
-    state.email = "";
-    state.phone = "";
-    state.subject = "";
-    state.comment = "";
-    state.hp = "";
+    result.value = { ok: true, message };
+    Object.assign(state, empty());
   } catch (error) {
     console.error("Error sending contact mail:", error);
-    toast.add({
-      title: "Fehler!",
-      description:
-        "Deine Nachricht konnte nicht versendet werden. Bitte versuche es später erneut.",
-      color: "error",
-    });
+    result.value = {
+      ok: false,
+      message:
+        "Die Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es später noch einmal.",
+    };
   } finally {
-    loading.value = false;
+    sending.value = false;
   }
+  await nextTick();
+  resultBox.value?.focus();
 }
 </script>
 
 <template>
-  <ContactFormPreset v-if="hasPreset" />
-  <div v-else-if="submitted" class="space-y-4 text-center">
-    <UAlert
-      color="success"
-      variant="soft"
-      icon="i-lucide-check-circle"
-      :title="successMessage"
-    />
-    <UButton variant="link" @click="submitted = false">
-      Weiteres Formular senden
-    </UButton>
+  <div class="flex flex-col gap-4 font-body text-sb-ink">
+    <div
+      v-if="result?.ok"
+      ref="resultBox"
+      role="status"
+      tabindex="-1"
+      class="flex flex-col items-start gap-4 rounded-sb-card bg-sb-primary-tint p-6 text-sb-primary-ink"
+    >
+      <p class="font-semibold">{{ result.message }}</p>
+      <SbButton variant="secondary" @click="result = null"
+        >Weitere Nachricht schreiben</SbButton
+      >
+    </div>
+    <form
+      v-else
+      ref="form"
+      novalidate
+      class="relative flex flex-col gap-4"
+      @submit.prevent="onSubmit"
+    >
+      <p
+        v-if="result"
+        ref="resultBox"
+        role="alert"
+        tabindex="-1"
+        class="rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
+      >
+        {{ result.message }}
+      </p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <SbField v-slot="{ id, describedBy }" label="Vorname" optional>
+          <SbInput
+            :id="id"
+            v-model="state.firstName"
+            name="firstName"
+            autocomplete="given-name"
+            :aria-describedby="describedBy"
+          />
+        </SbField>
+        <SbField v-slot="{ id, describedBy }" label="Nachname" optional>
+          <SbInput
+            :id="id"
+            v-model="state.lastName"
+            name="lastName"
+            autocomplete="family-name"
+            :aria-describedby="describedBy"
+          />
+        </SbField>
+      </div>
+      <SbField
+        v-slot="{ id, describedBy, invalid }"
+        label="E-Mail"
+        hint="Für unsere Antwort"
+        :error="errors.email"
+      >
+        <SbInput
+          :id="id"
+          v-model="state.email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          :aria-describedby="describedBy"
+          :invalid="invalid"
+        />
+      </SbField>
+      <SbField v-slot="{ id, describedBy }" label="Telefon" optional>
+        <SbInput
+          :id="id"
+          v-model="state.phone"
+          name="phone"
+          type="tel"
+          autocomplete="tel"
+          :aria-describedby="describedBy"
+        />
+      </SbField>
+      <SbField
+        v-slot="{ id, describedBy, invalid }"
+        label="Betreff"
+        :error="errors.subject"
+      >
+        <SbInput
+          :id="id"
+          v-model="state.subject"
+          name="subject"
+          :aria-describedby="describedBy"
+          :invalid="invalid"
+        />
+      </SbField>
+      <SbField
+        v-slot="{ id, describedBy, invalid }"
+        label="Nachricht"
+        :error="errors.comment"
+      >
+        <textarea
+          :id="id"
+          v-model="state.comment"
+          name="comment"
+          rows="6"
+          :aria-describedby="describedBy"
+          :aria-invalid="invalid || undefined"
+          class="w-full rounded-sb-control border-[1.5px] border-sb-control bg-sb-surface px-3.5 py-3 font-body text-base text-sb-ink focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-sb-focus aria-invalid:border-sb-danger"
+        />
+      </SbField>
+      <!-- honeypot: hidden from people and assistive technology -->
+      <div class="absolute size-0 overflow-hidden opacity-0" aria-hidden="true">
+        <label>
+          Adresse
+          <input
+            v-model="state.hp"
+            name="hp"
+            type="text"
+            tabindex="-1"
+            autocomplete="off"
+          />
+        </label>
+      </div>
+      <SbButton type="submit" size="lg" :loading="sending" class="self-start"
+        >Nachricht senden</SbButton
+      >
+    </form>
   </div>
-
-  <UForm
-    v-else
-    :schema="schema"
-    :state="state"
-    class="space-y-4"
-    @submit="onSubmit"
-  >
-    <UFormField label="Anrede" name="salutationId">
-      <USelect
-        v-model="state.salutationId"
-        :items="salutations"
-        placeholder="Bitte wählen"
-        class="w-full"
-      />
-    </UFormField>
-
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <UFormField label="Vorname" name="firstName">
-        <UInput
-          v-model="state.firstName"
-          placeholder="Dein Vorname"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UFormField label="Nachname" name="lastName">
-        <UInput
-          v-model="state.lastName"
-          placeholder="Dein Nachname"
-          class="w-full"
-        />
-      </UFormField>
-    </div>
-
-    <UFormField label="E-Mail" name="email" required>
-      <UInput
-        v-model="state.email"
-        type="email"
-        placeholder="Deine E-Mail-Adresse"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField label="Telefon" name="phone">
-      <UInput
-        v-model="state.phone"
-        type="tel"
-        placeholder="Deine Telefonnummer"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField label="Betreff" name="subject" required>
-      <UInput
-        v-model="state.subject"
-        placeholder="Worum geht es?"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField label="Nachricht" name="comment" required>
-      <UTextarea
-        v-model="state.comment"
-        placeholder="Wie können wir dir helfen?"
-        class="w-full"
-      />
-    </UFormField>
-
-    <!-- Honeypot field -->
-    <div class="hidden-field" aria-hidden="true">
-      <UFormField label="Address" name="hp">
-        <UInput
-          v-model="state.hp"
-          type="text"
-          placeholder="Address"
-          tabindex="-1"
-          autocomplete="off"
-        />
-      </UFormField>
-    </div>
-
-    <UButton type="submit" :loading="loading" block> Absenden </UButton>
-  </UForm>
 </template>
-
-<style scoped>
-.hidden-field {
-  opacity: 0;
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 0;
-  width: 0;
-  z-index: -1;
-  overflow: hidden;
-}
-</style>

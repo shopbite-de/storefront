@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import * as z from "zod";
-import type { FormSubmitEvent } from "@nuxt/ui";
 
 useHead({
   title: "Passwort zurücksetzen",
@@ -14,24 +13,9 @@ useHead({
 const MIN_PASSWORD_LENGTH = 8;
 const PASSWORD_MIN_LENGTH_ERROR = "Das Passwort braucht mindestens 8 Zeichen.";
 const PASSWORD_MISMATCH_ERROR = "Die Passwörter stimmen nicht überein.";
-const SUCCESS_TOAST_CONFIG = {
-  title: "Erfolgreich zurückgesetzt!",
-  description: "Melden Sie sich nun mit Ihrem neuen Passwort an.",
-  icon: "i-lucide-check",
-  color: "success" as const,
-  duration: 0,
-  close: true,
-};
-const ERROR_TOAST_CONFIG = {
-  title: "Fehler beim Senden",
-  icon: "i-lucide-x",
-  description: "Bitte versuchen Sie es später erneut.",
-  color: "error" as const,
-};
 
 const { apiClient } = useShopwareContext();
 const route = useRoute();
-const toast = useToast();
 
 // Schemas
 const routeValidationSchema = z.object({
@@ -66,34 +50,8 @@ function validateRouteParameters(): string {
   }
 }
 
-// Extract toast creation functions
-function showSuccessToast(): void {
-  toast.add(SUCCESS_TOAST_CONFIG);
-}
-
-function showErrorToast(): void {
-  toast.add(ERROR_TOAST_CONFIG);
-}
-
 const recoveryHash = ref<string>("");
 recoveryHash.value = validateRouteParameters();
-
-const formFields = [
-  {
-    name: "newPassword",
-    type: "password" as const,
-    label: "Neues Passwort",
-    placeholder: "Neues Passwort eingeben",
-    required: true,
-  },
-  {
-    name: "newPasswordConfirm",
-    type: "password" as const,
-    label: "Neues Passwort wiederholen",
-    placeholder: "Neues Passwort wiederholen",
-    required: true,
-  },
-];
 
 async function resetPassword(data: PasswordResetSchema) {
   await apiClient.invoke(
@@ -108,28 +66,14 @@ async function resetPassword(data: PasswordResetSchema) {
   );
 }
 
-async function handlePasswordReset(
-  payload: FormSubmitEvent<PasswordResetSchema>,
-) {
-  try {
-    await resetPassword(payload.data);
-    showSuccessToast();
-    navigateTo("/anmelden");
-  } catch (error) {
-    showErrorToast();
-    console.error("Password recovery error:", error);
-  }
-}
-
-// Presets (#445): errors and the result show in the form, not as toasts.
-const { hasPreset } = useThemePreset();
+// Errors and the result show in the form (#445).
 const passwords = reactive({ newPassword: "", newPasswordConfirm: "" });
 const errors = ref<Partial<Record<keyof PasswordResetSchema, string>>>({});
 const result = ref<"done" | "failed" | null>(null);
 const saving = ref(false);
 const resultBox = ref<HTMLElement | null>(null);
 
-async function onPresetSubmit() {
+async function onSubmit() {
   result.value = null;
   const parsed = passwordResetSchema.safeParse(passwords);
   if (!parsed.success) {
@@ -157,7 +101,7 @@ async function onPresetSubmit() {
 }
 </script>
 <template>
-  <UserAuthPanelPreset v-if="hasPreset" title="Neues Passwort">
+  <UserAuthPanel title="Neues Passwort">
     <div
       v-if="result === 'done'"
       ref="resultBox"
@@ -175,7 +119,7 @@ async function onPresetSubmit() {
       v-else
       novalidate
       class="flex flex-col gap-4"
-      @submit.prevent="onPresetSubmit"
+      @submit.prevent="onSubmit"
     >
       <div
         v-if="result === 'failed'"
@@ -229,28 +173,5 @@ async function onPresetSubmit() {
         >Passwort speichern</SbButton
       >
     </form>
-  </UserAuthPanelPreset>
-  <UContainer v-else class="max-w-xl mx-auto mt-18">
-    <UAuthForm
-      :schema="passwordResetSchema"
-      title="Password zurücksetzten"
-      icon="i-lucide-shield-user"
-      :fields="formFields"
-      :submit="{
-        label: 'Senden',
-      }"
-      @submit="handlePasswordReset"
-    >
-      <template #description>
-        <p>Vergeben Sie hier Ihr neues Passwort.</p>
-      </template>
-      <template #footer>
-        Beim absenden stimmst du unseren
-        <ULink to="datenschutz" class="text-primary font-medium"
-          >Datenschutzbestimmungen</ULink
-        >
-        zu.
-      </template>
-    </UAuthForm>
-  </UContainer>
+  </UserAuthPanel>
 </template>

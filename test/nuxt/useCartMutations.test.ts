@@ -12,13 +12,11 @@ const {
   mockAddProducts,
   mockChangeProductQuantity,
   mockRemoveItem,
-  mockToastAdd,
 } = vi.hoisted(() => ({
   mockRefreshCart: vi.fn(),
   mockAddProducts: vi.fn(),
   mockChangeProductQuantity: vi.fn(),
   mockRemoveItem: vi.fn(),
-  mockToastAdd: vi.fn(),
 }));
 
 // Read lazily inside the factory, i.e. after module initialisation.
@@ -30,10 +28,6 @@ mockNuxtImport("useCart", () => () => ({
   addProducts: mockAddProducts,
   changeProductQuantity: mockChangeProductQuantity,
   removeItem: mockRemoveItem,
-}));
-
-mockNuxtImport("useToast", () => () => ({
-  add: mockToastAdd,
 }));
 
 function cartWith(items: { id: string; quantity: number }[]) {
@@ -163,7 +157,7 @@ describe("useCartMutations", () => {
       await pending;
 
       expect(mockChangeProductQuantity).toHaveBeenCalledTimes(2);
-      expect(mockToastAdd).not.toHaveBeenCalled();
+      expect(mockRefreshCart).not.toHaveBeenCalledWith();
     } finally {
       vi.useRealTimers();
     }
@@ -189,24 +183,16 @@ describe("useCartMutations", () => {
     await setQuantity("li-1", 3);
 
     expect(mockChangeProductQuantity).toHaveBeenCalledTimes(1);
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Menge konnte nicht geändert werden" }),
-    );
+    expect(mockRefreshCart).toHaveBeenCalledWith();
   });
 
-  it("reports a final failure, re-syncs the cart and resolves undefined", async () => {
+  it("re-syncs the cart and resolves undefined after a final failure", async () => {
     mockRemoveItem.mockRejectedValue(new Error("network"));
 
     const { removeLineItem, isMutating } = useCartMutations();
     const result = await removeLineItem({ id: "li-1" } as Schemas["LineItem"]);
 
     expect(result).toBeUndefined();
-    expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Artikel konnte nicht entfernt werden",
-        color: "error",
-      }),
-    );
     expect(mockRefreshCart).toHaveBeenCalledWith();
     expect(isMutating.value).toBe(false);
   });

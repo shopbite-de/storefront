@@ -9,13 +9,11 @@ const { state, mocks } = vi.hoisted(() => ({
   state: { guest: true },
   mocks: {
     createOrder: vi.fn(),
-    toastAdd: vi.fn(),
   },
 }));
 
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
-  hasPreset: true,
   menuView: "bon",
   colorMode: "light",
 }));
@@ -41,7 +39,6 @@ mockNuxtImport("useShopBiteConfig", () => () => ({
   refresh: vi.fn(),
 }));
 mockNuxtImport("useTrackEvent", () => () => ({ trackOrder: vi.fn() }));
-mockNuxtImport("useToast", () => () => ({ add: mocks.toastAdd }));
 mockNuxtImport("useCheckoutMethodGuard", () => () => ({
   isShippingMethodBlocked: ref(false),
   isPaymentMethodBlocked: ref(false),
@@ -106,7 +103,7 @@ describe("one-page checkout (#443)", () => {
     expect(button.attributes("disabled")).toBeDefined();
   });
 
-  it("shows a failed order in the form instead of a toast", async () => {
+  it("shows a failed order in the form", async () => {
     mocks.createOrder.mockRejectedValue(new Error("invalid cart"));
     const wrapper = await mountOnePage();
     await wrapper.get("button").trigger("click");
@@ -114,6 +111,5 @@ describe("one-page checkout (#443)", () => {
 
     const alert = wrapper.get('[role="alert"]');
     expect(alert.text()).toContain("Bestellung fehlgeschlagen");
-    expect(mocks.toastAdd).not.toHaveBeenCalled();
   });
 });

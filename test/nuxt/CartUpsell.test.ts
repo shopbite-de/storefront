@@ -53,13 +53,12 @@ describe("CartUpsell", () => {
     mockLoadUpsellProducts.mockResolvedValue([tiramisu, cola]);
   });
 
-  it("shows the suggestions with name, number and price", async () => {
+  it("shows the suggestions with name and price", async () => {
     const wrapper = await mountUpsell();
 
     expect(wrapper.find("h3").text()).toBe("Dazu passt");
     const tiles = wrapper.findAll("li");
     expect(tiles).toHaveLength(2);
-    expect(tiles[0]!.text()).toContain("#TIRAMISU");
     expect(tiles[0]!.text()).toContain("Tiramisu");
     expect(tiles[0]!.text()).toContain("5.5 €");
   });

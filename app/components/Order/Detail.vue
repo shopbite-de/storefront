@@ -1,122 +1,114 @@
 <script setup lang="ts">
 import type { Schemas } from "#shopware";
 
+/**
+ * Order details of the presets (#445): order facts as a description list,
+ * the dishes as receipt lines and the totals. Every state is spelled out,
+ * nothing depends on colour.
+ */
 const props = defineProps<{
   order: Schemas["Order"];
-  status: string;
+  status?: string;
 }>();
-
-const { order } = toRefs(props);
 
 const { getFormattedPrice } = useCommercePrice();
 
-const lineItems = computed(() =>
-  order.value?.lineItems?.filter(
-    (item: Schemas["OrderLineItem"]) => item.parentId === null,
-  ),
+const lineItems = computed(
+  () =>
+    props.order.lineItems?.filter(
+      (item: Schemas["OrderLineItem"]) => item.parentId === null,
+    ) ?? [],
 );
 
-const paymentState = computed(
-  () => order.value?.transactions?.at(-1)?.stateMachineState,
-);
-
-type BadgeColor =
-  "success" | "error" | "warning" | "info" | "neutral" | "primary";
-
-const paymentStateColor = computed((): BadgeColor => {
-  switch (paymentState.value?.technicalName) {
-    case "paid":
-    case "authorized":
-      return "success";
-    case "failed":
-    case "cancelled":
-    case "chargeback":
-      return "error";
-    case "open":
-    case "reminded":
-    case "unconfirmed":
-      return "warning";
-    case "in_progress":
-      return "info";
-    default:
-      return "neutral";
-  }
+const transaction = computed(() => props.order.transactions?.at(-1));
+const paymentState = computed(() => {
+  const state = transaction.value?.stateMachineState;
+  return state?.translated?.name ?? state?.name;
 });
+const paymentMethod = computed(() => {
+  const method = transaction.value?.paymentMethod;
+  return method?.translated?.distinguishableName ?? method?.distinguishableName;
+});
+const shippingMethod = computed(() => {
+  const method = props.order.deliveries?.[0]?.shippingMethod;
+  return method?.translated?.name ?? method?.name;
+});
+// The checkout stores the chosen time as "Wunschlieferzeit: …" (Summary.vue).
+const wishedTime = computed(() =>
+  props.order.customerComment?.replace(/^Wunschlieferzeit:\s*/, "").trim(),
+);
+
+// Restaurants sell gross prices; net orders (B2B) list the tax on top.
+const taxLabel = computed(() =>
+  props.order.taxStatus === "net" ? "zzgl. MwSt." : "enthaltene MwSt.",
+);
+
+const facts = computed(() =>
+  [
+    { label: "Status", value: props.status },
+    { label: "Lieferung oder Abholung", value: shippingMethod.value },
+    { label: "Wunschzeit", value: wishedTime.value },
+    {
+      label: "Bezahlung",
+      value: [paymentMethod.value, paymentState.value]
+        .filter(Boolean)
+        .join(", "),
+    },
+  ].filter((fact) => fact.value),
+);
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <div class="flex flex-wrap gap-2">
-      <UBadge variant="subtle" color="neutral" icon="i-lucide-package">
-        {{ status }}
-      </UBadge>
-      <UBadge
-        v-if="order?.deliveries?.[0]?.shippingMethod?.name"
-        variant="subtle"
-        color="neutral"
-        icon="i-lucide-truck"
-      >
-        {{ order.deliveries[0].shippingMethod.name }}
-      </UBadge>
-      <UBadge
-        v-if="paymentState"
-        variant="subtle"
-        :color="paymentStateColor"
-        icon="i-lucide-credit-card"
-      >
-        {{ paymentState.translated?.name ?? paymentState.name }}
-      </UBadge>
-    </div>
+  <div class="flex flex-col gap-6 font-body text-sb-ink">
+    <dl v-if="facts.length" class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+      <div v-for="fact in facts" :key="fact.label">
+        <dt class="text-sm text-sb-ink-muted">{{ fact.label }}</dt>
+        <dd class="font-semibold">{{ fact.value }}</dd>
+      </div>
+    </dl>
 
-    <ul class="flex flex-col divide-y divide-default">
+    <ul class="flex flex-col border-t border-sb-line">
       <li
         v-for="item in lineItems"
         :key="item.id"
-        class="flex items-start gap-4 py-4 first:pt-0 last:pb-0"
+        class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b border-sb-line py-3"
       >
-        <div
-          class="size-10 rounded-md bg-elevated flex items-center justify-center shrink-0 text-sm font-semibold text-muted"
+        <span class="font-semibold [overflow-wrap:anywhere] hyphens-auto">
+          <span class="tabular-nums">{{ item.quantity }}×</span>
+          {{ item.label }}
+        </span>
+        <span class="font-semibold tabular-nums">{{
+          getFormattedPrice(item.totalPrice)
+        }}</span>
+        <span
+          v-if="item.payload?.productNumber"
+          class="text-sm text-sb-ink-muted"
+          >Nr. {{ item.payload.productNumber }}</span
         >
-          {{ item.quantity }}×
-        </div>
-        <div class="flex flex-col gap-0.5 flex-1 min-w-0">
-          <p class="font-medium truncate">{{ item.label }}</p>
-          <p
-            v-if="item.payload?.productNumber"
-            class="text-xs text-muted truncate"
-          >
-            #{{ item.payload.productNumber }}
-          </p>
-        </div>
-        <p class="font-semibold shrink-0">
-          {{ getFormattedPrice(item.totalPrice) }}
-        </p>
       </li>
     </ul>
 
-    <USeparator />
-
-    <div class="flex flex-col gap-2 text-sm">
-      <div class="flex justify-between text-muted">
-        <span>Lieferkosten</span>
-        <span>{{ getFormattedPrice(order?.shippingTotal) }}</span>
-      </div>
-      <div class="flex justify-between text-muted">
-        <span>Netto</span>
-        <span>{{ getFormattedPrice(order?.amountNet) }}</span>
+    <dl class="flex flex-col gap-1.5">
+      <div class="flex justify-between gap-4 text-sb-ink-muted">
+        <dt>Lieferkosten</dt>
+        <dd class="tabular-nums">
+          {{ getFormattedPrice(order.shippingTotal) }}
+        </dd>
       </div>
       <div
-        v-for="tax in order?.price?.calculatedTaxes"
+        v-for="tax in order.price?.calculatedTaxes"
         :key="tax.taxRate"
-        class="flex justify-between text-muted"
+        class="flex justify-between gap-4 text-sb-ink-muted"
       >
-        <span>MwSt. {{ tax.taxRate }}%</span>
-        <span>{{ getFormattedPrice(tax.tax) }}</span>
+        <dt>{{ taxLabel }} {{ tax.taxRate }} %</dt>
+        <dd class="tabular-nums">{{ getFormattedPrice(tax.tax) }}</dd>
       </div>
-      <div class="flex justify-between font-semibold text-base pt-1">
-        <span>Gesamt</span>
-        <span>{{ getFormattedPrice(order?.amountTotal) }}</span>
+      <div
+        class="mt-1 flex justify-between gap-4 border-t-[1.5px] border-sb-ink pt-2 text-lg font-bold"
+      >
+        <dt>Gesamt</dt>
+        <dd class="tabular-nums">{{ getFormattedPrice(order.amountTotal) }}</dd>
       </div>
-    </div>
+    </dl>
   </div>
 </template>

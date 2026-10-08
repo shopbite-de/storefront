@@ -47,14 +47,15 @@ describe("theme presets", () => {
     expect(isThemePresetName("")).toBe(false);
   });
 
-  it("scopes the stylesheet to the preset and bridges Nuxt UI", () => {
+  it("scopes the stylesheet to the preset", () => {
     const css = presetCss(resolvePreset("grill"));
     expect(css).toContain(':root[data-preset="grill"] {');
     expect(css).toContain("--sb-primary-tint: #3A2E1E;");
     expect(css).toContain(
       '--font-sb-display: "Bricolage Grotesque", sans-serif;',
     );
-    expect(css).toContain("--ui-primary: var(--sb-primary);");
+    expect(css).toContain("--font-sans: var(--font-sb-body);");
+    expect(css).not.toContain("--ui-");
     expect(css).toContain("color-scheme: dark;");
   });
 });

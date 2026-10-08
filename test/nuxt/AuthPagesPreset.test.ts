@@ -9,7 +9,6 @@ const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
 
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
-  hasPreset: true,
   menuView: "bon",
 }));
 mockNuxtImport("useShopwareContext", () => () => ({

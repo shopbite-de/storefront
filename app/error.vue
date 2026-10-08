@@ -18,15 +18,13 @@ const statusCode = props.error.statusCode;
 useSeoMeta({
   title: pageTitle,
 });
-
-const { hasPreset } = useThemePreset();
 </script>
 
 <template>
   <NuxtLayout>
-    <!-- error.vue replaces app.vue, so the preset page brings its own
+    <!-- error.vue replaces app.vue, so the error page brings its own
          header and footer -->
-    <template v-if="hasPreset">
+    <div>
       <Header />
       <main
         id="inhalt"
@@ -55,19 +53,6 @@ const { hasPreset } = useThemePreset();
         </div>
       </main>
       <Footer />
-    </template>
-    <div
-      v-else
-      class="mb-20 flex flex-col items-center justify-center px-5 py-3"
-    >
-      <h2 v-if="statusCode === 404" class="text-center">
-        Die angeforderte Seite konnte nicht gefunden werden.
-      </h2>
-      <h2 v-else class="text-center">Irgendwas ist schief gelaufen</h2>
-      <h3 class="max-w-lg whitespace-pre-line pb-8 pt-5 text-3xl">
-        {{ error.statusCode }}
-      </h3>
-      <NuxtLink to="/" class="button">Zurück zur Startseite</NuxtLink>
     </div>
   </NuxtLayout>
 </template>

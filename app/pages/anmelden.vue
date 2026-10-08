@@ -7,7 +7,6 @@ useSeoMeta({
 
 const { isLoggedIn } = useUser();
 const { mergeWishlistProducts } = useWishlist();
-const { hasPreset } = useThemePreset();
 
 onBeforeMount(async () => {
   if (import.meta.client && isLoggedIn.value) {
@@ -28,8 +27,8 @@ function handleLoginSuccess() {
 </script>
 
 <template>
-  <UserAuthPanelPreset v-if="hasPreset" title="Anmelden">
-    <UserLoginFormPreset @login-success="handleLoginSuccess" />
+  <UserAuthPanel title="Anmelden">
+    <UserLoginForm @login-success="handleLoginSuccess" />
     <template #footer>
       Noch kein Kundenkonto?
       <NuxtLink
@@ -38,15 +37,5 @@ function handleLoginSuccess() {
         >Jetzt registrieren</NuxtLink
       >
     </template>
-  </UserAuthPanelPreset>
-  <UContainer v-else>
-    <div class="max-w-xl mx-auto mt-16">
-      <UserLoginForm
-        title="Anmelden"
-        icon="i-lucide-user"
-        with-register-hint
-        @login-success="handleLoginSuccess"
-      />
-    </div>
-  </UContainer>
+  </UserAuthPanel>
 </template>

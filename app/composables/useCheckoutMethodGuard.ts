@@ -33,15 +33,11 @@ export function hasBlockedPaymentMethod(cart?: Schemas["Cart"]): boolean {
 }
 
 type MethodGuardConfig<M extends CheckoutMethod> = {
-  /** Human readable label, e.g. "Versandart" */
-  label: string;
-  icon: string;
   isBlocked: () => boolean;
   selected: () => M | null;
   loadAvailable: () => Promise<M[]>;
   defaultId: () => string | undefined;
   select: (id: string) => Promise<void>;
-  displayName: (method: M) => string | undefined;
 };
 
 /**
@@ -64,7 +60,6 @@ export function useCheckoutMethodGuard() {
     selectedPaymentMethod,
   } = useCheckout();
   const { sessionContext } = useSessionContext();
-  const toast = useToast();
 
   const isShippingMethodBlocked = computed(() =>
     hasBlockedShippingMethod(cart.value),
@@ -76,27 +71,21 @@ export function useCheckoutMethodGuard() {
   const isResolving = ref(false);
 
   const shippingConfig: MethodGuardConfig<Schemas["ShippingMethod"]> = {
-    label: "Versandart",
-    icon: "i-lucide-truck",
     isBlocked: () => isShippingMethodBlocked.value,
     selected: () => selectedShippingMethod.value,
     loadAvailable: async () =>
       (await getShippingMethods({ forceReload: true })).value,
     defaultId: () => sessionContext.value?.salesChannel?.shippingMethodId,
     select: (id) => setShippingMethod({ id }),
-    displayName: (method) => method.name,
   };
 
   const paymentConfig: MethodGuardConfig<Schemas["PaymentMethod"]> = {
-    label: "Zahlart",
-    icon: "i-lucide-badge-euro",
     isBlocked: () => isPaymentMethodBlocked.value,
     selected: () => selectedPaymentMethod.value,
     loadAvailable: async () =>
       (await getPaymentMethods({ forceReload: true })).value,
     defaultId: () => sessionContext.value?.salesChannel?.paymentMethodId,
     select: (id) => setPaymentMethod({ id }),
-    displayName: (method) => method.distinguishableName ?? method.name,
   };
 
   /**
@@ -122,22 +111,11 @@ export function useCheckoutMethodGuard() {
     await refreshCart();
     if (config.isBlocked()) return false;
 
-    const blockedName = blocked ? config.displayName(blocked) : undefined;
-    const targetName = config.displayName(target) ?? config.label;
-    toast.add({
-      title: `${config.label} geändert`,
-      description: blockedName
-        ? `${blockedName} ist nicht mehr verfügbar. ${targetName} wurde ausgewählt.`
-        : `${targetName} wurde ausgewählt.`,
-      color: "warning",
-      icon: config.icon,
-      progress: false,
-    });
     return true;
   }
 
   // Calls are serialized: the guard performs side effects (cart refresh,
-  // method switch, toast), so overlapping runs (e.g. the mount-time check
+  // method switch), so overlapping runs (e.g. the mount-time check
   // plus a quick click on the order button) must not race each other.
   // A call made while another one is in flight waits for it and then
   // re-checks the latest cart state.
@@ -179,7 +157,7 @@ export function useCheckoutMethodGuard() {
    * Shipping is handled first because payment availability rules may
    * depend on the shipping method. If shipping cannot be resolved the
    * checkout stays blocked anyway, so payment is left untouched to avoid
-   * a pointless switch and toast.
+   * a pointless switch.
    *
    * @returns `true` when both methods are available afterwards.
    */
