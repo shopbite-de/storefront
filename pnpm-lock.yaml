@@ -189,7 +189,7 @@ importers:
         version: 8.6.1(e7fbb31b18370c37ae97bb9c2819c12d)
       '@shopware/api-client':
         specifier: ^1.6.0
-        version: 1.6.0
+        version: 1.7.0
       '@shopware/api-gen':
         specifier: ^1.5.2
         version: 1.5.3
