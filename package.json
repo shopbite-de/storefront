@@ -85,7 +85,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vitest": "^5.0.1",
-    "vue-tsc": "3.3.12"
+    "vue-tsc": "3.3.13"
   },
   "packageManager": "pnpm@12.10.1"
 }
