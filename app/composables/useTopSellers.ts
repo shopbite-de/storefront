@@ -30,6 +30,9 @@ export function useTopSellers(): useTopSellersReturn {
               "available",
               "cover",
               "sortedProperties",
+              // Allergens checked (#485); includes filter `translated` as well,
+              // so custom fields only come back when listed here.
+              "customFields",
               // Card link to the quick view deep link (#289).
               "seoUrls",
             ],
@@ -38,7 +41,7 @@ export function useTopSellers(): useTopSellersReturn {
             media: ["url", "thumbnails"],
             media_thumbnail: ["width", "url"],
             property_group: ["id", "name", "translated", "options"],
-            property_group_option: ["id", "name", "translated"],
+            property_group_option: ["id", "name", "translated", "customFields"],
           },
           associations: {
             cover: { associations: { media: {} } },

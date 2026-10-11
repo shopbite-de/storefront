@@ -190,9 +190,12 @@ async function loadProductByNumber(
             "translated",
             "description",
             "sortedProperties",
+            // Allergens checked (#485); includes filter `translated` as well,
+            // so custom fields only come back when listed here.
+            "customFields",
           ],
           property_group: ["id", "name", "translated", "options"],
-          property_group_option: ["id", "name", "translated"],
+          property_group_option: ["id", "name", "translated", "customFields"],
         },
         associations: {
           properties: { associations: { group: {} } },

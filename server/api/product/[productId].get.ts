@@ -20,13 +20,22 @@ const criteria = {
       "children",
       "parentId",
       "sortedProperties",
+      // Allergens checked (#485); includes filter `translated` as well,
+      // so custom fields only come back when listed here.
+      "customFields",
       "cover",
     ],
     // The entity is `property_group`: under `property` the groups came back
     // with every field. Options keep their group for the configurator and
     // the ingredient selection (`option.group.name`).
     property_group: ["id", "name", "translated", "options"],
-    property_group_option: ["id", "name", "translated", "group"],
+    property_group_option: [
+      "id",
+      "name",
+      "translated",
+      "customFields",
+      "group",
+    ],
     product_configurator_setting: ["id", "optionId", "option", "productId"],
     category: ["id", "name", "translated"],
     ...MEDIA_INCLUDES,
