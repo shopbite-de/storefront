@@ -10687,6 +10687,11 @@
             "type": "integer",
             "minimum": 1,
             "description": "Default delivery time in minutes"
+          },
+          "menuCategoryId": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Root category of the menu: the configured menu category, else the navigation category of the sales channel"
           }
         },
         "required": ["isCheckoutEnabled", "deliveryTime"]

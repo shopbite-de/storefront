@@ -1,12 +1,11 @@
 /**
  * The menu sections of the home page (#388, #444): the children of the menu
- * root (`menuCategoryId`, else the navigation root) with their photo
+ * root (useMenuRootId: env, plugin configuration, navigation root) with their photo
  * (`category.media`). Shared by the tiles and the word list of the presets.
  */
 export async function useHomeMenuCategories() {
   const { apiClient } = useShopwareContext();
-  const config = useRuntimeConfig();
-  const rootId = config.public.shopBite.menuCategoryId || "main-navigation";
+  const menuRootId = useMenuRootId();
 
   const { data: categories } = await useAsyncData(
     "home-menu-categories",
@@ -30,7 +29,10 @@ export async function useHomeMenuCategories() {
               media_thumbnail: ["url", "width"],
             },
           },
-          pathParams: { activeId: "main-navigation", rootId },
+          pathParams: {
+            activeId: "main-navigation",
+            rootId: await menuRootId(),
+          },
         },
       );
       return response.data;

@@ -11,10 +11,7 @@ export interface NavigationMenuItem {
 
 export function useNavigation(withChildren: boolean | undefined) {
   const { apiClient } = useShopwareContext();
-  const config = useRuntimeConfig();
-  const menuCategoryId = computed(
-    () => config.public.shopBite.menuCategoryId ?? "main-navigation",
-  );
+  const menuRootId = useMenuRootId();
 
   // Sent as a POST body: as `_criteria` query parameters the projection is
   // ignored and every category arrives with media, translations, cms page
@@ -101,7 +98,7 @@ export function useNavigation(withChildren: boolean | undefined) {
           body: criteria,
           pathParams: {
             activeId: "main-navigation",
-            rootId: menuCategoryId.value,
+            rootId: await menuRootId(),
           },
         },
       );

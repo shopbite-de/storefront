@@ -21,10 +21,7 @@ const NAVIGATION_CRITERIA = {
  */
 export default defineSitemapEventHandler(async () => {
   const { shopware, shopBite } = useRuntimeConfig().public;
-  const rootIds = new Set([
-    "main-navigation",
-    shopBite.menuCategoryId || "main-navigation",
-  ]);
+  const rootIds = new Set(["main-navigation", await menuRootId()]);
 
   const trees = await Promise.all(
     [...rootIds].map((rootId) =>
