@@ -56,6 +56,9 @@ export default defineNuxtConfig({
       adminEndpoint: "",
     },
     apiClientConfig: {},
+    // Secret of POST /api/_cache/purge (#484), the backoffice empties the
+    // Store API caches after menu changes. Empty = route off.
+    cachePurgeSecret: "",
     geoapifyApiKey: "",
     // AI crawlers named in robots.txt (#403, server/plugins/ai-crawlers.ts):
     // search = AI search and assistant fetches, training = model training.
