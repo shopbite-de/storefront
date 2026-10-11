@@ -5362,6 +5362,8 @@ export type Schemas = {
     deliveryTime: number;
     /** Whether checkout is enabled for ShopBite */
     isCheckoutEnabled: boolean;
+    /** Root category of the menu: the configured menu category, else the navigation category of the sales channel (plugin 2026-10, missing in older plugins) */
+    menuCategoryId?: string;
   };
   ShopBiteWishlistItem: {
     /** Format: date-time */

@@ -52,10 +52,10 @@ const PRODUCT_CRITERIA = {
  * its section out instead of failing the file.
  */
 export default defineEventHandler(async (event) => {
-  const { shopware, shopBite, site } = useRuntimeConfig(event).public;
+  const { shopware, site } = useRuntimeConfig(event).public;
   const siteUrl = getSiteConfig(event).url;
   const headers = { "sw-access-key": shopware.accessToken };
-  const menuRootId = shopBite.menuCategoryId || "main-navigation";
+  const menuRoot = await menuRootId();
 
   const storeApi = <T>(path: string, body?: Record<string, unknown>) =>
     $fetch<T>(`${shopware.endpoint}${path}`, {
@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
   const [navigation, products, hours, holidays, config, context, pages, home] =
     await Promise.allSettled([
       storeApi<Schemas["Category"][]>(
-        `/navigation/${menuRootId}/${menuRootId}`,
+        `/navigation/${menuRoot}/${menuRoot}`,
         NAVIGATION_CRITERIA,
       ),
       loadProducts((page) =>
