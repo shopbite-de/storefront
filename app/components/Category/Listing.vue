@@ -223,6 +223,7 @@ async function openFilterDrawer() {
           @select="quickView.show"
         />
       </div>
+      <MenuFoodLabelLegend v-if="!showSkeleton" :products="elements" />
       <LazyProductQuickView
         v-if="quickView.mounted.value"
         v-model:open="quickView.open.value"

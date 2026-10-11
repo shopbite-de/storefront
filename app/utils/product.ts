@@ -66,3 +66,135 @@ export function getDiets(
     hasYesOption(sortedProperties, DIET_GROUPS[diet]),
   );
 }
+
+// Mandatory food information (#485): property groups and custom fields of the
+// ShopBite plugin (shopware-plugin#36), maintained in the backoffice.
+const ALLERGEN_GROUP = "Allergene";
+const ADDITIVE_GROUP = "Zusatzstoffe";
+
+/**
+ * Names of the allergen codes for the legend. The options name the cereal
+ * or nut (LMIV Annex II), the legend names the allergen.
+ */
+export const ALLERGEN_CODE_NAMES: Record<string, string> = {
+  A: "Glutenhaltiges Getreide",
+  B: "Krebstiere",
+  C: "Eier",
+  D: "Fisch",
+  E: "Erdnüsse",
+  F: "Soja",
+  G: "Milch",
+  H: "Schalenfrüchte",
+  L: "Sellerie",
+  M: "Senf",
+  N: "Sesam",
+  O: "Schwefeldioxid und Sulfite",
+  P: "Lupinen",
+  R: "Weichtiere",
+};
+
+export interface FoodLabel {
+  code: string;
+  name: string;
+}
+
+export interface FoodLabels {
+  allergens: FoodLabel[];
+  additives: FoodLabel[];
+}
+
+function customFieldsOf(entity: {
+  customFields?: unknown;
+  translated?: unknown;
+}): Record<string, unknown> {
+  const translated = (entity.translated as { customFields?: unknown })
+    ?.customFields;
+  return ((translated ?? entity.customFields) as Record<string, unknown>) ?? {};
+}
+
+function labelsOf(
+  sortedProperties: Schemas["PropertyGroup"][] | undefined,
+  groupName: string,
+): FoodLabel[] {
+  const group = sortedProperties?.find(
+    (propertyGroup) => propertyGroup.translated.name === groupName,
+  );
+  return (group?.options ?? []).map((option) => ({
+    code: String(customFieldsOf(option).shopbite_code ?? ""),
+    name: option.translated?.name ?? option.name ?? "",
+  }));
+}
+
+/** Allergens and additives of a product, in the order of the catalogue. */
+export function getFoodLabels(
+  sortedProperties: Schemas["PropertyGroup"][] | undefined,
+): FoodLabels {
+  return {
+    allergens: labelsOf(sortedProperties, ALLERGEN_GROUP),
+    additives: labelsOf(sortedProperties, ADDITIVE_GROUP),
+  };
+}
+
+/**
+ * Whether the restaurant confirmed the lists as complete. Without it an
+ * empty list means "not entered yet", never "free of allergens".
+ */
+export function allergensChecked(product: Schemas["Product"]): boolean {
+  return customFieldsOf(product).shopbite_allergens_checked === true;
+}
+
+/** "A, G, 2": every code once, allergens first. */
+export function foodLabelCodes(labels: FoodLabels): string[] {
+  return [
+    ...new Set(
+      [...labels.allergens, ...labels.additives]
+        .map((label) => label.code)
+        .filter(Boolean),
+    ),
+  ];
+}
+
+/** Plain text for the product sheet and screen readers. */
+export function foodLabelText(labels: FoodLabels): string {
+  const parts: string[] = [];
+  if (labels.allergens.length) {
+    parts.push(
+      `Enthält: ${labels.allergens.map((label) => label.name).join(", ")}.`,
+    );
+  }
+  if (labels.additives.length) {
+    parts.push(
+      `Zusatzstoffe: ${labels.additives.map((label) => label.name).join(", ")}.`,
+    );
+  }
+  return parts.join(" ");
+}
+
+/**
+ * Legend of the codes used in a list of products: allergens by their
+ * allergen name, additives by their option name, sorted like a menu.
+ */
+export function foodLabelLegend(products: Schemas["Product"][]): FoodLabel[] {
+  const legend = new Map<string, string>();
+  for (const product of products) {
+    const labels = getFoodLabels(
+      product.sortedProperties as Schemas["PropertyGroup"][] | undefined,
+    );
+    for (const label of labels.allergens) {
+      if (label.code)
+        legend.set(label.code, ALLERGEN_CODE_NAMES[label.code] ?? label.name);
+    }
+    for (const label of labels.additives) {
+      if (label.code) legend.set(label.code, label.name);
+    }
+  }
+  return [...legend]
+    .map(([code, name]) => ({ code, name }))
+    .sort((a, b) => {
+      const numeric = Number(a.code) - Number(b.code);
+      if (!Number.isNaN(numeric)) return numeric;
+      if (Number.isNaN(Number(a.code)) !== Number.isNaN(Number(b.code)))
+        return Number.isNaN(Number(a.code)) ? -1 : 1;
+      return a.code.localeCompare(b.code);
+    });
+}

@@ -15,6 +15,9 @@ const BASE_CRITERIA = {
       // `properties` would repeat every option with its group. The quick view
       // loads its own product (/api/product/[productId]).
       "sortedProperties",
+      // Allergens checked (#485); includes filter `translated` as well,
+      // so custom fields only come back when listed here.
+      "customFields",
       "cover",
       // "Ausverkauft" on the card (#325).
       "available",
@@ -28,7 +31,14 @@ const BASE_CRITERIA = {
     // The entity is `property_group`: under `property` the groups came back
     // with every field, nested once more in each option.
     property_group: ["id", "name", "translated", "displayType", "options"],
-    property_group_option: ["id", "name", "translated", "media", "mediaId"],
+    property_group_option: [
+      "id",
+      "name",
+      "translated",
+      "customFields",
+      "media",
+      "mediaId",
+    ],
     product_option: ["id", "groupId", "name", "translated", "group"],
     ...MEDIA_INCLUDES,
   },
