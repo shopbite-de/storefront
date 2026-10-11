@@ -19,6 +19,8 @@ const BASE_CRITERIA = {
       // so custom fields only come back when listed here.
       "customFields",
       "cover",
+      // Groups the dishes of a section by sub-section (#487).
+      "categoryIds",
       // "Ausverkauft" on the card (#325).
       "available",
       // Product deep link (#289); the request sends `sw-include-seo-urls`.

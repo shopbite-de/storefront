@@ -46,6 +46,18 @@ useMenuSectionSchema(category, elements);
 
 const quickView = useProductQuickView(elements);
 
+// A section with sub-sections lists its dishes under their sub-section (#487):
+// direct dishes first, then one heading per sub-section in backoffice order.
+// Navigation to them is the chip row (phones) and the word-list index (desktop).
+const { menuCardNavigation } = useNavigation(true);
+const grouped = computed(() =>
+  groupBySubsections(
+    elements.value,
+    findCategory(menuCardNavigation.value ?? undefined, props.id)?.children ??
+      undefined,
+  ),
+);
+
 // Derived from the listing data instead of snapshotted at setup time, which
 // would be a hydration mismatch (#239); see useSortingSelection.
 const { currentSorting } = useSortingSelection(currentSortingOrder);
@@ -208,6 +220,46 @@ async function openFilterDrawer() {
         aria-label="Gerichte werden geladen"
       >
         <LazyProductCardSkeleton v-for="i in 6" :key="i" />
+      </div>
+      <div
+        v-else-if="grouped"
+        class="flex flex-col gap-6 transition-opacity duration-200"
+        :class="{ 'pointer-events-none opacity-40': loading }"
+      >
+        <div v-if="grouped.direct.length" class="grid grid-cols-1 gap-3">
+          <MenuBonCardWhenVisible
+            v-for="product in grouped.direct"
+            :key="product.id"
+            :product="product"
+            :photo="menuView === 'bonPhoto'"
+            :href="productDeepLink(product, category?.seoUrl)"
+            @select="quickView.show"
+          />
+        </div>
+        <section
+          v-for="group in grouped.groups"
+          :id="`u-${group.id}`"
+          :key="group.id"
+          :aria-labelledby="`u-${group.id}-titel`"
+          class="scroll-mt-28"
+        >
+          <h2
+            :id="`u-${group.id}-titel`"
+            class="mb-3 font-display text-xl text-sb-ink"
+          >
+            {{ group.name }}
+          </h2>
+          <div class="grid grid-cols-1 gap-3">
+            <MenuBonCardWhenVisible
+              v-for="product in group.products"
+              :key="product.id"
+              :product="product"
+              :photo="menuView === 'bonPhoto'"
+              :href="productDeepLink(product, category?.seoUrl)"
+              @select="quickView.show"
+            />
+          </div>
+        </section>
       </div>
       <div
         v-else
