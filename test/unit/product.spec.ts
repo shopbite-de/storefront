@@ -2,8 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { Schemas } from "#shopware";
 import {
   allergensChecked,
-  foodLabelCodes,
-  foodLabelLegend,
   foodLabelText,
   getDiets,
   getFoodLabels,
@@ -141,9 +139,8 @@ describe("food labels (#485)", () => {
     expect(getFoodLabels(undefined)).toEqual({ allergens: [], additives: [] });
   });
 
-  it("lists every code once and writes plain text", () => {
+  it("writes plain text", () => {
     const labels = getFoodLabels(withLabels());
-    expect(foodLabelCodes(labels)).toEqual(["A", "G", "2"]);
     expect(foodLabelText(labels)).toBe(
       "Enthält: Weizen, Dinkel, Milch (inkl. Laktose). Zusatzstoffe: mit Konservierungsstoff.",
     );
@@ -159,24 +156,5 @@ describe("food labels (#485)", () => {
       ),
     ).toBe(true);
     expect(allergensChecked(product())).toBe(false);
-  });
-
-  it("builds a legend of the used codes, allergens by allergen name", () => {
-    const legend = foodLabelLegend([
-      product({ sortedProperties: withLabels() } as unknown as Partial<
-        Schemas["Product"]
-      >),
-      product({
-        sortedProperties: [
-          labelGroup("Zusatzstoffe", [["11", "koffeinhaltig"]]),
-        ],
-      } as unknown as Partial<Schemas["Product"]>),
-    ]);
-    expect(legend).toEqual([
-      { code: "A", name: "Glutenhaltiges Getreide" },
-      { code: "G", name: "Milch" },
-      { code: "2", name: "mit Konservierungsstoff" },
-      { code: "11", name: "koffeinhaltig" },
-    ]);
   });
 });

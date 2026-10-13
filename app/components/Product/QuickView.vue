@@ -89,11 +89,11 @@ function onVariantSelected(variant: Schemas["Product"]) {
               >{{ diets.join(" · ") }}{{ description ? " · " : "" }}</span
             >{{ description }}
           </DialogDescription>
-          <ProductFoodLabels v-if="product" :product="product" />
         </div>
       </div>
     </template>
     <template #actions>
+      <ProductFoodLabels v-if="product" :product="product" />
       <WishlistSaveButton :selection="selection" :name="label" />
       <SbIconButton
         :label="canShare ? 'Teilen' : 'Link kopieren'"
