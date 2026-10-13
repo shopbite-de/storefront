@@ -35,11 +35,6 @@ const diets = computed(() =>
     diet === "vegan" ? "Vegan" : "Vegetarisch",
   ),
 );
-// Allergen and additive codes (#485); the legend below the list explains
-// them, screen readers get the names.
-const foodLabels = computed(() => getFoodLabels(sortedProperties.value));
-const foodCodes = computed(() => foodLabelCodes(foodLabels.value));
-const foodText = computed(() => foodLabelText(foodLabels.value));
 // Read before the name; the strip with the number is aria-hidden. Built in
 // script: a trailing space in the template would be condensed away.
 // The strip has a fixed width so the cards line up (#441); menu numbers
@@ -155,14 +150,6 @@ function onLinkClick(event: MouseEvent) {
         </p>
         <p v-if="ingredients" class="text-sm leading-snug text-sb-ink-muted">
           {{ ingredients }}
-        </p>
-        <p
-          v-if="foodCodes.length"
-          class="text-xs tracking-wide text-sb-ink-muted tabular-nums"
-          data-testid="food-codes"
-        >
-          <span aria-hidden="true">{{ foodCodes.join(", ") }}</span
-          ><span class="sr-only">{{ foodText }}</span>
         </p>
         <div class="mt-auto flex items-center justify-between pt-1.5">
           <span class="text-base font-bold tabular-nums">{{ price }}</span>
