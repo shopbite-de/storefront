@@ -186,7 +186,7 @@ importers:
         version: 6.2.4(1132cc728322254c48c717549116e835)
       '@nuxtjs/sitemap':
         specifier: ^8.5.1
-        version: 8.6.1(b251b82c6acb98f89bb9e6bda1186b30)
+        version: 8.6.2(e18bd08d5aece4504545199ed4eccfe2)
       '@shopware/api-client':
         specifier: ^1.6.0
         version: 1.7.0
@@ -2002,8 +2002,8 @@ packages:
       zod:
         optional: true
 
-  '@nuxtjs/sitemap@8.6.1':
-    resolution: {integrity: sha512-8tjWb0poZZSRUkJG9AICPn5TskHyxVRQDH9T8PXD1LCcDYuTqPbsJ7tB0qwbS7OFrTHQHcBWcnHX7MNdgLO77Q==}
+  '@nuxtjs/sitemap@8.6.2':
+    resolution: {integrity: sha512-TmHKPGWq7Xlu/BzSeJ5Y3DeocFP5jZgz4gvO6cXiJPmbKqNjEMBpKw9gMTGWMPNSMo8T+xbbMmGetKkmFJGmoA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       zod: '>=3'
@@ -10842,14 +10842,15 @@ snapshots:
       - vite
       - vue
 
-  '@nuxtjs/sitemap@8.6.1(b251b82c6acb98f89bb9e6bda1186b30)':
+  '@nuxtjs/sitemap@8.6.2(e18bd08d5aece4504545199ed4eccfe2)':
     dependencies:
-      '@nuxt/kit': 4.5.2(magic-string@1.4.3)(magicast@0.5.5)(oxc-parser@0.141.0)(rolldown@1.2.12)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.12)(rollup@4.63.5)(vite@8.3.3(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)))
+      '@nuxt/kit': 4.6.1(@nuxt/schema@4.6.1)(confbox@0.3.1)(dotenv@18.0.7)(giget@3.3.1)(jiti@2.7.0)(magic-string@1.4.3)(mlly@1.8.2)(oxc-parser@0.141.0)(rolldown@1.2.12)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.12)(rollup@4.63.5)(vite@8.3.3(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)))
       consola: 3.4.2
       defu: 6.1.7
       nuxt-site-config: 4.2.3(1132cc728322254c48c717549116e835)
       nuxtseo-shared: 5.3.16(02fae0d17a07d4624ee20ee37c4091bf)
       ofetch: 1.5.1
+      ohash: 2.0.12
       oxc-parser: 0.141.0
       oxc-walker: 1.1.1(@oxc-project/types@0.152.0)(oxc-parser@0.141.0)(rolldown@1.2.12)
       pathe: 2.0.3
@@ -10863,8 +10864,13 @@ snapshots:
     transitivePeerDependencies:
       - '@nuxt/schema'
       - '@oxc-project/types'
+      - confbox
+      - dotenv
+      - giget
+      - jiti
       - magic-string
       - magicast
+      - mlly
       - nuxt
       - rolldown
       - unplugin
