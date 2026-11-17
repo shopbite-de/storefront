@@ -99,3 +99,19 @@ describe("hostile paths", () => {
     expect(mayBeSeoPath("/c/%C3%B8l/", KNOWN)).toBe(true);
   });
 });
+
+describe("isOutage", () => {
+  it("counts fetch errors without a response and 5xx, not bugs or 4xx", async () => {
+    const { isOutage } = await import("../../server/utils/backoff");
+    const fetchError = (status?: number) =>
+      Object.assign(new Error("[GET] fetch failed"), {
+        name: "FetchError",
+        ...(status ? { status, statusCode: status } : {}),
+      });
+
+    expect(isOutage(fetchError())).toBe(true);
+    expect(isOutage(fetchError(503))).toBe(true);
+    expect(isOutage(fetchError(404))).toBe(false);
+    expect(isOutage(new TypeError("x is undefined"))).toBe(false);
+  });
+});

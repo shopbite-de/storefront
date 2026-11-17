@@ -23,10 +23,14 @@ function statusOf(error: unknown): number | undefined {
   return statusCode ?? status;
 }
 
-/** A network error or a 5xx; a 4xx is an answer, not an outage. */
+/**
+ * A 5xx, or a fetch error without a response (network, timeout). A 4xx is
+ * an answer, and a programming error (TypeError) is no outage either.
+ */
 export function isOutage(error: unknown): boolean {
   const status = statusOf(error);
-  return status === undefined || status >= 500;
+  if (status !== undefined) return status >= 500;
+  return (error as { name?: string } | null)?.name === "FetchError";
 }
 
 /**
