@@ -32,6 +32,10 @@ pnpm load-schema      # Reload Shopware API schema
 
 pnpm 12 (pinned in `package.json`, CI and `node.dockerfile`). Settings live in `pnpm-workspace.yaml` (`.npmrc` is auth/registry only since pnpm 11). pnpm 12 rejects packages published less than 24 hours ago (`minimumReleaseAge`), also in an existing lockfile; update dependencies with pnpm 12 itself, not an older global pnpm (`docs/notes/2026-09-21-dependency-update.md`).
 
+### Test-driven development
+
+Work test-first (red, green, refactor): for a bug, first write a test that reproduces it and fails on the current code, then fix it; for new behaviour, write the tests that describe it before the implementation. The test lands in the same commit as the change it covers. Changes with nothing to assert (content, copy, styling, dependency bumps) skip this; say so in the commit message.
+
 ### Running a single test
 
 ```bash
