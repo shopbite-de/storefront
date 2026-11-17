@@ -1,9 +1,6 @@
 import type { components } from "../../api-types/storeApiTypes";
-import { createBackoff } from "./backoff";
+import { createResilientLoader } from "./backoff";
 type ShopBiteConfig = components["schemas"]["ShopBiteConfig"];
-
-/** After a failed request, Shopware is asked again only after this pause. */
-const FAILURE_BACKOFF_MS = 30_000;
 
 /**
  * `swr: false`: an answer is never older than `cacheTtl.config`. A failed
@@ -19,8 +16,7 @@ const cachedConfig = defineCachedFunction(
   },
 );
 
-const backoff = createBackoff(FAILURE_BACKOFF_MS);
-let lastGood: ShopBiteConfig | null = null;
+const load = createResilientLoader<ShopBiteConfig>();
 
 /**
  * The ShopBite plugin configuration (delivery time, checkout switch, menu
@@ -29,17 +25,6 @@ let lastGood: ShopBiteConfig | null = null;
  * on its root) and Shopware is asked again only after a pause, so an outage
  * does not multiply the requests; without one it throws.
  */
-export async function shopBiteConfig(): Promise<ShopBiteConfig> {
-  if (backoff.active()) {
-    if (lastGood) return lastGood;
-    throw new Error("ShopBite configuration unavailable");
-  }
-  try {
-    lastGood = await cachedConfig();
-    return lastGood;
-  } catch (error) {
-    backoff.trip();
-    if (lastGood) return lastGood;
-    throw error;
-  }
+export function shopBiteConfig(): Promise<ShopBiteConfig> {
+  return load("shopbite-config", () => cachedConfig());
 }

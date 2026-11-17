@@ -30,6 +30,9 @@ export function storeApiPost<T>(
     method: "POST",
     headers: { "sw-access-key": accessToken, ...options.headers },
     body,
+    // a failing request reaches Shopware once (the cached routes back off
+    // instead)
+    retry: 0,
   });
 }
 
@@ -46,5 +49,8 @@ export function storeApiGet<T>(
   return $fetch<T>(`${endpoint}${path}`, {
     headers: { "sw-access-key": accessToken, ...options.headers },
     query: options.query,
+    // ofetch retries a GET once by default; during an outage that doubles
+    // every request
+    retry: 0,
   });
 }

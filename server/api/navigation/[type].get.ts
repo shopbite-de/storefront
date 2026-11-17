@@ -1,4 +1,5 @@
 import type { components } from "~~/api-types/storeApiTypes";
+import { createResilientLoader } from "../../utils/backoff";
 type Schemas = components["schemas"];
 
 // What the header, footer and menu navigation read (useNavigation).
@@ -34,6 +35,8 @@ const NAVIGATIONS = {
 } as const;
 
 type NavigationType = keyof typeof NAVIGATIONS;
+
+const load = createResilientLoader<Schemas["Category"][]>();
 
 function navigationOf(type: string | undefined) {
   if (!type || !Object.hasOwn(NAVIGATIONS, type)) return null;
@@ -75,9 +78,12 @@ export default defineCachedEventHandler(
     const navigation = navigationOf(type);
     if (!navigation) throw createError({ statusCode: 404 });
 
-    return await storeApiPost(
-      `/navigation/${navigation.activeId}/${await rootIdOf(event, type)}`,
-      type === "home" ? HOME_CRITERIA : NAVIGATION_CRITERIA,
+    const root = await rootIdOf(event, type);
+    return await load(`${type}-${root}`, () =>
+      storeApiPost(
+        `/navigation/${navigation.activeId}/${root}`,
+        type === "home" ? HOME_CRITERIA : NAVIGATION_CRITERIA,
+      ),
     );
   },
   {

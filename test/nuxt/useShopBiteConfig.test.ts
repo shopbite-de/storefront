@@ -52,4 +52,26 @@ describe("useShopBiteConfig", () => {
     expect(deliveryTime.value).toBe(45);
     expect(isCheckoutEnabled.value).toBe(true);
   });
+
+  it("checks the checkout switch with Shopware before an order", async () => {
+    mockInvoke.mockResolvedValue({
+      data: { deliveryTime: 30, isCheckoutEnabled: false },
+    });
+
+    const { checkCheckoutEnabled, isCheckoutEnabled } = useShopBiteConfig();
+
+    expect(await checkCheckoutEnabled()).toBe(false);
+    expect(isCheckoutEnabled.value).toBe(false);
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "shopbite.config.get get /shopbite/config",
+    );
+  });
+
+  it("reports an unknown checkout switch when Shopware fails", async () => {
+    mockInvoke.mockRejectedValue(new Error("offline"));
+
+    const { checkCheckoutEnabled } = useShopBiteConfig();
+
+    expect(await checkCheckoutEnabled([])).toBeNull();
+  });
 });

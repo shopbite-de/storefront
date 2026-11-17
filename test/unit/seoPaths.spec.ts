@@ -47,11 +47,12 @@ describe("mayBeSeoPath", () => {
 
   it("lets through what it cannot compare like the database", () => {
     expect(mayBeSeoPath("/c/%C3%B8l/", KNOWN)).toBe(true);
-    expect(mayBeSeoPath("/c/%E0%A4%A/", KNOWN)).toBe(true);
   });
 
   it("leaves technical URLs and an unknown list to the lookup", () => {
-    expect(mayBeSeoPath("/navigation/0123abcd", KNOWN)).toBe(true);
+    expect(
+      mayBeSeoPath("/navigation/0123456789abcdef0123456789abcdef", KNOWN),
+    ).toBe(true);
     expect(mayBeSeoPath("/wp-admin/", null)).toBe(true);
   });
 });
@@ -66,5 +67,35 @@ describe("createBackoff", () => {
     expect(backoff.active()).toBe(true);
     now.mockReturnValue(31_000);
     expect(backoff.active()).toBe(false);
+  });
+});
+
+describe("hostile paths", () => {
+  const HOSTILE = [
+    "/%c0%ae%c0%ae/etc/passwd",
+    "/%252e%252e/etc/passwd",
+    "/..%252f..%252fetc%252fpasswd",
+    "/../etc/passwd",
+    "/%2e%2e/etc/passwd",
+    "/%ff",
+    "/navigation/zzz",
+    "/detail/abc",
+    "/landingPage/x",
+    "/navigation/0123456789abcdef0123456789abcdef/x",
+  ];
+
+  it("are rejected, even without a list of known paths", () => {
+    for (const path of HOSTILE) {
+      expect(mayBeSeoPath(path, KNOWN), path).toBe(false);
+      expect(mayBeSeoPath(path, null), path).toBe(false);
+    }
+  });
+
+  it("leave real technical URLs and non-ASCII paths to the lookup", () => {
+    const id = "0123456789ABCDEF0123456789abcdef";
+    expect(mayBeSeoPath(`/navigation/${id}`, KNOWN)).toBe(true);
+    expect(mayBeSeoPath(`/detail/${id}/`, KNOWN)).toBe(true);
+    expect(mayBeSeoPath(`/landingPage/${id}`, null)).toBe(true);
+    expect(mayBeSeoPath("/c/%C3%B8l/", KNOWN)).toBe(true);
   });
 });

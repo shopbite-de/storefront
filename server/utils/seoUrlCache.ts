@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { components } from "../../api-types/storeApiTypes";
+import { createResilientLoader } from "./backoff";
 import { isTechnicalPath, loadSeoPaths } from "./seoPaths";
 type SeoUrl = components["schemas"]["SeoUrl"];
 
@@ -15,6 +16,12 @@ export function seoUrlLookup(path: string): Lookup {
     : { field: "seoPathInfo", value: path.substring(1) };
 }
 
+// backs off during an outage; nothing is remembered (the cache keeps the
+// exact matches)
+const lookupLoader = createResilientLoader<{ elements?: SeoUrl[] }>(
+  () => false,
+);
+
 /**
  * One SEO URL lookup. `exact` when the match spells the looked-up value
  * (up to case): Shopware's collation also ignores accents and trailing
@@ -25,10 +32,12 @@ const cachedLookup = defineCachedFunction(
     field: Lookup["field"],
     value: string,
   ): Promise<{ match: SeoUrl | null; exact: boolean }> => {
-    const result = await storeApiPost<{ elements?: SeoUrl[] }>("/seo-url", {
-      limit: 1,
-      filter: [{ type: "equals", field, value }],
-    });
+    const result = await lookupLoader(`${field}:${value}`, () =>
+      storeApiPost<{ elements?: SeoUrl[] }>("/seo-url", {
+        limit: 1,
+        filter: [{ type: "equals", field, value }],
+      }),
+    );
     const match = result.elements?.[0] ?? null;
     const spelled = match?.[field];
     return {

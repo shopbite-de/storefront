@@ -7,7 +7,8 @@ const { createOrder, selectedPaymentMethod, selectedShippingMethod } =
   useCheckout();
 const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
-const { isCheckoutEnabled, refresh } = useShopBiteConfig();
+const { isCheckoutEnabled, refresh, checkCheckoutEnabled } =
+  useShopBiteConfig();
 const { trackOrder } = useTrackEvent();
 const { isLoading: isLoadingOpeningHours, hasFailed: hasOpeningHoursFailed } =
   useOpeningHoursData();
@@ -89,10 +90,34 @@ async function hasAvailableCheckoutMethods(): Promise<boolean> {
   return false;
 }
 
+/**
+ * The checkout switch as Shopware has it now: the page may still show the
+ * value of the server render, and the plugin accepts orders regardless.
+ */
+async function isCheckoutStillEnabled(): Promise<boolean> {
+  const enabled = await checkCheckoutEnabled();
+  if (enabled) return true;
+  reportError(
+    enabled === false
+      ? {
+          title: "Bestellung nicht möglich",
+          description:
+            "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen.",
+        }
+      : {
+          title: "Bestellung nicht möglich",
+          description:
+            "Ob gerade Bestellungen angenommen werden, konnte nicht geprüft werden. Bitte versuche es in einem Moment erneut.",
+        },
+  );
+  return false;
+}
+
 async function handleCreateOrder() {
   isPlacingOrder.value = true;
   orderError.value = null;
   try {
+    if (!(await isCheckoutStillEnabled())) return;
     if (!(await hasAvailableCheckoutMethods())) return;
 
     const order = await createOrder({

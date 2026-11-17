@@ -1,4 +1,8 @@
 import type { components } from "~~/api-types/storeApiTypes";
+import { createResilientLoader } from "../../utils/backoff";
+
+const load =
+  createResilientLoader<components["schemas"]["BusinessHourStruct"]>();
 
 /**
  * Weekly opening hours for server-side rendering (footer, home page,
@@ -6,8 +10,8 @@ import type { components } from "~~/api-types/storeApiTypes";
  * hydration (useLiveShopData).
  */
 export default defineCachedEventHandler(
-  async (): Promise<components["schemas"]["BusinessHourStruct"]> =>
-    await storeApiGet("/shopbite/business-hour"),
+  (): Promise<components["schemas"]["BusinessHourStruct"]> =>
+    load("business-hours", () => storeApiGet("/shopbite/business-hour")),
   {
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.businessHours,
     // never older than the TTL (default swr would serve a stale answer once)

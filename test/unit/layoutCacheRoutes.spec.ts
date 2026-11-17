@@ -154,7 +154,9 @@ describe("menuRootId", () => {
     stubs.storeApiGet!.mockRejectedValue(new Error("down"));
     const { menuRootIdStrict } = await import("../../server/utils/menuRoot");
 
-    await expect(menuRootIdStrict()).rejects.toThrow("down");
+    await expect(menuRootIdStrict()).rejects.toMatchObject({
+      statusCode: 503,
+    });
   });
 });
 
@@ -412,5 +414,129 @@ describe("/api/_cache/purge", () => {
   it("rejects a layout target that is not a boolean", async () => {
     const { result } = await purge({ layout: "yes" });
     await expect(result).rejects.toMatchObject({ statusCode: 400 });
+  });
+});
+
+describe("cold caches during a Shopware outage", () => {
+  const DOWN = Object.assign(new Error("503 Service Unavailable"), {
+    statusCode: 503,
+  });
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const HANDLERS: { path: string; params: Record<string, string> }[] = [
+    {
+      path: "../../server/api/navigation/[type].get",
+      params: { type: "main" },
+    },
+    {
+      path: "../../server/api/navigation/[type].get",
+      params: { type: "menu" },
+    },
+    { path: "../../server/api/shopbite/business-hours.get", params: {} },
+    { path: "../../server/api/shopbite/holidays.get", params: {} },
+    { path: "../../server/api/payment-methods.get", params: {} },
+    { path: "../../server/api/top-sellers.get", params: {} },
+    {
+      path: "../../server/api/breadcrumb/[categoryId].get",
+      params: { categoryId: SECTION },
+    },
+  ];
+
+  for (const { path, params } of HANDLERS) {
+    it(`asks Shopware once per pause: ${path.split("/api/")[1]} ${JSON.stringify(params)}`, async () => {
+      const stubs = stubNitro({
+        menuRootIdStrict: vi.fn().mockResolvedValue(ROOT),
+      });
+      stubs.storeApiGet!.mockRejectedValue(DOWN);
+      stubs.storeApiPost!.mockRejectedValue(DOWN);
+      const { handler } = await load<CachedHandler>(path);
+      const calls = () =>
+        stubs.storeApiGet!.mock.calls.length +
+        stubs.storeApiPost!.mock.calls.length;
+
+      for (let i = 0; i < 3; i++) {
+        await expect(handler({ params, context: {} })).rejects.toMatchObject({
+          statusCode: 503,
+        });
+      }
+      expect(calls()).toBe(1);
+
+      vi.setSystemTime(31_000);
+      await expect(handler({ params, context: {} })).rejects.toThrow();
+      expect(calls()).toBe(2);
+    });
+  }
+
+  it("serves the last good answer per key during an outage", async () => {
+    const stubs = stubNitro();
+    const hours = { businessHours: [{ dayOfWeek: 1 }] };
+    stubs.storeApiGet!.mockResolvedValueOnce(hours).mockRejectedValue(DOWN);
+    const { handler } = await load<CachedHandler>(
+      "../../server/api/shopbite/business-hours.get",
+    );
+
+    expect(await handler({})).toEqual(hours);
+    expect(await handler({})).toEqual(hours);
+    expect(await handler({})).toEqual(hours);
+    expect(stubs.storeApiGet).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not take a client error for an outage", async () => {
+    const stubs = stubNitro();
+    stubs.storeApiGet!.mockRejectedValue(
+      Object.assign(new Error("400"), { statusCode: 400 }),
+    );
+    const { handler } = await load<CachedHandler>(
+      "../../server/api/breadcrumb/[categoryId].get",
+    );
+
+    await expect(
+      handler({ params: { categoryId: SECTION } }),
+    ).rejects.toThrow();
+    await expect(
+      handler({ params: { categoryId: SECTION } }),
+    ).rejects.toThrow();
+    expect(stubs.storeApiGet).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("storeApi", () => {
+  it("does not retry: a failing request reaches Shopware once", async () => {
+    const fetch = vi.fn().mockResolvedValue({});
+    stubNitro({ $fetch: fetch });
+    const { storeApiGet, storeApiPost } =
+      await import("../../server/utils/storeApi");
+
+    await storeApiGet("/shopbite/holiday");
+    await storeApiPost("/seo-url", {});
+    for (const [, options] of fetch.mock.calls) {
+      expect(options.retry).toBe(0);
+    }
+  });
+});
+
+describe("/api/seo-url with hostile paths", () => {
+  it("answers without a lookup", async () => {
+    const findSeoUrl = vi.fn().mockResolvedValue(null);
+    stubNitro({ findSeoUrl });
+    const handler = await load<(event: unknown) => Promise<unknown>>(
+      "../../server/api/seo-url/index.get",
+    );
+
+    expect(
+      await handler({ query: { path: "/%c0%ae%c0%ae/etc/passwd" } }),
+    ).toEqual({ seoUrl: null });
+    expect(await handler({ query: { path: "/navigation/zzz" } })).toEqual({
+      seoUrl: null,
+    });
+    expect(findSeoUrl).not.toHaveBeenCalled();
   });
 });
