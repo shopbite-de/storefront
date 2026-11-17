@@ -9,41 +9,16 @@ export interface NavigationMenuItem {
   children?: NavigationMenuItem[];
 }
 
+/** Loads a navigation from the server cache (server/api/navigation). */
+const fetchNavigation = (type: "main" | "footer" | "menu") =>
+  $fetch<Schemas["Category"][]>(`/api/navigation/${type}`);
+
 export function useNavigation(withChildren: boolean | undefined) {
-  const { apiClient } = useShopwareContext();
-  const menuRootId = useMenuRootId();
-
-  // Sent as a POST body: as `_criteria` query parameters the projection is
-  // ignored and every category arrives with media, translations, cms page
-  // and more (#312).
-  const criteria = {
-    includes: {
-      category: [
-        "id",
-        "name",
-        "translated",
-        "seoUrl",
-        "customFields",
-        "children",
-        "linkNewTab",
-      ],
-    },
-  };
-
-  const { data: mainNavigation } = useAsyncData("main-navigation", async () => {
-    const response = await apiClient.invoke(
-      "readNavigation post /navigation/{activeId}/{rootId}",
-      {
-        body: criteria,
-        pathParams: {
-          activeId: "main-navigation",
-          rootId: "main-navigation",
-        },
-      },
-    );
-
-    return response.data;
-  });
+  // Every page renders these, a 404 too: the server keeps them
+  // (server/api/navigation) instead of asking Shopware per request.
+  const { data: mainNavigation } = useAsyncData("main-navigation", () =>
+    fetchNavigation("main"),
+  );
 
   const mapCategoryToMenuItem = (
     category: Schemas["Category"],
@@ -65,22 +40,8 @@ export function useNavigation(withChildren: boolean | undefined) {
     return mainNavigation.value?.map(mapCategoryToMenuItem);
   });
 
-  const { data: footerNavigation } = useAsyncData(
-    "footer-navigation",
-    async () => {
-      const response = await apiClient.invoke(
-        "readNavigation post /navigation/{activeId}/{rootId}",
-        {
-          body: criteria,
-          pathParams: {
-            activeId: "footer-navigation",
-            rootId: "footer-navigation",
-          },
-        },
-      );
-
-      return response.data;
-    },
+  const { data: footerNavigation } = useAsyncData("footer-navigation", () =>
+    fetchNavigation("footer"),
   );
 
   const footerMenu = computed<NavigationMenuItem[]>(() => {
@@ -89,22 +50,9 @@ export function useNavigation(withChildren: boolean | undefined) {
     return footerNavigation.value?.map(mapCategoryToMenuItem);
   });
 
-  const { data: menuCardNavigation } = useAsyncData(
-    "menu-category",
-    async () => {
-      const response = await apiClient.invoke(
-        "readNavigation post /navigation/{activeId}/{rootId}",
-        {
-          body: criteria,
-          pathParams: {
-            activeId: "main-navigation",
-            rootId: await menuRootId(),
-          },
-        },
-      );
-
-      return response.data;
-    },
+  // The menu sections below the menu root (#486, resolved on the server).
+  const { data: menuCardNavigation } = useAsyncData("menu-category", () =>
+    fetchNavigation("menu"),
   );
 
   const menuCardMenu = computed<NavigationMenuItem[]>(() => {

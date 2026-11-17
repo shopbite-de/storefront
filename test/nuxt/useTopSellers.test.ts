@@ -1,44 +1,27 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { describe, it, expect, vi } from "vitest";
+import { registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useTopSellers } from "~/composables/useTopSellers";
 
-const { mockInvoke } = vi.hoisted(() => ({
-  mockInvoke: vi.fn(),
-}));
+const { topSellers } = vi.hoisted(() => ({ topSellers: vi.fn() }));
 
-mockNuxtImport("useShopwareContext", () => {
-  return () => ({
-    apiClient: {
-      invoke: mockInvoke,
-    },
-  });
-});
+registerEndpoint("/api/top-sellers", () => topSellers());
 
 describe("useTopSellers", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("should load top sellers successfully", async () => {
+  it("should load top sellers from the server cache", async () => {
     const mockElements = [{ id: "1", name: "Top Product" }];
-    mockInvoke.mockResolvedValue({
-      data: {
-        elements: mockElements,
-      },
-    });
+    topSellers.mockReturnValue(mockElements);
 
     const { loadTopSellers } = useTopSellers();
     const result = await loadTopSellers();
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "readProduct post /product",
-      expect.any(Object),
-    );
+    expect(topSellers).toHaveBeenCalled();
     expect(result).toEqual(mockElements);
   });
 
   it("should return empty array on error", async () => {
-    mockInvoke.mockRejectedValue(new Error("Network error"));
+    topSellers.mockImplementation(() => {
+      throw new Error("Network error");
+    });
 
     // Silence console.error for this test
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});

@@ -18,24 +18,13 @@ export function useRestaurantSchema() {
   const { menuCardMenu } = useNavigation(true);
   const { isCheckoutEnabled } = useShopBiteConfig();
   const { currencyCode } = useCommercePrice();
-  const { apiClient } = useShopwareContext();
 
+  // Cached on the server (server/api/payment-methods).
   const { data: paymentMethods } = useAsyncData(
     "restaurant-schema-payment-methods",
     async () => {
       try {
-        const { data } = await apiClient.invoke(
-          "readPaymentMethod post /payment-method",
-          {
-            body: {
-              onlyAvailable: true,
-              includes: { payment_method: ["name", "translated"] },
-            },
-          },
-        );
-        return (data.elements ?? []).map(
-          (method) => method.translated?.name ?? method.name,
-        );
+        return await $fetch<string[]>("/api/payment-methods");
       } catch (error) {
         console.error("Failed to load payment methods", error);
         return [];

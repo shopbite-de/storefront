@@ -16,6 +16,21 @@ const KEYS = [
   `cache:nitro:handlers:sitemap:urls.json`,
   `cache:nitro:routes:_:llmstxt.json`,
 ];
+// layout data of every page, purged with any target
+const LAYOUT_KEYS = [
+  `cache:nitro:handlers:navigation:navigationmenu${PIZZA}.json`,
+  `cache:nitro:handlers:navigation:navigationmainmainnavigation.json`,
+  `cache:nitro:handlers:breadcrumb:breadcrumb${PIZZA}.json`,
+  `cache:nitro:handlers:shopbite-config:shopbiteconfig.json`,
+  `cache:nitro:handlers:business-hours:businesshours.json`,
+  `cache:nitro:handlers:holidays:holidays.json`,
+  `cache:nitro:handlers:payment-methods:paymentmethods.json`,
+  `cache:nitro:handlers:top-sellers:topsellers.json`,
+  `cache:nitro:functions:seo-url:3f786850e387550fdab836ed7e6dc881de23001b.json`,
+  `cache:nitro:functions:seo-paths:seo-paths.json`,
+  `cache:nitro:functions:menu-root:menu-root.json`,
+];
+const OTHER_FUNCTION = `cache:nitro:functions:_:abc.json`;
 
 describe("keysToPurge", () => {
   it("purges every Store API cache without a target", () => {
@@ -43,6 +58,32 @@ describe("keysToPurge", () => {
       KEYS[6],
       KEYS[8],
     ]);
+  });
+
+  it("purges the layout data with every target", () => {
+    const keys = [...KEYS, ...LAYOUT_KEYS, OTHER_FUNCTION];
+    for (const target of [
+      {},
+      { products: [MARGHERITA] },
+      { categories: [PIZZA] },
+    ]) {
+      const purged = keysToPurge(keys, target);
+      expect(purged).toEqual(expect.arrayContaining(LAYOUT_KEYS));
+      expect(purged).not.toContain(OTHER_FUNCTION);
+    }
+  });
+
+  it("purges only the layout data and llms.txt for a layout target", () => {
+    const keys = [...KEYS, ...LAYOUT_KEYS, OTHER_FUNCTION];
+    const layout = LAYOUT_KEYS.filter((k) => !k.includes("top-sellers"));
+    expect(keysToPurge(keys, { layout: true })).toEqual([KEYS[8], ...layout]);
+  });
+
+  it("adds the layout data to a menu target", () => {
+    const keys = [...KEYS, ...LAYOUT_KEYS];
+    expect(keysToPurge(keys, { products: [SCHNITZEL], layout: true })).toEqual(
+      keysToPurge(keys, { products: [SCHNITZEL] }),
+    );
   });
 
   it("finds ids written with dashes or upper case", () => {

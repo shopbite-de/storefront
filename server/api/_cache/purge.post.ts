@@ -5,13 +5,16 @@ const Body = z
   .object({
     products: z.array(Id).max(1000).optional(),
     categories: z.array(Id).max(1000).optional(),
+    // only the layout data (hours, closing days, checkout switch, ...)
+    layout: z.boolean().optional(),
   })
   .default({});
 
 /**
- * Empties the Store API caches after the backoffice changed the menu (#484).
- * Protected by NUXT_CACHE_PURGE_SECRET; without the variable the route is
- * off. An empty body purges everything.
+ * Empties the Store API caches after the backoffice changed the menu (#484)
+ * or the shop settings (`{ "layout": true }`). Protected by
+ * NUXT_CACHE_PURGE_SECRET; without the variable the route is off. An empty
+ * body purges everything.
  */
 export default defineEventHandler(async (event) => {
   const secret = useRuntimeConfig(event).cachePurgeSecret;

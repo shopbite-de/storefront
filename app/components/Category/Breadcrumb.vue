@@ -7,8 +7,6 @@ const props = defineProps<{
 
 const { categoryId } = toRefs(props);
 
-const { apiClient } = useShopwareContext();
-
 const breadcrumbJsonLd = ref<object | null>(null);
 
 useHead(() => ({
@@ -27,14 +25,10 @@ const cacheKey = computed(() => `breadcrumb-${categoryId.value}`);
 
 const { data } = await useAsyncData(cacheKey, async () => {
   if (!categoryId.value) return [];
-  const response = await apiClient.invoke(
-    "readBreadcrumb get /breadcrumb/{id}",
-    {
-      pathParams: { id: categoryId.value },
-      query: { type: "category" },
-    },
+  // cached on the server (server/api/breadcrumb)
+  return await $fetch<Schemas["BreadcrumbCollection"]>(
+    `/api/breadcrumb/${categoryId.value}`,
   );
-  return response.data;
 });
 
 const items = computed<{ label?: string; to: string }[]>(() => {

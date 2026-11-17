@@ -74,6 +74,19 @@ export default defineNuxtConfig({
           listing: 86400,
           variant: 3600,
           category: 86400,
+          // Layout data of every page (navigation, SEO URLs, breadcrumbs,
+          // plugin config, hours): the server renders it from these caches,
+          // so a request (also a 404) does not ask Shopware for it again.
+          navigation: 86400,
+          // SEO URL matches and the list of known category paths: a new or
+          // renamed section must not 404 for long without a purge.
+          seoUrl: 600,
+          paymentMethods: 3600,
+          // Carries the checkout switch, so short; the browser asks
+          // Shopware directly (useShopBiteConfig).
+          config: 60,
+          businessHours: 300,
+          holidays: 300,
         },
         menuCategoryId: "",
         searchFallbackCategoryId: "",
