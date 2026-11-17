@@ -1,43 +1,66 @@
 import { createHash } from "node:crypto";
 import type { components } from "../../api-types/storeApiTypes";
-import { loadSeoPaths } from "./seoPaths";
+import { isTechnicalPath, loadSeoPaths } from "./seoPaths";
 type SeoUrl = components["schemas"]["SeoUrl"];
 
+type Lookup = { field: "pathInfo" | "seoPathInfo"; value: string };
+
 /**
- * Looks a path up against the canonical SEO URLs (/api/seo-url for
- * useNavigationSearch). Only matches are kept: an unknown path (a scanner
- * probing `/wp-admin/`) would otherwise add a cache entry per request.
- * Shopware compares the path case-insensitively, so all casings of a path
- * share one entry.
+ * What Shopware compares a path with: technical URLs by `pathInfo` (without
+ * the trailing slash), SEO URLs by `seoPathInfo` (without the leading one).
  */
-export const findSeoUrl = defineCachedFunction(
-  async (path: string): Promise<SeoUrl | null> => {
-    const isTechnicalUrl =
-      path.startsWith("/navigation/") ||
-      path.startsWith("/detail/") ||
-      path.startsWith("/landingPage/");
+export function seoUrlLookup(path: string): Lookup {
+  return isTechnicalPath(path)
+    ? { field: "pathInfo", value: path.replace(/\/$/, "") }
+    : { field: "seoPathInfo", value: path.substring(1) };
+}
 
-    // without the leading slash for SEO URLs, without the trailing slash
-    // for technical URLs
-    const value = isTechnicalUrl ? path.replace(/\/$/, "") : path.substring(1);
-    const field = isTechnicalUrl ? "pathInfo" : "seoPathInfo";
-
+/**
+ * One SEO URL lookup. `exact` when the match spells the looked-up value
+ * (up to case): Shopware's collation also ignores accents and trailing
+ * spaces, and caching those variants would add an entry per spelling.
+ */
+const cachedLookup = defineCachedFunction(
+  async (
+    field: Lookup["field"],
+    value: string,
+  ): Promise<{ match: SeoUrl | null; exact: boolean }> => {
     const result = await storeApiPost<{ elements?: SeoUrl[] }>("/seo-url", {
       limit: 1,
       filter: [{ type: "equals", field, value }],
     });
-    return result.elements?.[0] ?? null;
+    const match = result.elements?.[0] ?? null;
+    const spelled = match?.[field];
+    return {
+      match,
+      exact:
+        typeof spelled === "string" &&
+        spelled.toLowerCase() === value.toLowerCase(),
+    };
   },
   {
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.seoUrl,
     // a renamed section must not keep its old match beyond the TTL
     swr: false,
     name: "seo-url",
-    getKey: (path: string) =>
-      createHash("sha1").update(path.toLowerCase()).digest("hex"),
-    validate: (entry) => Boolean(entry.value),
+    // the field keeps `/Navigation/<id>` (a SEO path) apart from the
+    // technical `/navigation/<id>`
+    getKey: (field: Lookup["field"], value: string) =>
+      createHash("sha1")
+        .update(`${field}:${value.toLowerCase()}`)
+        .digest("hex"),
+    // only exact matches: misses and loose spellings (a scanner probing
+    // `/wp-admin/` or `/Pizza/%20`) never create an entry
+    validate: (entry) =>
+      Boolean((entry.value as { exact?: boolean } | undefined)?.exact),
   },
 );
+
+/** The canonical SEO URL of a path (/api/seo-url for useNavigationSearch). */
+export async function findSeoUrl(path: string): Promise<SeoUrl | null> {
+  const { field, value } = seoUrlLookup(path);
+  return (await cachedLookup(field, value)).match;
+}
 
 /**
  * All category SEO paths (server/utils/seoPaths.ts). `paths: null` (more

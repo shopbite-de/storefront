@@ -42,6 +42,26 @@ describe("/api/navigation/[type]", () => {
     );
   });
 
+  it("resolves the menu root once for key and request", async () => {
+    const strict = vi
+      .fn()
+      .mockResolvedValueOnce(ROOT)
+      .mockResolvedValue("0".repeat(32));
+    const stubs = stubNitro({ menuRootIdStrict: strict });
+    stubs.storeApiPost!.mockResolvedValue([]);
+    const { handler, opts } = await load<CachedHandler>(
+      "../../server/api/navigation/[type].get",
+    );
+    const event = { params: { type: "menu" }, context: {} };
+
+    expect(await opts.getKey(event)).toBe(`navigation-menu-${ROOT}`);
+    await handler(event);
+    expect(stubs.storeApiPost).toHaveBeenCalledWith(
+      `/navigation/main-navigation/${ROOT}`,
+      expect.anything(),
+    );
+  });
+
   it("caches nothing when the menu root cannot be resolved", async () => {
     stubNitro({
       menuRootIdStrict: vi.fn().mockRejectedValue(new Error("down")),
@@ -96,16 +116,16 @@ describe("time-critical layout data", () => {
     const stubs = stubNitro();
     stubs.storeApiGet!.mockResolvedValue({ isCheckoutEnabled: true });
     const { shopBiteConfig } =
-      (await import("../../server/utils/shopBiteConfig")) as {
-        shopBiteConfig: CachedFunction<[], unknown>;
-      };
+      await import("../../server/utils/shopBiteConfig");
 
-    expect(shopBiteConfig.opts).toMatchObject({
+    expect(stubs.defineCachedFunction!.mock.calls[0]![1]).toMatchObject({
       name: "shopbite-config",
       maxAge: 60,
       swr: false,
     });
     expect(await shopBiteConfig()).toEqual({ isCheckoutEnabled: true });
+    expect(await shopBiteConfig()).toEqual({ isCheckoutEnabled: true });
+    expect(stubs.storeApiGet).toHaveBeenCalledOnce();
     expect(stubs.storeApiGet).toHaveBeenCalledWith("/shopbite/config");
   });
 });
@@ -118,8 +138,15 @@ describe("menuRootId", () => {
     const { menuRootId, menuRootIdStrict } =
       await import("../../server/utils/menuRoot");
 
-    expect(await menuRootId()).toBe("main-navigation");
-    expect(await menuRootIdStrict()).toBe(ROOT);
+    vi.useFakeTimers();
+    try {
+      expect(await menuRootId()).toBe("main-navigation");
+      // asked again after the pause, not answered with the fallback
+      vi.advanceTimersByTime(31_000);
+      expect(await menuRootIdStrict()).toBe(ROOT);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("rejects in the strict variant when the config fails", async () => {
@@ -138,21 +165,81 @@ describe("SEO URL caches", () => {
       knownSeoPaths: CachedFunction<[], { paths: string[] | null }>;
     };
 
-  it("keeps SEO URL matches only, one entry for all casings", async () => {
-    stubNitro();
+  const PIZZA = {
+    seoPathInfo: "Speisekarte/Pizza/",
+    foreignKey: SECTION,
+    routeName: "frontend.navigation.page",
+  };
+  const NAVIGATION = {
+    pathInfo: `/navigation/${SECTION}`,
+    seoPathInfo: "Speisekarte/Pizza/",
+    foreignKey: SECTION,
+  };
+
+  /** Shopware's lookup: case-, accent- and trailing-space-insensitive. */
+  function stubShopwareSeoUrls() {
+    const stubs = stubNitro();
+    const loose = (value: string) =>
+      value
+        .normalize("NFD")
+        .replace(/\p{Diacritic}/gu, "")
+        .toLowerCase()
+        .replace(/ +$/, "");
+    stubs.storeApiPost!.mockImplementation(
+      async (
+        _path: string,
+        criteria: { filter: { field: string; value: string }[] },
+      ) => {
+        const { field, value } = criteria.filter[0]!;
+        if (
+          field === "seoPathInfo" &&
+          loose(value) === loose(PIZZA.seoPathInfo)
+        )
+          return { elements: [PIZZA] };
+        if (field === "pathInfo" && loose(value) === loose(NAVIGATION.pathInfo))
+          return { elements: [NAVIGATION] };
+        return { elements: [] };
+      },
+    );
+    return stubs;
+  }
+
+  it("keeps SEO URL matches, one entry for all casings of a path", async () => {
+    const stubs = stubShopwareSeoUrls();
     const { findSeoUrl } = await loadCaches();
 
-    expect(findSeoUrl.opts.validate?.({ value: null })).toBe(false);
-    expect(findSeoUrl.opts.validate?.({ value: { foreignKey: "x" } })).toBe(
-      true,
-    );
-    expect(findSeoUrl.opts.getKey("/C/Pizza/")).toBe(
-      findSeoUrl.opts.getKey("/c/pizza/"),
-    );
-    expect(findSeoUrl.opts.getKey("/c/pizza")).not.toBe(
-      findSeoUrl.opts.getKey("/c/pizza/"),
-    );
-    expect(findSeoUrl.opts.swr).toBe(false);
+    expect(await findSeoUrl("/Speisekarte/Pizza/")).toEqual(PIZZA);
+    expect(await findSeoUrl("/speisekarte/pizza/")).toEqual(PIZZA);
+    expect(await findSeoUrl("/Speisekarte/Pizza/")).toEqual(PIZZA);
+    expect(stubs.storeApiPost).toHaveBeenCalledTimes(1);
+  });
+
+  it("caches neither misses nor loose matches (accents, trailing spaces)", async () => {
+    const stubs = stubShopwareSeoUrls();
+    const { findSeoUrl } = await loadCaches();
+    const variants = [
+      "/Speisekarte/Pizza/ ",
+      "/Speisekarte/Pizza/   ",
+      "/Spéisekarte/Pizza/",
+      "/Spêisekárte/Pizzà/",
+    ];
+
+    for (const round of [1, 2]) {
+      for (const path of variants) {
+        expect(await findSeoUrl(path), `${path} round ${round}`).toEqual(PIZZA);
+      }
+      expect(await findSeoUrl("/wp-admin/")).toBeNull();
+    }
+    expect(stubs.storeApiPost).toHaveBeenCalledTimes(2 * (variants.length + 1));
+  });
+
+  it("keys technical URLs apart from SEO paths of the same spelling", async () => {
+    stubShopwareSeoUrls();
+    const { findSeoUrl } = await loadCaches();
+
+    expect(await findSeoUrl(`/navigation/${SECTION}`)).toEqual(NAVIGATION);
+    // not a technical URL (case-sensitive prefix): a SEO path lookup
+    expect(await findSeoUrl(`/Navigation/${SECTION}`)).toBeNull();
   });
 
   it("asks Shopware page by page with `page` for the known paths", async () => {
@@ -172,6 +259,10 @@ describe("SEO URL caches", () => {
 
     const { paths } = await knownSeoPaths();
     expect(paths).toHaveLength(205);
+    // stable order, so pages neither skip nor repeat rows
+    for (const [, criteria] of stubs.storeApiPost!.mock.calls) {
+      expect(criteria.sort).toEqual([{ field: "id", order: "ASC" }]);
+    }
     expect(paths).toContain("p2-7");
     expect(knownSeoPaths.opts.swr).toBe(false);
   });
@@ -187,5 +278,139 @@ describe("SEO URL caches", () => {
 
     // stored (a value, not undefined), so the next request does not page again
     expect(await knownSeoPaths()).toMatchObject({ paths: null });
+    const calls = stubs.storeApiPost!.mock.calls.length;
+    await knownSeoPaths();
+    expect(stubs.storeApiPost!.mock.calls.length).toBe(calls);
+  });
+});
+
+describe("/api/seo-url/known", () => {
+  const ask = async (
+    knownSeoPaths: ReturnType<typeof vi.fn>,
+    paths: string[],
+  ) => {
+    stubNitro({ knownSeoPaths });
+    const handler = await load<(event: unknown) => Promise<unknown>>(
+      "../../server/api/seo-url/known.get",
+    );
+    const results = [];
+    for (const path of paths) results.push(await handler({ query: { path } }));
+    return results;
+  };
+
+  it("rejects paths no category had and lets known ones through", async () => {
+    const known = vi
+      .fn()
+      .mockResolvedValue({ paths: ["speisekarte/pizza"], loadedAt: 1 });
+    expect(await ask(known, ["/wp-admin/", "/Speisekarte/Pizza"])).toEqual([
+      { known: false },
+      { known: true },
+    ]);
+  });
+
+  it("lets everything through for a list too long to filter by", async () => {
+    const known = vi.fn().mockResolvedValue({ paths: null, loadedAt: 1 });
+    expect(await ask(known, ["/wp-admin/"])).toEqual([{ known: true }]);
+  });
+
+  it("backs off after a failed load instead of asking on every request", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const known = vi.fn().mockRejectedValue(new Error("down"));
+    expect(await ask(known, ["/wp-admin/", "/.git/HEAD"])).toEqual([
+      { known: true },
+      { known: true },
+    ]);
+    expect(known).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("plugin config during an outage", () => {
+  const CONFIG = { menuCategoryId: ROOT, isCheckoutEnabled: true };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("keeps the last good config and asks again only after a pause", async () => {
+    const stubs = stubNitro();
+    stubs.storeApiGet!.mockResolvedValueOnce(CONFIG);
+    stubs.storeApiGet!.mockRejectedValue(new Error("down"));
+    const { shopBiteConfig } =
+      await import("../../server/utils/shopBiteConfig");
+
+    expect(await shopBiteConfig()).toEqual(CONFIG);
+    vi.setSystemTime(61_000); // cache entry expired
+    expect(await shopBiteConfig()).toEqual(CONFIG);
+    expect(await shopBiteConfig()).toEqual(CONFIG);
+    expect(stubs.storeApiGet).toHaveBeenCalledTimes(2);
+
+    vi.setSystemTime(92_000); // after the pause
+    await shopBiteConfig();
+    expect(stubs.storeApiGet).toHaveBeenCalledTimes(3);
+  });
+
+  it("without a good config fails fast during the pause", async () => {
+    const stubs = stubNitro();
+    stubs.storeApiGet!.mockRejectedValue(new Error("down"));
+    const { menuRootIdStrict } = await import("../../server/utils/menuRoot");
+
+    await expect(menuRootIdStrict()).rejects.toThrow();
+    await expect(menuRootIdStrict()).rejects.toThrow();
+    expect(stubs.storeApiGet).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the menu on the last good root", async () => {
+    const stubs = stubNitro();
+    stubs.storeApiGet!.mockResolvedValueOnce(CONFIG);
+    stubs.storeApiGet!.mockRejectedValue(new Error("down"));
+    const { menuRootIdStrict } = await import("../../server/utils/menuRoot");
+
+    expect(await menuRootIdStrict()).toBe(ROOT);
+    vi.setSystemTime(61_000);
+    expect(await menuRootIdStrict()).toBe(ROOT);
+  });
+});
+
+describe("/api/_cache/purge", () => {
+  async function purge(body: unknown) {
+    const { keysToPurge, hasPurgeSecret } =
+      await import("../../server/utils/cachePurge");
+    const removeItem = vi.fn();
+    stubNitro({
+      useRuntimeConfig: () => ({ cachePurgeSecret: "s" }),
+      getHeader: () => "Bearer s",
+      readBody: async () => body,
+      useStorage: () => ({
+        getKeys: async () => [
+          "cache:nitro:handlers:holidays:holidays.json",
+          "cache:nitro:handlers:listing:x1.json",
+        ],
+        removeItem,
+      }),
+      keysToPurge,
+      hasPurgeSecret,
+    });
+    const handler = await load<(event: unknown) => Promise<unknown>>(
+      "../../server/api/_cache/purge.post",
+    );
+    return { result: handler({}), removeItem };
+  }
+
+  it("accepts a layout target", async () => {
+    const { result, removeItem } = await purge({ layout: true });
+    expect(await result).toEqual({ purged: 1 });
+    expect(removeItem).toHaveBeenCalledWith(
+      "cache:nitro:handlers:holidays:holidays.json",
+    );
+  });
+
+  it("rejects a layout target that is not a boolean", async () => {
+    const { result } = await purge({ layout: "yes" });
+    await expect(result).rejects.toMatchObject({ statusCode: 400 });
   });
 });

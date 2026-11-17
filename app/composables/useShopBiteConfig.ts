@@ -14,12 +14,15 @@ type ApiClient = ReturnType<typeof useShopwareContext>["apiClient"];
 export async function loadShopBiteConfig(
   apiClient: ApiClient,
   fromServerCache: boolean,
+  retryDelays: readonly number[] = OPENING_HOURS_RETRY_DELAYS,
 ): Promise<Schemas["ShopBiteConfig"]> {
   if (fromServerCache) {
     return await $fetch<Schemas["ShopBiteConfig"]>("/api/shopbite/config");
   }
-  const { data } = await apiClient.invoke(
-    "shopbite.config.get get /shopbite/config",
+  // retried in the browser like the opening hours (#355)
+  const { data } = await withRetries(
+    () => apiClient.invoke("shopbite.config.get get /shopbite/config"),
+    retryDelays,
   );
   return data;
 }

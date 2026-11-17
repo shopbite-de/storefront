@@ -58,6 +58,17 @@ describe("shop data sources", () => {
     );
   });
 
+  it("retries the config in the browser like the opening hours", async () => {
+    invoke
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue({ data: { isCheckoutEnabled: true } });
+
+    expect(await loadShopBiteConfig(apiClient, false, [0])).toEqual({
+      isCheckoutEnabled: true,
+    });
+    expect(invoke).toHaveBeenCalledTimes(2);
+  });
+
   it("reads business hours and holidays from the cache on the server", async () => {
     const hours = [{ dayOfWeek: 1, openingTime: "11:00" }];
     const holidays = [{ start: "2026-12-24", end: "2026-12-26" }];

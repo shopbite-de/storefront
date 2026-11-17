@@ -7,8 +7,10 @@
  * database lookup, the path is let through.
  */
 
-/** Technical URLs are looked up by `pathInfo`, never filtered. */
-const TECHNICAL = /^\/(navigation|detail|landingPage)\//;
+/** Technical URLs (`/navigation/<id>`) are looked up by `pathInfo`. */
+export function isTechnicalPath(path: string): boolean {
+  return /^\/(navigation|detail|landingPage)\//.test(path);
+}
 const CATEGORY_ROUTE = "frontend.navigation.page";
 /** Shopware's default MAX_LIMIT of the Store API. */
 export const SEO_PATH_PAGE_SIZE = 100;
@@ -46,7 +48,7 @@ export function seoPathKey(path: string): string {
  * let through, since the collation may match it in ways not mapped here.
  */
 export function mayBeSeoPath(path: string, known: Set<string> | null): boolean {
-  if (!known || TECHNICAL.test(path)) return true;
+  if (!known || isTechnicalPath(path)) return true;
   const key = seoPathKey(path);
   if (/[^\x20-\x7e]/.test(key) || key.includes("%")) return true;
   return known.has(key);
@@ -58,6 +60,8 @@ export function seoPathCriteria(isCanonical: true | null, page: number) {
     limit: SEO_PATH_PAGE_SIZE,
     // `/seo-url` pages with `page`; `p` is ignored there
     page,
+    // a stable order, so pages neither skip nor repeat rows
+    sort: [{ field: "id", order: "ASC" }],
     filter: [
       { type: "equals", field: "routeName", value: CATEGORY_ROUTE },
       // the Store API returns old SEO URLs only when the criteria filter on
@@ -101,15 +105,4 @@ export async function loadSeoPaths(
   ]);
   if (lists.some((list) => list === null)) return null;
   return lists.flatMap((list) => list ?? []);
-}
-
-/** Remembers a failure for `ms`, so an outage is not asked on every request. */
-export function createBackoff(ms: number, now: () => number = Date.now) {
-  let until = 0;
-  return {
-    active: () => now() < until,
-    trip: () => {
-      until = now() + ms;
-    },
-  };
 }

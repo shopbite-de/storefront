@@ -1,4 +1,5 @@
-import { createBackoff, mayBeSeoPath } from "../../utils/seoPaths";
+import { createBackoff } from "../../utils/backoff";
+import { mayBeSeoPath } from "../../utils/seoPaths";
 
 /** After a failed load, let every path through for this long. */
 const FAILURE_BACKOFF_MS = 30_000;
