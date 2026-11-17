@@ -1,4 +1,5 @@
 import type { components } from "~~/api-types/storeApiTypes";
+import { createResilientLoader } from "../utils/backoff";
 
 const TOP_SELLERS_LIMIT = 8;
 
@@ -36,17 +37,20 @@ const criteria = {
   },
 };
 
+const load = createResilientLoader<components["schemas"]["Product"][]>();
+
 /** The dishes marked as top sellers, for the home page (useTopSellers). */
 export default defineCachedEventHandler(
-  async (): Promise<components["schemas"]["Product"][]> => {
-    const result = await storeApiPost<{
-      elements?: components["schemas"]["Product"][];
-    }>("/product", criteria, {
-      // Variants marked as top sellers inherit name, cover and properties.
-      headers: { "sw-inheritance": "true", "sw-include-seo-urls": "true" },
-    });
-    return result.elements ?? [];
-  },
+  (): Promise<components["schemas"]["Product"][]> =>
+    load("top-sellers", async () => {
+      const result = await storeApiPost<{
+        elements?: components["schemas"]["Product"][];
+      }>("/product", criteria, {
+        // Variants marked as top sellers inherit name, cover and properties.
+        headers: { "sw-inheritance": "true", "sw-include-seo-urls": "true" },
+      });
+      return result.elements ?? [];
+    }),
   {
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.listing,
     name: "top-sellers",

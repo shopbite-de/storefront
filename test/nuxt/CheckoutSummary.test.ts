@@ -3,7 +3,11 @@ import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { defineComponent, h, onMounted, ref } from "vue";
 import Summary from "~/components/Checkout/Summary.vue";
 
-const { state } = vi.hoisted(() => ({
+const { state, mocks } = vi.hoisted(() => ({
+  mocks: {
+    createOrder: vi.fn(),
+    checkCheckoutEnabled: vi.fn(),
+  },
   state: {
     isLoading: true,
     hasFailed: false,
@@ -19,7 +23,7 @@ mockNuxtImport("useOpeningHoursData", () => () => ({
 }));
 
 mockNuxtImport("useCheckout", () => () => ({
-  createOrder: vi.fn(),
+  createOrder: mocks.createOrder,
   selectedPaymentMethod: ref({ id: "pm1" }),
   selectedShippingMethod: ref({ id: "sm1", name: "Lieferung" }),
 }));
@@ -37,6 +41,7 @@ mockNuxtImport("useUser", () => () => ({
 mockNuxtImport("useShopBiteConfig", () => () => ({
   isCheckoutEnabled: ref(true),
   refresh: vi.fn(),
+  checkCheckoutEnabled: mocks.checkCheckoutEnabled,
 }));
 
 mockNuxtImport("useTrackEvent", () => () => ({
@@ -159,5 +164,36 @@ describe("Checkout Summary order button", () => {
       "Ob Lieferung an Ihre Adresse möglich ist",
     );
     expect(page.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it("does not order when Shopware says the checkout was switched off", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    mocks.checkCheckoutEnabled.mockResolvedValue(false);
+
+    const button = await mountSummary();
+    await button.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mocks.checkCheckoutEnabled).toHaveBeenCalled();
+    expect(mocks.createOrder).not.toHaveBeenCalled();
+    expect(button.element.closest(".grid")!.textContent).toContain(
+      "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen",
+    );
+  });
+
+  it("does not order when the checkout switch cannot be checked", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    mocks.checkCheckoutEnabled.mockResolvedValue(null);
+
+    const button = await mountSummary();
+    await button.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mocks.createOrder).not.toHaveBeenCalled();
+    expect(button.element.closest(".grid")!.textContent).toContain(
+      "konnte nicht geprüft werden",
+    );
   });
 });

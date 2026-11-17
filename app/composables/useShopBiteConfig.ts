@@ -34,7 +34,25 @@ export function useShopBiteConfig() {
     loadShopBiteConfig(apiClient, import.meta.server),
   );
 
+  /**
+   * Asks Shopware (never the server cache) right before an order: the
+   * plugin does not refuse orders itself, so the checkout must not act on
+   * a value from the server render. `null` when it cannot be checked.
+   */
+  async function checkCheckoutEnabled(
+    retryDelays?: readonly number[],
+  ): Promise<boolean | null> {
+    try {
+      data.value = await loadShopBiteConfig(apiClient, false, retryDelays);
+    } catch (error) {
+      console.error("[checkout][checkCheckoutEnabled]", error);
+      return null;
+    }
+    return data.value?.isCheckoutEnabled ?? false;
+  }
+
   return {
+    checkCheckoutEnabled,
     deliveryTime: computed(() => data.value?.deliveryTime ?? 30),
     isCheckoutEnabled: computed(() => data.value?.isCheckoutEnabled ?? false),
     refresh,

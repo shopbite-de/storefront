@@ -11,6 +11,27 @@
 export function isTechnicalPath(path: string): boolean {
   return /^\/(navigation|detail|landingPage)\//.test(path);
 }
+
+/** The only shape of a technical URL: prefix, entity id, optional slash. */
+const TECHNICAL_URL = /^\/(navigation|detail|landingPage)\/[0-9a-f]{32}\/?$/i;
+
+/**
+ * Paths no SEO URL can have, answered with a 404 without any lookup:
+ * undecodable or invalid UTF-8 (`/%ff`, `/%c0%ae`), double encoding
+ * (`%25`), `..` (path traversal probes) and technical prefixes without an
+ * entity id (`/navigation/zzz`).
+ */
+export function isHostilePath(path: string): boolean {
+  if (/%25/i.test(path) || path.includes("..")) return true;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(path);
+  } catch {
+    return true;
+  }
+  if (decoded.includes("..")) return true;
+  return isTechnicalPath(path) && !TECHNICAL_URL.test(path);
+}
 const CATEGORY_ROUTE = "frontend.navigation.page";
 /** Shopware's default MAX_LIMIT of the Store API. */
 export const SEO_PATH_PAGE_SIZE = 100;
@@ -48,6 +69,7 @@ export function seoPathKey(path: string): string {
  * let through, since the collation may match it in ways not mapped here.
  */
 export function mayBeSeoPath(path: string, known: Set<string> | null): boolean {
+  if (isHostilePath(path)) return false;
   if (!known || isTechnicalPath(path)) return true;
   const key = seoPathKey(path);
   if (/[^\x20-\x7e]/.test(key) || key.includes("%")) return true;
