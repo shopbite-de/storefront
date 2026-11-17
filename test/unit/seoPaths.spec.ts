@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  createBackoff,
-  mayBeSeoPath,
-  seoPathKey,
-} from "../../server/utils/seoPaths";
+import { createBackoff } from "../../server/utils/backoff";
+import { mayBeSeoPath, seoPathKey } from "../../server/utils/seoPaths";
 
 const KNOWN = new Set(
   [

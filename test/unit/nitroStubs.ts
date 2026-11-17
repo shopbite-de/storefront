@@ -29,6 +29,7 @@ export interface CachedFunction<A extends unknown[], R> {
 export interface TestEvent {
   params?: Record<string, string>;
   query?: Record<string, unknown>;
+  context?: Record<string, unknown>;
 }
 
 export const CACHE_TTL = {
@@ -51,10 +52,31 @@ export function stubNitro(globals: Record<string, unknown> = {}) {
       handler: CachedHandler["handler"],
       opts: CachedHandler["opts"],
     ) => ({ handler, opts }),
-    defineCachedFunction: (
-      fn: (...args: unknown[]) => Promise<unknown>,
-      opts: unknown,
-    ) => Object.assign((...args: unknown[]) => fn(...args), { opts }),
+    // Like Nitro: stores what `validate` accepts (default: not undefined)
+    // under `getKey`, for `maxAge` seconds; a thrown error is not stored.
+    defineCachedFunction: vi.fn(
+      (
+        fn: (...args: unknown[]) => Promise<unknown>,
+        opts: CachedFunction<unknown[], unknown>["opts"],
+      ) => {
+        const store = new Map<string, { value: unknown; mtime: number }>();
+        const cached = async (...args: unknown[]) => {
+          const key = opts.getKey ? opts.getKey(...args) : "";
+          const hit = store.get(key);
+          if (hit && Date.now() - hit.mtime <= (opts.maxAge ?? 0) * 1000) {
+            return hit.value;
+          }
+          const value = await fn(...args);
+          const entry = { value, mtime: Date.now() };
+          const valid = opts.validate
+            ? opts.validate(entry) !== false
+            : value !== undefined;
+          if (valid) store.set(key, entry);
+          return value;
+        };
+        return Object.assign(cached, { opts, store });
+      },
+    ),
     defineEventHandler: (handler: unknown) => handler,
     useRuntimeConfig: () => ({
       public: {

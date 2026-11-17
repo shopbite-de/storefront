@@ -40,12 +40,25 @@ function navigationOf(type: string | undefined) {
   return NAVIGATIONS[type as NavigationType];
 }
 
-async function rootIdOf(type: string | undefined): Promise<string> {
+type RootContext = { context?: Record<string, unknown> };
+
+/**
+ * The root of a navigation, resolved once per request (key and request
+ * share `event.context`): the plugin config may expire in between, and a
+ * second answer would cache one root's sections under the other's key.
+ */
+async function rootIdOf(
+  event: RootContext,
+  type: string | undefined,
+): Promise<string> {
+  const context = (event.context ??= {});
+  if (typeof context.navigationRoot === "string") return context.navigationRoot;
   const navigation = navigationOf(type);
   if (!navigation) return "";
-  return navigation.root === "menu"
-    ? await menuRootIdStrict()
-    : navigation.root;
+  const root =
+    navigation.root === "menu" ? await menuRootIdStrict() : navigation.root;
+  context.navigationRoot = root;
+  return root;
 }
 
 /**
@@ -63,7 +76,7 @@ export default defineCachedEventHandler(
     if (!navigation) throw createError({ statusCode: 404 });
 
     return await storeApiPost(
-      `/navigation/${navigation.activeId}/${await rootIdOf(type)}`,
+      `/navigation/${navigation.activeId}/${await rootIdOf(event, type)}`,
       type === "home" ? HOME_CRITERIA : NAVIGATION_CRITERIA,
     );
   },
@@ -72,7 +85,7 @@ export default defineCachedEventHandler(
     name: "navigation",
     getKey: async (event) => {
       const type = getRouterParam(event, "type");
-      return `navigation-${type}-${await rootIdOf(type)}`;
+      return `navigation-${type}-${await rootIdOf(event, type)}`;
     },
   },
 );
