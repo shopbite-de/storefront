@@ -68,7 +68,7 @@ function registerFonts(preset: ThemePreset, nuxt: Nuxt) {
  * browsers download only the faces the active preset uses) and makes the
  * configured preset the default of `runtimeConfig.public.shopBite.themePreset`.
  * One build can so serve every preset: `NUXT_PUBLIC_SHOP_BITE_THEME_PRESET`
- * switches it at runtime (the lead demos run one image for all restaurants),
+ * switches it at runtime (one image can run several restaurants),
  * plugins/theme-preset.ts sets `data-preset` on `<html>`.
  */
 export default defineNuxtModule<ShopBiteThemeOptions>({

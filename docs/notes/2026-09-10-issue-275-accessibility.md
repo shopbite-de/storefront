@@ -25,7 +25,7 @@ So the storefront default and both demos fail in light mode as well; nobody had 
 - Contrast: Nuxt UI convention. `--ui-primary` is `brand-600` in light mode and `brand-400` in dark mode; the storefront's own `brand-600` becomes `#c23d00` (5.30 on white, 4.59 on its tint). `--ui-success` is `green-800` light / `green-400` dark. Rule for demos: `brand-600` ≥ 5:1 on white (covers the tint), `brand-400` ≥ 4.5:1 on `#171717`.
 - Toast proxies: instead of patching `reka-ui` (tried first: a pnpm patch of `dist/Toast/FocusProxy.{js,cjs}` without `aria-hidden` cleared the audit), the **status toasts are gone**. A permanent "closed" toast was a misuse of a transient notification; the status is now a line above the opening hours in the footer (`components/Footer/StoreStatus.vue`, `useStoreStatus`). A chip next to the logo was tried first: on phones only the dot fit, on the desktop the text ran into the navigation, and inside the logo link it broke the link's accessible name. Transient toasts stay on Nuxt UI; their proxies only exist for seconds. Upstream issue for the proxy still worth filing.
 - The status line is client only (`ClientOnly` with a placeholder of the same size): the open/closed state depends on the current time, and the server's clock/time zone is not the shop's. Server-rendered status would need a configured time zone; separate issue if wanted.
-- La Fattoria keeps its own `main.css`; the same `--ui-primary` and `--ui-success` changes went there as veliu/pizzerialafattoria#346.
+- La Fattoria keeps its own `main.css`; the same `--ui-primary` and `--ui-success` changes went there.
 
 ## Implementation
 
@@ -34,7 +34,7 @@ So the storefront default and both demos fail in light mode as well; nobody had 
 - `useStoreStatus`: open → closing time of the current interval; closed → `getNextOpeningTime`. Refreshes the clock every minute. `app.vue` keeps loading business hours and holidays on mount but no longer shows toasts.
 - `Footer/StoreStatus.vue`: "Geöffnet bis 23:00 Uhr" or "Geschlossen, wir öffnen wieder …", no link (the old toast's "Zur Speisekarte" action was dropped on purpose). `role="status"`, placeholder of the same height while unknown.
 - `--ui-text-muted` in light mode is `#6b6b6b` (was `#737373`, 4.38:1 on `--ui-bg-elevated`, the header navigation background). `UHeader` gets `:title="site.name"`: Nuxt UI's default made the logo link read "Nuxt UI".
-- Docs: contrast rule in `homepage/content/{de,en}/docs/8.storefront/2.configuration.md` and the demo-shop checklist in the root `CLAUDE.md`.
+- Docs: contrast rule in https://shopbite.de/docs/storefront/configuration (DE/EN) and the demo-shop checklist in the root `CLAUDE.md`.
 
 ## Not covered
 

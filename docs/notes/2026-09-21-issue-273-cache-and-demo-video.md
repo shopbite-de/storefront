@@ -6,7 +6,7 @@ Follow-up to `2026-09-10-issue-273-performance-media.md` (PR #308).
 
 - Object storage media (demo and La Fattoria) send
   `public, max-age=31536000, immutable`: done on the buckets.
-- Homepage docs cover poster, video size, thumbnails and the bucket header.
+- The docs on shopbite.de cover poster, video size, thumbnails and the bucket header.
 - Remaining requests without a useful cache lifetime on demo.shopbite.de:
   - files from `public/` (`/hero-poster.webp`, `/favicon.ico`, `/light/Logo.png`):
     no `Cache-Control` at all. Nitro only adds one for public asset dirs with

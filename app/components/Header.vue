@@ -10,8 +10,8 @@ import { useUser } from "@shopware/composables";
 const { mainMenu } = useNavigation(false);
 const { site, shopBite } = useRuntimeConfig().public;
 const { colorMode } = useThemePreset();
-// A logo URL from runtime config (NUXT_PUBLIC_SHOP_BITE_LOGO_URL, e.g. the
-// lead demos) wins over the files in public/; the dark presets use dark/.
+// A logo URL from runtime config (NUXT_PUBLIC_SHOP_BITE_LOGO_URL, e.g. one
+// image serving several shops) wins over the files in public/; the dark presets use dark/.
 const logoSrc = computed(
   () =>
     (shopBite as { logoUrl?: string }).logoUrl ||

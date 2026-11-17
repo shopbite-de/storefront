@@ -30,13 +30,13 @@ demos (`leads/demo_create.py` in the monorepo) made the sameness obvious.
   title, description; all optional, German defaults in the components),
   `gallery` optional. Existing `index.yml` files keep working; an old
   `marquee` block is ignored by Zod.
-- Homepage docs (`content/{de,en}/docs/8.storefront/3.content.md`).
+- Docs: https://shopbite.de/docs/storefront/content (DE/EN).
 
 ## Verification
 
 - `HomeMenuCategories.test.ts`: tiles with photo/icon, cap and "all" tile,
   empty state. Prettier, ESLint, typecheck and the unit suite pass.
-- Production build against a lead demo channel (Da Piero): tiles show the
+- Production build against a demo sales channel: tiles show the
   category photos, the grid the eight top sellers, quick view opens.
 
 ## Follow-ups

@@ -40,7 +40,7 @@ top sellers as a horizontal scroller.
   sellers carry the parent's name and cover (La Fattoria marks both the
   parent "Cordon Bleu" and its three variants; the header type of the
   generated operation lacks `sw-inheritance`, hence the `@ts-expect-error`).
-- Homepage docs (`content/{de,en}/docs/8.storefront/3.content.md`)
+- Docs (https://shopbite.de/docs/storefront/content, DE/EN)
   describe `hero.title`, the status line, the link order and the top
   sellers.
 

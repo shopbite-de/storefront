@@ -31,9 +31,7 @@ A (three cards with a bold lead, detail text and one action) vs. B
 - Demo content: the three entries carry `kind`, the hours description
   keeps only the exceptions (Saturday, closed Tuesday), the reservation
   card gets a call button.
-- Homepage docs (`content/{de,en}/docs/8.storefront/3.content.md`,
-  branch `docs/storefront-info-cards` stacked on
-  `docs/storefront-hero-title`).
+- Docs: https://shopbite.de/docs/storefront/content (DE/EN).
 
 ## Verification
 
