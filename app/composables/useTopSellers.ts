@@ -4,52 +4,11 @@ export type useTopSellersReturn = {
   loadTopSellers(): Promise<Schemas["Product"][]>;
 };
 
-const TOP_SELLERS_LIMIT = 8;
-
 export function useTopSellers(): useTopSellersReturn {
-  const { apiClient } = useShopwareContext();
   async function loadTopSellers() {
     try {
-      const result = await apiClient.invoke("readProduct post /product", {
-        // Variants marked as top sellers inherit name, cover and properties.
-
-        // @ts-expect-error sw-inheritance is missing from the generated header type
-        headers: { "sw-inheritance": "true", "sw-include-seo-urls": "true" },
-        body: {
-          filter: [{ type: "equals", field: "markAsTopseller", value: true }],
-          limit: TOP_SELLERS_LIMIT,
-          // What the compact card and the quick view need (#327).
-          includes: {
-            product: [
-              "id",
-              "productNumber",
-              "name",
-              "translated",
-              "description",
-              "calculatedPrice",
-              "available",
-              "cover",
-              "sortedProperties",
-              // Allergens checked (#485); includes filter `translated` as well,
-              // so custom fields only come back when listed here.
-              "customFields",
-              // Card link to the quick view deep link (#289).
-              "seoUrls",
-            ],
-            seo_url: ["seoPathInfo", "isCanonical"],
-            product_media: ["media"],
-            media: ["url", "thumbnails"],
-            media_thumbnail: ["width", "url"],
-            property_group: ["id", "name", "translated", "options"],
-            property_group_option: ["id", "name", "translated", "customFields"],
-          },
-          associations: {
-            cover: { associations: { media: {} } },
-            properties: { associations: { group: {} } },
-          },
-        },
-      });
-      return result.data.elements;
+      // Cached on the server like the listings (server/api/top-sellers).
+      return await $fetch<Schemas["Product"][]>("/api/top-sellers");
     } catch (e) {
       console.error("[useTopSellers][loadTopSellers]", e);
       return [];

@@ -1,4 +1,5 @@
 import { useShopwareContext } from "#imports";
+import type { Schemas } from "#shopware";
 
 export function useHolidays() {
   const { apiClient } = useShopwareContext();
@@ -6,11 +7,19 @@ export function useHolidays() {
   const { data, pending, status, refresh } = useAsyncData(
     "holidays",
     async () => {
+      // The server renders from its cache (server/api/shopbite,
+      // `cacheTtl.holidays`); the browser asks Shopware after mounting.
+      if (import.meta.server) {
+        const cached = await $fetch<Schemas["HolidayStruct"]>(
+          "/api/shopbite/holidays",
+        );
+        return cached.holidays;
+      }
       // Retried in the browser only: on the server a retry would delay the
       // page, and app.vue loads the data again after mounting (#355).
       const response = await withRetries(
         () => apiClient.invoke("shopbite.holiday.get get /shopbite/holiday"),
-        import.meta.client ? OPENING_HOURS_RETRY_DELAYS : [],
+        OPENING_HOURS_RETRY_DELAYS,
       );
 
       return response.data.holidays;

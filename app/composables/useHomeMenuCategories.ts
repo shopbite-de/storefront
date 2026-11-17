@@ -1,42 +1,14 @@
+import type { Schemas } from "#shopware";
+
 /**
  * The menu sections of the home page (#388, #444): the children of the menu
- * root (useMenuRootId: env, plugin configuration, navigation root) with their photo
+ * root (env, plugin configuration, navigation root; resolved on the server) with their photo
  * (`category.media`). Shared by the tiles and the word list of the presets.
  */
 export async function useHomeMenuCategories() {
-  const { apiClient } = useShopwareContext();
-  const menuRootId = useMenuRootId();
-
-  const { data: categories } = await useAsyncData(
-    "home-menu-categories",
-    async () => {
-      const response = await apiClient.invoke(
-        "readNavigation post /navigation/{activeId}/{rootId}",
-        {
-          body: {
-            depth: 1,
-            // Sent as a POST body so the projection is honoured (#312).
-            includes: {
-              category: [
-                "id",
-                "name",
-                "translated",
-                "seoUrl",
-                "customFields",
-                "media",
-              ],
-              media: ["url", "thumbnails", "metaData"],
-              media_thumbnail: ["url", "width"],
-            },
-          },
-          pathParams: {
-            activeId: "main-navigation",
-            rootId: await menuRootId(),
-          },
-        },
-      );
-      return response.data;
-    },
+  // Cached on the server with the other navigations (server/api/navigation).
+  const { data: categories } = await useAsyncData("home-menu-categories", () =>
+    $fetch<Schemas["Category"][]>("/api/navigation/home"),
   );
 
   return { categories };

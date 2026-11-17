@@ -29,6 +29,15 @@ export async function useSeoUrlRoute() {
         };
       }
 
+      // A path no category ever had (a scanner probing `/wp-admin/`) is
+      // answered from the server's list of SEO paths, not by four lookups.
+      if (import.meta.server && !(await mayBeSeoPath(routePath))) {
+        throw createError({
+          statusCode: 404,
+          statusMessage: `No data fetched from API for ${routePath}`,
+        });
+      }
+
       const { match, redirectPath } = await resolveSeoPath(
         routePath,
         resolveCategoryPath,
@@ -55,6 +64,18 @@ export async function useSeoUrlRoute() {
       { path: data.value.redirectPath, query: route.query },
       { redirectCode: 301, replace: true },
     );
+  }
+
+  async function mayBeSeoPath(path: string): Promise<boolean> {
+    if (path === "/") return true;
+    try {
+      const { known } = await $fetch<{ known: boolean }>("/api/seo-url/known", {
+        query: { path },
+      });
+      return known;
+    } catch {
+      return true;
+    }
   }
 
   async function resolveCategoryPath(

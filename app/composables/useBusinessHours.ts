@@ -1,5 +1,6 @@
 import { useShopwareContext } from "#imports";
 import type { Ref } from "vue";
+import type { Schemas } from "#shopware";
 import { setTime } from "~/utils/time";
 
 export type ServiceInterval = { start: Date; end: Date };
@@ -10,6 +11,14 @@ export function useBusinessHours() {
   const { data, pending, status, refresh } = useAsyncData(
     "business-hours",
     async () => {
+      // The server renders from its cache (server/api/shopbite,
+      // `cacheTtl.businessHours`); the browser asks Shopware after mounting.
+      if (import.meta.server) {
+        const cached = await $fetch<Schemas["BusinessHourStruct"]>(
+          "/api/shopbite/business-hours",
+        );
+        return cached.businessHours;
+      }
       // Retried in the browser only: on the server a retry would delay the
       // page, and app.vue loads the data again after mounting (#355).
       const response = await withRetries(
@@ -17,7 +26,7 @@ export function useBusinessHours() {
           apiClient.invoke(
             "shopbite.business-hour.get get /shopbite/business-hour",
           ),
-        import.meta.client ? OPENING_HOURS_RETRY_DELAYS : [],
+        OPENING_HOURS_RETRY_DELAYS,
       );
 
       return response.data.businessHours;

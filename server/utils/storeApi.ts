@@ -32,3 +32,19 @@ export function storeApiPost<T>(
     body,
   });
 }
+
+/**
+ * Calls a Store API route that takes no criteria (the ShopBite plugin's
+ * config, business hours and holidays) with the storefront's access key.
+ */
+export function storeApiGet<T>(
+  path: string,
+  options: Pick<NitroFetchOptions<string>, "headers" | "query"> = {},
+): Promise<T> {
+  const { endpoint, accessToken } = useRuntimeConfig().public.shopware;
+
+  return $fetch<T>(`${endpoint}${path}`, {
+    headers: { "sw-access-key": accessToken, ...options.headers },
+    query: options.query,
+  });
+}

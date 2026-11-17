@@ -1,6 +1,5 @@
-import { useSessionContext, useShopwareContext } from "#imports";
+import { useSessionContext } from "#imports";
 import type { Schemas } from "#shopware";
-import { encodeForQuery } from "@shopware/api-client/helpers";
 
 export type UseNavigationSearchReturn = {
   /**
@@ -16,7 +15,6 @@ export type UseNavigationSearchReturn = {
  * @category Navigation & Routing
  */
 export function useNavigationSearch(): UseNavigationSearchReturn {
-  const { apiClient } = useShopwareContext();
   const { sessionContext } = useSessionContext();
 
   async function resolvePath(path: string): Promise<Schemas["SeoUrl"] | null> {
@@ -31,35 +29,14 @@ export function useNavigationSearch(): UseNavigationSearchReturn {
       } as Schemas["SeoUrl"];
     }
 
-    const isTechnicalUrl =
-      path.startsWith("/navigation/") ||
-      path.startsWith("/detail/") ||
-      path.startsWith("/landingPage/");
+    // Matches are cached on the server (server/api/seo-url), so a menu
+    // section does not ask Shopware for its SEO URL on every request.
+    const { seoUrl } = await $fetch<{ seoUrl: Schemas["SeoUrl"] | null }>(
+      "/api/seo-url",
+      { query: { path } },
+    );
 
-    // remove leading slash in case of seo url or remove trailing slash in case of technical url
-    const normalizedPath = isTechnicalUrl
-      ? path.endsWith("/")
-        ? path.slice(0, -1)
-        : path
-      : path.substring(1);
-
-    const criteria = encodeForQuery({
-      filter: [
-        {
-          type: "equals",
-          field: isTechnicalUrl ? "pathInfo" : "seoPathInfo",
-          value: normalizedPath,
-        },
-      ],
-    });
-
-    const seoResult = await apiClient.invoke("readSeoUrlGet get /seo-url", {
-      query: {
-        _criteria: criteria,
-      },
-    });
-
-    return seoResult.data.elements?.[0] ?? null;
+    return seoUrl;
   }
 
   return {
