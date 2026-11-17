@@ -180,7 +180,7 @@ const checkoutButtonLabel = computed<string>(() => {
     return "Bitte zuerst Ihre Angaben speichern";
   }
 
-  // app.vue loads business hours and holidays after mounting. Until then (or
+  // app.vue loads business hours and holidays after hydration. Until then (or
   // when that fails) an invalid time says nothing about the shop being closed
   // (#349, #355).
   if (isLoadingOpeningHours.value) {

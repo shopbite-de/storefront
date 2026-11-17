@@ -1,25 +1,31 @@
 import { pickMenuRoot } from "../../app/utils/menuRoot";
+import { shopBiteConfig } from "./shopBiteConfig";
 
 /**
- * Server side of the menu root (#486, see app/utils/menuRoot.ts) for the
- * sitemap and llms.txt. The plugin value is kept for five minutes.
+ * Server side of the menu root (#486, see app/utils/menuRoot.ts). The plugin
+ * value comes from the cached plugin configuration (shopBiteConfig).
  */
-const pluginMenuRoot = defineCachedFunction(
-  async (): Promise<string | null> => {
-    const { shopware } = useRuntimeConfig().public;
-    const config = await $fetch<{ menuCategoryId?: string }>(
-      `${shopware.endpoint}/shopbite/config`,
-      { headers: { "sw-access-key": shopware.accessToken } },
-    ).catch(() => null);
-    return config?.menuCategoryId ?? null;
-  },
-  { maxAge: 300, name: "menu-root", getKey: () => "menu-root" },
-);
+function configuredRoot(): string | undefined {
+  return (
+    (useRuntimeConfig().public.shopBite.menuCategoryId as string | undefined) ||
+    undefined
+  );
+}
 
+/** For the sitemap and llms.txt: falls back to the navigation root. */
 export async function menuRootId(): Promise<string> {
-  const configured = useRuntimeConfig().public.shopBite.menuCategoryId as
-    string | undefined;
-  return configured
-    ? configured
-    : pickMenuRoot(undefined, await pluginMenuRoot());
+  const configured = configuredRoot();
+  if (configured) return configured;
+  const config = await shopBiteConfig().catch(() => null);
+  return pickMenuRoot(undefined, config?.menuCategoryId);
+}
+
+/**
+ * For cached navigations: rejects when the plugin configuration cannot be
+ * loaded, so a menu built on the fallback root is never cached.
+ */
+export async function menuRootIdStrict(): Promise<string> {
+  const configured = configuredRoot();
+  if (configured) return configured;
+  return pickMenuRoot(undefined, (await shopBiteConfig()).menuCategoryId);
 }

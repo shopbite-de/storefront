@@ -1,29 +1,40 @@
 import { useShopwareContext } from "#imports";
 import type { Schemas } from "#shopware";
 
+export const HOLIDAYS_KEY = "holidays";
+
+type ApiClient = ReturnType<typeof useShopwareContext>["apiClient"];
+
+/**
+ * Closing days: from the server's cache (`/api/shopbite/holidays`,
+ * `cacheTtl.holidays`) for server-side rendering, from Shopware in the
+ * browser, where app.vue reloads them after hydration (useLiveShopData).
+ * Retried in the browser only (#355).
+ */
+export async function loadHolidays(
+  apiClient: ApiClient,
+  fromServerCache: boolean,
+  retryDelays: readonly number[] = OPENING_HOURS_RETRY_DELAYS,
+): Promise<Schemas["HolidayStruct"]["holidays"]> {
+  if (fromServerCache) {
+    const cached = await $fetch<Schemas["HolidayStruct"]>(
+      "/api/shopbite/holidays",
+    );
+    return cached.holidays;
+  }
+  const response = await withRetries(
+    () => apiClient.invoke("shopbite.holiday.get get /shopbite/holiday"),
+    retryDelays,
+  );
+  return response.data.holidays;
+}
+
 export function useHolidays() {
   const { apiClient } = useShopwareContext();
 
   const { data, pending, status, refresh } = useAsyncData(
-    "holidays",
-    async () => {
-      // The server renders from its cache (server/api/shopbite,
-      // `cacheTtl.holidays`); the browser asks Shopware after mounting.
-      if (import.meta.server) {
-        const cached = await $fetch<Schemas["HolidayStruct"]>(
-          "/api/shopbite/holidays",
-        );
-        return cached.holidays;
-      }
-      // Retried in the browser only: on the server a retry would delay the
-      // page, and app.vue loads the data again after mounting (#355).
-      const response = await withRetries(
-        () => apiClient.invoke("shopbite.holiday.get get /shopbite/holiday"),
-        OPENING_HOURS_RETRY_DELAYS,
-      );
-
-      return response.data.holidays;
-    },
+    HOLIDAYS_KEY,
+    () => loadHolidays(apiClient, import.meta.server),
     { immediate: false },
   );
 

@@ -21,14 +21,13 @@ const LAYOUT_KEYS = [
   `cache:nitro:handlers:navigation:navigationmenu${PIZZA}.json`,
   `cache:nitro:handlers:navigation:navigationmainmainnavigation.json`,
   `cache:nitro:handlers:breadcrumb:breadcrumb${PIZZA}.json`,
-  `cache:nitro:handlers:shopbite-config:shopbiteconfig.json`,
   `cache:nitro:handlers:business-hours:businesshours.json`,
   `cache:nitro:handlers:holidays:holidays.json`,
   `cache:nitro:handlers:payment-methods:paymentmethods.json`,
   `cache:nitro:handlers:top-sellers:topsellers.json`,
   `cache:nitro:functions:seo-url:3f786850e387550fdab836ed7e6dc881de23001b.json`,
   `cache:nitro:functions:seo-paths:seo-paths.json`,
-  `cache:nitro:functions:menu-root:menu-root.json`,
+  `cache:nitro:functions:shopbite-config:shopbite-config.json`,
 ];
 const OTHER_FUNCTION = `cache:nitro:functions:_:abc.json`;
 
@@ -79,11 +78,12 @@ describe("keysToPurge", () => {
     expect(keysToPurge(keys, { layout: true })).toEqual([KEYS[8], ...layout]);
   });
 
-  it("adds the layout data to a menu target", () => {
+  it("adds the layout data to a menu target, not other products", () => {
     const keys = [...KEYS, ...LAYOUT_KEYS];
-    expect(keysToPurge(keys, { products: [SCHNITZEL], layout: true })).toEqual(
-      keysToPurge(keys, { products: [SCHNITZEL] }),
-    );
+    const purged = keysToPurge(keys, { products: [SCHNITZEL], layout: true });
+    expect(purged).toEqual(expect.arrayContaining(LAYOUT_KEYS));
+    expect(purged).toContain(KEYS[1]);
+    expect(purged).not.toContain(KEYS[0]);
   });
 
   it("finds ids written with dashes or upper case", () => {
