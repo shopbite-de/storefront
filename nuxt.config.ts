@@ -82,8 +82,8 @@ export default defineNuxtConfig({
           // renamed section must not 404 for long without a purge.
           seoUrl: 600,
           paymentMethods: 3600,
-          // Carries the checkout switch, so short; the browser asks
-          // Shopware directly (useShopBiteConfig).
+          // Carries the checkout switch, so short; the browser reloads it
+          // from Shopware after hydration (useLiveShopData).
           config: 60,
           businessHours: 300,
           holidays: 300,

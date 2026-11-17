@@ -25,10 +25,15 @@ const cacheKey = computed(() => `breadcrumb-${categoryId.value}`);
 
 const { data } = await useAsyncData(cacheKey, async () => {
   if (!categoryId.value) return [];
-  // cached on the server (server/api/breadcrumb)
-  return await $fetch<Schemas["BreadcrumbCollection"]>(
-    `/api/breadcrumb/${categoryId.value}`,
-  );
+  // cached on the server (server/api/breadcrumb); 404 = empty breadcrumb
+  try {
+    return await $fetch<Schemas["BreadcrumbCollection"]>(
+      `/api/breadcrumb/${categoryId.value}`,
+    );
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode === 404) return [];
+    throw error;
+  }
 });
 
 const items = computed<{ label?: string; to: string }[]>(() => {

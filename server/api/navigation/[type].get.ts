@@ -43,7 +43,9 @@ function navigationOf(type: string | undefined) {
 async function rootIdOf(type: string | undefined): Promise<string> {
   const navigation = navigationOf(type);
   if (!navigation) return "";
-  return navigation.root === "menu" ? await menuRootId() : navigation.root;
+  return navigation.root === "menu"
+    ? await menuRootIdStrict()
+    : navigation.root;
 }
 
 /**
@@ -51,7 +53,8 @@ async function rootIdOf(type: string | undefined): Promise<string> {
  * menu sections below the menu root, #486) and `home` (the sections with
  * their photo). Shared by all visitors, so the server keeps them instead of
  * asking Shopware on each request; the key carries the menu root, which the
- * plugin configuration may change.
+ * plugin configuration may change. Without the plugin configuration the
+ * request fails rather than caching a menu of the fallback root.
  */
 export default defineCachedEventHandler(
   async (event): Promise<Schemas["Category"][]> => {

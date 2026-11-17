@@ -5,32 +5,44 @@ import { setTime } from "~/utils/time";
 
 export type ServiceInterval = { start: Date; end: Date };
 
+export const BUSINESS_HOURS_KEY = "business-hours";
+
+type ApiClient = ReturnType<typeof useShopwareContext>["apiClient"];
+
+/**
+ * Weekly opening hours: from the server's cache (`/api/shopbite/business-
+ * hours`, `cacheTtl.businessHours`) for server-side rendering, from
+ * Shopware in the browser, where app.vue reloads them after hydration
+ * (useLiveShopData). Retried in the browser only: on the server a retry
+ * would delay the page (#355).
+ */
+export async function loadBusinessHours(
+  apiClient: ApiClient,
+  fromServerCache: boolean,
+  retryDelays: readonly number[] = OPENING_HOURS_RETRY_DELAYS,
+): Promise<Schemas["BusinessHourStruct"]["businessHours"]> {
+  if (fromServerCache) {
+    const cached = await $fetch<Schemas["BusinessHourStruct"]>(
+      "/api/shopbite/business-hours",
+    );
+    return cached.businessHours;
+  }
+  const response = await withRetries(
+    () =>
+      apiClient.invoke(
+        "shopbite.business-hour.get get /shopbite/business-hour",
+      ),
+    retryDelays,
+  );
+  return response.data.businessHours;
+}
+
 export function useBusinessHours() {
   const { apiClient } = useShopwareContext();
 
   const { data, pending, status, refresh } = useAsyncData(
-    "business-hours",
-    async () => {
-      // The server renders from its cache (server/api/shopbite,
-      // `cacheTtl.businessHours`); the browser asks Shopware after mounting.
-      if (import.meta.server) {
-        const cached = await $fetch<Schemas["BusinessHourStruct"]>(
-          "/api/shopbite/business-hours",
-        );
-        return cached.businessHours;
-      }
-      // Retried in the browser only: on the server a retry would delay the
-      // page, and app.vue loads the data again after mounting (#355).
-      const response = await withRetries(
-        () =>
-          apiClient.invoke(
-            "shopbite.business-hour.get get /shopbite/business-hour",
-          ),
-        OPENING_HOURS_RETRY_DELAYS,
-      );
-
-      return response.data.businessHours;
-    },
+    BUSINESS_HOURS_KEY,
+    () => loadBusinessHours(apiClient, import.meta.server),
     { immediate: false },
   );
 

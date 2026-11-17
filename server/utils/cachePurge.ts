@@ -21,7 +21,6 @@ const LISTS = ["listing", "search", "top-sellers"];
 export const LAYOUT = [
   "navigation",
   "breadcrumb",
-  "shopbite-config",
   "business-hours",
   "holidays",
   "payment-methods",
@@ -30,9 +29,9 @@ export const LAYOUT = [
 const SHARED = [...LISTS, ...LAYOUT];
 const ALL = [...PER_PRODUCT, "category", ...SHARED];
 const HANDLERS = "cache:nitro:handlers:";
-/** Cached functions: SEO URL matches, known SEO paths, the menu root. */
+/** Cached functions: SEO URL matches, known SEO paths, plugin config. */
 const FUNCTIONS = "cache:nitro:functions:";
-const LAYOUT_FUNCTIONS = ["seo-url", "seo-paths", "menu-root"];
+const LAYOUT_FUNCTIONS = ["seo-url", "seo-paths", "shopbite-config"];
 /** Route rules with `swr` (llms.txt lists the menu). */
 const ROUTES = "cache:nitro:routes:";
 

@@ -33,10 +33,14 @@ if (sessionContextData.value) {
   useSessionContext(sessionContextData.value);
 }
 
-// Business hours and holidays feed the store status in the header
-// (HeaderStoreStatus) and the delivery time selection.
-const { refresh: refreshBusinessHours } = useBusinessHours();
-const { refresh: refreshHolidays } = useHolidays();
+// Business hours, holidays and the checkout switch feed the store status
+// (HeaderStoreStatus), the delivery time selection and the order buttons.
+// The server renders them from its caches; after hydration the browser
+// loads them from Shopware (useLiveShopData).
+useBusinessHours();
+useHolidays();
+useShopBiteConfig();
+useLiveShopData();
 
 const { refreshCart } = useCart();
 // Wishlist entries (#467): loaded in the browser, not during SSR. A login
@@ -50,8 +54,7 @@ watch(isLoggedIn, (loggedIn, before) => {
   else loadWishlist();
 });
 
-onMounted(async () => {
-  await Promise.all([refreshHolidays(), refreshBusinessHours()]);
+onMounted(() => {
   refreshCart();
 });
 

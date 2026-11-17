@@ -8,9 +8,13 @@ export default defineCachedEventHandler(
     const categoryId = getRouterParam(event, "categoryId") ?? "";
     if (!Id.test(categoryId)) throw createError({ statusCode: 400 });
 
-    return await storeApiGet(`/breadcrumb/${categoryId}`, {
-      query: { type: "category" },
-    });
+    const breadcrumb = await storeApiGet<
+      components["schemas"]["BreadcrumbCollection"]
+    >(`/breadcrumb/${categoryId}`, { query: { type: "category" } });
+    // Shopware answers an unknown id with an empty list; a 404 is not
+    // cached, so random ids cannot fill the cache.
+    if (!breadcrumb?.length) throw createError({ statusCode: 404 });
+    return breadcrumb;
   },
   {
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.category,
