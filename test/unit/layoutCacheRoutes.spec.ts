@@ -16,6 +16,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** What ofetch throws when Shopware cannot be reached. */
+const fetchFailed = () =>
+  Object.assign(new Error("[GET] fetch failed"), { name: "FetchError" });
+
 const load = async <T>(path: string): Promise<T> =>
   (await import(/* @vite-ignore */ path)).default as T;
 
@@ -133,7 +137,7 @@ describe("time-critical layout data", () => {
 describe("menuRootId", () => {
   it("falls back to the navigation root without caching the failure", async () => {
     const stubs = stubNitro();
-    stubs.storeApiGet!.mockRejectedValueOnce(new Error("down"));
+    stubs.storeApiGet!.mockRejectedValueOnce(fetchFailed());
     stubs.storeApiGet!.mockResolvedValueOnce({ menuCategoryId: ROOT });
     const { menuRootId, menuRootIdStrict } =
       await import("../../server/utils/menuRoot");
@@ -151,7 +155,7 @@ describe("menuRootId", () => {
 
   it("rejects in the strict variant when the config fails", async () => {
     const stubs = stubNitro();
-    stubs.storeApiGet!.mockRejectedValue(new Error("down"));
+    stubs.storeApiGet!.mockRejectedValue(fetchFailed());
     const { menuRootIdStrict } = await import("../../server/utils/menuRoot");
 
     await expect(menuRootIdStrict()).rejects.toMatchObject({
@@ -300,6 +304,26 @@ describe("/api/seo-url/known", () => {
     return results;
   };
 
+  const HOSTILE = ["/navigation/zzz", "/%ff", "/%252e%252e/etc/passwd"];
+
+  it("rejects hostile paths while the list is too long to filter by", async () => {
+    const known = vi.fn().mockResolvedValue({ paths: null, loadedAt: 1 });
+    expect(await ask(known, HOSTILE)).toEqual(
+      HOSTILE.map(() => ({ known: false })),
+    );
+  });
+
+  it("rejects hostile paths while backing off after a failed load", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const known = vi.fn().mockRejectedValue(new Error("down"));
+    // the first request trips the backoff, the others are answered during it
+    expect(await ask(known, ["/wp-admin/", ...HOSTILE])).toEqual([
+      { known: true },
+      ...HOSTILE.map(() => ({ known: false })),
+    ]);
+    expect(known).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects paths no category had and lets known ones through", async () => {
     const known = vi
       .fn()
@@ -341,7 +365,7 @@ describe("plugin config during an outage", () => {
   it("keeps the last good config and asks again only after a pause", async () => {
     const stubs = stubNitro();
     stubs.storeApiGet!.mockResolvedValueOnce(CONFIG);
-    stubs.storeApiGet!.mockRejectedValue(new Error("down"));
+    stubs.storeApiGet!.mockRejectedValue(fetchFailed());
     const { shopBiteConfig } =
       await import("../../server/utils/shopBiteConfig");
 
@@ -358,7 +382,7 @@ describe("plugin config during an outage", () => {
 
   it("without a good config fails fast during the pause", async () => {
     const stubs = stubNitro();
-    stubs.storeApiGet!.mockRejectedValue(new Error("down"));
+    stubs.storeApiGet!.mockRejectedValue(fetchFailed());
     const { menuRootIdStrict } = await import("../../server/utils/menuRoot");
 
     await expect(menuRootIdStrict()).rejects.toThrow();
@@ -369,7 +393,7 @@ describe("plugin config during an outage", () => {
   it("keeps the menu on the last good root", async () => {
     const stubs = stubNitro();
     stubs.storeApiGet!.mockResolvedValueOnce(CONFIG);
-    stubs.storeApiGet!.mockRejectedValue(new Error("down"));
+    stubs.storeApiGet!.mockRejectedValue(fetchFailed());
     const { menuRootIdStrict } = await import("../../server/utils/menuRoot");
 
     expect(await menuRootIdStrict()).toBe(ROOT);
