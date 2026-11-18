@@ -16,16 +16,6 @@ mockNuxtImport("useRuntimeConfig", () => () => ({
   geoapifyApiKey: "test-api-key",
 }));
 
-// Mock useAddressSuggestionArea
-const { mockBoundingBoxCoordinates } = vi.hoisted(() => ({
-  mockBoundingBoxCoordinates: {
-    value: "8.822251,50.055026,8.899077,50.104327",
-  },
-}));
-mockNuxtImport("useAddressSuggestionArea", () => () => ({
-  boundingBoxCoordinates: mockBoundingBoxCoordinates,
-}));
-
 describe("useAddressAutocomplete", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -67,7 +57,6 @@ describe("useAddressAutocomplete", () => {
           text: "Main St 1",
           lang: "de",
           limit: 5,
-          filter: "rect:8.822251,50.055026,8.899077,50.104327",
         }),
       }),
       expect.any(String),
@@ -102,8 +91,7 @@ describe("useAddressAutocomplete", () => {
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
-  it("should not include filter when boundingBoxCoordinates is empty", async () => {
-    mockBoundingBoxCoordinates.value = "";
+  it("leaves the area filter to the server route", async () => {
     mockUseFetch.mockResolvedValue({
       data: ref({ features: [] }),
     });
@@ -120,8 +108,5 @@ describe("useAddressAutocomplete", () => {
       }),
       expect.any(String),
     );
-
-    // Reset for other tests
-    mockBoundingBoxCoordinates.value = "8.822251,50.055026,8.899077,50.104327";
   });
 });

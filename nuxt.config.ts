@@ -60,6 +60,16 @@ export default defineNuxtConfig({
     // Store API caches after menu changes. Empty = route off.
     cachePurgeSecret: "",
     geoapifyApiKey: "",
+    // Per-IP token bucket of /api/address/autocomplete: `capacity` lookups at
+    // once, refilled by `refillPerMinute`; only lookups that reach Geoapify
+    // count. In memory per server process; capacity 0 turns it off (e.g. when
+    // the reverse proxy limits the route).
+    addressAutocomplete: {
+      rateLimit: {
+        capacity: 20,
+        refillPerMinute: 20,
+      },
+    },
     // AI crawlers named in robots.txt (#403, server/plugins/ai-crawlers.ts):
     // search = AI search and assistant fetches, training = model training.
     aiCrawlers: {
@@ -92,6 +102,7 @@ export default defineNuxtConfig({
         searchFallbackCategoryId: "",
         // Optional Geoapify bounding box "lon1,lat1,lon2,lat2" that narrows
         // the address suggestions in the checkout (empty = no filter, #251).
+        // Applied by the server route, never taken from the request.
         addressAutocomplete: {
           boundingBox: "",
         },
