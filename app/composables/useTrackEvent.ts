@@ -16,9 +16,10 @@ export function useTrackEvent() {
   }
 
   // Page views are pushed by `plugins/matomo.ts` (initial page and every
-  // `page:finish`), not by the registry's page watcher.
+  // `page:finish`), not by the registry's page watcher. The URL keeps only
+  // harmless query parameters (`trackingUrl`): e-mail links carry secrets.
   function trackPageView(path: string) {
-    push(["setCustomUrl", path]);
+    push(["setCustomUrl", trackingUrl(path)]);
     push(["setDocumentTitle", document.title]);
     push(["trackPageView"]);
   }
@@ -75,7 +76,7 @@ export function useTrackEvent() {
     productNumber: string,
     path: string,
   ) {
-    push(["setCustomUrl", path]);
+    push(["setCustomUrl", trackingUrl(path)]);
     push([
       "trackEvent",
       "Product",

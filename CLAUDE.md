@@ -128,7 +128,7 @@ Layout data is cached the same way, because every page renders it, a 404 too (on
 
 ### Client-side JavaScript budget (#314)
 
-- Nothing that the first paint does not need belongs in the entry chunk. Components that only some shops use go behind `Lazy…` + `v-if` (`SalesChannelSwitch`); the Matomo registry is imported in `plugins/matomo.ts` after `onNuxtReady`, tracking pushes to `_paq` via `useTrackEvent`.
+- Nothing that the first paint does not need belongs in the entry chunk. Components that only some shops use go behind `Lazy…` + `v-if` (`SalesChannelSwitch`); the Matomo registry is imported in `plugins/matomo.ts` after `onNuxtReady`, tracking pushes to `_paq` via `useTrackEvent`. Tracked URLs (`setCustomUrl`) go through `trackingUrl()` (`app/utils/trackingUrl.ts`): no fragment, and of the query only campaign parameters (`utm_*`, `mtm_*`, `pk_*`, `matomo_*`) and the quick view configuration (`produkt`, `ohne`, `extras`), because e-mail links carry one-time secrets; the password reset and registration confirmation pages also `router.replace` their query away once read.
 - Overlays (`SbSheet`, collapsibles) are created on first use (`v-if` + `nextTick()` before opening), not mounted with the page — mounting forces a layout of the whole page.
 - Long lists render on the server and hydrate on scroll: `hydrateWhenVisible(Component)` (`app/utils`) keeps the markup and the chunk, Used for the bon cards and the footer.
 - `NuxtLink` prefetches on interaction only (`experimental.defaults.nuxtLink`), and Rolldown groups shared framework/UI modules into two chunks (`vite.build.rollupOptions.output.codeSplitting`). Measure with Lighthouse behind the h2 proxy (see `docs/notes/2026-09-10-issue-314-mobile-js-cost.md`) before changing either.

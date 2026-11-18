@@ -54,9 +54,12 @@ describe("password pages with a preset (#445)", () => {
   });
 
   it("sets a new password with the hash from the link", async () => {
+    const replace = vi.spyOn(useRouter(), "replace");
     const wrapper = await mountSuspended(PasswordReset, {
       route: "/account/recover/password?hash=abc",
     });
+    // the hash is read once and removed from the address bar
+    expect(replace).toHaveBeenLastCalledWith({ query: {} });
     await wrapper.find('input[name="newPassword"]').setValue("geheim123");
     await wrapper
       .find('input[name="newPasswordConfirm"]')

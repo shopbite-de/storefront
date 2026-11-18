@@ -6,6 +6,7 @@ useSeoMeta({
 });
 
 const route = useRoute();
+const router = useRouter();
 
 const { apiClient } = useShopwareContext();
 const { refreshSessionContext } = useSessionContext();
@@ -41,6 +42,9 @@ function toConfirmError(e: unknown): ConfirmError {
 async function confirmRegistration() {
   const em = route.query.em;
   const hash = route.query.hash;
+  // One-time secrets: off the address bar (history, tracking, shared
+  // screenshots) once read.
+  router.replace({ query: {} });
   if (typeof em !== "string" || typeof hash !== "string" || !em || !hash) {
     error.value = "invalid";
     return;
