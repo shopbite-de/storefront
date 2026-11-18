@@ -100,7 +100,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <VitePwaManifest />
+  <NuxtPwaManifest />
   <NuxtLoadingIndicator />
 
   <div>

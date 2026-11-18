@@ -288,9 +288,17 @@ export default defineNuxtConfig({
         },
       ],
     },
-    workbox: {
+    // `workbox` before @vite-pwa/nuxt 2.
+    generateSW: {
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
       globIgnores: ["**/_payload.json"],
+      // The module adds a `**/_payload.json` pattern because Nuxt Content
+      // prerenders its database dumps; no page payload exists, and since
+      // 2.0 an empty pattern fails the build unless globStrict is off (the
+      // warning of 1.x).
+      globStrict: false,
+      // default of 1.x, off by default since 2.0
+      cleanupOutdatedCaches: true,
       navigateFallback: null,
       runtimeCaching: [
         {
