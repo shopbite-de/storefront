@@ -70,6 +70,12 @@ export default defineNuxtConfig({
         refillPerMinute: 20,
       },
     },
+    // AI crawlers named in robots.txt (#403, server/plugins/ai-crawlers.ts):
+    // search = AI search and assistant fetches, training = model training.
+    aiCrawlers: {
+      search: true,
+      training: true,
+    },
     // Headers of every response (server/plugins/security-headers.ts),
     // NUXT_SECURITY_HEADERS_*; an empty value leaves the header out.
     securityHeaders: {
@@ -98,12 +104,6 @@ export default defineNuxtConfig({
         imgSrc: "",
         reportUri: "",
       },
-    },
-    // AI crawlers named in robots.txt (#403, server/plugins/ai-crawlers.ts):
-    // search = AI search and assistant fetches, training = model training.
-    aiCrawlers: {
-      search: true,
-      training: true,
     },
     public: {
       shopBite: {
