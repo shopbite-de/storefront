@@ -4,7 +4,7 @@ As of 2026-09-12, branch `fix/319-stylesheet-cost`.
 
 ## Measurement setup
 
-Production build, La Fattoria Store API, Lighthouse 12.8.2 mobile
+Production build, customer Store API, Lighthouse 12.8.2 mobile
 (simulated throttling, 4× CPU) behind the h2/gzip proxy of the #273 and
 #314 notes, two runs per page. In addition, Chrome DevTools Protocol
 traces through Playwright (4× CPU throttling, mobile viewport):

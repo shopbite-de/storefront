@@ -18,7 +18,7 @@ const dinner = (dayOfWeek: number) => ({
 
 describe("groupOpeningHours", () => {
   it("groups consecutive days with identical intervals", () => {
-    // Pizzeria La Fattoria: closed on Tuesday, Saturday dinner only
+    // closed on Tuesday, Saturday dinner only
     const businessHours = [1, 3, 4, 5, 7].flatMap((day) => [
       dinner(day),
       lunch(day),
@@ -57,8 +57,8 @@ describe("groupOpeningHours", () => {
 
 describe("toTelHref", () => {
   it("strips formatting from the phone number", () => {
-    expect(toTelHref("+49 6104 71427")).toBe("tel:+49610471427");
-    expect(toTelHref("06104 / 71-427")).toBe("tel:0610471427");
+    expect(toTelHref("+49 123 456789")).toBe("tel:+49123456789");
+    expect(toTelHref("0123 / 456-789")).toBe("tel:0123456789");
   });
 });
 

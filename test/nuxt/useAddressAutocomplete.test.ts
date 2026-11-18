@@ -45,9 +45,9 @@ describe("useAddressAutocomplete", () => {
           properties: {
             street: "Main St",
             housenumber: "1",
-            city: "Obertshausen",
-            postcode: "63179",
-            formatted: "Main St 1, 63179 Obertshausen, Germany",
+            city: "Musterstadt",
+            postcode: "12345",
+            formatted: "Main St 1, 12345 Musterstadt, Germany",
           },
         },
       ],
@@ -75,9 +75,9 @@ describe("useAddressAutocomplete", () => {
     expect(suggestions).toHaveLength(1);
     expect(suggestions[0]).toEqual({
       street: "Main St 1",
-      city: "Obertshausen",
-      zipcode: "63179",
-      label: "Main St 1, 63179 Obertshausen, Germany",
+      city: "Musterstadt",
+      zipcode: "12345",
+      label: "Main St 1, 12345 Musterstadt, Germany",
     });
   });
 

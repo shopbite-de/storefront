@@ -62,7 +62,7 @@ describe("order pages with a preset (#445)", () => {
     vi.clearAllMocks();
     order.value = undefined;
     Object.assign(useRuntimeConfig().public.site, {
-      telephone: "06104 71427",
+      telephone: "0123 456789",
     });
   });
 
@@ -95,7 +95,7 @@ describe("order pages with a preset (#445)", () => {
 
     const call = wrapper.find('a[href^="tel:"]');
     expect(call.text()).toContain("Anrufen:");
-    expect(call.text()).toContain("06104 71427");
+    expect(call.text()).toContain("0123 456789");
   });
 
   it("titles the order page with the order number", async () => {

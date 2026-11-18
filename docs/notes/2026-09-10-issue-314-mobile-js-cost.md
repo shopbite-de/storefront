@@ -4,7 +4,7 @@ As of 2026-09-10, branch `fix/314-mobile-js-cost`.
 
 ## Measurement setup
 
-Production build, La Fattoria Store API, Lighthouse 12.8.2 mobile
+Production build, customer Store API, Lighthouse 12.8.2 mobile
 (simulated throttling, 4× CPU) behind the h2/gzip proxy from
 `docs/notes/2026-09-10-issue-273-performance-media.md`; two runs per page,
 same machine. Chunk attribution comes from the client manifest that Nuxt

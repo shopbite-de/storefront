@@ -7,7 +7,7 @@ As of 2026-09-10, branch `feature/290-footer-nap`.
 - Data comes from `runtimeConfig.public.site` (platform-neutral, via env): `address.street`, `address.postalCode`, `address.city` (since #274), `telephone`, `googleBusinessProfileUrl`. The same values will later feed the `Restaurant` schema from #272. Long-term the values move to the Shopware plugin config (shopbite-de/shopware-plugin#15, storefront #298), env stays as fallback.
 - A dedicated contact block above the Shopware footer navigation (not extra columns), so it stays readable regardless of the number of navigation columns.
 - Opening hours: consecutive days with identical intervals are grouped, days without hours show as "Ruhetag". No holidays/closing days in the footer.
-- La Fattoria: only a note in the PR, no special handling (see below).
+- The customer shop: only a note in the PR, no special handling (see below).
 
 ## Implementation
 
@@ -21,8 +21,8 @@ As of 2026-09-10, branch `feature/290-footer-nap`.
 - A `mockNuxtImport("useRuntimeConfig")` without `app.baseURL` breaks the router setup of the Nuxt test environment (`useRouter()` undefined, see #294; `HeaderRight.test.ts` mocks with `app.baseURL` and works). `test/nuxt/FooterContact.test.ts` sets the real runtime config via `Object.assign` instead.
 - After switching branches across #292, `@nuxtjs/sitemap` was missing from `node_modules` (`nuxt prepare`: "Cannot resolve module"). Run `pnpm install --frozen-lockfile` after every switch to a newer `main`.
 
-## After the release for Pizzeria La Fattoria
+## After the release for the customer shop
 
-- Set env: `NUXT_PUBLIC_SITE_ADDRESS_STREET="Kantstr. 6"`, `NUXT_PUBLIC_SITE_ADDRESS_POSTAL_CODE=63179`, `NUXT_PUBLIC_SITE_ADDRESS_CITY=Obertshausen`, `NUXT_PUBLIC_SITE_TELEPHONE`, `NUXT_PUBLIC_SITE_GOOGLE_BUSINESS_PROFILE_URL`.
-- **Clarify the phone number:** imprint says `+49 6104 71427`, the Shopware footer navigation `tel:+491726723920`. For NAP consistency use one number, identical to the Google Business Profile.
-- Remove the link categories "Kantstraße 6" and "Tel: …" in the Shopware folder "Unternehmen", otherwise address and phone appear twice in the footer.
+- Set env: `NUXT_PUBLIC_SITE_ADDRESS_STREET="Musterstr. 1"`, `NUXT_PUBLIC_SITE_ADDRESS_POSTAL_CODE=12345`, `NUXT_PUBLIC_SITE_ADDRESS_CITY=Musterstadt`, `NUXT_PUBLIC_SITE_TELEPHONE`, `NUXT_PUBLIC_SITE_GOOGLE_BUSINESS_PROFILE_URL`.
+- **Clarify the phone number:** imprint says `+49 123 456789`, the Shopware footer navigation `tel:+49123456780`. For NAP consistency use one number, identical to the Google Business Profile.
+- Remove the link categories "Musterstraße 1" and "Tel: …" in the Shopware folder "Unternehmen", otherwise address and phone appear twice in the footer.

@@ -15,7 +15,7 @@ The demo deployment (Dokploy) sets `NUXT_SITE_INDEXABLE=false`. Nothing in
 `nuxt.config.ts`:
 
 - An unconditional `site: { indexable: false }` would be merged into every shop
-  project. Pizzeria La Fattoria does not set `site.indexable`, so it would drop
+  project. The customer shop does not set `site.indexable`, so it would drop
   out of search engines with the next release.
 - A config flag limited to this repository as the root project (comparing
   `process.cwd()` with the config directory) worked, but was rejected as too
@@ -37,7 +37,7 @@ module's `max-image-preview:large` rule. The composable now only sets
 
 ## Verified
 
-Production build with La Fattoria's Store API, `node .output/server/index.mjs`:
+Production build with the customer shop's Store API, `node .output/server/index.mjs`:
 
 - `NUXT_SITE_INDEXABLE=false`: robots.txt `Disallow: /`; `/`, `/c/Pizza/` and
   `/bestellung/warenkorb` send `X-Robots-Tag: noindex, nofollow` and render

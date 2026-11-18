@@ -73,12 +73,12 @@ describe("header and footer with a preset (#455)", () => {
     state.wishlistCount = 0;
     state.loggedIn = false;
     Object.assign(useRuntimeConfig().public.site, {
-      name: "La Fattoria",
-      telephone: "06104 71427",
+      name: "Esempio",
+      telephone: "0123 456789",
       address: {
-        street: "Kantstraße 6",
-        postalCode: "63179",
-        city: "Obertshausen",
+        street: "Musterstraße 1",
+        postalCode: "12345",
+        city: "Musterstadt",
         country: "DE",
       },
       googleBusinessProfileUrl: "",
@@ -88,11 +88,11 @@ describe("header and footer with a preset (#455)", () => {
   it("names the logo link and the icon-only controls", async () => {
     const wrapper = await mountSuspended(Header);
     expect(
-      wrapper.find('a[aria-label="La Fattoria, zur Startseite"]').exists(),
+      wrapper.find('a[aria-label="Esempio, zur Startseite"]').exists(),
     ).toBe(true);
     expect(
-      wrapper.find('a[href="tel:0610471427"]').attributes("aria-label"),
-    ).toBe("Anrufen: 06104 71427");
+      wrapper.find('a[href="tel:0123456789"]').attributes("aria-label"),
+    ).toBe("Anrufen: 0123 456789");
     expect(wrapper.find('a[href="/anmelden"]').attributes("aria-label")).toBe(
       "Anmelden",
     );
@@ -128,8 +128,8 @@ describe("header and footer with a preset (#455)", () => {
 
   it("shows contact data and the footer columns without a colour switch", async () => {
     const wrapper = await mountSuspended(Footer);
-    expect(wrapper.find("address").text()).toContain("Kantstraße 6");
-    expect(wrapper.find("address").text()).toContain("63179 Obertshausen");
+    expect(wrapper.find("address").text()).toContain("Musterstraße 1");
+    expect(wrapper.find("address").text()).toContain("12345 Musterstadt");
     const navs = wrapper.findAll("nav");
     expect(navs.map((nav) => nav.attributes("aria-label"))).toEqual([
       "Rechtliches",

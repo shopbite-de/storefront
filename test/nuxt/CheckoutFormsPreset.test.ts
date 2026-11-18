@@ -69,10 +69,10 @@ describe("registration form with a preset (#443)", () => {
     await wrapper.get("#firstName").setValue("Giulia");
     await wrapper.get("#lastName").setValue("Rossi");
     await wrapper.get("#email").setValue("giulia@example.com");
-    await wrapper.get("#billingAddress-street").setValue("Kantstraße 12");
-    await wrapper.get("#billingAddress-zipcode").setValue("63179");
-    await wrapper.get("#billingAddress-city").setValue("Obertshausen");
-    await wrapper.get("#billingAddress-phoneNumber").setValue("06104 12345");
+    await wrapper.get("#billingAddress-street").setValue("Musterstraße 12");
+    await wrapper.get("#billingAddress-zipcode").setValue("12345");
+    await wrapper.get("#billingAddress-city").setValue("Musterstadt");
+    await wrapper.get("#billingAddress-phoneNumber").setValue("0123 4567890");
     await wrapper.get("#acceptedDataProtection").trigger("click");
     await wrapper.find("form").trigger("submit");
     await flushPromises();
@@ -84,7 +84,7 @@ describe("registration form with a preset (#443)", () => {
         email: "giulia@example.com",
         billingAddress: expect.objectContaining({
           firstName: "Giulia",
-          street: "Kantstraße 12",
+          street: "Musterstraße 12",
         }),
       }),
     );

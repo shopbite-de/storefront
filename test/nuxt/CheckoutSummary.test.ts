@@ -134,7 +134,7 @@ describe("Checkout Summary order button", () => {
     expect(button.attributes("disabled")).toBeUndefined();
   });
 
-  // La Fattoria: "Lieferung" needs a shipping city in the delivery area
+  // e.g. "Lieferung" needs a shipping city in the delivery area
   it("says delivery is not possible once the address is known", async () => {
     state.isLoading = false;
     state.validTime = true;

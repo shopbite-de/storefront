@@ -21,7 +21,7 @@ describe("useShippingMethodChoice", () => {
   });
 
   it("loads all active methods, also those whose rule needs an address", async () => {
-    // "Lieferung" at La Fattoria only matches with a shipping city in the
+    // "Lieferung" in a shop with a delivery-area rule only matches with a shipping city in the
     // delivery area; onlyAvailable hid it from guests without an address
     const { methods, load } = useShippingMethodChoice();
     await load({ forceReload: true });

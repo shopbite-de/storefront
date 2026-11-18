@@ -1,5 +1,5 @@
-// A minimal shop that extends the storefront like the real shops do (La
-// Fattoria, the quickstart). CI builds it to catch imports that only
+// A minimal shop that extends the storefront like the real shops do (customer
+// shops, the quickstart). CI builds it to catch imports that only
 // resolve inside the storefront itself, e.g. the `#shared` alias, which in a
 // layer points to the shop's shared/ folder (2.0.1).
 export default defineNuxtConfig({

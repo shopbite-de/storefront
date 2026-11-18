@@ -10,7 +10,7 @@ description: Zahlungs- und Lieferinformationen
 Wir bieten Ihnen zwei Möglichkeiten, Ihre Bestellung zu erhalten:
 
 - **Lieferung:** Wir bringen Ihre Bestellung direkt zu Ihnen nach Hause (beachten Sie bitte unsere Liefergebiete).
-- **Abholung:** Sie können Ihre Bestellung auch direkt bei uns abholen (Kantstraße 6, 63179 Obertshausen).
+- **Abholung:** Sie können Ihre Bestellung auch direkt bei uns abholen (Musterstraße 1, 12345 Musterstadt).
 
 ### Zahlungsmöglichkeiten
 
@@ -21,8 +21,8 @@ Wir bieten Ihnen zwei Möglichkeiten, Ihre Bestellung zu erhalten:
 
 Wir liefern ausschließlich in folgende Gebiete:
 
-- **63179 Obertshausen** (Stadtteile Obertshausen und Hausen)
-- **63165 Mühlheim** (Stadtteil Lämmerspiel)
+- **12345 Musterstadt** (Stadtteile Musterstadt und Nebenort)
+- **12346 Beispieldorf**
 
 ### Lieferkosten
 

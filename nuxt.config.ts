@@ -126,14 +126,14 @@ export default defineNuxtConfig({
         telephone: "",
         googleBusinessProfileUrl: "",
         // Other names the shop is known by on maps and directories, comma-
-        // separated ("La Fattoria / Alte Schmiede, Alte Schmiede"), so search
+        // separated ("Esempio / Alter Hof, Alter Hof"), so search
         // engines and AI assistants match them to this shop. Restaurant
         // schema `alternateName` and /llms.txt.
         alternateNames: "",
         // Restaurant schema only, e.g. "€€" (#272).
         priceRange: "",
         // Restaurant schema only (#401): comma-separated delivery areas
-        // ("63179 Obertshausen, 63165 Lämmerspiel"), coordinates and
+        // ("12345 Musterstadt, 12346 Beispieldorf"), coordinates and
         // "true"/"false" or a text for table reservations.
         deliveryAreas: "",
         geo: {

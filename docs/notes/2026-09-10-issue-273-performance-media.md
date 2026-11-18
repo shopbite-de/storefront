@@ -2,7 +2,7 @@
 
 As of 2026-09-10, branch `feature/273-performance-hero-media`.
 
-## Measurement (Lighthouse 12 on pizzeria-lafattoria.de, 2026-09-10)
+## Measurement (Lighthouse 12 on the customer shop, 2026-09-10)
 
 | | Mobile | Desktop |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ ffmpeg -i hero.mp4 -vf "scale=1280:-2" -r 25 -c:v libx264 -crf 28 -preset medium
 
 | Shop | Original | 720p | Poster 1280 |
 | --- | --- | --- | --- |
-| La Fattoria | 3.4 MB | 713 KB | 65 KB |
+| Customer shop | 3.4 MB | 713 KB | 65 KB |
 | ShopBite demo | 27.6 MB | 6.0 MB | 60 KB (`public/hero-poster.webp`) |
 
 The 720p files are not in a repository; they need to be uploaded to the respective Shopware media (no admin credentials in the storefront `.env`).
@@ -42,7 +42,7 @@ The 720p files are not in a repository; they need to be uploaded to the respecti
 ## Not covered
 
 - `Wishlist.vue`, `CardKitchen.vue`, `FilterGroup.vue`, `ShippingMethod.vue`, `PaymentMethod.vue` still use `NuxtImg` for small icons; harmless without a provider domain.
-- La Fattoria's `Kalam-Regular.ttf` (154 KB, `font-display: optional`) is the shop's own font.
+- The customer shop's `Kalam-Regular.ttf` (154 KB, `font-display: optional`) is the shop's own font.
 - bf-cache "Internal error".
 
 ## Measuring locally: pitfalls
@@ -54,7 +54,7 @@ Lighthouse against the bare `node .output/server/index.mjs` is not comparable wi
 - TTFB is 450–680 ms here (SSR calls the Store API in another data centre) vs 190 ms live.
 - The observed (unthrottled) first paint of the local headless Chrome is ~1.5 s although HTML, CSS and poster are loaded at 0.45 s, while the live site paints at 0.4 s; nothing in the HTML hides the page. Simulated mobile FCP therefore stays around 3.2 s locally regardless of media, and mobile LCP (poster loaded at 1.6 s) is reported as 5.6 s ("render delay" ~4 s). The mobile acceptance numbers need a run against the deployed shop.
 
-Local results (h2 proxy, La Fattoria Store API, demo content): desktop `/` 98 (LCP 1.0 s, was 88/1.9 s live), `/c/Pizza/` 98 (LCP 1.0 s); mobile `/` 66 (LCP element is the 19 KB poster, page weight 1.07 MB instead of 5.1 MB, no video request), `/c/Pizza/` 65 (category header 37 KB thumbnail instead of 756 KB, CLS 0).
+Local results (h2 proxy, customer Store API, demo content): desktop `/` 98 (LCP 1.0 s, was 88/1.9 s live), `/c/Pizza/` 98 (LCP 1.0 s); mobile `/` 66 (LCP element is the 19 KB poster, page weight 1.07 MB instead of 5.1 MB, no video request), `/c/Pizza/` 65 (category header 37 KB thumbnail instead of 756 KB, CLS 0).
 
 The `blur-sm` on the poster made no measurable difference in the simulation; it was still removed in favour of a pre-blurred file (19 KB instead of 60 KB), which also saves the filter on real phones.
 

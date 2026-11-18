@@ -15,7 +15,7 @@ hero:
       icon: i-simple-icons-google
       link: https://www.google.com/maps/place/?q=place_id
     - title: 20 Jahre
-      subtitle: in Obertshausen
+      subtitle: in Musterstadt
       icon: i-lucide-award
     - title: Lieferservice
       subtitle: Schnell & zuverlässig
@@ -32,7 +32,7 @@ hero:
       size: xl
       color: neutral
       variant: outline
-      to: "tel:+490610477777"
+      to: "tel:+49123456789"
       target: _blank
 features:
   title: Alle [Informationen]{.text-primary} auf einen Blick
@@ -48,7 +48,7 @@ features:
         to: "#oeffnungszeiten"
     - title: Lieferung
       kind: delivery
-      description: Wir liefern nach Obertshausen und Lämmerspiel. Ab 15 € frei Haus, darunter 1 € Liefergebühr.
+      description: Wir liefern nach Musterstadt und Beispieldorf. Ab 15 € frei Haus, darunter 1 € Liefergebühr.
       icon: i-lucide-truck
     - title: Reservierung
       kind: reservation
@@ -56,8 +56,8 @@ features:
       description: Bestellungen nehmen wir gerne online oder telefonisch entgegen.
       icon: i-lucide-phone
       link:
-        label: 06104 77777 anrufen
-        to: "tel:+490610477777"
+        label: 0123 456789 anrufen
+        to: "tel:+49123456789"
 menu:
   headline: SHOPBITE
   title: Unsere Speisekarte
@@ -72,23 +72,23 @@ gallery:
   headline: SHOPBITE
   links:
     - label: Tisch reservieren
-      to: tel:+49610471427
+      to: tel:+49123456789
       color: primary
       variant: subtle
       trailingIcon: i-lucide-phone
   images:
     - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/be/7b/ba/1789148625/restaurant1.webp?ts=1789148625
-      alt: La Fattoria Restaurant Innenbereich 1
+      alt: Restaurant Innenbereich 1
     - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/7c/a7/1c/1789148639/restaurant2.webp?ts=1789148639
-      alt: La Fattoria Restaurant Innenbereich 2
+      alt: Restaurant Innenbereich 2
     - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/94/27/0b/1789148651/restaurant3.webp?ts=1789148651
-      alt: La Fattoria Restaurant Innenbereich 3
+      alt: Restaurant Innenbereich 3
     - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/50/31/b1/1789148669/restaurant4.webp?ts=1789148669
-      alt: La Fattoria Restaurant Innenbereich 4
+      alt: Restaurant Innenbereich 4
     - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/41/1b/09/1789148680/restaurant5.webp?ts=1789148680
-      alt: La Fattoria Restaurant Innenbereich 5
+      alt: Restaurant Innenbereich 5
     - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/5b/d1/f9/1789148692/restaurant6.webp?ts=1789148692
-      alt: La Fattoria Restaurant Innenbereich 6
+      alt: Restaurant Innenbereich 6
 
 mittagstisch:
   headline: SHOPBITE
@@ -110,7 +110,7 @@ mittagstisch:
       icon: i-lucide-info
   links:
     - label: Reservieren
-      to: "tel:+49610471427"
+      to: "tel:+49123456789"
       color: neutral
       variant: subtle
       trailingIcon: i-lucide-phone
@@ -119,13 +119,13 @@ faq:
   title: Häufige Fragen
   items:
     - question: Wohin liefern Sie?
-      answer: Wir liefern nach 63179 Obertshausen (Obertshausen und Hausen) und nach 63165 Mühlheim-Lämmerspiel.
+      answer: Wir liefern nach 12345 Musterstadt (Musterstadt und Nebenort) und nach 12346 Beispieldorf.
     - question: Was kostet die Lieferung?
       answer: Ab 15 € Bestellwert liefern wir kostenlos. Darunter berechnen wir eine Liefergebühr von 2 €.
     - question: Wie lange dauert die Lieferung?
       answer: Etwa 30 Minuten. Bei der Bestellung können Sie auch eine spätere Lieferzeit wählen.
     - question: Kann ich meine Bestellung abholen?
-      answer: Ja, Sie können Ihre Bestellung auch bei uns in der Kantstraße 6 in Obertshausen abholen.
+      answer: Ja, Sie können Ihre Bestellung auch bei uns in der Musterstraße 1 in Musterstadt abholen.
     - question: Wie kann ich bezahlen?
       answer: Bei Lieferung bar, bei Abholung bar oder mit EC-Karte.
     - question: Gibt es vegetarische und vegane Gerichte?
@@ -141,6 +141,6 @@ cta:
       to: /speisekarte/
       color: primary
     - label: Tisch reservieren
-      to: tel:+49610471427
+      to: tel:+49123456789
       variant: outline
       trailingIcon: i-lucide-phone

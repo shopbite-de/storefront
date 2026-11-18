@@ -25,10 +25,10 @@ const home = {
   id: "addr-home",
   firstName: "Gina",
   lastName: "Rossi",
-  street: "Kantstr. 6",
-  zipcode: "63179",
-  city: "Obertshausen",
-  phoneNumber: "06104 71427",
+  street: "Musterstr. 1",
+  zipcode: "12345",
+  city: "Musterstadt",
+  phoneNumber: "0123 456789",
   countryId: "de",
 } as Schemas["CustomerAddress"];
 const office = {
@@ -98,14 +98,14 @@ describe("account pages with a preset (#445)", () => {
       wrapper.find(`input[name="shippingAddress.${name}"]`).setValue(value);
     await fill("firstName", "Gina");
     await fill("lastName", "Rossi");
-    await fill("street", "Kantstr. 6");
-    await fill("zipcode", "63179");
-    await fill("city", "Obertshausen");
-    await fill("phoneNumber", "06104 71427");
+    await fill("street", "Musterstr. 1");
+    await fill("zipcode", "12345");
+    await fill("city", "Musterstadt");
+    await fill("phoneNumber", "0123 456789");
     await wrapper.find("form").trigger("submit");
     await flushPromises();
     expect(mocks.createCustomerAddress).toHaveBeenCalledWith(
-      expect.objectContaining({ firstName: "Gina", zipcode: "63179" }),
+      expect.objectContaining({ firstName: "Gina", zipcode: "12345" }),
     );
     expect(wrapper.emitted("submit-success")?.[0]).toEqual([{ id: "new" }]);
   });
@@ -153,7 +153,7 @@ describe("account pages with a preset (#445)", () => {
     const makeShipping = cards[1]!
       .findAll("button")
       .find((b) => b.text().startsWith("Als Lieferadresse"))!;
-    expect(makeShipping.text()).toContain("Waldstr. 1, Obertshausen");
+    expect(makeShipping.text()).toContain("Waldstr. 1, Musterstadt");
     await makeShipping.trigger("click");
     await flushPromises();
     expect(mocks.setDefaultCustomerShippingAddress).toHaveBeenCalledWith(

@@ -44,7 +44,7 @@ changes the content height while choosing makes it jump:
   and could wrap the row. Both states now carry an icon of the same size (X to
   remove, plus to add back).
 
-Checked on the production menu of La Fattoria (12 pizzas with up to 34 extras, 360
+Checked on the production menu of the customer shop (12 pizzas with up to 34 extras, 360
 and 390 px wide): toggling every ingredient and ticking an extra keeps the
 drawer height constant.
 

@@ -11,23 +11,19 @@ const TEMPLATE = "%s | %siteName – Online bestellen";
 
 describe("formatPageTitle", () => {
   it("applies the title template", () => {
-    expect(formatPageTitle("Pizza", "La Fattoria", TEMPLATE)).toBe(
-      "Pizza | La Fattoria – Online bestellen",
+    expect(formatPageTitle("Pizza", "Esempio", TEMPLATE)).toBe(
+      "Pizza | Esempio – Online bestellen",
     );
   });
 
   it("renders the bare site name for a missing or site-name title", () => {
-    expect(formatPageTitle(undefined, "La Fattoria", TEMPLATE)).toBe(
-      "La Fattoria",
-    );
-    expect(formatPageTitle("", "La Fattoria", TEMPLATE)).toBe("La Fattoria");
-    expect(formatPageTitle("La Fattoria", "La Fattoria", TEMPLATE)).toBe(
-      "La Fattoria",
-    );
+    expect(formatPageTitle(undefined, "Esempio", TEMPLATE)).toBe("Esempio");
+    expect(formatPageTitle("", "Esempio", TEMPLATE)).toBe("Esempio");
+    expect(formatPageTitle("Esempio", "Esempio", TEMPLATE)).toBe("Esempio");
   });
 
   it("renders the title as is without a template", () => {
-    expect(formatPageTitle("Pizza", "La Fattoria", "")).toBe("Pizza");
+    expect(formatPageTitle("Pizza", "Esempio", "")).toBe("Pizza");
   });
 });
 
@@ -56,20 +52,20 @@ describe("toAbsoluteUrl", () => {
 
 describe("buildHomeTitle", () => {
   it("adds the city to the shop name", () => {
-    expect(buildHomeTitle({ name: "La Fattoria", city: "Obertshausen" })).toBe(
-      "La Fattoria Obertshausen | Online bestellen & liefern lassen",
+    expect(buildHomeTitle({ name: "Esempio", city: "Musterstadt" })).toBe(
+      "Esempio Musterstadt | Online bestellen & liefern lassen",
     );
   });
 
   it("does not repeat a city that is already part of the name", () => {
     expect(
-      buildHomeTitle({ name: "Pizzeria Obertshausen", city: "Obertshausen" }),
-    ).toBe("Pizzeria Obertshausen | Online bestellen & liefern lassen");
+      buildHomeTitle({ name: "Pizzeria Musterstadt", city: "Musterstadt" }),
+    ).toBe("Pizzeria Musterstadt | Online bestellen & liefern lassen");
   });
 
   it("works without a city", () => {
-    expect(buildHomeTitle({ name: "La Fattoria", city: "" })).toBe(
-      "La Fattoria | Online bestellen & liefern lassen",
+    expect(buildHomeTitle({ name: "Esempio", city: "" })).toBe(
+      "Esempio | Online bestellen & liefern lassen",
     );
   });
 });
@@ -78,40 +74,38 @@ describe("buildHomeDescription", () => {
   it("combines cuisine, city and name", () => {
     expect(
       buildHomeDescription({
-        name: "La Fattoria",
-        city: "Obertshausen",
+        name: "Esempio",
+        city: "Musterstadt",
         cuisine: "Italienische Küche",
       }),
     ).toBe(
-      "Italienische Küche in Obertshausen: Bei La Fattoria online bestellen und liefern lassen oder abholen.",
+      "Italienische Küche in Musterstadt: Bei Esempio online bestellen und liefern lassen oder abholen.",
     );
   });
 
   it("uses city or cuisine alone", () => {
-    expect(
-      buildHomeDescription({ name: "La Fattoria", city: "Obertshausen" }),
-    ).toBe(
-      "La Fattoria in Obertshausen: Online bestellen und liefern lassen oder abholen.",
+    expect(buildHomeDescription({ name: "Esempio", city: "Musterstadt" })).toBe(
+      "Esempio in Musterstadt: Online bestellen und liefern lassen oder abholen.",
     );
     expect(
-      buildHomeDescription({ name: "La Fattoria", cuisine: "Pizza & Pasta" }),
+      buildHomeDescription({ name: "Esempio", cuisine: "Pizza & Pasta" }),
     ).toBe(
-      "Pizza & Pasta: Bei La Fattoria online bestellen und liefern lassen oder abholen.",
+      "Pizza & Pasta: Bei Esempio online bestellen und liefern lassen oder abholen.",
     );
   });
 
   it("returns undefined without city and cuisine", () => {
     expect(
-      buildHomeDescription({ name: "La Fattoria", city: "", cuisine: "" }),
+      buildHomeDescription({ name: "Esempio", city: "", cuisine: "" }),
     ).toBeUndefined();
   });
 });
 
 describe("splitList", () => {
   it("splits a comma-separated value and keeps arrays", () => {
-    expect(splitList("63179 Obertshausen, 63165 Lämmerspiel,")).toEqual([
-      "63179 Obertshausen",
-      "63165 Lämmerspiel",
+    expect(splitList("12345 Musterstadt, 12346 Beispieldorf,")).toEqual([
+      "12345 Musterstadt",
+      "12346 Beispieldorf",
     ]);
     expect(splitList(["A", "B"])).toEqual(["A", "B"]);
     expect(splitList("")).toEqual([]);

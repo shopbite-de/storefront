@@ -9,7 +9,7 @@ criteria as `_criteria` query parameters (`encodeForQuery` from
 `@shopware/api-client/helpers`), and `useNavigation` used the
 `readNavigationGet` operation the same way. Shopware applies `associations`
 and `limit` from the query string, but not the `includes` projection: every
-entity came back with all of its fields. Measured on the La Fattoria Store
+entity came back with all of its fields. Measured on the customer shop Store
 API (category "Pizza", 100 products): the listing route returned 285 KB with
 92 fields per product; the same criteria as a POST body returns 147 KB with
 the 11 requested fields. `/api/category/<id>` returned 40 fields incl.
@@ -36,7 +36,7 @@ The category page shipped 546 KB of HTML (393 KB Nuxt payload).
 
 ## Verification
 
-Production build against the La Fattoria Store API (category "Pizza", 100
+Production build against the customer Store API (category "Pizza", 100
 products), uncompressed sizes:
 
 | Response                  | Before | After                     |
@@ -52,7 +52,7 @@ back) shows the same product counts and no hydration warnings. Lighthouse
 mobile on `/c/Pizza/` is unchanged on the CPU side (TBT 600 ms, main
 thread 3.9 s): the gain is transfer size only; script cost is #314.
 
-The product cover projection could not be checked on La Fattoria: 39 of
+The product cover projection could not be checked on the customer shop: 39 of
 100 products carry a `coverId`, but none of them resolves to a `cover`,
 with or without `includes` (the media rows are gone; a data problem of that
 instance, unrelated to this change). Verified against Shopware's public

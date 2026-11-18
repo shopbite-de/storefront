@@ -4,7 +4,7 @@ Follow-up to `2026-09-10-issue-273-performance-media.md` (PR #308).
 
 ## State on 2026-09-21
 
-- Object storage media (demo and La Fattoria) send
+- Object storage media (demo and the customer shop) send
   `public, max-age=31536000, immutable`: done on the buckets.
 - The docs on shopbite.de cover poster, video size, thumbnails and the bucket header.
 - Remaining requests without a useful cache lifetime on demo.shopbite.de:

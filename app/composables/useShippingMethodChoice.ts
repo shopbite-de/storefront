@@ -6,8 +6,8 @@ import type { Schemas } from "#shopware";
  *
  * `useCheckout().getShippingMethods()` asks the Store API for the methods
  * whose availability rule matches right now. A rule on the shipping
- * address (La Fattoria: "Valide Lieferung", city Obertshausen, Hausen or
- * Lämmerspiel) never matches before the guest has entered an address, so
+ * address (e.g. "Valide Lieferung", city Musterstadt, Nebenort or
+ * Beispieldorf) never matches before the guest has entered an address, so
  * "Lieferung" vanished from the choice. Whether the chosen method works
  * for the address is checked in the cart (`shipping-method-blocked`).
  */
