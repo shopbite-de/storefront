@@ -25,23 +25,15 @@ interface GeoapifyResponse {
 }
 
 export function useAddressAutocomplete() {
-  const { boundingBoxCoordinates } = useAddressSuggestionArea();
-
   async function getSuggestions(text: string): Promise<AddressSuggestion[]> {
     if (!text || text.length < 3) {
       return [];
     }
 
     try {
-      const query: Record<string, string | number> = {
-        text,
-        lang: "de",
-        limit: 5,
-      };
-
-      if (boundingBoxCoordinates.value) {
-        query.filter = `rect:${boundingBoxCoordinates.value}`;
-      }
+      // The server route applies the configured area
+      // (`addressAutocomplete.boundingBox`) itself.
+      const query = { text, lang: "de", limit: 5 };
 
       const { data } = await useFetch<GeoapifyResponse>(
         "/api/address/autocomplete",

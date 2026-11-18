@@ -112,7 +112,7 @@ The storefront reads plain Shopware entities with fixed names; seed data must ma
 
 ### Server routes
 
-`server/api/address/autocomplete.get.ts` — Geoapify proxy (keeps API key server-side).
+`server/api/address/autocomplete.get.ts` — Geoapify proxy (keeps API key server-side). Passes on only `text` (3–200 characters), `lang` (`/^[a-z]{2}$/`) and `limit` (1–10), 400 otherwise; the area filter comes from `public.shopBite.addressAutocomplete.boundingBox`, never from the query. Upstream errors are logged with the key redacted and answered with a generic 502 (ofetch messages contain the request URL). Identical lookups come from a bounded in-memory cache (5 min, 500 entries); lookups reaching Geoapify are rate limited per client IP (`addressAutocomplete.rateLimit`, token bucket in memory per process, capacity 0 = off; the IP comes from `X-Forwarded-For`, so the app must run behind a proxy that sets it). Helpers in `server/utils/addressAutocomplete.ts`.
 `server/utils/shopware/adminApiClient.ts` — Admin API client for server-side Shopware operations requiring elevated credentials.
 `server/api/__sitemap__/urls.get.ts` — dynamic `@nuxtjs/sitemap` source (navigation categories from the Store API).
 `server/routes/llms.txt.ts` — `/llms.txt` for AI assistants (#402): shop, hours, ordering and the menu with prices, ingredients and diets as Markdown, built by the pure `server/utils/llmsTxt.ts`; `swr` 1 h. Every Store API source is optional (`Promise.allSettled`), content pages blocked in `robots.txt` are left out.
