@@ -141,7 +141,9 @@ const sampleOrder = {
 };
 
 async function mockOrder(page: Page) {
-  await page.route("**/store-api/order", (route) =>
+  // @shopware/composables 1.15 sends checkPromotion as a query parameter
+  // (/store-api/order?checkPromotion=true), which a glob would not match.
+  await page.route(/\/store-api\/order(\?|$)/, (route) =>
     route.fulfill({
       json: {
         orders: { elements: [sampleOrder], total: 1 },
