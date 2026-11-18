@@ -35,7 +35,7 @@ A (three cards with a bold lead, detail text and one action) vs. B
 
 ## Verification
 
-- Production build with the La Fattoria API: leads "Heute 11:30–14:30
+- Production build with the customer API: leads "Heute 11:30–14:30
   und 17:30–23:00", "In ca. 30 Minuten bei dir", "Tisch nur telefonisch";
   status "Geöffnet bis 14:30"; the hours link scrolls to
   `#oeffnungszeiten`; no page errors and no hydration warnings on 390 px

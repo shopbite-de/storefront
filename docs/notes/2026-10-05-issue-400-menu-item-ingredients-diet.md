@@ -4,7 +4,7 @@ As of 2026-10-05, branch `feature/400-menu-item-ingredients-diet`. Part of the A
 
 ## Finding
 
-On www.pizzeria-lafattoria.de, `/c/Pizza/` carried 29 `MenuItem`s, but only 4 had a `description`: the ingredients live in the `Hauptzutaten` property group, not in the product description. No item said whether it is vegetarian or vegan. AI assistants answering "what is on it / is it vegetarian" had nothing to go on.
+On the customer shop, `/c/Pizza/` carried 29 `MenuItem`s, but only 4 had a `description`: the ingredients live in the `Hauptzutaten` property group, not in the product description. No item said whether it is vegetarian or vegan. AI assistants answering "what is on it / is it vegetarian" had nothing to go on.
 
 ## Implementation
 

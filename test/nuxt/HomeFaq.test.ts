@@ -3,7 +3,7 @@ import { mountSuspended } from "@nuxt/test-utils/runtime";
 import HomeFaq from "~/components/Home/Faq.vue";
 
 const items = [
-  { question: "Wohin liefern Sie?", answer: "Nach Obertshausen." },
+  { question: "Wohin liefern Sie?", answer: "Nach Musterstadt." },
   { question: "Wie kann ich bezahlen?", answer: "Bar oder mit EC-Karte." },
 ];
 

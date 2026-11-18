@@ -6,7 +6,7 @@ import { useNavigation } from "~/composables/useNavigation";
  * Menu categories as horizontally scrolling rows on phones and tablets
  * (#445); the desktop menu has the word-list index (MenuCategoryIndex).
  * The first row holds the menu sections. When the open section has
- * sub-categories (La Fattoria: Fleischgerichte → Vom Rind, Hähnchen …),
+ * sub-categories (e.g. Fleischgerichte → Vom Rind, Hähnchen …),
  * a second row lists them, led by "Alle" for the section itself; deeper
  * levels follow in the same row. The current chip scrolls into view.
  */

@@ -16,4 +16,4 @@ As of 2026-09-10, branch `fix/296-track-direct-search`.
 
 ## Verification
 
-Production build against the La Fattoria Store API with Matomo configured: direct load of `/suche?q=pizza` pushes exactly one `trackSiteSearch`; a client-side search from `/c/Pizza/` to `/suche?q=salat` still pushes one.
+Production build against the customer Store API with Matomo configured: direct load of `/suche?q=pizza` pushes exactly one `trackSiteSearch`; a client-side search from `/c/Pizza/` to `/suche?q=salat` still pushes one.

@@ -81,19 +81,19 @@ describe("buildSpecialOpeningHoursSpecification", () => {
 
 describe("buildRestaurantSchema", () => {
   const site = {
-    name: "Pizzeria La Fattoria",
-    description: "Italienisch-deutsche Küche in Obertshausen seit 1997.",
-    url: "https://www.pizzeria-lafattoria.de",
-    image: "https://www.pizzeria-lafattoria.de/card.png",
-    telephone: "+49 6104 71427",
+    name: "Pizzeria Esempio",
+    description: "Italienisch-deutsche Küche in Musterstadt seit 1997.",
+    url: "https://www.pizzeria-esempio.example",
+    image: "https://www.pizzeria-esempio.example/card.png",
+    telephone: "+49 123 456789",
     cuisine: "Italienisch",
     priceRange: "€€",
     googleBusinessProfileUrl: "https://maps.google.com/?cid=123",
     address: {
-      street: "Kantstr. 6",
+      street: "Musterstr. 1",
       // a number: Nuxt parses a numeric env value
-      postalCode: 63179 as unknown as string,
-      city: "Obertshausen",
+      postalCode: 12345 as unknown as string,
+      city: "Musterstadt",
       country: "DE",
     },
   };
@@ -105,15 +105,15 @@ describe("buildRestaurantSchema", () => {
       holidays: [
         { start: "2026-07-12T21:00:00Z", end: "2026-08-05T22:00:00Z" },
       ],
-      menuUrl: "https://www.pizzeria-lafattoria.de/speisekarte",
+      menuUrl: "https://www.pizzeria-esempio.example/speisekarte",
       menuSections: [
-        { name: "Pizza", url: "https://www.pizzeria-lafattoria.de/c/Pizza/" },
+        { name: "Pizza", url: "https://www.pizzeria-esempio.example/c/Pizza/" },
         {
           name: "Nudeln",
           sections: [
             {
               name: "Spaghetti",
-              url: "https://www.pizzeria-lafattoria.de/c/Nudeln/Spaghetti/",
+              url: "https://www.pizzeria-esempio.example/c/Nudeln/Spaghetti/",
             },
           ],
         },
@@ -123,7 +123,7 @@ describe("buildRestaurantSchema", () => {
     expect(schema).toEqual({
       "@context": "https://schema.org",
       "@type": "Restaurant",
-      "@id": "https://www.pizzeria-lafattoria.de#restaurant",
+      "@id": "https://www.pizzeria-esempio.example#restaurant",
       name: site.name,
       description: site.description,
       url: site.url,
@@ -133,9 +133,9 @@ describe("buildRestaurantSchema", () => {
       priceRange: "€€",
       address: {
         "@type": "PostalAddress",
-        streetAddress: "Kantstr. 6",
-        postalCode: "63179",
-        addressLocality: "Obertshausen",
+        streetAddress: "Musterstr. 1",
+        postalCode: "12345",
+        addressLocality: "Musterstadt",
         addressCountry: "DE",
       },
       sameAs: ["https://maps.google.com/?cid=123"],
@@ -158,14 +158,14 @@ describe("buildRestaurantSchema", () => {
       ],
       hasMenu: {
         "@type": "Menu",
-        "@id": "https://www.pizzeria-lafattoria.de#menu",
+        "@id": "https://www.pizzeria-esempio.example#menu",
         name: "Speisekarte",
-        url: "https://www.pizzeria-lafattoria.de/speisekarte",
+        url: "https://www.pizzeria-esempio.example/speisekarte",
         hasMenuSection: [
           {
             "@type": "MenuSection",
             name: "Pizza",
-            url: "https://www.pizzeria-lafattoria.de/c/Pizza/",
+            url: "https://www.pizzeria-esempio.example/c/Pizza/",
           },
           {
             "@type": "MenuSection",
@@ -174,7 +174,7 @@ describe("buildRestaurantSchema", () => {
               {
                 "@type": "MenuSection",
                 name: "Spaghetti",
-                url: "https://www.pizzeria-lafattoria.de/c/Nudeln/Spaghetti/",
+                url: "https://www.pizzeria-esempio.example/c/Nudeln/Spaghetti/",
               },
             ],
           },
@@ -187,19 +187,19 @@ describe("buildRestaurantSchema", () => {
     const schema = buildRestaurantSchema({
       site: {
         ...site,
-        deliveryAreas: ["63179 Obertshausen", "63165 Lämmerspiel"],
+        deliveryAreas: ["12345 Musterstadt", "12346 Beispieldorf"],
         // strings: env values that are not plain numbers
         geo: { latitude: "50.0716", longitude: 8.8483 },
         acceptsReservations: "Nur telefonisch",
       },
-      orderUrl: "https://www.pizzeria-lafattoria.de/speisekarte",
+      orderUrl: "https://www.pizzeria-esempio.example/speisekarte",
       paymentMethods: ["Barzahlung", "EC-Karte"],
       currency: "EUR",
     });
 
     expect(schema).toMatchObject({
       geo: { "@type": "GeoCoordinates", latitude: 50.0716, longitude: 8.8483 },
-      areaServed: ["63179 Obertshausen", "63165 Lämmerspiel"],
+      areaServed: ["12345 Musterstadt", "12346 Beispieldorf"],
       acceptsReservations: "Nur telefonisch",
       paymentAccepted: "Barzahlung, EC-Karte",
       currenciesAccepted: "EUR",
@@ -207,7 +207,7 @@ describe("buildRestaurantSchema", () => {
         "@type": "OrderAction",
         target: {
           "@type": "EntryPoint",
-          urlTemplate: "https://www.pizzeria-lafattoria.de/speisekarte",
+          urlTemplate: "https://www.pizzeria-esempio.example/speisekarte",
           actionPlatform: [
             "https://schema.org/DesktopWebPlatform",
             "https://schema.org/MobileWebPlatform",
@@ -246,16 +246,13 @@ describe("buildRestaurantSchema", () => {
   it("lists other names of the shop as alternateName", () => {
     const schema = buildRestaurantSchema({
       site: {
-        name: "Pizzeria La Fattoria",
-        url: "https://www.pizzeria-lafattoria.de",
-        alternateNames: ["La Fattoria / Alte Schmiede", "Alte Schmiede"],
+        name: "Pizzeria Esempio",
+        url: "https://www.pizzeria-esempio.example",
+        alternateNames: ["Esempio / Alter Hof", "Alter Hof"],
       },
     });
 
-    expect(schema.alternateName).toEqual([
-      "La Fattoria / Alte Schmiede",
-      "Alte Schmiede",
-    ]);
+    expect(schema.alternateName).toEqual(["Esempio / Alter Hof", "Alter Hof"]);
   });
 
   it("leaves empty values out", () => {
@@ -365,7 +362,7 @@ describe("buildFaqPageSchema", () => {
   it("maps questions and answers", () => {
     expect(
       buildFaqPageSchema([
-        { question: "Wohin liefern Sie?", answer: "Nach Obertshausen." },
+        { question: "Wohin liefern Sie?", answer: "Nach Musterstadt." },
       ]),
     ).toEqual({
       "@context": "https://schema.org",
@@ -374,7 +371,7 @@ describe("buildFaqPageSchema", () => {
         {
           "@type": "Question",
           name: "Wohin liefern Sie?",
-          acceptedAnswer: { "@type": "Answer", text: "Nach Obertshausen." },
+          acceptedAnswer: { "@type": "Answer", text: "Nach Musterstadt." },
         },
       ],
     });

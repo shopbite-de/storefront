@@ -4,7 +4,7 @@ Date: 2026-09-08, reduced to the remaining delta on 2026-09-10. Branch `fix/issu
 
 ## Re-verified (2026-09-08)
 
-Live probe on pizzeria-lafattoria.de:
+Live probe on the customer shop:
 
 | URL          | Result                                    |
 | ------------ | ----------------------------------------- |
@@ -53,7 +53,7 @@ note of #277 on why a project composable must not share a layer name).
 
 ## Verification
 
-Production build against the La Fattoria Store API: `/c/Fisch/` 200,
+Production build against the customer Store API: `/c/Fisch/` 200,
 `/c/fisch/`, `/c/fisch`, `/c/FISCH` and `/c/Pizza` → 301 to the SEO URL,
 `/c/Fisch?properties=x` → 301 `/c/Fisch/?properties=x`, unknown paths 404.
 Playwright: direct load, link navigation, client-side redirect and back

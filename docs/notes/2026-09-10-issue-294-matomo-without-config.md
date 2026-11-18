@@ -23,7 +23,7 @@ As of 2026-09-10, branch `fix/294-matomo-without-config`.
 
 ## Verification
 
-Production build locally against the La Fattoria Store API, three scenarios, Playwright records every request containing `matomo`:
+Production build locally against the customer Store API, three scenarios, Playwright records every request containing `matomo`:
 
 - Without Matomo env and with `MATOMO_URL` only: no `matomo.js` reference in the SSR HTML, no request (neither `cdn.matomo.cloud` nor anything else).
 - With URL + site ID: preload and request to `<matomoUrl>/matomo.js`, `_paq` contains `setTrackerUrl`, `setSiteId`, `trackPageView`. A client-side search from `/c/Pizza/` to `/suche?q=salat` pushes `trackSiteSearch` through the same instance (only one script request).

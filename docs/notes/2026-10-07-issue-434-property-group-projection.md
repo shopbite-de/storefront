@@ -8,7 +8,7 @@ All Store API projections used the key `property` for property groups. The entit
 
 - `server/api/product/[productId].get.ts` and `server/api/product/variant.get.ts`: `property_group: ["id", "name", "translated", "options"]`. Options keep `group`: the configurator reads `option.group.id`, the ingredient selection `option.group.name`.
 - `server/api/search.get.ts`: same projection as the listing (#435), because the search page renders the same cards: `property_group` with `displayType`, options without `group`, no `properties`/`propertyIds`.
-- `app/components/Product/Category.vue` deleted: it was rendered nowhere (only recursively by itself), neither in the storefront nor in La Fattoria or the quickstart repo.
+- `app/components/Product/Category.vue` deleted: it was rendered nowhere (only recursively by itself), neither in the storefront nor in the customer shop or the quickstart repo.
 
 ## Verification (demo backend, `main` build against branch build)
 

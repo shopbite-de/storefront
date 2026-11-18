@@ -2,7 +2,7 @@
 
 As of 2026-09-10, branch `feature/274-seo-sitemap-canonical-og`.
 
-## Starting point (live, pizzeria-lafattoria.de)
+## Starting point (live, the customer shop)
 
 - `/sitemap.xml` 404, robots.txt without `Sitemap:`.
 - Home page: no canonical, no `og:image`, `twitter:card: summary`.
@@ -35,15 +35,15 @@ As of 2026-09-10, branch `feature/274-seo-sitemap-canonical-og`.
 
 ## Verification
 
-Production build locally against the La Fattoria Shopware (Store API, public access key) with `NUXT_PUBLIC_STORE_URL=https://www.pizzeria-lafattoria.de`:
+Production build locally against the customer Shopware (Store API, public access key) with `NUXT_PUBLIC_STORE_URL=https://shop.example.com`:
 
-- robots.txt: `Sitemap: https://www.pizzeria-lafattoria.de/sitemap.xml`
+- robots.txt: `Sitemap: https://shop.example.com/sitemap.xml`
 - `/sitemap.xml` 200: home page, content pages, categories incl. subcategories with `/`, lastmod, category images
 - Home page, `/c/Pizza/`, `/c/Nudeln/Penne/`, `/agb`, `/anmelden`, `/bestellung/warenkorb`: exactly one absolute canonical and one absolute `og:image` each, individual title
 
-## After the release for Pizzeria La Fattoria
+## After the release for the customer shop
 
-- Set `NUXT_PUBLIC_SITE_ADDRESS_CITY=Obertshausen`, `NUXT_PUBLIC_SITE_CUISINE`.
-- Remove `seo.title`/`seo.description` in `content/index.yml` or fill them with search terms (currently "Pizzeria La Fattoria Obertshausen", which takes precedence over the new default).
+- Set `NUXT_PUBLIC_SITE_ADDRESS_CITY=Musterstadt`, `NUXT_PUBLIC_SITE_CUISINE`.
+- Remove `seo.title`/`seo.description` in `content/index.yml` or fill them with search terms (currently the shop name and city, which takes precedence over the new default).
 - `public/card.png` exists; check it is 1200 × 630 px. Run the Facebook Sharing Debugger.
 - The `robots.disallow` for `/impressum`, `/datenschutz`, `/agb` keeps those pages out of the sitemap.

@@ -6,17 +6,17 @@ const now = new Date("2026-10-05T12:00:00Z");
 describe("buildLlmsTxt", () => {
   it("renders shop, hours, ordering, menu and pages as Markdown", () => {
     const text = buildLlmsTxt({
-      name: "Pizzeria La Fattoria",
+      name: "Pizzeria Esempio",
       description: "Italienisch-deutsche Küche seit 1997.",
-      url: "https://www.pizzeria-lafattoria.de",
+      url: "https://www.pizzeria-esempio.example",
       cuisine: "Italienische Küche",
       address: {
-        street: "Kantstraße 6",
-        postalCode: "63179",
-        city: "Obertshausen",
+        street: "Musterstraße 1",
+        postalCode: "12345",
+        city: "Musterstadt",
       },
-      telephone: "+49 6104 71427",
-      deliveryAreas: ["63179 Obertshausen", "63165 Lämmerspiel"],
+      telephone: "+49 123 456789",
+      deliveryAreas: ["12345 Musterstadt", "12346 Beispieldorf"],
       businessHours: [1, 2, 3, 4, 5].map((dayOfWeek) => ({
         dayOfWeek,
         openingTime: "11:30:00",
@@ -29,11 +29,11 @@ describe("buildLlmsTxt", () => {
       ],
       isCheckoutEnabled: true,
       deliveryTime: 30,
-      menuUrl: "https://www.pizzeria-lafattoria.de/speisekarte",
+      menuUrl: "https://www.pizzeria-esempio.example/speisekarte",
       menu: [
         {
           name: "Pizza",
-          url: "https://www.pizzeria-lafattoria.de/c/Pizza/",
+          url: "https://www.pizzeria-esempio.example/c/Pizza/",
           items: [
             {
               name: "Pizza Margherita",
@@ -45,7 +45,7 @@ describe("buildLlmsTxt", () => {
             {
               name: "Pizza Salami",
               price: 8.5,
-              url: "https://www.pizzeria-lafattoria.de/c/Pizza/?produkt=22",
+              url: "https://www.pizzeria-esempio.example/c/Pizza/?produkt=22",
             },
           ],
         },
@@ -71,31 +71,31 @@ describe("buildLlmsTxt", () => {
       pages: [
         {
           title: "Zahlungs- und Lieferinformationen",
-          url: "https://www.pizzeria-lafattoria.de/zahlung-und-versand",
+          url: "https://www.pizzeria-esempio.example/zahlung-und-versand",
           description: "Zahlungs- und Lieferinformationen",
         },
       ],
       faq: [
         {
           question: "Wohin liefern Sie?",
-          answer: "Nach Obertshausen und Lämmerspiel.",
+          answer: "Nach Musterstadt und Beispieldorf.",
         },
       ],
       currency: "EUR",
       now,
     });
 
-    expect(text).toBe(`# Pizzeria La Fattoria
+    expect(text).toBe(`# Pizzeria Esempio
 
-> Pizzeria La Fattoria: Italienische Küche in Obertshausen. Online bestellen zur Lieferung oder Abholung unter https://www.pizzeria-lafattoria.de.
+> Pizzeria Esempio: Italienische Küche in Musterstadt. Online bestellen zur Lieferung oder Abholung unter https://www.pizzeria-esempio.example.
 
 Italienisch-deutsche Küche seit 1997.
 
 ## Kontakt
 
-- Adresse: Kantstraße 6, 63179 Obertshausen
-- Telefon: +49 6104 71427
-- Website: https://www.pizzeria-lafattoria.de
+- Adresse: Musterstraße 1, 12345 Musterstadt
+- Telefon: +49 123 456789
+- Website: https://www.pizzeria-esempio.example
 
 ## Öffnungszeiten
 
@@ -105,8 +105,8 @@ Italienisch-deutsche Küche seit 1997.
 
 ## Bestellen
 
-- Online bestellen: https://www.pizzeria-lafattoria.de/speisekarte
-- Liefergebiet: 63179 Obertshausen, 63165 Lämmerspiel
+- Online bestellen: https://www.pizzeria-esempio.example/speisekarte
+- Liefergebiet: 12345 Musterstadt, 12346 Beispieldorf
 - Lieferzeit: ca. 30 Minuten
 - Abholung im Restaurant möglich
 
@@ -114,14 +114,14 @@ Italienisch-deutsche Küche seit 1997.
 
 ### Wohin liefern Sie?
 
-Nach Obertshausen und Lämmerspiel.
+Nach Musterstadt und Beispieldorf.
 
 ## Speisekarte
 
-### [Pizza](https://www.pizzeria-lafattoria.de/c/Pizza/)
+### [Pizza](https://www.pizzeria-esempio.example/c/Pizza/)
 
 - Pizza Margherita: ab 7,00 € (Tomatensoße, Mozzarella; vegetarisch)
-- [Pizza Salami](https://www.pizzeria-lafattoria.de/c/Pizza/?produkt=22): 8,50 €
+- [Pizza Salami](https://www.pizzeria-esempio.example/c/Pizza/?produkt=22): 8,50 €
 
 ### Nudeln
 
@@ -131,22 +131,22 @@ Nach Obertshausen und Lämmerspiel.
 
 ## Weitere Informationen
 
-- [Zahlungs- und Lieferinformationen](https://www.pizzeria-lafattoria.de/zahlung-und-versand)
+- [Zahlungs- und Lieferinformationen](https://www.pizzeria-esempio.example/zahlung-und-versand)
 `);
   });
 
   it("names other names of the shop under Kontakt", () => {
     expect(
       buildLlmsTxt({
-        name: "Pizzeria La Fattoria",
-        alternateNames: ["La Fattoria / Alte Schmiede", "Alte Schmiede"],
-        url: "https://www.pizzeria-lafattoria.de",
+        name: "Pizzeria Esempio",
+        alternateNames: ["Esempio / Alter Hof", "Alter Hof"],
+        url: "https://www.pizzeria-esempio.example",
         now,
       }),
     ).toContain(`## Kontakt
 
-- Auch bekannt als: La Fattoria / Alte Schmiede, Alte Schmiede
-- Website: https://www.pizzeria-lafattoria.de
+- Auch bekannt als: Esempio / Alter Hof, Alter Hof
+- Website: https://www.pizzeria-esempio.example
 `);
   });
 

@@ -155,7 +155,7 @@ describe("useCheckoutMethodGuard", () => {
     });
 
     it("never switches a blocked shipping method, it only reports it", async () => {
-      // La Fattoria: "Lieferung" is blocked until the guest has entered an
+      // e.g. "Lieferung" is blocked until the guest has entered an
       // address in the delivery area; switching made every order a pickup
       cart.value = cartWith({ [shippingBlocked.key]: shippingBlocked });
 

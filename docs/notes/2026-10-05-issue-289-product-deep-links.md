@@ -10,7 +10,7 @@ Lirim's template, verified on the demo (preview API and after indexing):
 {% set main = product.mainCategories|first %}{% set cat = main ? main.category : product.categories|first %}{% for p in (cat.translated.breadcrumb ?? [])|slice(1) %}{{ p }}/{% endfor %}?produkt={{ product.productNumber|url_encode|raw }}
 ```
 
-- `slice(1)` matches the demo's category template (`category.seoBreadcrumb` → `Speisekarte/Pizza/`, incl. slugs such as `Getraenke`); `slice(2)` gives `Pizza/…`, which does not exist. Shops with a prefixed category template (La Fattoria `c/…`) need the prefix: the plugin derives it.
+- `slice(1)` matches the demo's category template (`category.seoBreadcrumb` → `Speisekarte/Pizza/`, incl. slugs such as `Getraenke`); `slice(2)` gives `Pizza/…`, which does not exist. Shops with a prefixed category template (the customer shop `c/…`) need the prefix: the plugin derives it.
 - The product number must be `|url_encode|raw`: the SEO escaper slugifies variables, `LF-21-groß` became `LF-21-gross`, which the quick view cannot find. Encoded it is `LF-21-gro%C3%9F`, which the router decodes.
 - `seoBreadcrumb`/`seoCategory` are not available in the product template; the preview API renders main products only, so variants are only visible after indexing.
 - **The demo backend now runs this template** (set via Admin API for verification, both `frontend.detail.page` and `store-api.product.detail`, reindexed).

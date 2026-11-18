@@ -2,7 +2,7 @@
 
 As of 2026-09-10, branch `fix/275-accessibility-contrast-aria-hidden`.
 
-## Findings (Lighthouse 12 on pizzeria-lafattoria.de, score 92 mobile and desktop)
+## Findings (Lighthouse 12 on the customer shop, score 92 mobile and desktop)
 
 The issue guessed at light backgrounds and a carousel; both audits point elsewhere.
 
@@ -14,7 +14,7 @@ Contrast of the palettes in use (WCAG ratio, target ≥ 4.5; "tint" is the 10 % 
 | Palette | 500 on white | 600 on white / tint | 400 on #171717 | 500 on #171717 |
 | --- | --- | --- | --- | --- |
 | ShopBite orange (storefront default) | 3.11 | old `#e64d00` 3.87; new `#c23d00` 5.30 / 4.59 | 6.89 | 5.76 |
-| La Fattoria green | 4.99 | 7.12 / 6.12 | 9.07 | 3.59 |
+| Customer green | 4.99 | 7.12 / 6.12 | 9.07 | 3.59 |
 | Tailwind rose (hey-amore) | 3.67 | 4.70 / ~4.1 | 6.66 | 4.88 |
 | Tailwind red (masala-mio) | 3.76 | 4.83 / ~4.2 | 6.48 | 4.76 |
 
@@ -25,7 +25,7 @@ So the storefront default and both demos fail in light mode as well; nobody had 
 - Contrast: Nuxt UI convention. `--ui-primary` is `brand-600` in light mode and `brand-400` in dark mode; the storefront's own `brand-600` becomes `#c23d00` (5.30 on white, 4.59 on its tint). `--ui-success` is `green-800` light / `green-400` dark. Rule for demos: `brand-600` ≥ 5:1 on white (covers the tint), `brand-400` ≥ 4.5:1 on `#171717`.
 - Toast proxies: instead of patching `reka-ui` (tried first: a pnpm patch of `dist/Toast/FocusProxy.{js,cjs}` without `aria-hidden` cleared the audit), the **status toasts are gone**. A permanent "closed" toast was a misuse of a transient notification; the status is now a line above the opening hours in the footer (`components/Footer/StoreStatus.vue`, `useStoreStatus`). A chip next to the logo was tried first: on phones only the dot fit, on the desktop the text ran into the navigation, and inside the logo link it broke the link's accessible name. Transient toasts stay on Nuxt UI; their proxies only exist for seconds. Upstream issue for the proxy still worth filing.
 - The status line is client only (`ClientOnly` with a placeholder of the same size): the open/closed state depends on the current time, and the server's clock/time zone is not the shop's. Server-rendered status would need a configured time zone; separate issue if wanted.
-- La Fattoria keeps its own `main.css`; the same `--ui-primary` and `--ui-success` changes went there.
+- The customer shop keeps its own `main.css`; the same `--ui-primary` and `--ui-success` changes went there.
 
 ## Implementation
 

@@ -51,7 +51,7 @@ type MethodGuardConfig<M extends CheckoutMethod> = {
  * A blocked shipping method is only reported, never switched: its rule
  * usually needs the shipping address (delivery area), which a guest enters
  * after choosing delivery or pickup. Switching turned every delivery into
- * a pickup before the address was known (La Fattoria, 2.0.2). With an
+ * a pickup before the address was known (2.0.2). With an
  * address the checkout says the method is not possible and the customer
  * picks another one.
  */

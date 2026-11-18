@@ -10,7 +10,7 @@ type Schemas = components["schemas"];
 
 // Store API maximum per request.
 const PRODUCT_PAGE_SIZE = 100;
-// A menu has a few hundred products at most (La Fattoria: 390 incl. extras).
+// A menu has a few hundred products at most (a real menu: 390 incl. extras).
 const MAX_PRODUCT_PAGES = 10;
 
 const NAVIGATION_CRITERIA = {

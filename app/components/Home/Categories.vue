@@ -5,8 +5,8 @@ import type { Schemas } from "#shopware";
  * Menu sections of the presets on the home page (#444): a word list in the
  * display font on the darker band, no dish counts. On desktop one photo
  * follows the hovered or focused section (category media from Shopware);
- * phones get the words stacked and no photo. Wide category banners (as in
- * La Fattoria) do not fit the 4:5 column: then the photo spans the width
+ * phones get the words stacked and no photo. Wide category banners (as
+ * some shops use) do not fit the 4:5 column: then the photo spans the width
  * below the words in the banner's own aspect ratio.
  */
 withDefaults(

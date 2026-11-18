@@ -3,8 +3,8 @@ import { splitHighlight } from "../../app/utils/highlight";
 
 describe("splitHighlight", () => {
   it("keeps text without highlights as one part", () => {
-    expect(splitHighlight("Pizzeria La Fattoria")).toEqual([
-      { text: "Pizzeria La Fattoria", highlight: false },
+    expect(splitHighlight("Pizzeria Esempio")).toEqual([
+      { text: "Pizzeria Esempio", highlight: false },
     ]);
   });
 

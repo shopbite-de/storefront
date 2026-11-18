@@ -50,7 +50,7 @@ describe("categoriesToSitemapUrls", () => {
           seoUrl: "/navigation/018d9f1649c9709580aab97a16368d8d",
         },
         { type: "link", seoUrl: "/agb" },
-        { type: "link", seoUrl: "tel:+491726723920" },
+        { type: "link", seoUrl: "tel:+49123456780" },
         { type: "folder", seoUrl: null },
         { type: "page", seoUrl: "//evil.example.com/" },
         { type: "page" },

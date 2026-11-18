@@ -23,7 +23,7 @@ variant id, `pending` went back to `true` and the extras collapsed into
 the skeleton until the (identical) extras came back.
 
 Measured with `scripts/perf/quick-view-layout.mjs`, which logs the drawer body per animation
-frame against the production build with the La Fattoria data (product
+frame against the production build with the customer data (product
 18V "Insalata di Pollo", two variants, 12 extras):
 
 | Viewport | Open: body height steps      | Variant switch: steps |

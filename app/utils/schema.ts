@@ -26,7 +26,7 @@ type HolidayLike = {
 
 export type SiteInfo = {
   name: string;
-  /** Other names the shop is listed under, e.g. "Alte Schmiede". */
+  /** Other names the shop is listed under, e.g. "Alter Hof". */
   alternateNames?: string[];
   url: string;
   description?: string;
@@ -35,7 +35,7 @@ export type SiteInfo = {
   cuisine?: string;
   priceRange?: string;
   googleBusinessProfileUrl?: string;
-  /** Places the shop delivers to, e.g. "63179 Obertshausen" (#401). */
+  /** Places the shop delivers to, e.g. "12345 Musterstadt" (#401). */
   deliveryAreas?: string[];
   /** Nuxt parses numeric env values into numbers. */
   geo?: { latitude?: number | string; longitude?: number | string };

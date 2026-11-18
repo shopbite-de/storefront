@@ -84,7 +84,7 @@ export function groupOpeningHours(
   return rows;
 }
 
-/** `tel:` link for a displayed phone number, e.g. `+49 6104 71427`. */
+/** `tel:` link for a displayed phone number, e.g. `+49 123 456789`. */
 export function toTelHref(telephone: string): string {
   return `tel:${telephone.replace(/[^\d+]/g, "")}`;
 }

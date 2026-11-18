@@ -4,7 +4,7 @@ import type { VueWrapper } from "@vue/test-utils";
 import { ref } from "vue";
 import MobileTop from "~/components/Navigation/MobileTop.vue";
 
-// La Fattoria's menu: Fleischgerichte has sub-categories, Pizza has none.
+// A menu where Fleischgerichte has sub-categories, Pizza has none.
 vi.mock("~/composables/useNavigation", () => ({
   useNavigation: () => ({
     menuCardNavigation: ref([

@@ -9,7 +9,7 @@ layer from npm does not get them, but inherits the module list.
 
 Reproduced with the packed storefront installed into an empty app
 (`extends: ["@shopbite-de/storefront"]`, pnpm 10.26.2, `node-linker=hoisted`
-like La Fattoria), no dev tooling installed:
+like the customer shop), no dev tooling installed:
 
 - 1.27.0: `pnpm install` fails in the storefront's own `postinstall`
   (`nuxt prepare`, which runs inside `node_modules/@shopbite-de/storefront`

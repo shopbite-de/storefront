@@ -23,7 +23,7 @@ instead of `@import`; it resolves utilities without re-emitting the base.
 
 - Production build: the `merkliste.*.css` chunk is gone; the remaining
   chunks are `entry.css` (253 KB) and `kontakt.css` (117 B).
-- `/merkliste` on the production build against the La Fattoria Store API
+- `/merkliste` on the production build against the customer Store API
   loads only `entry.css` (25 KB gzipped), renders the empty-wishlist state
   as before, no console errors.
 - Prettier and ESLint pass.

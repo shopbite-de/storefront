@@ -37,7 +37,7 @@ top sellers as a horizontal scroller.
   `useAsyncData`.
 - `useTopSellers`: limit 8, includes for cover, properties and
   availability, and the `sw-inheritance` header so variants marked as top
-  sellers carry the parent's name and cover (La Fattoria marks both the
+  sellers carry the parent's name and cover (the customer shop marks both the
   parent "Cordon Bleu" and its three variants; the header type of the
   generated operation lacks `sw-inheritance`, hence the `@ts-expect-error`).
 - Docs (https://shopbite.de/docs/storefront/content, DE/EN)
@@ -46,7 +46,7 @@ top sellers as a horizontal scroller.
 
 ## Verification
 
-- Production build with the La Fattoria API: status "Geöffnet bis 23:00",
+- Production build with the customer API: status "Geöffnet bis 23:00",
   eight top sellers, a tap opens the quick view (`?produkt=18V`), video
   only at 1280 px; screenshots mobile light/dark and desktop reviewed, no
   page errors.

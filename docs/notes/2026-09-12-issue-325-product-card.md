@@ -10,7 +10,7 @@ three directions (A compact with thumbnail, B dense menu list, C visual
 with a large image), then three derivatives of C for shops without
 product photos, then five levels of button emphasis. Chosen: **C1** (the
 anatomy of C, the image block only when the product has a cover) with
-button level **B1** (`variant="subtle"`). La Fattoria has no product
+button level **B1** (`variant="subtle"`). The customer shop has no product
 covers at all, the ShopBite demo a few, so the card must look finished
 without any image.
 
@@ -78,7 +78,7 @@ loads cross-sellings.
 
 ## Verification
 
-- Production build with the La Fattoria API: tapping a pizza card sets
+- Production build with the customer API: tapping a pizza card sets
   `?produkt=22` and opens the sheet with 34 extras chips and the "Ohne"
   chip; one extra plus quantity 2 puts 17,00 € into the cart and the card
   shows "2× im Warenkorb"; the back button closes the sheet;

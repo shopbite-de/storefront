@@ -71,7 +71,7 @@ This is a step toward the multi-platform goal: only the seeding in
 - `AnimatedSection` renders product cards with `opacity-0` in SSR HTML
   (IntersectionObserver reveals them post-mount) — content invisible without
   JS; potential SEO/CLS concern. → suggested issue
-- `Header/Right.vue` hardcodes the phone number `tel:+49610471427` in the
+- `Header/Right.vue` hardcodes the phone number `tel:+49123456789` in the
   base layer — should come from config for multi-tenant demo shops.
   → suggested issue
 - The 16 home-page mismatches from the RUM data were **not** reproducible

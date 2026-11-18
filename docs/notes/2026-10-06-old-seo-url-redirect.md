@@ -1,10 +1,10 @@
 # Old category SEO URLs redirect to the current ones
 
-As of 2026-10-06, branch `feature/redirect-non-canonical-seo-urls`. Prompted by La Fattoria moving its category URLs from `/c/Pizza/` to `/speisekarte/pizza/` via the Shopware SEO URL template.
+As of 2026-10-06, branch `feature/redirect-non-canonical-seo-urls`. Prompted by the customer shop moving its category URLs from `/c/Pizza/` to `/speisekarte/pizza/` via the Shopware SEO URL template.
 
-## Findings (La Fattoria Store API)
+## Findings (customer Store API)
 
-- Shopware keeps the old SEO URL of an entity when the template or the entity name changes: same `foreignKey`, `isCanonical: null`. La Fattoria has 262 of them for products already (e.g. `Schnitzel-Wiener-Art/103V` next to the canonical `Schnitzel-Wiener-Art/103`).
+- Shopware keeps the old SEO URL of an entity when the template or the entity name changes: same `foreignKey`, `isCanonical: null`. The customer shop has 262 of them for products already (e.g. `Schnitzel-Wiener-Art/103V` next to the canonical `Schnitzel-Wiener-Art/103`).
 - The Store API `/seo-url` route adds `isCanonical = true` to the criteria unless they contain an `equals` filter on `isCanonical` at top level (a nested `multi` filter does not count). A lookup by `seoPathInfo` alone therefore never finds an old URL: before this change, every old category URL returned 404 after a template change.
 
 ## Change
@@ -23,8 +23,8 @@ The category pages `pages/c/[...all].vue` and `pages/speisekarte/[...all].vue` w
 
 The category bar of the `listing` layout is rendered by the page itself (same markup) instead of switching layouts per result, which would need `setPageLayout` during SSR (hydration warning in Nuxt). A category page now costs one extra request to `/api/content/page`.
 
-Checked against the La Fattoria backend (dev server): `/c/Pizza/` 200 with 29 products, `/c/pizza` and `/navigation/<pizza id>` 301 to `/c/Pizza/`, `/agb` 200, `/c/Unbekannt/`, `/Schnitzel-Wiener-Art/103`, `/wp-login.php`, `/.env` 404. Client-side navigation content → category → category → alias → content → back renders the right page each time. The hydration warnings on a category page (`NavigationDesktopLeft`, `CategoryListing`) are the same with the old pages.
+Checked against the customer backend (dev server): `/c/Pizza/` 200 with 29 products, `/c/pizza` and `/navigation/<pizza id>` 301 to `/c/Pizza/`, `/agb` 200, `/c/Unbekannt/`, `/Schnitzel-Wiener-Art/103`, `/wp-login.php`, `/.env` 404. Client-side navigation content → category → category → alias → content → back renders the right page each time. The hydration warnings on a category page (`NavigationDesktopLeft`, `CategoryListing`) are the same with the old pages.
 
 ## Verification
 
-Unit tests (`seoPath.spec.ts`, `useSeoUrlRoute.test.ts`), typecheck, ESLint, Prettier. Both queries checked against the La Fattoria Store API with existing old product URLs: the `seoPathInfo` lookup without an `isCanonical` filter returns nothing, with `isCanonical: null` it returns the old record, and the canonical lookup returns `Schnitzel-Wiener-Art/103`.
+Unit tests (`seoPath.spec.ts`, `useSeoUrlRoute.test.ts`), typecheck, ESLint, Prettier. Both queries checked against the customer Store API with existing old product URLs: the `seoPathInfo` lookup without an `isCanonical` filter returns nothing, with `isCanonical: null` it returns the old record, and the canonical lookup returns `Schnitzel-Wiener-Art/103`.

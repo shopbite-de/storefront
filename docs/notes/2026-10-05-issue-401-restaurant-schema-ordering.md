@@ -18,4 +18,4 @@ As of 2026-10-05, branch `feature/401-restaurant-schema-ordering`. Part of the A
 
 Production build against the demo backend with the new env variables: the home page `Restaurant` node carries `geo`, both delivery areas, `acceptsReservations: true`, `paymentAccepted: "Nachnahme"`, `currenciesAccepted: "EUR"` and the `OrderAction` with pickup and own delivery. Without the new variables only `paymentAccepted`, `currenciesAccepted` and `potentialAction` (without `deliveryMethod`) are added. Unit + nuxt tests, typecheck, ESLint green.
 
-Docs: https://shopbite.de/docs/storefront/configuration (DE/EN), including the note that `NUXT_PUBLIC_SITE_CUISINE` is a cuisine name: La Fattoria sets `italienische`, which produces "italienische in Obertshausen" in its meta description.
+Docs: https://shopbite.de/docs/storefront/configuration (DE/EN), including the note that `NUXT_PUBLIC_SITE_CUISINE` is a cuisine name: The customer shop sets `italienische`, which produces "italienische in Musterstadt" in its meta description.
