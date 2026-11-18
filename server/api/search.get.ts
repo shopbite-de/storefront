@@ -50,25 +50,12 @@ const BASE_CRITERIA = {
   limit: 100,
 };
 
-function sanitizeString(value: unknown, maxLength: number): string | undefined {
-  if (typeof value !== "string" || value === "") return undefined;
-  const trimmed = value.trim();
-  return trimmed.length <= maxLength ? trimmed : undefined;
-}
-
-function sanitizePage(value: unknown): number | undefined {
-  const n = Number(value);
-  return Number.isInteger(n) && n >= 1 && n <= 1000 ? n : undefined;
-}
-
 export default defineCachedEventHandler(
   async (event) => {
     const { endpoint, accessToken } = useRuntimeConfig().public.shopware;
     const q = getQuery(event) as Record<string, unknown>;
 
-    const search = sanitizeString(q.query, 256);
-    const order = sanitizeString(q.order, 64);
-    const p = sanitizePage(q.p);
+    const { search, order, p } = searchParams(q);
 
     if (!search) {
       return {
@@ -97,10 +84,9 @@ export default defineCachedEventHandler(
     name: "search",
     getKey: (event) => {
       const q = getQuery(event) as Record<string, unknown>;
-      const search = sanitizeString(q.query, 256) ?? "";
-      const order = sanitizeString(q.order, 64) ?? "";
-      const p = sanitizePage(q.p) ?? 1;
-      return [search, order, p].join("|");
+      // Validated before it becomes a key (400 otherwise).
+      const { search, order, p } = searchParams(q);
+      return [search ?? "", order ?? "", p ?? 1].join("|");
     },
   },
 );
