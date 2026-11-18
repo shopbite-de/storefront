@@ -4,8 +4,8 @@
  * the request origin (which is internal behind a reverse proxy).
  */
 export default defineNitroPlugin((nitroApp) => {
-  nitroApp.hooks.hook("site-config:init", ({ event, siteConfig }) => {
-    const { storeUrl } = useRuntimeConfig(event).public;
+  nitroApp.hooks.hook("site-config:init", ({ siteConfig }) => {
+    const { storeUrl } = useRuntimeConfig().public;
     if (storeUrl) {
       siteConfig.push({ _context: "storeUrl", url: storeUrl });
     }
