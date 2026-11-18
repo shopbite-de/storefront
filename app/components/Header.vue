@@ -217,6 +217,10 @@ function logoutHandler() {
             <path d="M16 10a4 4 0 0 1-8 0" />
           </svg>
           <span class="hidden sm:inline" aria-hidden="true">Warenkorb</span>
+          <!-- the space keeps the visible text "Warenkorb 2" (not
+          "Warenkorb2") part of the button name (WCAG 2.5.3); a flex
+          container does not render it -->
+          {{ " " }}
           <span
             v-if="cartCount"
             aria-hidden="true"
