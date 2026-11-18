@@ -1,5 +1,5 @@
 
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 
 ARG PNPM_VERSION=12.21.0
 ARG NUXT_PUBLIC_SHOPWARE_ENDPOINT='https://my.shop/store-api'
@@ -12,7 +12,8 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+# Node 25+ no longer bundles corepack
+RUN npm install -g pnpm@${PNPM_VERSION}
 
 # Copy manifests first so dependency layer is cached independently from source changes.
 # pnpm-workspace.yaml (settings, allowBuilds) is part of the lockfile contract; without it
@@ -24,7 +25,7 @@ COPY . .
 
 RUN pnpm build
 
-FROM node:24-alpine AS production
+FROM node:26-alpine AS production
 
 WORKDIR /app
 
