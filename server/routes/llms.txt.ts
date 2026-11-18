@@ -1,4 +1,5 @@
 import { queryCollection } from "@nuxt/content/server";
+import { defineEventHandler } from "nuxt/server";
 import type { components } from "~~/api-types/storeApiTypes";
 import { getDiets, getMainIngredients } from "../../app/utils/product";
 import { productDeepLink } from "../../app/utils/productUrl";
@@ -50,9 +51,12 @@ const PRODUCT_CRITERIA = {
  * `/llms.txt` (#402): the shop, its hours, ordering and the menu as Markdown
  * for language models. Every source is optional; a failing request leaves
  * its section out instead of failing the file.
+ *
+ * A `nuxt/server` handler: its event has the web-standard shape that
+ * `getPathRobotConfig()` of @nuxtjs/robots 7 reads.
  */
 export default defineEventHandler(async (event) => {
-  const { shopware, site } = useRuntimeConfig(event).public;
+  const { shopware, site } = useRuntimeConfig().public;
   const siteUrl = getSiteConfig(event).url;
   const headers = { "sw-access-key": shopware.accessToken };
   const menuRoot = await menuRootId();
@@ -155,7 +159,7 @@ export default defineEventHandler(async (event) => {
     now: new Date(),
   });
 
-  setResponseHeader(event, "Content-Type", "text/markdown; charset=utf-8");
+  event.res.headers.set("Content-Type", "text/markdown; charset=utf-8");
   return body;
 });
 

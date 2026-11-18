@@ -26,6 +26,8 @@ export function storeApiPost<T>(
 ): Promise<T> {
   const { endpoint, accessToken } = useRuntimeConfig().public.shopware;
 
+  // Nitro's typed $fetch resolves the response type per internal route; for
+  // a generic T on an external URL it cannot, so the type is asserted.
   return $fetch<T>(`${endpoint}${path}`, {
     method: "POST",
     headers: { "sw-access-key": accessToken, ...options.headers },
@@ -33,7 +35,7 @@ export function storeApiPost<T>(
     // a failing request reaches Shopware once (the cached routes back off
     // instead)
     retry: 0,
-  });
+  }) as Promise<T>;
 }
 
 /**
@@ -52,5 +54,5 @@ export function storeApiGet<T>(
     // ofetch retries a GET once by default; during an outage that doubles
     // every request
     retry: 0,
-  });
+  }) as Promise<T>;
 }

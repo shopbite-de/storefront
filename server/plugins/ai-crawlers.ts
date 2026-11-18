@@ -8,7 +8,7 @@ import { buildAiCrawlerGroups } from "../utils/aiCrawlers";
  */
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook("robots:config", (ctx) => {
-    const { aiCrawlers } = useRuntimeConfig(ctx.event);
+    const { aiCrawlers } = useRuntimeConfig();
     const wildcard = ctx.groups.find((group) =>
       [group.userAgent ?? "*"].flat().includes("*"),
     );
