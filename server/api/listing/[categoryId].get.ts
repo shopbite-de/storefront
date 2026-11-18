@@ -60,34 +60,11 @@ const BASE_CRITERIA = {
   limit: 100,
 };
 
-/** Validates and returns a non-empty string up to maxLength, or undefined. */
-function sanitizeString(value: unknown, maxLength: number): string | undefined {
-  if (typeof value !== "string" || value === "") return undefined;
-  const trimmed = value.trim();
-  return trimmed.length <= maxLength ? trimmed : undefined;
-}
-
-/** Validates page number: positive integer in [1, 1000]. */
-function sanitizePage(value: unknown): number | undefined {
-  const n = Number(value);
-  return Number.isInteger(n) && n >= 1 && n <= 1000 ? n : undefined;
-}
-
-function resolveAllowedParams(query: Record<string, unknown>) {
-  return {
-    order: sanitizeString(query.order, 64),
-    properties: sanitizeString(query.properties, 2048),
-    manufacturer: sanitizeString(query.manufacturer, 2048),
-    query: sanitizeString(query.query, 256),
-    p: sanitizePage(query.p),
-  };
-}
-
 export default defineCachedEventHandler(
   async (event) => {
-    const categoryId = getRouterParam(event, "categoryId")!;
+    const categoryId = categoryIdParam(getRouterParam(event, "categoryId"));
 
-    const { order, properties, manufacturer, query, p } = resolveAllowedParams(
+    const { order, properties, manufacturer, query, p } = listingParams(
       getQuery(event) as Record<string, unknown>,
     );
 
@@ -108,10 +85,10 @@ export default defineCachedEventHandler(
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.listing,
     name: "listing",
     getKey: (event) => {
-      const categoryId = getRouterParam(event, "categoryId") ?? "";
+      const categoryId = categoryIdParam(getRouterParam(event, "categoryId"));
       const q = getQuery(event) as Record<string, unknown>;
-      const { order, properties, manufacturer, query, p } =
-        resolveAllowedParams(q);
+      // Validated before it becomes a key (400 otherwise).
+      const { order, properties, manufacturer, query, p } = listingParams(q);
       return [
         categoryId,
         order ?? "",

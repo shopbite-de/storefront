@@ -70,6 +70,18 @@ export default defineNuxtConfig({
         refillPerMinute: 20,
       },
     },
+    // Bound of the Nitro cache (server/plugins/bounded-cache.ts): an LRU in
+    // memory with at most `maxEntries` entries and `maxSizeMb` of data;
+    // NUXT_CACHE_STORAGE_*, maxEntries 0 = unbounded. A cache storage the
+    // shop mounts itself (nitro.storage.cache) is kept.
+    cacheStorage: {
+      maxEntries: 5000,
+      maxSizeMb: 128,
+    },
+    // Sortings the listing and search routes accept (`order`), comma-
+    // separated; empty = Shopware's standard sortings. Add the keys of
+    // custom sortings created in the Shopware Administration.
+    listingSortings: "",
     // AI crawlers named in robots.txt (#403, server/plugins/ai-crawlers.ts):
     // search = AI search and assistant fetches, training = model training.
     aiCrawlers: {
