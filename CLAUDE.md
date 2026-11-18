@@ -51,11 +51,12 @@ pnpm playwright test test/e2e/checkout.spec.ts
 
 Always run `nuxt typecheck` via the `pnpm typecheck` script, not via `npx vue-tsc`. The global npx-cached `vue-tsc` version may not be compatible with the project's installed `vue-router`. If `.nuxt/tsconfig.json` has stale pnpm paths after a dependency update (or after adding/renaming a composable), run `pnpm nuxt prepare` to regenerate it.
 
-`pnpm typecheck` must stay at zero errors; CI runs it in the lint job. The sources of `@shopware/composables` and the `@shopware/nuxt-module` plugin are part of the checked program, so three things keep them green (see `docs/notes/2026-09-08-issue-277-typecheck.md`):
+`pnpm typecheck` must stay at zero errors; CI runs it in the lint job. The sources of `@shopware/composables` and the `@shopware/nuxt-module` plugin are part of the checked program, so two things keep them green (see `docs/notes/2026-09-08-issue-277-typecheck.md`):
 
 - `shopware.d.ts` falls back to the api-client's default types for operations/schemas our instance does not expose, and keeps `LineItem.payload` optional.
 - `api-gen.config.json` applies the upstream schema patches plus `api-types/storeApiSchema.shopbite.overrides.json` when generating types.
-- `patches/@shopware__nuxt-module@1.5.2.patch` (pnpm patch) points the plugin's `ShopwareNuxtOptions` import at `./dist/index` (the package ships no `src/`). Since 1.5.2 the plugin carries its explicit type upstream, so this one line is all that is left. When Renovate bumps `@shopware/nuxt-module`, the patch must be re-applied to the new version (`pnpm patch @shopware/nuxt-module@<version>`), or dropped once upstream fixes the import.
+
+Until 1.5.2 a pnpm patch fixed the plugin's `ShopwareNuxtOptions` import (`./src`, not shipped). `@shopware/nuxt-module` 1.6 imports `ShopwareNuxtOptions` from its package name, so the patch is gone (`docs/notes/2026-11-18-dependency-update.md`). If a future version breaks the plugin's types again, patch it with `pnpm patch @shopware/nuxt-module@<version>` and add `patches/` to `node.dockerfile`'s `COPY`.
 
 Do not name a project composable like one from the `@shopware/composables` layer (e.g. `useCategory`): the project version shadows the layer's inside the layer's own code as well.
 

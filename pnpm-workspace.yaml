@@ -7,5 +7,3 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   vue-demi: true
-patchedDependencies:
-  '@shopware/nuxt-module@1.5.2': patches/@shopware__nuxt-module@1.5.2.patch

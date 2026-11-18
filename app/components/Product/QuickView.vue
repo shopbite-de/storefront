@@ -78,8 +78,7 @@ function onVariantSelected(variant: Schemas["Product"]) {
           <DialogTitle
             class="font-display text-xl leading-tight hyphens-auto [overflow-wrap:anywhere] sm:text-2xl"
           >
-            <span class="sr-only">{{ numberLabel }}</span
-            >{{ label }}
+            <span class="sr-only">{{ numberLabel }}</span>{{ label }}
           </DialogTitle>
           <DialogDescription
             v-if="description || diets.length"
