@@ -46,10 +46,19 @@ mockNuxtImport("useWishlist", () => () => ({
 mockNuxtImport("useShopBiteConfig", () => () => ({
   isCheckoutEnabled: ref(true),
 }));
-mockNuxtImport("useUser", () => () => ({
-  isLoggedIn: computed(() => state.loggedIn),
-  isGuestSession: computed(() => false),
-  logout: mocks.logout,
+function userApi() {
+  return {
+    isLoggedIn: computed(() => state.loggedIn),
+    isGuestSession: computed(() => false),
+    logout: mocks.logout,
+  };
+}
+mockNuxtImport("useUser", () => () => userApi());
+// Header.vue imports useUser from the package; since @shopware/composables
+// 1.15 the auto-import mock above no longer reaches that import.
+vi.mock("@shopware/composables", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@shopware/composables")>()),
+  useUser: () => userApi(),
 }));
 mockNuxtImport("useStoreStatus", () => () => ({ status: ref(null) }));
 mockNuxtImport("useBusinessHours", () => () => ({
