@@ -16,6 +16,7 @@ const PASSWORD_MISMATCH_ERROR = "Die Passwörter stimmen nicht überein.";
 
 const { apiClient } = useShopwareContext();
 const route = useRoute();
+const router = useRouter();
 
 // Schemas
 const routeValidationSchema = z.object({
@@ -52,6 +53,15 @@ function validateRouteParameters(): string {
 
 const recoveryHash = ref<string>("");
 recoveryHash.value = validateRouteParameters();
+
+// The hash is a one-time secret: remove it from the address bar (history,
+// tracking, shared screenshots) once read. After hydration, so the server
+// and the browser render the same page.
+onMounted(() => {
+  if (route.query.hash !== undefined) {
+    router.replace({ query: {} });
+  }
+});
 
 async function resetPassword(data: PasswordResetSchema) {
   await apiClient.invoke(

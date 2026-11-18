@@ -63,6 +63,18 @@ describe("registrierung/bestaetigen", () => {
     expect(navigateToMock).toHaveBeenCalledWith({ path: "/konto" });
   });
 
+  it("removes the confirmation hashes from the address bar", async () => {
+    invokeMock.mockResolvedValueOnce({ data: {} });
+    const replaceMock = vi.spyOn(useRouter(), "replace");
+
+    await mountPage();
+
+    expect(replaceMock).toHaveBeenCalledWith({ query: {} });
+    expect(replaceMock.mock.invocationCallOrder[0]).toBeLessThan(
+      invokeMock.mock.invocationCallOrder[0]!,
+    );
+  });
+
   it("shows an error and stays on the page when the link is invalid", async () => {
     invokeMock.mockRejectedValueOnce(
       new ApiClientErrorMock({

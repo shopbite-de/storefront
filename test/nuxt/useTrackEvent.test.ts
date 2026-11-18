@@ -96,6 +96,22 @@ describe("useTrackEvent", () => {
     ]);
   });
 
+  it("tracks no query parameters that may carry secrets", () => {
+    setMatomoConfig("https://analytics.example.com/", 3);
+    document.title = "Neues Passwort";
+
+    useTrackEvent().trackPageView("/account/recover/password?hash=abc#x");
+    useTrackEvent().trackShare("copy", "P1", "/?produkt=P1&em=x");
+
+    expect(matomoWindow._paq).toEqual([
+      ["setCustomUrl", "/account/recover/password"],
+      ["setDocumentTitle", "Neues Passwort"],
+      ["trackPageView"],
+      ["setCustomUrl", "/?produkt=P1"],
+      ["trackEvent", "Product", "CopyLink", "P1"],
+    ]);
+  });
+
   it("tracks an add from the cart suggestions as its own action", () => {
     setMatomoConfig("https://analytics.example.com/", 3);
 
