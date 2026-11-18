@@ -70,6 +70,35 @@ export default defineNuxtConfig({
         refillPerMinute: 20,
       },
     },
+    // Headers of every response (server/plugins/security-headers.ts),
+    // NUXT_SECURITY_HEADERS_*; an empty value leaves the header out.
+    securityHeaders: {
+      // Only sent when public.storeUrl is https.
+      strictTransportSecurity: "max-age=31536000; includeSubDomains",
+      contentTypeOptions: "nosniff",
+      // A shop embedded in another site sets frameOptions "" and lists the
+      // embedding origin in frameAncestors (CSP `frame-ancestors`).
+      frameOptions: "DENY",
+      frameAncestors: "'none'",
+      referrerPolicy: "strict-origin-when-cross-origin",
+      // No feature of the storefront uses these (address suggestions are
+      // typed, not located); Web Share and the clipboard stay allowed.
+      permissionsPolicy:
+        "camera=(), microphone=(), geolocation=(), usb=(), browsing-topics=()",
+      // Server-rendered HTML may contain the visitor's cart or login
+      // (useUserContextInSSR), so no shared or browser cache keeps it.
+      htmlCacheControl: "private, no-store",
+      // Report-only policy for pages: self, the Shopware endpoint, Matomo
+      // and inline scripts by hash. Extra hosts (e.g. a RUM collector) are
+      // space-separated lists.
+      contentSecurityPolicyReportOnly: {
+        enabled: true,
+        scriptSrc: "",
+        connectSrc: "",
+        imgSrc: "",
+        reportUri: "",
+      },
+    },
     // AI crawlers named in robots.txt (#403, server/plugins/ai-crawlers.ts):
     // search = AI search and assistant fetches, training = model training.
     aiCrawlers: {
@@ -310,13 +339,9 @@ export default defineNuxtConfig({
       globStrict: false,
       // default of 1.x, off by default since 2.0
       cleanupOutdatedCaches: true,
+      // No runtime caching of pages: server-rendered HTML may contain the
+      // visitor's cart or login and must not be kept in CacheStorage.
       navigateFallback: null,
-      runtimeCaching: [
-        {
-          urlPattern: "/",
-          handler: "NetworkFirst",
-        },
-      ],
     },
     devOptions: {
       enabled: true,
