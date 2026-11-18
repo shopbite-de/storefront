@@ -48,8 +48,7 @@ onMounted(async () => {
         Wir haben sie erhalten und bereiten sie jetzt vor.
         <template v-if="order?.orderNumber">
           Ihre Bestellnummer ist
-          <strong class="tabular-nums">{{ order.orderNumber }}</strong
-          >.
+          <strong class="tabular-nums">{{ order.orderNumber }}</strong>.
         </template>
       </p>
     </header>

@@ -1,7 +1,7 @@
 
 FROM node:24-alpine AS build
 
-ARG PNPM_VERSION=12.5.1
+ARG PNPM_VERSION=12.21.0
 ARG NUXT_PUBLIC_SHOPWARE_ENDPOINT='https://my.shop/store-api'
 ARG NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN='TOKEN'
 
@@ -15,10 +15,9 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 # Copy manifests first so dependency layer is cached independently from source changes.
-# pnpm-workspace.yaml (settings, allowBuilds, patchedDependencies) and patches/ are part of the
-# lockfile contract; without them `--frozen-lockfile` fails.
+# pnpm-workspace.yaml (settings, allowBuilds) is part of the lockfile contract; without it
+# `--frozen-lockfile` fails. Copy patches/ as well if a pnpm patch is added again.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY patches ./patches
 RUN pnpm install --frozen-lockfile --prefer-offline
 
 COPY . .

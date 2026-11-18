@@ -138,8 +138,7 @@ function onLinkClick(event: MouseEvent) {
             >{{ name }}</a
           >
           <template v-else>
-            <span class="sr-only">{{ numberLabel }}</span
-            >{{ name }}
+            <span class="sr-only">{{ numberLabel }}</span>{{ name }}
           </template>
         </h3>
         <p
