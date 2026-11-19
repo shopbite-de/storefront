@@ -92,7 +92,32 @@ function roundToNext5MinInterval(timeString: string | null): string {
   return `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
 }
 
-// Move initialization to a proper place
+/**
+ * A 5-minute slot within min and max: rounded up, else the last slot before
+ * max. A clamped raw minimum such as 16:43 failed the 5-minute check.
+ */
+function slotWithin(time: string, min: string, max: string): string {
+  const rounded = roundToNext5MinInterval(time);
+  if (rounded <= max) return rounded;
+  const parts = max.split(":").map(Number);
+  const total = Math.floor(((parts[0] ?? 0) * 60 + (parts[1] ?? 0)) / 5) * 5;
+  const last = `${Math.floor(total / 60)
+    .toString()
+    .padStart(2, "0")}:${(total % 60).toString().padStart(2, "0")}`;
+  return last >= min ? last : rounded;
+}
+
+// Whether the time is the one filled in here (earliest slot), not one the
+// guest chose: it follows the earliest slot, e.g. to an earlier one after a
+// switch from delivery to pickup (shopbite#6).
+const isPrefilled = ref(false);
+
+function setSelected(time: string): void {
+  if (time === selected.value) return;
+  selected.value = time;
+  emit("update:modelValue", time);
+}
+
 watch(
   [minTime, maxTime],
   () => {
@@ -104,26 +129,20 @@ watch(
       return;
     }
 
-    if (!selected.value) {
-      selected.value = roundToNext5MinInterval(minTime.value);
-      emit("update:modelValue", selected.value);
+    if (!selected.value || isPrefilled.value) {
+      setSelected(slotWithin(minTime.value, minTime.value, maxTime.value));
+      isPrefilled.value = true;
       return;
     }
 
-    if (
-      selected.value &&
-      !isTimeWithinBounds(selected.value, minTime.value, maxTime.value)
-    ) {
+    if (!isTimeWithinBounds(selected.value, minTime.value, maxTime.value)) {
       const clampedTime = clampTimeToInterval(
         selected.value,
         minTime.value,
         maxTime.value,
         now.value,
       );
-      if (clampedTime !== selected.value) {
-        selected.value = clampedTime;
-        emit("update:modelValue", clampedTime);
-      }
+      setSelected(slotWithin(clampedTime, minTime.value, maxTime.value));
     }
   },
   { immediate: true },
@@ -131,6 +150,7 @@ watch(
 
 function handleTimeInput(event: Event): void {
   const value = (event.target as HTMLInputElement).value;
+  isPrefilled.value = false;
   selected.value = value;
   emit("update:modelValue", value || null);
 }
