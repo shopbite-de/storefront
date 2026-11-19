@@ -36,9 +36,12 @@ mockNuxtImport("useUser", () => () => ({
 }));
 mockNuxtImport("useShopBiteConfig", () => () => ({
   isCheckoutEnabled: ref(true),
-  deliveryTime: ref(30),
   refresh: vi.fn(),
   checkCheckoutEnabled: vi.fn().mockResolvedValue(true),
+}));
+mockNuxtImport("useShippingLeadTime", () => () => ({
+  fulfillment: ref("delivery"),
+  leadTime: ref(30),
 }));
 mockNuxtImport("useTrackEvent", () => () => ({ trackOrder: vi.fn() }));
 mockNuxtImport("useCheckoutMethodGuard", () => () => ({

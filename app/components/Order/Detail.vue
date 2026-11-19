@@ -33,10 +33,9 @@ const shippingMethod = computed(() => {
   const method = props.order.deliveries?.[0]?.shippingMethod;
   return method?.translated?.name ?? method?.name;
 });
-// The checkout stores the chosen time as "Wunschlieferzeit: …" (Summary.vue).
-const wishedTime = computed(() =>
-  props.order.customerComment?.replace(/^Wunschlieferzeit:\s*/, "").trim(),
-);
+// The checkout stores the chosen time as "Wunschlieferzeit: …" or
+// "Wunschabholzeit: …" (Summary.vue, wishedTimeComment).
+const wishedTime = computed(() => parseWishedTime(props.order.customerComment));
 
 // Restaurants sell gross prices; net orders (B2B) list the tax on top.
 const taxLabel = computed(() =>

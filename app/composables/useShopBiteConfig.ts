@@ -51,9 +51,18 @@ export function useShopBiteConfig() {
     return data.value?.isCheckoutEnabled ?? false;
   }
 
+  /** Fulfillment and lead time of a shipping method (shopbite#6). */
+  function leadTimeFor(method: { id?: string } | null | undefined): LeadTime {
+    return shippingLeadTime(data.value, method);
+  }
+
   return {
     checkCheckoutEnabled,
-    deliveryTime: computed(() => data.value?.deliveryTime ?? 30),
+    leadTimeFor,
+    /** Lead time of the delivery method, `null` without one. */
+    deliveryTime: computed(() => fulfillmentLeadTime(data.value, "delivery")),
+    /** Lead time of the pickup method, `null` without one. */
+    pickupTime: computed(() => fulfillmentLeadTime(data.value, "pickup")),
     isCheckoutEnabled: computed(() => data.value?.isCheckoutEnabled ?? false),
     refresh,
   };

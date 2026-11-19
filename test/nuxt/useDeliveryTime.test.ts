@@ -3,9 +3,10 @@ import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref } from "vue";
 import { useDeliveryTime } from "~/composables/useDeliveryTime";
 
-const { mockDeliveryTime, mockBusinessHours, mockHolidays } = vi.hoisted(
-  () => ({
+const { mockDeliveryTime, mockFulfillment, mockBusinessHours, mockHolidays } =
+  vi.hoisted(() => ({
     mockDeliveryTime: { value: 45 },
+    mockFulfillment: { value: "delivery" as "delivery" | "pickup" },
     mockBusinessHours: {
       value: [
         { dayOfWeek: 1, openingTime: "11:30", closingTime: "14:30" },
@@ -22,11 +23,11 @@ const { mockDeliveryTime, mockBusinessHours, mockHolidays } = vi.hoisted(
       ],
     },
     mockHolidays: { value: [] as { start: string; end: string }[] | null },
-  }),
-);
+  }));
 
-mockNuxtImport("useShopBiteConfig", () => () => ({
-  deliveryTime: mockDeliveryTime,
+mockNuxtImport("useShippingLeadTime", () => () => ({
+  leadTime: mockDeliveryTime,
+  fulfillment: mockFulfillment,
 }));
 
 mockNuxtImport("useBusinessHours", () => () => ({
@@ -120,6 +121,29 @@ describe("useDeliveryTime", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFulfillment.value = "delivery";
+  });
+
+  // shopbite#6: the lead time of the selected shipping method
+  it("uses the lead time of the selected shipping method", () => {
+    mockDeliveryTime.value = 20;
+    mockFulfillment.value = "pickup";
+    const { earliest } = useDeliveryTime(now);
+    expect(earliest.value.getHours()).toBe(12);
+    expect(earliest.value.getMinutes()).toBe(20);
+  });
+
+  it("speaks of pickup times for a pickup method", () => {
+    mockDeliveryTime.value = 30;
+    const late = ref(new Date("2023-10-27T22:45:00"));
+    mockFulfillment.value = "pickup";
+    expect(useDeliveryTime(late).helperText.value).toBe(
+      "Heute sind keine Abholzeiten mehr verfügbar.",
+    );
+    mockFulfillment.value = "delivery";
+    expect(useDeliveryTime(late).helperText.value).toBe(
+      "Heute sind keine Lieferzeiten mehr verfügbar.",
+    );
   });
 
   it("should calculate earliest selectable time", () => {

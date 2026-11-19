@@ -10683,18 +10683,33 @@
             "type": "boolean",
             "description": "Whether checkout is enabled for ShopBite"
           },
-          "deliveryTime": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "Default delivery time in minutes"
-          },
           "menuCategoryId": {
             "type": "string",
             "pattern": "^[0-9a-f]{32}$",
             "description": "Root category of the menu: the configured menu category, else the navigation category of the sales channel"
+          },
+          "shippingMethods": {
+            "type": "array",
+            "description": "Active shipping methods of the sales channel with fulfillment and lead time",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+                "fulfillment": {
+                  "type": "string",
+                  "enum": ["delivery", "pickup"]
+                },
+                "leadTimeMinutes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Minutes until the order is delivered or ready for pickup"
+                }
+              },
+              "required": ["id", "fulfillment", "leadTimeMinutes"]
+            }
           }
         },
-        "required": ["isCheckoutEnabled", "deliveryTime"]
+        "required": ["isCheckoutEnabled", "shippingMethods"]
       },
       "BusinessHour": {
         "type": "object",

@@ -14,7 +14,13 @@ const { state, mocks } = vi.hoisted(() => ({
     validTime: false,
     shippingBlocked: false,
     customer: true,
+    fulfillment: "delivery" as "delivery" | "pickup",
   },
+}));
+
+mockNuxtImport("useShippingLeadTime", () => () => ({
+  fulfillment: ref(state.fulfillment),
+  leadTime: ref(30),
 }));
 
 mockNuxtImport("useOpeningHoursData", () => () => ({
@@ -61,9 +67,12 @@ vi.mock("@shopware/composables", async (importOriginal) => ({
 
 // Reports the time as DeliveryTimeSelect does once a time is selected.
 const DeliveryTimeSelectStub = defineComponent({
-  emits: ["update:valid"],
+  emits: ["update:valid", "update:modelValue"],
   setup(_, { emit }) {
-    onMounted(() => emit("update:valid", state.validTime));
+    onMounted(() => {
+      emit("update:modelValue", "19:15");
+      emit("update:valid", state.validTime);
+    });
     return () => h("div");
   },
 });
@@ -93,6 +102,9 @@ describe("Checkout Summary order button", () => {
     state.validTime = false;
     state.shippingBlocked = false;
     state.customer = true;
+    state.fulfillment = "delivery";
+    mocks.createOrder.mockReset();
+    mocks.checkCheckoutEnabled.mockReset();
   });
 
   it("shows a loading state while the opening hours are not loaded", async () => {
@@ -196,4 +208,27 @@ describe("Checkout Summary order button", () => {
       "konnte nicht geprüft werden",
     );
   });
+
+  // shopbite#6: the comment names the kind of time
+  it.each([
+    ["delivery", "Wunschlieferzeit: 19:15"],
+    ["pickup", "Wunschabholzeit: 19:15"],
+  ] as const)(
+    "stores the wished time of a %s order",
+    async (fulfillment, comment) => {
+      state.isLoading = false;
+      state.validTime = true;
+      state.fulfillment = fulfillment;
+      mocks.checkCheckoutEnabled.mockResolvedValue(true);
+      mocks.createOrder.mockResolvedValue({ id: "order-1" });
+
+      const button = await mountSummary();
+      await button.trigger("click");
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(mocks.createOrder).toHaveBeenCalledWith({
+        customerComment: comment,
+      });
+    },
+  );
 });

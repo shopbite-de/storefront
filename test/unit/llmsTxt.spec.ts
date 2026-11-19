@@ -29,6 +29,7 @@ describe("buildLlmsTxt", () => {
       ],
       isCheckoutEnabled: true,
       deliveryTime: 30,
+      pickupTime: 20,
       menuUrl: "https://www.pizzeria-esempio.example/speisekarte",
       menu: [
         {
@@ -108,7 +109,7 @@ Italienisch-deutsche Küche seit 1997.
 - Online bestellen: https://www.pizzeria-esempio.example/speisekarte
 - Liefergebiet: 12345 Musterstadt, 12346 Beispieldorf
 - Lieferzeit: ca. 30 Minuten
-- Abholung im Restaurant möglich
+- Abholung im Restaurant möglich, abholbereit in ca. 20 Minuten
 
 ## Häufige Fragen
 

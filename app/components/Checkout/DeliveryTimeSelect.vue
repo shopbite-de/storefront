@@ -13,7 +13,9 @@ const emit = defineEmits<{
   (e: "update:valid", value: boolean): void;
 }>();
 
-const { deliveryTime } = useShopBiteConfig();
+// Lead time and wording follow the selected shipping method (shopbite#6).
+const { fulfillment, leadTime } = useShippingLeadTime();
+const wording = computed(() => FULFILLMENT_WORDING[fulfillment.value]);
 
 const selected = ref<string>(props.modelValue ?? "");
 const now = ref<Date>(new Date());
@@ -147,7 +149,7 @@ function handleTimeInput(event: Event): void {
         <strong class="block"
           >Öffnungszeiten konnten nicht geladen werden</strong
         >
-        Ohne Öffnungszeiten können wir keine Lieferzeit anbieten.
+        Ohne Öffnungszeiten können wir keine {{ wording.time }} anbieten.
       </span>
       <SbButton variant="secondary" @click="retryOpeningHours"
         >Erneut versuchen</SbButton
@@ -164,7 +166,7 @@ function handleTimeInput(event: Event): void {
       <SbField
         id="delivery-time"
         v-slot="{ id, describedBy, invalid }"
-        label="Wunschzeit für Lieferung oder Abholung, frühestens"
+        :label="wording.wishedTime"
         :hint="validationError ? undefined : helperText"
         :error="validationError ?? undefined"
       >
@@ -184,9 +186,8 @@ function handleTimeInput(event: Event): void {
           />
         </ClientOnly>
       </SbField>
-      <p class="text-sm text-sb-ink-muted">
-        Lieferzeit ca. {{ deliveryTime }} Minuten, zu Stoßzeiten kann es etwas
-        länger dauern.
+      <p v-if="leadTime !== null" class="text-sm text-sb-ink-muted">
+        {{ wording.leadTimeHint(leadTime) }}
       </p>
     </template>
     <p v-else class="text-sm text-sb-ink-muted" aria-busy="true">
