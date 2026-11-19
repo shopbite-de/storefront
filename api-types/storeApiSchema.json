@@ -10683,6 +10683,32 @@
             "type": "boolean",
             "description": "Whether checkout is enabled for ShopBite"
           },
+          "addressStreet": {
+            "type": "string",
+            "nullable": true,
+            "description": "Street and number of the shop, null if not configured"
+          },
+          "addressPostalCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Postal code of the shop, null if not configured"
+          },
+          "addressCity": {
+            "type": "string",
+            "nullable": true,
+            "description": "City of the shop, null if not configured"
+          },
+          "telephone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Telephone number in display format (e.g. +49 123 456789), null if not configured"
+          },
+          "googleBusinessProfileUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "Link to the shop's Google Business Profile, null if not configured"
+          },
           "menuCategoryId": {
             "type": "string",
             "pattern": "^[0-9a-f]{32}$",
@@ -10690,26 +10716,41 @@
           },
           "shippingMethods": {
             "type": "array",
-            "description": "Active shipping methods of the sales channel with fulfillment and lead time",
+            "description": "The active shipping methods of the sales channel with fulfillment and lead time (shipping method custom fields shopbite_fulfillment and shopbite_lead_time_minutes; without a value: delivery and 30 minutes)",
             "items": {
               "type": "object",
               "properties": {
-                "id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+                "id": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
                 "fulfillment": {
                   "type": "string",
-                  "enum": ["delivery", "pickup"]
+                  "enum": [
+                    "delivery",
+                    "pickup"
+                  ]
                 },
                 "leadTimeMinutes": {
                   "type": "integer",
-                  "minimum": 0,
+                  "minimum": 1,
+                  "maximum": 1440,
                   "description": "Minutes until the order is delivered or ready for pickup"
                 }
               },
-              "required": ["id", "fulfillment", "leadTimeMinutes"]
+              "required": [
+                "id",
+                "fulfillment",
+                "leadTimeMinutes"
+              ]
             }
           }
         },
-        "required": ["isCheckoutEnabled", "shippingMethods"]
+        "required": [
+          "isCheckoutEnabled",
+          "menuCategoryId",
+          "shippingMethods"
+        ]
       },
       "BusinessHour": {
         "type": "object",
@@ -16914,7 +16955,7 @@
       "get": {
         "tags": ["ShopBite"],
         "summary": "Get ShopBite configuration",
-        "description": "Retrieves ShopBite configuration including checkout status and delivery time",
+        "description": "Retrieves ShopBite configuration including checkout status and the fulfillment and lead time of each shipping method",
         "operationId": "shopbite.config.get",
         "parameters": [],
         "responses": {
