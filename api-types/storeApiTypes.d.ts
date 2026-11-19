@@ -5358,19 +5358,31 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   ShopBiteConfig: {
+    /** City of the shop, null if not configured */
+    addressCity?: string | null;
+    /** Postal code of the shop, null if not configured */
+    addressPostalCode?: string | null;
+    /** Street and number of the shop, null if not configured */
+    addressStreet?: string | null;
+    /**
+     * Format: uri
+     * Link to the shop's Google Business Profile, null if not configured
+     */
+    googleBusinessProfileUrl?: string | null;
     /** Whether checkout is enabled for ShopBite */
     isCheckoutEnabled: boolean;
-    /** Root category of the menu: the configured menu category, else the navigation category of the sales channel (plugin 2026-10, missing in older plugins) */
-    menuCategoryId?: string;
-    /** Active shipping methods of the sales channel with fulfillment and lead time */
+    /** Root category of the menu: the configured menu category, else the navigation category of the sales channel */
+    menuCategoryId: string;
+    /** The active shipping methods of the sales channel with fulfillment and lead time (shipping method custom fields shopbite_fulfillment and shopbite_lead_time_minutes; without a value: delivery and 30 minutes) */
     shippingMethods: {
-      /** @pattern ^[0-9a-f]{32}$ */
-      id: string;
       /** @enum {string} */
       fulfillment: "delivery" | "pickup";
+      id: string;
       /** Minutes until the order is delivered or ready for pickup */
       leadTimeMinutes: number;
     }[];
+    /** Telephone number in display format (e.g. +49 123 456789), null if not configured */
+    telephone?: string | null;
   };
   ShopBiteWishlistItem: {
     /** Format: date-time */
