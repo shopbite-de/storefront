@@ -2,6 +2,7 @@ import { queryCollection } from "@nuxt/content/server";
 import { defineEventHandler } from "nuxt/server";
 import type { components } from "~~/api-types/storeApiTypes";
 import { getDiets, getMainIngredients } from "../../app/utils/product";
+import { fulfillmentLeadTime } from "../../app/utils/leadTime";
 import { productDeepLink } from "../../app/utils/productUrl";
 import { splitList, toAbsoluteUrl } from "../../app/utils/seo";
 import { buildLlmsTxt, type LlmsMenuSection } from "../utils/llmsTxt";
@@ -87,9 +88,7 @@ export default defineEventHandler(async (event) => {
       storeApi<{ holidays?: { start?: string; end?: string }[] }>(
         "/shopbite/holiday",
       ),
-      storeApi<{ isCheckoutEnabled?: boolean; deliveryTime?: number }>(
-        "/shopbite/config",
-      ),
+      storeApi<Schemas["ShopBiteConfig"]>("/shopbite/config"),
       storeApi<Schemas["SalesChannelContext"]>("/context"),
       queryCollection(event, "landingpages")
         .select("path", "title", "description")
@@ -135,7 +134,9 @@ export default defineEventHandler(async (event) => {
     businessHours: value(hours)?.businessHours,
     holidays: value(holidays)?.holidays,
     isCheckoutEnabled: value(config)?.isCheckoutEnabled,
-    deliveryTime: value(config)?.deliveryTime,
+    // lead times of the delivery and pickup methods (shopbite#6)
+    deliveryTime: fulfillmentLeadTime(value(config), "delivery"),
+    pickupTime: fulfillmentLeadTime(value(config), "pickup"),
     menuUrl: toAbsoluteUrl(siteUrl, "/speisekarte"),
     menu: (value(navigation) ?? [])
       .filter((category) => category.type === "page")

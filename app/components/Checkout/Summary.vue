@@ -9,6 +9,7 @@ const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
 const { isCheckoutEnabled, refresh, checkCheckoutEnabled } =
   useShopBiteConfig();
+const { fulfillment } = useShippingLeadTime();
 const { trackOrder } = useTrackEvent();
 const { isLoading: isLoadingOpeningHours, hasFailed: hasOpeningHoursFailed } =
   useOpeningHoursData();
@@ -121,7 +122,10 @@ async function handleCreateOrder() {
     if (!(await hasAvailableCheckoutMethods())) return;
 
     const order = await createOrder({
-      customerComment: "Wunschlieferzeit: " + selectedDeliveryTime.value,
+      customerComment: wishedTimeComment(
+        fulfillment.value,
+        selectedDeliveryTime.value,
+      ),
     });
 
     trackOrder(order);

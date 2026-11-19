@@ -42,7 +42,8 @@ const rating = computed(() => {
 });
 
 const { status } = useStoreStatus();
-const { deliveryTime } = useShopBiteConfig();
+// lead times of the delivery and pickup methods (shopbite#6)
+const { deliveryTime, pickupTime } = useShopBiteConfig();
 
 const statusLabel = computed(() => {
   if (!status.value) return "";
@@ -120,7 +121,12 @@ const BLANK =
             />
             {{ statusLabel }}
           </span>
-          <span>Lieferung ca. {{ deliveryTime }} Min</span>
+          <span v-if="deliveryTime !== null"
+            >Lieferung ca. {{ deliveryTime }} Min</span
+          >
+          <span v-if="pickupTime !== null"
+            >Abholung ca. {{ pickupTime }} Min</span
+          >
         </p>
         <template #fallback>
           <span class="h-6" aria-hidden="true" />

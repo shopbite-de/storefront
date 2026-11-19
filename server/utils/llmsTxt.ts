@@ -40,8 +40,10 @@ export type LlmsTxtInput = {
   }[];
   holidays?: { start?: string; end?: string }[];
   isCheckoutEnabled?: boolean;
-  /** Minutes until delivery. */
-  deliveryTime?: number;
+  /** Minutes until delivery (lead time of the delivery method). */
+  deliveryTime?: number | null;
+  /** Minutes until an order is ready for pickup (pickup method). */
+  pickupTime?: number | null;
   menuUrl?: string;
   menu?: LlmsMenuSection[];
   pages?: { title: string; url: string; description?: string }[];
@@ -169,7 +171,9 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
         input.deliveryTime
           ? `- Lieferzeit: ca. ${input.deliveryTime} Minuten`
           : undefined,
-        input.address?.street ? "- Abholung im Restaurant möglich" : undefined,
+        input.address?.street
+          ? `- Abholung im Restaurant möglich${input.pickupTime ? `, abholbereit in ca. ${input.pickupTime} Minuten` : ""}`
+          : undefined,
       ].filter((line): line is string => Boolean(line))
     : [];
 

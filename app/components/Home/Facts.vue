@@ -4,7 +4,7 @@ export type FeatureCardProps = {
   title: string;
   description: string;
   icon?: string;
-  kind?: "hours" | "delivery" | "reservation";
+  kind?: "hours" | "delivery" | "pickup" | "reservation";
   lead?: string;
   link?: { label: string; to: string };
 };
@@ -12,12 +12,13 @@ export type FeatureCardProps = {
 /**
  * Facts row under the hero of the presets (#444): the `features` of
  * content/index.yml as four columns with a strong top rule. Today's hours
- * and the delivery time are live, like on the feature cards (#332).
+ * and the delivery and pickup times are live, like on the feature cards
+ * (#332, shopbite#6).
  */
 const props = defineProps<{ features: FeatureCardProps[] }>();
 
 const { businessHours } = useBusinessHours();
-const { deliveryTime } = useShopBiteConfig();
+const { deliveryTime, pickupTime } = useShopBiteConfig();
 
 const items = computed(() =>
   props.features.map((feature) => {
@@ -25,8 +26,12 @@ const items = computed(() =>
     if (feature.kind === "hours" && businessHours.value) {
       lead = formatTodayHours(businessHours.value, new Date());
     }
-    if (feature.kind === "delivery") {
+    // lead times of the delivery and pickup methods (shopbite#6)
+    if (feature.kind === "delivery" && deliveryTime.value !== null) {
       lead = `In ca. ${deliveryTime.value} Minuten bei Ihnen`;
+    }
+    if (feature.kind === "pickup" && pickupTime.value !== null) {
+      lead = `Abholbereit in ca. ${pickupTime.value} Minuten`;
     }
     return { ...feature, lead };
   }),

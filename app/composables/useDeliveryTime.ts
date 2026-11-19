@@ -10,7 +10,8 @@ function isTimeWithinBounds(
 }
 
 export function useDeliveryTime(now: Ref<Date>) {
-  const { deliveryTime } = useShopBiteConfig();
+  // lead time of the selected shipping method (shopbite#6)
+  const { leadTime, fulfillment } = useShippingLeadTime();
   const {
     getServiceIntervals,
     getEarliestSelectableTime,
@@ -19,12 +20,14 @@ export function useDeliveryTime(now: Ref<Date>) {
   } = useBusinessHours();
   const { isClosedHoliday } = useHolidays();
 
+  const wording = computed(() => FULFILLMENT_WORDING[fulfillment.value]);
+
   const earliest = computed<Date>(() =>
-    getEarliestSelectableTime(now.value, deliveryTime.value),
+    getEarliestSelectableTime(now.value, leadTime.value),
   );
 
   const activeInterval = computed<ServiceInterval | null>(() =>
-    findActiveInterval(now.value, deliveryTime.value),
+    findActiveInterval(now.value, leadTime.value),
   );
 
   const minTime = computed<string | null>(() => {
@@ -76,9 +79,9 @@ export function useDeliveryTime(now: Ref<Date>) {
       const intervals = getServiceIntervals(now.value);
       const lastInterval = intervals.at(-1);
       if (lastInterval && earliest.value > lastInterval.end) {
-        return "Heute sind keine Lieferzeiten mehr verfügbar.";
+        return `Heute sind keine ${wording.value.times} mehr verfügbar.`;
       }
-      return "Aktuell keine Lieferzeit verfügbar. Bitte später erneut versuchen.";
+      return `Aktuell keine ${wording.value.time} verfügbar. Bitte später erneut versuchen.`;
     }
 
     const startStr = toTimeString(interval.start);

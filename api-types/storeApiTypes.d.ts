@@ -5358,12 +5358,19 @@ export type Schemas = {
     readonly updatedAt?: string;
   };
   ShopBiteConfig: {
-    /** Default delivery time in minutes */
-    deliveryTime: number;
     /** Whether checkout is enabled for ShopBite */
     isCheckoutEnabled: boolean;
     /** Root category of the menu: the configured menu category, else the navigation category of the sales channel (plugin 2026-10, missing in older plugins) */
     menuCategoryId?: string;
+    /** Active shipping methods of the sales channel with fulfillment and lead time */
+    shippingMethods: {
+      /** @pattern ^[0-9a-f]{32}$ */
+      id: string;
+      /** @enum {string} */
+      fulfillment: "delivery" | "pickup";
+      /** Minutes until the order is delivered or ready for pickup */
+      leadTimeMinutes: number;
+    }[];
   };
   ShopBiteWishlistItem: {
     /** Format: date-time */

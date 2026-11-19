@@ -19,7 +19,7 @@ const cachedConfig = defineCachedFunction(
 const load = createResilientLoader<ShopBiteConfig>();
 
 /**
- * The ShopBite plugin configuration (delivery time, checkout switch, menu
+ * The ShopBite plugin configuration (lead times, checkout switch, menu
  * root) for server-side rendering, `/api/shopbite/config` and the menu root.
  * When Shopware fails, the last good configuration is kept (the menu stays
  * on its root) and Shopware is asked again only after a pause, so an outage

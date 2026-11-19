@@ -66,6 +66,26 @@ describe("order pages with a preset (#445)", () => {
     });
   });
 
+  // shopbite#6: pickup orders store "Wunschabholzeit"
+  it("shows the wished pickup time", async () => {
+    mocks.loadOrderDetails.mockImplementation(async () => {
+      order.value = {
+        ...sampleOrder,
+        customerComment: "Wunschabholzeit: 18:40",
+      } as Schemas["Order"];
+    });
+    const wrapper = await mountSuspended(ConfirmationPreset, {
+      props: { orderId: "order-1", kind: "success" },
+    });
+    await flushPromises();
+
+    const facts = wrapper
+      .findAll("dl")[0]!
+      .findAll("div")
+      .map((row) => row.text());
+    expect(facts).toContain("Wunschzeit18:40");
+  });
+
   it("thanks the guest and shows the order after loading", async () => {
     mocks.loadOrderDetails.mockImplementation(async () => {
       order.value = sampleOrder;
