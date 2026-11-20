@@ -1,35 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
-import type { Schemas } from "#shopware";
+import type { FoodLabels } from "../../shared/domain";
 import ProductFoodLabels from "~/components/Product/FoodLabels.vue";
 
-const option = (code: string, name: string) => ({
-  name,
-  translated: { name, customFields: { shopbite_code: code } },
+const dish = (allergens: [string, string][], checked = false): FoodLabels => ({
+  allergens: allergens.map(([code, name]) => ({ code, name })),
+  additives: [],
+  checked,
 });
 
-const dish = (
-  allergens: [string, string][],
-  checked = false,
-): Schemas["Product"] =>
-  ({
-    translated: {
-      customFields: checked ? { shopbite_allergens_checked: true } : {},
-    },
-    sortedProperties: allergens.length
-      ? [
-          {
-            translated: { name: "Allergene" },
-            options: allergens.map(([code, name]) => option(code, name)),
-          },
-        ]
-      : [],
-  }) as unknown as Schemas["Product"];
-
-async function openPopover(product: Schemas["Product"]) {
+async function openPopover(labels: FoodLabels) {
   const wrapper = await mountSuspended(ProductFoodLabels, {
-    props: { product },
+    props: { labels },
     attachTo: document.body,
   });
   const button = wrapper.get("button");

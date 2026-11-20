@@ -71,6 +71,27 @@ describe("useTrackEvent", () => {
     expect(matomoWindow._paq).toBeUndefined();
   });
 
+  it("tracks the dish sheet as a product view and adds by menu number", () => {
+    setMatomoConfig("https://analytics.example.com/", 3);
+
+    const { trackProductView, trackAddToCart, trackUpsellAdd } =
+      useTrackEvent();
+    trackProductView({
+      number: "21-groß",
+      name: "Pizza Margherita",
+      price: { amountMinor: 1050, currency: "EUR" },
+    });
+    trackAddToCart({ number: "21-groß" }, 2);
+    trackUpsellAdd({ number: "12" }, 1);
+
+    expect(matomoWindow._paq).toEqual([
+      ["setEcommerceView", "21-groß", "Pizza Margherita", false, 10.5],
+      ["trackPageView", "21-groß"],
+      ["trackEvent", "Cart", "AddToCart", "21-groß", 2],
+      ["trackEvent", "Cart", "UpsellAdd", "12", 1],
+    ]);
+  });
+
   // The commands land in Matomo's own `_paq` queue, so they do not depend on
   // the registry script, which is loaded after `onNuxtReady` (#314).
   it("queues tracking commands in _paq when Matomo is configured", () => {
@@ -115,12 +136,7 @@ describe("useTrackEvent", () => {
   it("tracks an add from the cart suggestions as its own action", () => {
     setMatomoConfig("https://analytics.example.com/", 3);
 
-    useTrackEvent().trackUpsellAdd(
-      {
-        productNumber: "D1",
-      } as Parameters<ReturnType<typeof useTrackEvent>["trackUpsellAdd"]>[0],
-      1,
-    );
+    useTrackEvent().trackUpsellAdd({ number: "D1" }, 1);
 
     expect(matomoWindow._paq).toEqual([
       ["trackEvent", "Cart", "UpsellAdd", "D1", 1],

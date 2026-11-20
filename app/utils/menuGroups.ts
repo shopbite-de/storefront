@@ -1,57 +1,40 @@
-import type { Schemas } from "#shopware";
+import type { Dish, MenuSection } from "../../shared/domain";
 
 /** A sub-section of a menu section with its dishes (#487). */
 export interface MenuGroup {
   id: string;
   name: string;
-  products: Schemas["Product"][];
+  dishes: Dish[];
 }
 
-/** The category with this id anywhere in a navigation tree. */
-export function findCategory(
-  tree: Schemas["Category"][] | undefined,
-  id: string,
-): Schemas["Category"] | undefined {
-  for (const category of tree ?? []) {
-    if (category.id === id) return category;
-    const found = findCategory(category.children, id);
-    if (found) return found;
-  }
-  return undefined;
-}
-
-function idsBelow(category: Schemas["Category"]): string[] {
-  return [category.id, ...(category.children ?? []).flatMap(idsBelow)];
+function idsBelow(section: MenuSection): string[] {
+  return [section.id, ...section.children.flatMap(idsBelow)];
 }
 
 /**
  * Splits the dishes of a section into the ones directly in it and one group
- * per sub-section, in the order of the navigation (= backoffice order).
- * Deeper levels count to their sub-section; empty groups are left out, so a
- * filter or search shows only what matches. Without sub-sections: null.
+ * per sub-section, in menu order (= backoffice order). Deeper levels count
+ * to their sub-section; empty groups are left out, so a filter or search
+ * shows only what matches. Without sub-sections: null.
  */
 export function groupBySubsections(
-  products: Schemas["Product"][],
-  subsections: Schemas["Category"][] | undefined,
-): { direct: Schemas["Product"][]; groups: MenuGroup[] } | null {
+  dishes: readonly Dish[],
+  subsections: readonly MenuSection[] | undefined,
+): { direct: Dish[]; groups: MenuGroup[] } | null {
   if (!subsections?.length) return null;
-  const buckets = subsections.map((category) => ({
-    group: {
-      id: category.id,
-      name: category.translated?.name ?? category.name ?? "",
-      products: [] as Schemas["Product"][],
-    },
-    ids: new Set(idsBelow(category)),
+  const buckets = subsections.map((section) => ({
+    group: { id: section.id, name: section.name, dishes: [] as Dish[] },
+    ids: new Set(idsBelow(section)),
   }));
-  const direct: Schemas["Product"][] = [];
-  for (const product of products) {
+  const direct: Dish[] = [];
+  for (const dish of dishes) {
     const bucket = buckets.find((b) =>
-      (product.categoryIds ?? []).some((id) => b.ids.has(id)),
+      dish.sectionIds.some((id) => b.ids.has(id)),
     );
-    (bucket?.group.products ?? direct).push(product);
+    (bucket?.group.dishes ?? direct).push(dish);
   }
   return {
     direct,
-    groups: buckets.map((b) => b.group).filter((g) => g.products.length),
+    groups: buckets.map((b) => b.group).filter((g) => g.dishes.length),
   };
 }

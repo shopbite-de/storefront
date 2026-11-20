@@ -1,49 +1,31 @@
 import { describe, expect, it } from "vitest";
 import {
   parseListParam,
-  productDeepLink,
+  dishLink,
   withQuickViewConfiguration,
 } from "../../app/utils/productUrl";
 
-describe("productDeepLink", () => {
-  it("uses the canonical product SEO URL when it is a deep link", () => {
+describe("dishLink", () => {
+  it("uses the dish's own link when the backend keeps one", () => {
     expect(
-      productDeepLink(
-        {
-          productNumber: "LF-21",
-          seoUrls: [
-            { seoPathInfo: "Pizza-Margherita/LF-21", isCanonical: false },
-            {
-              seoPathInfo: "Speisekarte/Pizza/?produkt=LF-21",
-              isCanonical: true,
-            },
-          ],
-        },
+      dishLink(
+        { number: "LF-21", path: "/Speisekarte/Pizza/?produkt=LF-21" },
         "/Speisekarte/Nudeln/",
       ),
     ).toBe("/Speisekarte/Pizza/?produkt=LF-21");
   });
 
-  it("builds the link from the category without a deep link SEO URL", () => {
+  it("opens the dish's sheet over its section otherwise", () => {
     expect(
-      productDeepLink(
-        {
-          productNumber: "LF-21",
-          seoUrls: [
-            { seoPathInfo: "Pizza-Margherita/LF-21", isCanonical: true },
-          ],
-        },
-        "/Speisekarte/Pizza/",
-      ),
+      dishLink({ number: "LF-21", path: null }, "/Speisekarte/Pizza/"),
     ).toBe("/Speisekarte/Pizza/?produkt=LF-21");
-    expect(productDeepLink({ productNumber: "A 1/2" }, "c/Pizza/")).toBe(
+    expect(dishLink({ number: "A 1/2", path: null }, "c/Pizza/")).toBe(
       "/c/Pizza/?produkt=A+1%2F2",
     );
   });
 
-  it("is undefined without SEO URL and category", () => {
-    expect(productDeepLink({ productNumber: "LF-21" })).toBeUndefined();
-    expect(productDeepLink({}, "/c/Pizza/")).toBeUndefined();
+  it("is undefined without a link and a section", () => {
+    expect(dishLink({ number: "LF-21", path: null })).toBeUndefined();
   });
 });
 

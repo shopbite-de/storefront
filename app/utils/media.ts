@@ -1,33 +1,49 @@
-type Thumbnail = { url?: string; width?: number };
-type Media = {
+import type { Media } from "../../shared/domain";
+
+/**
+ * Navigation media still come as Shopware media until the Navigation
+ * context moves (ADR 0001, step 3): thumbnails and meta data instead of
+ * the domain's sources and size.
+ */
+type NavigationMedia = {
   url?: string;
-  thumbnails?: Thumbnail[] | null;
+  thumbnails?: { url?: string; width?: number }[] | null;
   metaData?: { width?: number; height?: number } | null;
 };
 
+const isDomainMedia = (media: Media | NavigationMedia): media is Media =>
+  "sources" in media;
+
 /**
- * `srcset` from the Shopware thumbnails of a media entity (e.g. 400, 800
- * and 1920 px wide), so the browser picks the size it needs instead of the
- * original (#273). Returns `undefined` without thumbnails.
+ * `srcset` from the renditions of an image (e.g. 400, 800 and 1920 px
+ * wide), so the browser picks the size it needs instead of the original
+ * (#273). Returns `undefined` without renditions.
  */
 export function mediaSrcSet(
-  media: Media | null | undefined,
+  media: Media | NavigationMedia | null | undefined,
 ): string | undefined {
-  const entries = (media?.thumbnails ?? [])
+  if (!media) return undefined;
+  const renditions = isDomainMedia(media)
+    ? media.sources
+    : (media.thumbnails ?? []);
+  const entries = renditions
     .filter(
-      (thumbnail): thumbnail is { url: string; width: number } =>
-        Boolean(thumbnail.url) && Boolean(thumbnail.width),
+      (rendition): rendition is { url: string; width: number } =>
+        Boolean(rendition.url) && Boolean(rendition.width),
     )
     .sort((a, b) => a.width - b.width)
-    .map((thumbnail) => `${thumbnail.url} ${thumbnail.width}w`);
+    .map((rendition) => `${rendition.url} ${rendition.width}w`);
 
   return entries.length ? entries.join(", ") : undefined;
 }
 
-/** Intrinsic size of a media entity for `width`/`height` attributes (no layout shift). */
+/** Intrinsic size of an image for `width`/`height` attributes (no layout shift). */
 export function mediaSize(
-  media: Media | null | undefined,
+  media: Media | NavigationMedia | null | undefined,
 ): { width: number; height: number } | undefined {
-  const { width, height } = media?.metaData ?? {};
+  if (!media) return undefined;
+  const { width, height } = isDomainMedia(media)
+    ? media
+    : (media.metaData ?? {});
   return width && height ? { width, height } : undefined;
 }

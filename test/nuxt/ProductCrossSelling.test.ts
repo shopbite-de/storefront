@@ -1,20 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import ProductCrossSelling from "~/components/Product/CrossSelling.vue";
-import type { AssociationItem } from "~/types/Association";
+import type { ExtraGroup } from "../../shared/domain";
+import { eur } from "../support/dishes";
 
 mockNuxtImport("useCommercePrice", () => () => ({
-  getFormattedPrice: (price: number) => `${price.toFixed(2)} €`,
+  getFormattedMoney: (price: { amountMinor: number }) =>
+    `${(price.amountMinor / 100).toFixed(2)} €`,
 }));
 
-const group = (label: string, count: number): AssociationItem => ({
-  label,
-  products: Array.from({ length: count }, (_, index) => ({
-    label: `${label} ${index + 1}`,
-    value: `${label}-${index + 1}`,
-    productNumber: `${label}-NR-${index + 1}`,
-    price: "1.00 €",
-    unitPrice: 1,
+const group = (name: string, count: number): ExtraGroup => ({
+  id: name.toLowerCase(),
+  name,
+  extras: Array.from({ length: count }, (_, index) => ({
+    id: `${name}-${index + 1}`,
+    number: `${name}-NR-${index + 1}`,
+    name: `${name} ${index + 1}`,
+    price: eur(100),
+    available: true,
   })),
 });
 
@@ -24,7 +27,7 @@ const rows = (wrapper: Awaited<ReturnType<typeof mountSuspended>>) =>
 describe("ProductCrossSelling", () => {
   it("opens only the first group", async () => {
     const wrapper = await mountSuspended(ProductCrossSelling, {
-      props: { associations: [group("Extras", 3), group("Saucen", 2)] },
+      props: { groups: [group("Extras", 3), group("Saucen", 2)] },
     });
 
     const toggles = wrapper.findAll("button[aria-expanded]");
@@ -39,7 +42,7 @@ describe("ProductCrossSelling", () => {
 
   it("shows every entry of a short list", async () => {
     const wrapper = await mountSuspended(ProductCrossSelling, {
-      props: { associations: [group("Extras", 8)] },
+      props: { groups: [group("Extras", 8)] },
     });
 
     expect(rows(wrapper)).toHaveLength(8);
@@ -48,7 +51,7 @@ describe("ProductCrossSelling", () => {
 
   it("shows the first entries of a long list and the rest on request", async () => {
     const wrapper = await mountSuspended(ProductCrossSelling, {
-      props: { associations: [group("Extras", 12)] },
+      props: { groups: [group("Extras", 12)] },
     });
 
     expect(rows(wrapper)).toHaveLength(6);
@@ -61,7 +64,7 @@ describe("ProductCrossSelling", () => {
 
   it("offers a search field for very long lists", async () => {
     const wrapper = await mountSuspended(ProductCrossSelling, {
-      props: { associations: [group("Extras", 20)] },
+      props: { groups: [group("Extras", 20)] },
     });
 
     const search = wrapper.find('input[type="search"]');
@@ -77,7 +80,7 @@ describe("ProductCrossSelling", () => {
 
   it("emits the selection and summarises it in the group header", async () => {
     const wrapper = await mountSuspended(ProductCrossSelling, {
-      props: { associations: [group("Extras", 3), group("Saucen", 2)] },
+      props: { groups: [group("Extras", 3), group("Saucen", 2)] },
     });
 
     expect(wrapper.text()).toContain("optional");
@@ -86,8 +89,8 @@ describe("ProductCrossSelling", () => {
 
     const emitted = wrapper.emitted("extras-selected")!;
     expect(emitted.at(-1)![0]).toMatchObject([
-      { value: "Extras-1" },
-      { value: "Extras-3" },
+      { id: "Extras-1" },
+      { id: "Extras-3" },
     ]);
     expect(wrapper.find("button[aria-expanded]").text()).toContain(
       "2 gewählt · +2.00 €",
@@ -95,21 +98,21 @@ describe("ProductCrossSelling", () => {
 
     await rows(wrapper)[0]!.trigger("click");
     expect(wrapper.emitted("extras-selected")!.at(-1)![0]).toMatchObject([
-      { value: "Extras-3" },
+      { id: "Extras-3" },
     ]);
   });
 
   it("preselects extras from the URL and emits them (#411)", async () => {
     const wrapper = await mountSuspended(ProductCrossSelling, {
       props: {
-        associations: [group("Extras", 3)],
+        groups: [group("Extras", 3)],
         initialExtras: ["Extras-NR-2", "unknown"],
       },
     });
 
     const emitted = wrapper.emitted("extras-selected");
     expect(emitted?.[0]?.[0]).toEqual([
-      expect.objectContaining({ productNumber: "Extras-NR-2" }),
+      expect.objectContaining({ number: "Extras-NR-2" }),
     ]);
     const checked = rows(wrapper).map(
       (row: { attributes: (name: string) => string | undefined }) =>

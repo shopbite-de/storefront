@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { ListingFilter } from "../../../shared/domain";
 
-/** One property group of the menu filter (#445), as a checkbox list. */
+/** One filter of the menu listing (#445), as a checkbox list. */
 const props = defineProps<{
-  filter: Schemas["PropertyGroup"];
+  filter: ListingFilter;
   modelValue: string[];
 }>();
 
@@ -21,13 +21,13 @@ function toggle(id: string, checked: boolean) {
 <template>
   <fieldset class="flex flex-col font-body text-sb-ink">
     <legend class="mb-1 font-bold">
-      {{ filter.translated?.name ?? filter.name }}
+      {{ filter.name }}
     </legend>
     <SbCheckbox
-      v-for="option in filter.options ?? []"
+      v-for="option in filter.options"
       :key="option.id"
       :model-value="modelValue.includes(option.id)"
-      :label="option.translated?.name ?? option.name ?? ''"
+      :label="option.name"
       @update:model-value="(checked: boolean) => toggle(option.id, checked)"
     />
   </fieldset>

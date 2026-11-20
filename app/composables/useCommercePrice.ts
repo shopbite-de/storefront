@@ -1,3 +1,6 @@
+import type { Money } from "../../shared/domain";
+import { moneyAmount } from "../utils/money";
+
 export interface CommercePriceConfig {
   currencyCode: string;
   localeCode: string;
@@ -52,8 +55,29 @@ export function useCommercePrice(params?: Partial<CommercePriceConfig>) {
     return formatter.value.format(+value);
   }
 
+  // One formatter per currency other than the shop's (rare).
+  const otherFormatters = new Map<string, Intl.NumberFormat>();
+
+  /** A price of the domain (Money) in its own currency. */
+  function getFormattedMoney(value: Money | null | undefined): string {
+    if (!value) return "";
+    if (value.currency === currencyCode.value) {
+      return formatter.value.format(moneyAmount(value));
+    }
+    let other = otherFormatters.get(value.currency);
+    if (!other) {
+      other = new Intl.NumberFormat(localeCode.value, {
+        style: "currency",
+        currency: value.currency,
+      });
+      otherFormatters.set(value.currency, other);
+    }
+    return other.format(moneyAmount(value));
+  }
+
   return {
     getFormattedPrice,
+    getFormattedMoney,
     setPriceConfig,
     currencyCode,
     localeCode,

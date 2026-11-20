@@ -1,6 +1,7 @@
-import type { Schemas } from "#shopware";
 import type { NitroFetchRequest } from "nitropack";
+import type { MenuListing } from "../../shared/domain";
 
+/** The search results from the BFF (`/api/search`, MenuListing). */
 export function useListingSearch(initialQuery: string) {
   const nuxtApp = useNuxtApp();
   const loading = ref(false);
@@ -10,7 +11,7 @@ export function useListingSearch(initialQuery: string) {
     query: string,
     order?: string,
     signal?: AbortSignal,
-  ): Promise<Schemas["ProductListingResult"]> {
+  ): Promise<MenuListing> {
     return await $fetch("/api/search" as NitroFetchRequest, {
       query: {
         query,
@@ -31,9 +32,9 @@ export function useListingSearch(initialQuery: string) {
   );
 
   const showSkeleton = computed(() => pending.value && !nuxtApp.isHydrating);
-  const elements = computed(() => listing.value?.elements ?? []);
-  const sortingOrders = computed(() => listing.value?.availableSortings);
-  const currentSortingOrder = computed(() => listing.value?.sorting);
+  const dishes = computed(() => listing.value?.dishes ?? []);
+  const sortings = computed(() => listing.value?.sortings ?? []);
+  const currentSorting = computed(() => listing.value?.sorting ?? undefined);
 
   async function applySearch(query: string, order?: string) {
     currentController?.abort();
@@ -57,9 +58,9 @@ export function useListingSearch(initialQuery: string) {
   return {
     showSkeleton,
     loading,
-    elements,
-    sortingOrders,
-    currentSortingOrder,
+    dishes,
+    sortings,
+    currentSorting,
     applySearch,
     changeSorting,
   };

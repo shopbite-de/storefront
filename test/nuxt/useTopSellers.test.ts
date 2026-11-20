@@ -1,24 +1,25 @@
 import { describe, it, expect, vi } from "vitest";
 import { registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useTopSellers } from "~/composables/useTopSellers";
+import { dish } from "../support/dishes";
 
 const { topSellers } = vi.hoisted(() => ({ topSellers: vi.fn() }));
 
 registerEndpoint("/api/top-sellers", () => topSellers());
 
 describe("useTopSellers", () => {
-  it("should load top sellers from the server cache", async () => {
-    const mockElements = [{ id: "1", name: "Top Product" }];
-    topSellers.mockReturnValue(mockElements);
+  it("loads the top sellers' dishes from the BFF", async () => {
+    const dishes = [dish({ id: "1", name: "Pizza Margherita" })];
+    topSellers.mockReturnValue(dishes);
 
     const { loadTopSellers } = useTopSellers();
     const result = await loadTopSellers();
 
     expect(topSellers).toHaveBeenCalled();
-    expect(result).toEqual(mockElements);
+    expect(result).toEqual(dishes);
   });
 
-  it("should return empty array on error", async () => {
+  it("answers no dishes on an error", async () => {
     topSellers.mockImplementation(() => {
       throw new Error("Network error");
     });

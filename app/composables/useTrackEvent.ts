@@ -1,4 +1,9 @@
 import type { Schemas } from "#shopware";
+import type { Dish } from "../../shared/domain";
+import { moneyAmount } from "../utils/money";
+
+/** What tracking names of a dish: its menu number, name and price. */
+type TrackedDish = Pick<Dish, "number" | "name" | "price">;
 
 type MatomoWindow = Window & { _paq?: unknown[][] };
 
@@ -24,15 +29,16 @@ export function useTrackEvent() {
     push(["trackPageView"]);
   }
 
-  function trackProductView(product: Schemas["Product"]) {
+  // The dish sheet as a product view; the category stays unset (false).
+  function trackProductView(dish: TrackedDish) {
     push([
       "setEcommerceView",
-      product.productNumber,
-      product.translated.name ?? product.name,
-      product.seoCategory?.name ?? false,
-      product.calculatedPrice.unitPrice,
+      dish.number,
+      dish.name,
+      false,
+      moneyAmount(dish.price),
     ]);
-    push(["trackPageView", product.productNumber]);
+    push(["trackPageView", dish.number]);
   }
 
   function trackOrder(order: Schemas["Order"]) {
@@ -51,20 +57,18 @@ export function useTrackEvent() {
     push(["trackEcommerceOrder", order.orderNumber, order.price.totalPrice]);
   }
 
-  function trackAddToWishlist(
-    product: Pick<Schemas["Product"], "productNumber">,
-  ) {
-    push(["trackEvent", "Product", "AddToWishlist", product.productNumber]);
+  function trackAddToWishlist(entry: { productNumber: string }) {
+    push(["trackEvent", "Product", "AddToWishlist", entry.productNumber]);
   }
 
-  function trackAddToCart(product: Schemas["Product"], quantity: number) {
-    push(["trackEvent", "Cart", "AddToCart", product.productNumber, quantity]);
+  function trackAddToCart(dish: Pick<Dish, "number">, quantity: number) {
+    push(["trackEvent", "Cart", "AddToCart", dish.number, quantity]);
   }
 
   // A separate action, so the cart suggestions are measurable apart from
   // regular adds (#338).
-  function trackUpsellAdd(product: Schemas["Product"], quantity: number) {
-    push(["trackEvent", "Cart", "UpsellAdd", product.productNumber, quantity]);
+  function trackUpsellAdd(dish: Pick<Dish, "number">, quantity: number) {
+    push(["trackEvent", "Cart", "UpsellAdd", dish.number, quantity]);
   }
 
   // A shared product link: `Share` for the native share sheet, `CopyLink`

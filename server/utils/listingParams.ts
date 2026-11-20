@@ -1,8 +1,10 @@
+import type { ListingQuery } from "../../shared/domain";
+
 /**
- * Query parameters of the cached listing and search routes
- * (`/api/listing/[categoryId]`, `/api/search`). They become part of the cache
- * key, so they are validated and normalised first: an invalid value is a 400
- * and never creates a cache entry.
+ * Query parameters of the cached menu routes (`/api/listing/[sectionId]`,
+ * `/api/search`, `/api/menu/...`). They become part of the cache key, so
+ * they are validated and normalised first: an invalid value is a 400 and
+ * never creates a cache entry.
  */
 
 /** Shopware's standard sortings (`listingSortings` replaces the list). */
@@ -18,14 +20,18 @@ export const DEFAULT_SORTINGS = [
 export const MAX_PAGE = 20;
 export const MAX_TEXT_QUERY = 100;
 export const MAX_FILTER_IDS = 50;
+export const MAX_NUMBER_LENGTH = 64;
 
-const ID = /^[0-9a-f]{32}$/i;
+/**
+ * Ids are the backend's opaque strings (Shopware: 32 hex characters,
+ * memory adapter: the same); the BFF only bounds what may become a key.
+ * Lower case, so a purge by id finds every entry.
+ */
+const ID = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
 
 export interface ListingParams {
   order?: string;
-  properties?: string;
-  manufacturer?: string;
-  query?: string;
+  filters?: string;
   p?: number;
 }
 
@@ -46,14 +52,12 @@ function optionalString(
   return value.trim() || undefined;
 }
 
-/** `|`-separated 32-hex ids, lower case, without duplicates, sorted. */
-function idList(query: Record<string, unknown>, name: string) {
+/** `|`-separated ids, lower case, without duplicates, sorted. */
+function idList(query: Record<string, unknown>, name: string, max: number) {
   const value = optionalString(query, name);
   if (value === undefined) return undefined;
   const ids = value.split("|");
-  if (ids.length > MAX_FILTER_IDS || !ids.every((id) => ID.test(id))) {
-    invalid(name);
-  }
+  if (ids.length > max || !ids.every((id) => ID.test(id))) invalid(name);
   return [...new Set(ids.map((id) => id.toLowerCase()))].sort().join("|");
 }
 
@@ -90,19 +94,17 @@ function text(query: Record<string, unknown>, name: string) {
   return value;
 }
 
-/** A category id (32 hex characters), lower case. */
-export function categoryIdParam(value: string | undefined): string {
-  if (!value || !ID.test(value)) invalid("categoryId");
+/** A section, dish or variant id, lower case. */
+export function idParam(value: string | undefined, name: string): string {
+  if (!value || !ID.test(value)) invalid(name);
   return value.toLowerCase();
 }
 
-/** Parameters of `/api/listing/[categoryId]`. */
+/** Parameters of `/api/listing/[sectionId]`. */
 export function listingParams(query: Record<string, unknown>): ListingParams {
   return {
     order: order(query),
-    properties: idList(query, "properties"),
-    manufacturer: idList(query, "manufacturer"),
-    query: text(query, "query"),
+    filters: idList(query, "filters", MAX_FILTER_IDS),
     p: page(query),
   };
 }
@@ -113,5 +115,32 @@ export function searchParams(query: Record<string, unknown>) {
     search: text(query, "query"),
     order: order(query),
     p: page(query),
+  };
+}
+
+/** `options` of `/api/menu/dishes/[dishId]/variant`: 1 to 20 option ids. */
+export function optionIdsParam(query: Record<string, unknown>): string[] {
+  const options = idList(query, "options", 20);
+  if (!options) invalid("options");
+  return options.split("|");
+}
+
+/** `number` of `/api/menu/dishes`: a menu number as the guest's link has it. */
+export function numberParam(query: Record<string, unknown>): string {
+  const value = optionalString(query, "number");
+  if (!value || value.length > MAX_NUMBER_LENGTH) invalid("number");
+  return value;
+}
+
+/** The port's query for validated listing parameters. */
+export function toListingQuery(params: {
+  order?: string;
+  filters?: string;
+  p?: number;
+}): ListingQuery {
+  return {
+    ...(params.order && { sorting: params.order }),
+    ...(params.filters && { filterOptionIds: params.filters.split("|") }),
+    ...(params.p && { page: params.p }),
   };
 }

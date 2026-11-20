@@ -128,6 +128,32 @@ Deviations and open points of step 1:
 - The menu root still comes from the Shopware plugin config on the server (`shopbite-config`, a second cache of `/shopbite/config` next to `shop-config`) until `NavigationPort` (step 3).
 - Behaviour changes allowed by the step: holidays are whole days in the restaurant's time zone (the Restaurant schema and `llms.txt` took the UTC date of the plugin's instants before); an interval up to the end of the day reads `24:00` instead of `00:00` (schema.org keeps `00:00`, a day open around the clock is `00:00`–`23:59`).
 
+**Step 2 (menu), done.** `CatalogPort` in both adapters with a contract suite (sections, listings with sorting, diet filters and pages, search, every dish for `llms.txt`, the dish sheet with variants, extras and removable ingredients, a dish or variant by menu number, a variant by options, top sellers, upsell dishes). The BFF answers domain types: `GET /api/listing/[sectionId]`, `/api/search`, `/api/top-sellers` (paths kept), `/api/menu/sections/[sectionId]`, `/api/menu/dishes/[dishId]`, `/api/menu/dishes?number=`, `/api/menu/dishes/[dishId]/variant`, `/api/menu/upsell`; they replace `/api/product/*` and `/api/category/[categoryId]`, and the browser asks no Store API for dishes any more (dish sheet by number, upsell, wishlist). Every route is a cached handler keyed by the section or dish id, so the backoffice purge keeps working; a dish sheet carries its extras, so every menu purge empties all dish sheets. The memory adapter serves the quickstart's demo menu with the ids its setup gives the Shopware entities. `llms.txt` takes the menu from the port. Components and composables of the menu work on the domain types; the app still imports types only (`app/utils/money.ts` and `app/utils/dish.ts` instead of the domain's value objects). Lint guard: 55 warnings.
+
+Domain decisions of step 2:
+
+- `Dish.path` is the dish's link when the backend keeps one (Shopware: the product SEO URL with `?produkt=`), else null and the storefront links the dish under the section it is listed in. Section paths stay `MenuSection.path`; resolving paths is step 3.
+- `DishDetail` is always the dish; a variant asked for by id or number answers its dish with `selectedVariantId`. Without a request for one, `selectedVariantId` is the backend's default variant (Shopware's detail route answers a parent with it). `Variant` has its own name, media and main ingredients, inherited from the dish when it has none.
+- Main ingredients carry ids (`Ingredient`); removals are still written by name (dish sheet URL `ohne`, cart payload `without`, wishlist), as before.
+- `Extra.available` and `Dish.listPrice`/`Variant.listPrice` are mapped; the UI does not use them yet.
+- `findVariant` with fewer options than groups answers the first variant that has them (Shopware's `/product` filter); with one option per group exactly that variant.
+- Food labels belong to every `Dish`, so the sheet's info button works before the sheet's own data are loaded.
+- `MenuSection.seo` (title, description, indexable) carries what the section page's SEO needs; a section off the menu keeps its page as not indexable.
+
+Behaviour changes allowed by the step (otherwise identical, compared on SSR HTML, JSON-LD and visible text against the quickstart):
+
+- The removable ingredients of the dish sheet are in the order of the menu card (the sheet listed them in the backend's order of assignment before).
+- Search results know a parent with variants: "ab" price and the choice button instead of adding the parent, which the cart silently left out.
+- A dish sheet opened by a variant's number (deep link, wishlist) shows the dish's description, diets and food labels.
+- The section page's `CollectionPage` JSON-LD leaves out a missing description instead of `null`.
+
+Open points for later steps:
+
+- Step 3: navigation trees (`useNavigation`, `MenuCategoryIndex`, `Home/Categories` with Shopware media), breadcrumbs, SEO path resolution and the sitemap still read Shopware; `CatalogPort.getMenu` exists (llms.txt) and can feed them. The memory adapter's media URLs are relative (`/api/menu/media/…`).
+- Step 4: `useAddToCart` builds Shopware line items from the domain types; the cart lines are still Shopware's (`cartLineHoldsDish` reads them structurally). Removals by ingredient id belong in `DishConfiguration` then.
+- A partial variant choice (one of two groups) silently takes the first matching variant while the other group stays unselected in the sheet, as before; the sheet could select the found variant's options or resolve locally from `DishDetail.variants`.
+- An unavailable extra is still offered in the sheet.
+
 ### Lint guard
 
 `@typescript-eslint/no-restricted-imports` forbids `#shopware`, `@shopware/*` and the `api-types` (`~~/api-types/*`, relative paths) outside `server/adapters/shopware/**`, the generated types and `shopware.d.ts`. It warns during steps 1 to 7 (111 warnings in 103 files at step 0, the number to bring down) and becomes an error in step 8. `#shopware/*` subpaths are covered too. It sees static `import` and `export … from` only: not type queries (`typeof import("#shopware")`, `import("…").Type` in a type position), not dynamic `import()`, and not composables auto-imported from the Shopware layer (`useShopwareContext`, `useCart`, …). Those disappear with the layer in step 8, and the typecheck finds what is left.
@@ -149,7 +175,7 @@ Recommendations from the review of step 0, to settle when the area moves:
   - *Overnight interval after a holiday:* the plugin ignores the after-midnight part of an interval that started on a holiday; splitting rows into weekday intervals loses that origin, so the domain treats it as open. Keep the origin day of a split interval (or apply the holiday to the continuation) when this matters.
   - *DST:* a wished time can land in the spring-forward gap or the ambiguous fall-back hour, and the 24 h search limit is wall-clock time. Decide whether to skip such slots.
 
-- **Catalog (step 2)**: `DishDetail` names the selected variant when opened by a variant's number; `Variant` gets its own name, media and main ingredients; an `Extra` can be unavailable; main ingredients get ids (removals by id, names only for display); list and strike-through prices.
+- **Catalog (step 2, done)**: `DishDetail` names the selected variant when opened by a variant's number; `Variant` gets its own name, media and main ingredients; an `Extra` can be unavailable; main ingredients get ids (removals by id from step 4, names only for display); list and strike-through prices (mapped, not shown yet).
 - **Cart (step 4)**: a structured variant label instead of one name string; removed ingredients are part of a line's identity, so two configurations that differ only in removals stay two lines (Shopware's container key today hashes dish and extras only); taxes as gross or net; subtotals before and after discounts.
 - **Checkout (step 1 and 5)**: `listShippingMethods` takes an optional session (Sylius prices shipping per cart; in the port since step 1, unused by both adapters). It is implemented in step 1 already, because ShopPort's consumers (home page, `llms.txt`, the time choice) need the lead times. Guest details stay editable after `registerGuest`.
 - **Orders (step 5)**: a guest opens an order by an e-mail deep link or token, without an account; `OrderLine` carries its `DishConfiguration` so an order can be repeated.

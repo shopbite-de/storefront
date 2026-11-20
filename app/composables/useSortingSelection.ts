@@ -27,15 +27,12 @@ export function useSortingSelection(
   return { currentSorting };
 }
 
-/** Store API sortings as options of `SbSelect` (#445). */
+/** A listing's sortings as options of `SbSelect` (#445). */
 export function toSortingOptions(
-  orders:
-    | { key: string; label?: string; translated?: { label?: string } }[]
-    | null
-    | undefined,
+  sortings: readonly { key: string; label: string }[] | null | undefined,
 ) {
-  return (orders ?? []).map((order) => ({
-    value: order.key,
-    label: order.translated?.label ?? order.label ?? order.key,
+  return (sortings ?? []).map((sorting) => ({
+    value: sorting.key,
+    label: sorting.label || sorting.key,
   }));
 }

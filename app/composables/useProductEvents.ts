@@ -1,9 +1,10 @@
-import type { Schemas } from "#shopware";
 import { ref, watch } from "vue";
+import type { Dish } from "../../shared/domain";
 
 export type CartAddition = {
   id: number;
-  product: Schemas["Product"];
+  /** The dish (or variant) that went into the cart. */
+  dish: Pick<Dish, "id" | "number" | "name">;
   quantity: number;
 };
 
@@ -16,14 +17,14 @@ export const useProductEvents = () => {
     productAddedTrigger.value++;
   };
 
-  /** A product went into the cart; the cart bar and the header badge react (#325). */
+  /** A dish went into the cart; the cart bar and the header badge react (#325). */
   const triggerCartItemAdded = (
-    product: Schemas["Product"],
+    dish: Pick<Dish, "id" | "number" | "name">,
     quantity: number,
   ) => {
     lastCartAddition.value = {
       id: productAddedTrigger.value + 1,
-      product,
+      dish: { id: dish.id, number: dish.number, name: dish.name },
       quantity,
     };
     triggerProductAdded();

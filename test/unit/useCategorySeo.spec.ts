@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref } from "vue";
+import type { MenuSection } from "../../shared/domain";
 
 // Re-import the mocks for assertions
 import { useHead, useSeoMeta } from "#imports";
@@ -49,9 +50,17 @@ vi.mock("#app", async () => {
 type UseCategorySeo =
   (typeof import("../../app/composables/useCategorySeo"))["useCategorySeo"];
 let useCategorySeo: UseCategorySeo;
-// The tests only need a partial category shape.
-const asCategory = (category: unknown) =>
-  category as Parameters<UseCategorySeo>[0];
+const section = (fields: Partial<MenuSection>): MenuSection => ({
+  id: "s1",
+  name: "Pizza",
+  description: null,
+  icon: null,
+  media: null,
+  path: "/c/pizza/",
+  seo: { title: null, description: null, indexable: true },
+  children: [],
+  ...fields,
+});
 
 describe("useCategorySeo", () => {
   beforeEach(async () => {
@@ -73,28 +82,27 @@ describe("useCategorySeo", () => {
   });
 
   it("computes core SEO refs and injects head tags", () => {
-    const category = ref<{
-      translated?: {
-        metaTitle?: string;
-        metaDescription?: string;
-        breadcrumb?: string[];
-        name?: string;
-      };
-      seoUrl?: string;
-      active?: boolean;
-      media?: { url?: string };
-    }>({
-      translated: {
-        metaTitle: "Pizza & Pasta",
-        metaDescription: "Leckere Pizza und Pasta bestellen",
-        breadcrumb: ["Speisen", "Italienisch", "Pasta"],
-      },
-      seoUrl: "/c/pasta/",
-      active: true,
-      media: { url: "https://example.com/img/pasta.jpg" },
-    });
+    const category = ref(
+      section({
+        name: "Pasta",
+        description: "Nudeln aus eigener Herstellung",
+        path: "/c/pasta/",
+        media: {
+          url: "https://example.com/img/pasta.jpg",
+          alt: null,
+          width: null,
+          height: null,
+          sources: [],
+        },
+        seo: {
+          title: "Pizza & Pasta",
+          description: "Leckere Pizza und Pasta bestellen",
+          indexable: true,
+        },
+      }),
+    );
 
-    const result = useCategorySeo(asCategory(category));
+    const result = useCategorySeo(category);
 
     // Returned refs: the <title> template is applied globally, og/twitter
     // titles carry it explicitly
@@ -103,6 +111,9 @@ describe("useCategorySeo", () => {
       "Pizza & Pasta | My Store – Online bestellen",
     );
     expect(result.canonicalUrl.value).toBe("https://example.com/c/pasta/");
+    expect(result.pageDescription.value).toBe(
+      "Leckere Pizza und Pasta bestellen",
+    );
     // Active categories leave the robots rule to @nuxtjs/robots
     expect(result.robots.value).toBeUndefined();
 
@@ -140,14 +151,24 @@ describe("useCategorySeo", () => {
     expect(collection.image?.[0]).toBe("https://example.com/img/pasta.jpg");
   });
 
-  it("sets robots to noindex when category is inactive", () => {
-    const category = ref({
-      translated: { name: "Salate" },
-      active: false,
-      seoUrl: "/c/salate",
-    });
+  it("falls back to name and description without SEO texts", () => {
+    const result = useCategorySeo(
+      ref(section({ name: "Salate", description: "Frisch" })),
+    );
+    expect(result.pageTitle.value).toBe("Salate");
+    expect(result.pageDescription.value).toBe("Frisch");
+  });
 
-    const result = useCategorySeo(asCategory(category));
+  it("sets robots to noindex for a section off the menu", () => {
+    const result = useCategorySeo(
+      ref(
+        section({
+          name: "Salate",
+          path: "/c/salate",
+          seo: { title: null, description: null, indexable: false },
+        }),
+      ),
+    );
     expect(result.robots.value).toBe("noindex,nofollow");
   });
 });

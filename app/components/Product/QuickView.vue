@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
 import { DialogDescription, DialogTitle } from "reka-ui";
+import type { Dish, Variant } from "../../../shared/domain";
 import type { WishlistConfiguration } from "~/composables/useWishlistEntries";
 
+/** The dish sheet over a listing (#325, #442): a dish or a variant. */
 const props = defineProps<{
-  product: Schemas["Product"] | undefined;
+  dish: Dish | undefined;
 }>();
 
 const open = defineModel<boolean>("open", { required: true });
@@ -12,41 +13,32 @@ const open = defineModel<boolean>("open", { required: true });
 const { initial, update: updateConfiguration } = useQuickViewConfiguration();
 const { share, canShare } = useShareLink();
 
-const sortedProperties = computed(
-  () =>
-    props.product?.sortedProperties as Schemas["PropertyGroup"][] | undefined,
-);
-const label = ref(props.product?.translated.name ?? props.product?.name ?? "");
-const description = ref(props.product?.description);
+const label = ref(props.dish?.name ?? "");
+const description = ref(props.dish?.description);
 // Follows the selected variant, like the URL (#411).
-const productNumber = ref(props.product?.productNumber);
+const productNumber = ref(props.dish?.number);
 // The dish as configured right now, for the save button (#467).
 const selection = ref<WishlistConfiguration>();
 // Built in script: a trailing space in the template would be condensed away.
 const numberLabel = computed(() => `Nr. ${productNumber.value} `);
 
 watch(
-  () => props.product,
-  (product) => {
-    if (!product) return;
-    label.value = product.translated.name ?? product.name;
-    description.value = product.description;
-    productNumber.value = product.productNumber;
+  () => props.dish,
+  (dish) => {
+    if (!dish) return;
+    label.value = dish.name;
+    description.value = dish.description;
+    productNumber.value = dish.number;
     selection.value = undefined;
   },
 );
 
 // The base sheet with a bon header (#442).
-const diets = computed(() =>
-  getDiets(sortedProperties.value).map((diet) =>
-    diet === "vegan" ? "Vegan" : "Vegetarisch",
-  ),
-);
+const diets = computed(() => dietLabels(props.dish?.diets ?? []));
 
-function onVariantSelected(variant: Schemas["Product"]) {
-  label.value = variant.translated.name ?? variant.name;
-  description.value = variant.translated.description ?? variant.description;
-  productNumber.value = variant.productNumber;
+function onVariantSelected(variant: Variant) {
+  label.value = variant.name;
+  productNumber.value = variant.number;
 }
 </script>
 
@@ -92,7 +84,7 @@ function onVariantSelected(variant: Schemas["Product"]) {
       </div>
     </template>
     <template #actions>
-      <ProductFoodLabels v-if="product" :product="product" />
+      <ProductFoodLabels v-if="dish" :labels="dish.foodLabels" />
       <WishlistSaveButton :selection="selection" :name="label" />
       <SbIconButton
         :label="canShare ? 'Teilen' : 'Link kopieren'"
@@ -115,9 +107,9 @@ function onVariantSelected(variant: Schemas["Product"]) {
       </SbIconButton>
     </template>
     <ProductDetail
-      v-if="product"
-      :key="product.id"
-      :product-id="product.id"
+      v-if="dish"
+      :key="dish.id"
+      :dish-id="dish.id"
       :initial-without="initial.without"
       :initial-extras="initial.extras"
       @product-added="open = false"

@@ -1,35 +1,27 @@
-import { getListingFilters } from "@shopware/helpers";
-import type { Schemas, operations } from "#shopware";
 import type { NitroFetchRequest } from "nitropack";
+import type { MenuListing } from "../../shared/domain";
 
-export type CategoryListingCriteria = NonNullable<
-  operations["readProductListingGet get /product-listing/{categoryId}"]["query"]
->;
+type ListingRequest = { order?: string; filters?: readonly string[] };
 
-export type ShortcutFilterParam = {
-  code: string;
-  value: string | string[] | undefined;
-};
-
+/**
+ * The dishes of a menu section from the BFF (`/api/listing/[sectionId]`,
+ * MenuListing): the server renders the first page, the guest's sorting and
+ * filters load in the browser. The filters are the listing's filter
+ * option ids (diets).
+ */
 export function useCategoryListing(
-  categoryId: string,
-  initialProperties: string[] = [],
+  sectionId: string,
+  initialFilters: readonly string[] = [],
 ) {
   const nuxtApp = useNuxtApp();
 
-  async function fetchListing(
-    criteria: CategoryListingCriteria,
-  ): Promise<Schemas["ProductListingResult"]> {
-    // Send only the allowlisted filter params; the server merges them with the
-    // fixed includes/associations/limit so clients cannot influence projections.
-    const c = criteria as Record<string, unknown>;
-    return await $fetch(`/api/listing/${categoryId}` as NitroFetchRequest, {
+  async function fetchListing(request: ListingRequest): Promise<MenuListing> {
+    return await $fetch(`/api/listing/${sectionId}` as NitroFetchRequest, {
       query: {
-        order: c.order,
-        properties: c.properties,
-        manufacturer: c.manufacturer,
-        query: c.query,
-        p: c.p,
+        order: request.order,
+        filters: request.filters?.length
+          ? request.filters.join("|")
+          : undefined,
       },
     });
   }
@@ -37,51 +29,36 @@ export function useCategoryListing(
   const loading = ref(false);
 
   const { data: listing, pending } = useLazyAsyncData(
-    `listing-${categoryId}`,
-    () =>
-      fetchListing(
-        initialProperties.length > 0
-          ? { properties: initialProperties.join("|") }
-          : {},
-      ),
+    `listing-${sectionId}`,
+    () => fetchListing({ filters: initialFilters }),
   );
 
   // Suppress skeleton during SSR hydration to prevent hydration mismatch.
   const showSkeleton = computed(() => pending.value && !nuxtApp.isHydrating);
 
-  const elements = computed(() => listing.value?.elements ?? []);
-  const sortingOrders = computed(() => listing.value?.availableSortings);
-  const currentSortingOrder = computed(() => listing.value?.sorting);
-  const availableFilters = computed(() =>
-    getListingFilters(listing.value?.aggregations),
-  );
-  const currentFilters = computed(() => listing.value?.currentFilters);
+  const dishes = computed(() => listing.value?.dishes ?? []);
+  const sortings = computed(() => listing.value?.sortings ?? []);
+  const currentSorting = computed(() => listing.value?.sorting ?? undefined);
+  const filters = computed(() => listing.value?.filters ?? []);
+  const filterOptionIds = computed(() => listing.value?.filterOptionIds ?? []);
 
-  async function applySearch(criteria: CategoryListingCriteria) {
+  async function applySearch(request: ListingRequest) {
     loading.value = true;
     try {
-      listing.value = await fetchListing(criteria);
+      listing.value = await fetchListing(request);
     } finally {
       loading.value = false;
     }
   }
 
-  async function changeSorting(order: string, query?: CategoryListingCriteria) {
-    await applySearch({ ...query, order } as CategoryListingCriteria);
+  /** Another sorting, the applied filters kept. */
+  async function changeSorting(order: string) {
+    await applySearch({ order, filters: filterOptionIds.value });
   }
 
-  async function setFilters(filters: ShortcutFilterParam[]) {
-    const filterObj: Record<string, unknown> = {};
-    for (const f of filters) {
-      filterObj[f.code] = f.value;
-    }
-    const appliedFilters = {
-      query: currentFilters.value?.search,
-      manufacturer: currentFilters.value?.manufacturer?.join("|"),
-      properties: currentFilters.value?.properties?.join("|"),
-      ...filterObj,
-    };
-    await applySearch(appliedFilters as CategoryListingCriteria);
+  /** Other filter options; the sorting falls back to the default. */
+  async function setFilters(ids: readonly string[]) {
+    await applySearch({ filters: ids });
   }
 
   async function resetFilters() {
@@ -91,11 +68,11 @@ export function useCategoryListing(
   return {
     showSkeleton,
     loading,
-    elements,
-    sortingOrders,
-    currentSortingOrder,
-    availableFilters,
-    currentFilters,
+    dishes,
+    sortings,
+    currentSorting,
+    filters,
+    filterOptionIds,
     changeSorting,
     setFilters,
     resetFilters,

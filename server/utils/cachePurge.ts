@@ -1,18 +1,31 @@
 import { timingSafeEqual } from "node:crypto";
 
 /**
- * Cache purge for the backoffice (#484): the cached Store API handlers keep
- * products, listings, categories and the layout data of every page for up
- * to a day (`cacheTtl`). Nitro stores a handler response under
+ * Cache purge for the backoffice (#484): the cached handlers keep dishes,
+ * listings, sections and the layout data of every page for up to a day
+ * (`cacheTtl`). Nitro stores a handler response under
  * `cache:nitro:handlers:<name>:<escaped key>.json` (cached functions under
  * `cache:nitro:functions:`); the escaped key keeps the hex ids, so an id
  * finds its entries.
  */
 
-/** Entries of one product: the product, its variants and its extras. */
-const PER_PRODUCT = ["product", "variant", "cross-selling"];
-/** Lists that may show any product or category. */
-const LISTS = ["listing", "search", "top-sellers"];
+/** Entries keyed by one dish: its variants by options. */
+const PER_PRODUCT = ["variant"];
+/** Entries keyed by one menu section. */
+const PER_CATEGORY = ["menu-section"];
+/**
+ * Entries any product or section change can reach: the lists, and the
+ * dish sheets with their extras (an extra's price reaches every dish that
+ * offers it), also by menu number.
+ */
+const LISTS = [
+  "listing",
+  "search",
+  "top-sellers",
+  "upsell",
+  "dish",
+  "dish-number",
+];
 /**
  * Layout data of every page: navigations, SEO URL matches and breadcrumbs
  * (a renamed or moved section changes them) and payment methods; the
@@ -22,7 +35,7 @@ const LISTS = ["listing", "search", "top-sellers"];
 export const LAYOUT = ["navigation", "breadcrumb", "payment-methods"];
 /** Always purged: the lists and the layout data. */
 const SHARED = [...LISTS, ...LAYOUT];
-const ALL = [...PER_PRODUCT, "category", ...SHARED];
+const ALL = [...PER_PRODUCT, ...PER_CATEGORY, ...SHARED];
 const HANDLERS = "cache:nitro:handlers:";
 /**
  * Cached functions: SEO URL matches, known SEO paths, the plugin config of
@@ -61,10 +74,8 @@ const compact = (id: string) => id.toLowerCase().replace(/[^0-9a-f]/g, "");
 
 /**
  * The cache keys to remove: without a target everything; with a target the
- * entries of the named products and categories plus every list and the
- * layout data. An extras group change reaches many dishes, so
- * cross-sellings always go completely. `layout` alone takes only the
- * layout data.
+ * entries of the named products and categories plus every list, the dish
+ * sheets and the layout data. `layout` alone takes only the layout data.
  */
 export function keysToPurge(
   keys: string[],
@@ -84,9 +95,8 @@ export function keysToPurge(
     if (!ALL.includes(handler)) return false;
     if (LAYOUT.includes(handler)) return true;
     if (layoutOnly) return false;
-    if (everything || SHARED.includes(handler) || handler === "cross-selling")
-      return true;
-    if (handler === "category")
+    if (everything || SHARED.includes(handler)) return true;
+    if (PER_CATEGORY.includes(handler))
       return categories.some((id) => key.includes(id));
     return products.some((id) => key.includes(id));
   });

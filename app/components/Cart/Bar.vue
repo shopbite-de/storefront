@@ -2,8 +2,8 @@
 // Sticky cart bar on phones: appears as soon as the cart holds something and
 // opens the cart drawer; hidden on the checkout pages, which show the cart
 // themselves. The cart is loaded on the client, so the bar never renders on
-// the server (no hydration mismatch). Adding a product pops the bar and
-// names the product for a moment; this replaces the add-to-cart toast (#325).
+// the server (no hydration mismatch). Adding a dish pops the bar and
+// names the dish for a moment; this replaces the add-to-cart toast (#325).
 const CHECKOUT_PATH_PREFIX = "/bestellung";
 const ADDED_LABEL_MS = 1800;
 
@@ -30,8 +30,8 @@ const addedLabel = ref<string | null>(null);
 const popKey = ref(0);
 let addedTimer: ReturnType<typeof setTimeout> | undefined;
 
-onCartItemAdded(({ product, quantity }) => {
-  const name = product.translated?.name ?? product.name;
+onCartItemAdded(({ dish, quantity }) => {
+  const name = dish.name;
   addedLabel.value = quantity > 1 ? `${quantity}× ${name}` : name;
   popKey.value++;
   clearTimeout(addedTimer);

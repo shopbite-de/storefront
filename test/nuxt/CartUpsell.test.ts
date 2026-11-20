@@ -4,37 +4,32 @@ import { flushPromises } from "@vue/test-utils";
 import { computed, reactive } from "vue";
 import { clearNuxtData } from "#imports";
 import CartUpsell from "~/components/Cart/Upsell.vue";
-import type { Schemas } from "#shopware";
+import type { Dish } from "../../shared/domain";
+import { dish, eur } from "../support/dishes";
 
-const { mockLoadUpsellProducts, mockAddUpsellProduct } = vi.hoisted(() => ({
-  mockLoadUpsellProducts: vi.fn(),
-  mockAddUpsellProduct: vi.fn(),
+const { mockLoadUpsellDishes, mockAddUpsellDish } = vi.hoisted(() => ({
+  mockLoadUpsellDishes: vi.fn(),
+  mockAddUpsellDish: vi.fn(),
 }));
 
 // Read lazily inside the factories, i.e. after module initialisation.
 const cart = reactive({ items: [] as unknown[] });
 
 mockNuxtImport("useCartUpsell", () => () => ({
-  loadUpsellProducts: mockLoadUpsellProducts,
-  addUpsellProduct: mockAddUpsellProduct,
+  loadUpsellDishes: mockLoadUpsellDishes,
+  addUpsellDish: mockAddUpsellDish,
   isAdding: () => false,
 }));
 mockNuxtImport("useCart", () => () => ({
-  cartItems: computed(() => cart.items as Schemas["LineItem"][]),
+  cartItems: computed(() => cart.items),
 }));
 mockNuxtImport("useCommercePrice", () => () => ({
-  getFormattedPrice: (value: number) => `${value} €`,
+  getFormattedMoney: (value: { amountMinor: number }) =>
+    `${value.amountMinor / 100} €`,
 }));
 
-const product = (id: string, name: string, overrides = {}) =>
-  ({
-    id,
-    productNumber: id.toUpperCase(),
-    name,
-    translated: { name },
-    calculatedPrice: { totalPrice: 5.5 },
-    ...overrides,
-  }) as unknown as Schemas["Product"];
+const product = (id: string, name: string, overrides: Partial<Dish> = {}) =>
+  dish({ id, number: id.toUpperCase(), name, price: eur(550), ...overrides });
 
 const tiramisu = product("tiramisu", "Tiramisu");
 const cola = product("cola", "Cola");
@@ -50,7 +45,7 @@ describe("CartUpsell", () => {
     vi.clearAllMocks();
     clearNuxtData("cart-upsell");
     cart.items = [];
-    mockLoadUpsellProducts.mockResolvedValue([tiramisu, cola]);
+    mockLoadUpsellDishes.mockResolvedValue([tiramisu, cola]);
   });
 
   it("shows the suggestions with name and price", async () => {
@@ -63,14 +58,14 @@ describe("CartUpsell", () => {
     expect(tiles[0]!.text()).toContain("5.5 €");
   });
 
-  it("hides products that are already in the cart", async () => {
+  it("hides dishes that are already in the cart", async () => {
     cart.items = [{ id: "li-1", type: "product", referencedId: "tiramisu" }];
     const wrapper = await mountUpsell();
 
     expect(wrapper.text()).not.toContain("Tiramisu");
     expect(wrapper.text()).toContain("Cola");
 
-    // Also as the product of a container item with extras.
+    // Also as the dish of a container line with extras.
     cart.items = [
       {
         id: "li-2",
@@ -93,18 +88,18 @@ describe("CartUpsell", () => {
     expect(wrapper.find("section").exists()).toBe(false);
   });
 
-  it("adds the product on a plus click", async () => {
+  it("adds the dish on a plus click", async () => {
     const wrapper = await mountUpsell();
 
     await wrapper
       .find('button[aria-label="Tiramisu in den Warenkorb"]')
       .trigger("click");
 
-    expect(mockAddUpsellProduct).toHaveBeenCalledWith(tiramisu);
+    expect(mockAddUpsellDish).toHaveBeenCalledWith(tiramisu);
   });
 
-  it("disables the button of an unavailable product", async () => {
-    mockLoadUpsellProducts.mockResolvedValue([
+  it("disables the button of a sold-out dish", async () => {
+    mockLoadUpsellDishes.mockResolvedValue([
       product("panna-cotta", "Panna Cotta", { available: false }),
       cola,
     ]);

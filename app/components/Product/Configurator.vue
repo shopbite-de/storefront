@@ -1,55 +1,71 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
-import { useProductConfigurator } from "~/composables/useProductConfigurator";
+import type { Variant, VariantGroup } from "../../../shared/domain";
 
+/**
+ * The variant groups of a dish ("Größe", "Beilage") as required choices
+ * (#442, every option visible). A changed choice asks the BFF for the
+ * variant with these options and emits it.
+ */
 const props = defineProps<{
-  p: Schemas["Product"];
-  c: Schemas["PropertyGroup"][];
+  dishId: string;
+  groups: readonly VariantGroup[];
+  /** The options of the variant the sheet starts with. */
+  selectedOptionIds: readonly string[];
 }>();
 
-const { p, c } = toRefs(props);
-const { product, changeVariant, configurator } = useProduct(p, c);
-const { findVariantForSelectedOptions } = useProductConfigurator();
-const { variants: selectableOptions } = useProductVariantsZwei(configurator);
+const emit = defineEmits<{
+  "variant-switched": [variant: Variant];
+}>();
 
 const selectedOptions = ref<Record<string, string>>({});
+for (const group of props.groups) {
+  const option = group.options.find((candidate) =>
+    props.selectedOptionIds.includes(candidate.id),
+  );
+  if (option) selectedOptions.value[group.id] = option.id;
+}
 
-// Presets show the options as a radio list, every option visible (#442).
+const choices = computed(() =>
+  props.groups.map((group) => ({
+    id: group.id,
+    name: group.name,
+    options: group.options.map((option) => ({
+      label: option.name,
+      value: option.id,
+    })),
+  })),
+);
 
-const options = product.value.options as Schemas["PropertyGroupOption"][];
-for (const option of options ?? []) {
-  if (option.group && option.id) {
-    selectedOptions.value[option.group.id] = option.id;
+async function findVariant(optionIds: string[]): Promise<Variant | null> {
+  try {
+    return await $fetch<Variant | null>(
+      `/api/menu/dishes/${props.dishId}/variant`,
+      { query: { options: optionIds.join("|") } },
+    );
+  } catch (error) {
+    console.error("[ProductConfigurator] variant not found", error);
+    return null;
   }
 }
 
 watch(
   selectedOptions.value,
   async () => {
-    const foundVariant = await findVariantForSelectedOptions(
-      selectedOptions.value,
-    );
-
-    if (foundVariant) {
-      changeVariant(foundVariant);
-      emit("variant-switched", foundVariant);
-    }
+    const variant = await findVariant(Object.values(selectedOptions.value));
+    if (variant) emit("variant-switched", variant);
   },
   { deep: true },
 );
-
-const emit = defineEmits<{
-  "variant-switched": [variant: Schemas["Product"]];
-}>();
 </script>
+
 <template>
   <div class="flex flex-col gap-5">
     <SbChoiceGroup
-      v-for="(variantGroup, propertyGroupId) in selectableOptions"
-      :key="propertyGroupId"
-      v-model="selectedOptions[propertyGroupId]"
-      :legend="variantGroup.name"
-      :options="variantGroup.options"
+      v-for="group in choices"
+      :key="group.id"
+      v-model="selectedOptions[group.id]"
+      :legend="group.name"
+      :options="group.options"
       required
     />
   </div>
