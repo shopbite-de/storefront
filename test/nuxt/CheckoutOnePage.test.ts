@@ -39,9 +39,6 @@ mockNuxtImport("useShopConfig", () => () => ({
   refresh: vi.fn(),
   checkAcceptsOrders: vi.fn().mockResolvedValue(true),
 }));
-mockNuxtImport("useShippingMethods", () => () => ({
-  refresh: vi.fn(),
-}));
 mockNuxtImport("useShippingLeadTime", () => () => ({
   fulfillment: ref("delivery"),
   leadTime: ref(30),

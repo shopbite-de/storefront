@@ -9,7 +9,7 @@ import {
 } from "../../../shared/domain";
 import type { CheckoutPort } from "../../ports";
 import { partlyImplemented } from "../notImplemented";
-import { call, type AdapterLog } from "./shop";
+import { call, text, type AdapterLog } from "./shop";
 import type { StoreApi } from "./storeApi";
 
 type Schemas = components["schemas"];
@@ -26,9 +26,6 @@ export const SHIPPING_METHOD_CRITERIA = {
     media_thumbnail: ["url", "width"],
   },
 };
-
-const text = (value: unknown): string | null =>
-  typeof value === "string" && value.trim() ? value.trim() : null;
 
 const isFulfillment = (value: unknown): value is Fulfillment =>
   value === "delivery" || value === "pickup";
@@ -58,7 +55,9 @@ export function toMedia(
  * order, the ShopBite plugin's configuration adds fulfillment and lead
  * time per method. A method the plugin does not list is a delivery without
  * a lead time (as the storefront always read it); a lead time the domain
- * cannot express is logged and left unknown.
+ * cannot express is logged and left unknown. Both requests are needed: if
+ * either fails, the list fails (`backend_unavailable`) rather than
+ * answering methods without names or without lead times.
  */
 export function toShippingMethods(
   methods: readonly Schemas["ShippingMethod"][],
@@ -69,7 +68,11 @@ export function toShippingMethods(
     if (!method.id) return [];
     const entry = pluginMethods.find((candidate) => candidate.id === method.id);
     let lead: LeadTime | null = null;
-    if (entry && entry.leadTimeMinutes !== undefined) {
+    // a missing lead time is unknown, not unreadable
+    if (
+      entry?.leadTimeMinutes !== undefined &&
+      entry.leadTimeMinutes !== null
+    ) {
       try {
         lead = leadTime(entry.leadTimeMinutes);
       } catch {
@@ -101,6 +104,15 @@ export function createShopwareCheckout(
   storeApi: StoreApi,
   options: Readonly<{ name: string; log: AdapterLog }>,
 ): CheckoutPort {
+  // the browser asks for live lead times often: report each unreadable
+  // value once per process, not on every request
+  const reported = new Set<string>();
+  const logOnce: AdapterLog = (message, details) => {
+    const key = `${message} ${JSON.stringify(details)}`;
+    if (reported.has(key) || reported.size >= 100) return;
+    reported.add(key);
+    options.log(message, details);
+  };
   return partlyImplemented("checkout", options.name, {
     listShippingMethods: async () => {
       const [config, methods] = await Promise.all([
@@ -118,7 +130,7 @@ export function createShopwareCheckout(
         toShippingMethods(
           methods.elements ?? [],
           config.shippingMethods ?? [],
-          options.log,
+          logOnce,
         ),
       );
     },

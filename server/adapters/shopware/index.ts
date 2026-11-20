@@ -15,7 +15,7 @@ import { notImplemented } from "../notImplemented";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { createShopwareCheckout } from "./checkout";
 import { createShopwareShop, type AdapterLog } from "./shop";
-import type { StoreApi } from "./storeApi";
+import { sharingRequestsInFlight, type StoreApi } from "./storeApi";
 
 export type { StoreApi } from "./storeApi";
 export type { AdapterLog } from "./shop";
@@ -36,7 +36,11 @@ export function createShopwareBackend(
   const name = "shopware";
   const log: AdapterLog =
     options.log ?? ((message, details) => console.warn(message, details));
-  const shop = createShopwareShop(options.storeApi, {
+  // ShopPort and CheckoutPort both read the plugin configuration
+  const storeApi = sharingRequestsInFlight(options.storeApi, [
+    "/shopbite/config",
+  ]);
+  const shop = createShopwareShop(storeApi, {
     storeUrl: options.storeUrl,
     timeZone: checkTimeZone(options.timeZone),
     log,
@@ -46,7 +50,7 @@ export function createShopwareBackend(
     catalog: notImplemented("catalog", name),
     navigation: notImplemented("navigation", name),
     cart: notImplemented("cart", name),
-    checkout: createShopwareCheckout(options.storeApi, { name, log }),
+    checkout: createShopwareCheckout(storeApi, { name, log }),
     customer: notImplemented("customer", name),
     orders: notImplemented("orders", name),
     shop,

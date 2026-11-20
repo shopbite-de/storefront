@@ -42,8 +42,9 @@ export async function call<T>(
   }
 }
 
-const text = (value: string | null | undefined): string | null =>
-  value?.trim() ? value.trim() : null;
+/** A trimmed text, `null` for anything empty or not a string. */
+export const text = (value: unknown): string | null =>
+  typeof value === "string" && value.trim() ? value.trim() : null;
 
 const isWeekday = (value: unknown): value is Weekday =>
   Number.isInteger(value) && (value as number) >= 1 && (value as number) <= 7;

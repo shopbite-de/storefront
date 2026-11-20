@@ -8,7 +8,6 @@ const { createOrder, selectedPaymentMethod, selectedShippingMethod } =
 const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
 const { acceptsOrders, refresh, checkAcceptsOrders } = useShopConfig();
-const { refresh: refreshShippingMethods } = useShippingMethods();
 const { fulfillment } = useShippingLeadTime();
 const { trackOrder } = useTrackEvent();
 const { isLoading: isLoadingOpeningHours, hasFailed: hasOpeningHoursFailed } =
@@ -31,14 +30,10 @@ function reportError(message: { title: string; description: string }) {
   orderError.value = message;
 }
 
-// The switch that accepts orders and the lead times stay live (?fresh=1).
-function refreshLiveShopData() {
-  refresh();
-  refreshShippingMethods();
-}
-
+// The switch that accepts orders stays live (?fresh=1); the lead times are
+// loaded live once after hydration (useLiveShopData).
 onMounted(() => {
-  refreshLiveShopData();
+  refresh();
   refreshUser({
     associations: {
       defaultShippingAddress: {},
@@ -52,7 +47,7 @@ onMounted(() => {
   });
 });
 
-useIntervalFn(refreshLiveShopData, 10000);
+useIntervalFn(refresh, 10000);
 
 const shippingMethodName = computed(
   () =>
@@ -99,8 +94,9 @@ async function hasAvailableCheckoutMethods(): Promise<boolean> {
 
 /**
  * Whether the restaurant accepts orders as the backend has it now
- * (uncached): the page may still show the value of the server render, and
- * the backend takes an order regardless.
+ * (uncached): the page may still show the value of the server render. The
+ * ShopBite plugin refuses a paused order as well; asking first gives the
+ * guest a clear message instead of a failed order.
  */
 async function isCheckoutStillEnabled(): Promise<boolean> {
   const enabled = await checkAcceptsOrders();

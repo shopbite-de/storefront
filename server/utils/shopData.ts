@@ -1,6 +1,7 @@
 import type { H3Event } from "h3";
+import { DomainError, isDomainError } from "../../shared/domain";
 import type { Backend } from "../ports";
-import { createResilientLoader } from "./backoff";
+import { createBackoff, createResilientLoader, isOutage } from "./backoff";
 import { answerDomain } from "./domainHttp";
 
 /**
@@ -13,9 +14,14 @@ import { answerDomain } from "./domainHttp";
  *   resilient loader that serves the last good answer during an outage and
  *   pauses the backend after a failure.
  * - `fresh()` for the browser's live values (`?fresh=1`): straight from the
- *   port, never from a cache or an old answer. The checkout asks it before
- *   an order, because the backend does not refuse an order when the
- *   restaurant stops accepting orders.
+ *   port, never from a cache or an old answer. The checkout asks it right
+ *   before an order whether the restaurant accepts orders (the ShopBite
+ *   plugin refuses a paused order too; this is defence in depth and gives
+ *   the guest a clear message). While the backend is paused after a
+ *   failure, a fresh request fails fast instead of reaching it.
+ *
+ * Every failure is a DomainError (`backend_unavailable` during an
+ * outage), so the routes answer `{ data: { code } }` like every BFF route.
  *
  * The cache purge (`server/utils/cachePurge.ts`) empties them by name.
  */
@@ -36,11 +42,35 @@ function defineBackendData<T>(
     swr: false,
     getKey: () => name,
   });
-  const load = createResilientLoader<T>();
+  // one pause per value for its cached and its fresh reads
+  const backoff = createBackoff();
+  const load = createResilientLoader<T>(undefined, backoff);
+  const unavailable = (cause?: unknown) =>
+    new DomainError(
+      "backend_unavailable",
+      `The backend is paused after a failure (${name}).`,
+      {},
+      cause === undefined ? undefined : { cause },
+    );
   return {
     name,
-    cached: () => load(name, () => cached()),
-    fresh: () => read(useBackend()),
+    cached: () =>
+      load(name, () => cached()).catch((error: unknown) => {
+        // the loader's own 503 (paused, no last good answer)
+        const status = (error as { statusCode?: number } | null)?.statusCode;
+        throw !isDomainError(error) && status === 503
+          ? unavailable(error)
+          : error;
+      }),
+    fresh: async () => {
+      if (backoff.active()) throw unavailable();
+      try {
+        return await read(useBackend());
+      } catch (error) {
+        if (isOutage(error)) backoff.trip();
+        throw error;
+      }
+    },
   };
 }
 

@@ -52,6 +52,78 @@ describe("Shopware CheckoutPort adapter (anti-corruption)", () => {
     ]);
   });
 
+  it("takes a missing lead time as unknown without logging it", async () => {
+    const log = vi.fn();
+    const { checkout } = checkoutOf(
+      {
+        shippingMethods: [
+          { id: "m1", fulfillment: "pickup", leadTimeMinutes: null },
+        ],
+      },
+      { elements: [{ id: "m1", name: "Abholung" }] },
+      log,
+    );
+    const [method] = await checkout.listShippingMethods();
+    expect(method).toMatchObject({ fulfillment: "pickup", leadTime: null });
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it("logs a lead time it cannot read once, not on every request", async () => {
+    const log = vi.fn();
+    const { checkout } = checkoutOf(
+      {
+        shippingMethods: [
+          { id: "m1", fulfillment: "pickup", leadTimeMinutes: -5 },
+        ],
+      },
+      { elements: [{ id: "m1", name: "Abholung" }] },
+      log,
+    );
+    await checkout.listShippingMethods();
+    await checkout.listShippingMethods();
+    expect(log).toHaveBeenCalledOnce();
+  });
+
+  it("fails as a whole when only the method names cannot be loaded", async () => {
+    const storeApi: StoreApi = {
+      get: async <T>() => ({ shippingMethods: [] }) as T,
+      post: () => Promise.reject(new Error("fetch failed")),
+    };
+    const { checkout } = createShopwareBackend({
+      storeApi,
+      storeUrl: "",
+      timeZone: "Europe/Berlin",
+      log: () => {},
+    });
+    const failure = await checkout.listShippingMethods().catch((e) => e);
+    expect(isDomainError(failure, "backend_unavailable")).toBe(true);
+  });
+
+  it("reads the plugin configuration once for config and shipping methods asked together", async () => {
+    const get = vi.fn(async () => ({
+      isCheckoutEnabled: true,
+      shippingMethods: [],
+    }));
+    const storeApi: StoreApi = {
+      get: get as StoreApi["get"],
+      post: async <T>() => ({ elements: [] }) as T,
+    };
+    const backend = createShopwareBackend({
+      storeApi,
+      storeUrl: "",
+      timeZone: "Europe/Berlin",
+      log: () => {},
+    });
+    await Promise.all([
+      backend.shop.getConfig(),
+      backend.checkout.listShippingMethods(),
+    ]);
+    expect(get).toHaveBeenCalledOnce();
+    // not cached beyond the request in flight
+    await backend.shop.getConfig();
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+
   it("logs and drops a lead time the domain cannot express", async () => {
     const log = vi.fn();
     const { checkout } = checkoutOf(
