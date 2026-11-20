@@ -16,6 +16,8 @@ const props = defineProps<{
 const { id: sectionId } = toRefs(props);
 
 const { section } = await useMenuSection(sectionId);
+// The menu root (/speisekarte/) lists every dish in one list.
+const menuRootId = await useMenuRootId()();
 
 const selectedPropertyFilters = useState<string[]>(
   "listing-property-filters",
@@ -48,7 +50,10 @@ const quickView = useProductQuickView(dishes);
 // direct dishes first, then one heading per sub-section in backoffice order.
 // Navigation to them is the chip row (phones) and the word-list index (desktop).
 const grouped = computed(() =>
-  groupBySubsections(dishes.value, section.value?.children),
+  groupBySubsections(dishes.value, section.value?.children, {
+    sectionId: props.id,
+    menuRootId,
+  }),
 );
 
 // Derived from the listing data instead of snapshotted at setup time, which
@@ -205,7 +210,7 @@ async function openFilterDrawer() {
             :key="dish.id"
             :dish="dish"
             :photo="menuView === 'bonPhoto'"
-            :href="dishLink(dish, section?.path)"
+            :href="dishLink(dish, section?.path ?? undefined)"
             @select="quickView.show"
           />
         </div>
@@ -228,7 +233,7 @@ async function openFilterDrawer() {
               :key="dish.id"
               :dish="dish"
               :photo="menuView === 'bonPhoto'"
-              :href="dishLink(dish, section?.path)"
+              :href="dishLink(dish, section?.path ?? undefined)"
               @select="quickView.show"
             />
           </div>
@@ -244,7 +249,7 @@ async function openFilterDrawer() {
           :key="dish.id"
           :dish="dish"
           :photo="menuView === 'bonPhoto'"
-          :href="dishLink(dish, section?.path)"
+          :href="dishLink(dish, section?.path ?? undefined)"
           @select="quickView.show"
         />
       </div>

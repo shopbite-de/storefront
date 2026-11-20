@@ -159,6 +159,11 @@ describe("useCategorySeo", () => {
     expect(result.pageDescription.value).toBe("Frisch");
   });
 
+  it("leaves the description out without one, so no default is rendered", () => {
+    const result = useCategorySeo(ref(section({ name: "Salate" })));
+    expect(result.pageDescription.value).toBeNull();
+  });
+
   it("sets robots to noindex for a section off the menu", () => {
     const result = useCategorySeo(
       ref(

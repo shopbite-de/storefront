@@ -20,13 +20,14 @@ export function useCategorySeo(section: Ref<MenuSection | null | undefined>) {
     ),
   );
 
+  // null without a description: the tag is left out, never the site's
+  // default description
   const pageDescription = computed(
-    () =>
-      section.value?.seo.description ?? section.value?.description ?? undefined,
+    () => section.value?.seo.description ?? section.value?.description ?? null,
   );
 
   const seoUrl = computed(() =>
-    toAbsoluteUrl(siteConfig.url, section.value?.path || ""),
+    toAbsoluteUrl(siteConfig.url, section.value?.path ?? ""),
   );
 
   const ogImage = computed(() => section.value?.media?.url);
