@@ -1,4 +1,4 @@
-import { createMemoryBackend, DEMO_SEED } from "../../server/adapters/memory";
+import { createMemoryBackend, demoSeed } from "../../server/adapters/memory";
 import {
   createShopwareBackend,
   type StoreApi,
@@ -20,7 +20,7 @@ export const memoryCatalog: AdapterFixture<CatalogScenario> = {
   adapter: "memory",
   create: (scenario) =>
     createMemoryBackend({
-      ...DEMO_SEED,
+      ...demoSeed(),
       catalog: {
         sections: scenario.sections,
         offMenuSections: scenario.offMenuSections,
@@ -291,6 +291,7 @@ function matches(product: Product, filter: Filter): boolean {
 }
 
 const SORT: Record<string, (a: Product, b: Product) => number> = {
+  id: (a, b) => a.id.localeCompare(b.id),
   "name-asc": (a, b) =>
     String(a.translated.name).localeCompare(String(b.translated.name), "de"),
   "name-desc": (a, b) =>
@@ -394,6 +395,16 @@ export const shopwareCatalog: AdapterFixture<CatalogScenario> = {
         .sort(SORT[sorting]);
       const page = Number(body.p ?? 1);
       const limit = Number(body.limit ?? 24);
+      if (page > 1 && (page - 1) * limit >= found.length) {
+        // Shopware refuses a page after the last one
+        throw Object.assign(httpError(404, "page out of range"), {
+          data: {
+            errors: [
+              { status: "404", code: "PRODUCT__LISTING_PAGE_OUT_OF_RANGE" },
+            ],
+          },
+        });
+      }
       const filterable = Object.values(scenario.dietFilters).filter((filter) =>
         candidates.some((product) =>
           groupsOf(product).some((g) => g.id === filter.id),

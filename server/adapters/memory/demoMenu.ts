@@ -8,7 +8,6 @@ import {
 } from "../../../shared/domain";
 import type { MemoryCatalog, MemoryDish, MemoryVariant } from "./catalog";
 import menu from "./demo-menu.json";
-import { DEMO_IMAGES } from "./demoImages";
 
 /**
  * The quickstart's demo menu (`demo-menu.json` is its `setup/menu.json`)
@@ -70,8 +69,22 @@ function slug(name: string): string {
 
 const euro = (amount: number) => money(Math.round(amount * 100), "EUR");
 
+/**
+ * Width and height of the photos in `demoImages.ts`, which only the media
+ * route loads (`/api/menu/media/[name]`).
+ */
+const PHOTOS: Readonly<Record<string, { width: number; height: number }>> = {
+  "3": { width: 320, height: 240 },
+  "21": { width: 320, height: 240 },
+  "35": { width: 320, height: 240 },
+  "95": { width: 320, height: 240 },
+  "133": { width: 320, height: 240 },
+  "139": { width: 320, height: 240 },
+  "144": { width: 320, height: 180 },
+};
+
 function photo(number: string): Media | null {
-  const image = DEMO_IMAGES[number];
+  const image = PHOTOS[number];
   if (!image) return null;
   const url = `/api/menu/media/${number}.webp`;
   return {

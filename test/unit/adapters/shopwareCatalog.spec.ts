@@ -18,7 +18,11 @@ import { isDomainError, money } from "../../../shared/domain";
  */
 function catalogOf(
   answer: (path: string, body: Record<string, unknown>) => unknown,
-  options: { menuCategoryId?: string; currency?: string } = {},
+  options: {
+    menuCategoryId?: string;
+    currency?: string;
+    log?: (message: string, details: unknown) => void;
+  } = {},
 ) {
   const post = vi.fn(async (path: string, body: Record<string, unknown>) =>
     answer(path, body),
@@ -36,7 +40,7 @@ function catalogOf(
     storeApi,
     storeUrl: "",
     timeZone: "Europe/Berlin",
-    log: () => {},
+    log: options.log ?? (() => {}),
     menuCategoryId: options.menuCategoryId,
   });
   return { catalog, post, get };
@@ -50,8 +54,8 @@ const product = (fields: Record<string, unknown> = {}) => ({
   ...fields,
 });
 
-const fetchError = (status?: number) =>
-  Object.assign(new Error("fetch failed"), { statusCode: status });
+const fetchError = (status?: number, data?: unknown) =>
+  Object.assign(new Error("fetch failed"), { statusCode: status, data });
 
 describe("Shopware CatalogPort adapter (anti-corruption)", () => {
   it("prices in the sales channel's currency, in minor units", async () => {
@@ -150,6 +154,112 @@ describe("Shopware CatalogPort adapter (anti-corruption)", () => {
     await expect(unknown.catalog.getDish("x")).rejects.toSatisfy((error) =>
       isDomainError(error, "not_found"),
     );
+  });
+
+  it("answers an id Shopware refuses (400) as invalid_value, not as an outage", async () => {
+    const { catalog } = catalogOf(() => {
+      throw fetchError(400);
+    });
+    await expect(catalog.listDishes("foo")).rejects.toSatisfy((error) =>
+      isDomainError(error, "invalid_value"),
+    );
+    await expect(catalog.getSection("foo")).rejects.toSatisfy((error) =>
+      isDomainError(error, "invalid_value"),
+    );
+    // no variant for a dish id Shopware does not take
+    expect(await catalog.findVariant("foo", ["a"])).toBeNull();
+  });
+
+  it("answers a page after the last one empty, as Shopware refuses it with 404", async () => {
+    const { catalog } = catalogOf(() => {
+      throw fetchError(404, {
+        errors: [{ code: "PRODUCT__LISTING_PAGE_OUT_OF_RANGE" }],
+      });
+    });
+    expect(
+      await catalog.listDishes("pizza", { page: 3, sorting: "name-asc" }),
+    ).toMatchObject({ dishes: [], page: 3, total: 0, sorting: "name-asc" });
+    await expect(catalog.listDishes("pizza")).rejects.toSatisfy((error) =>
+      isDomainError(error, "not_found"),
+    );
+  });
+
+  it("opens the dish sheet without extras when only the extras fail, and logs it", async () => {
+    const log = vi.fn();
+    const { catalog } = catalogOf(
+      (path) => {
+        if (path.endsWith("/cross-selling")) throw fetchError(500);
+        return { product: product(), configurator: [] };
+      },
+      { log },
+    );
+    expect(await catalog.getDish("p1")).toMatchObject({
+      id: "p1",
+      extraGroups: [],
+    });
+    expect(log).toHaveBeenCalledOnce();
+  });
+
+  it("reads the currency once for several answers", async () => {
+    const { catalog, get } = catalogOf(() => ({ elements: [] }));
+    await catalog.listTopSellers(8);
+    await catalog.listUpsellDishes(6);
+    await catalog.searchDishes("pizza");
+    expect(get.mock.calls.filter(([path]) => path === "/context")).toHaveLength(
+      1,
+    );
+  });
+
+  it("asks for a variant of a dish number with its family at once", async () => {
+    const { catalog, post } = catalogOf((path, body) => {
+      if (
+        path === "/product" &&
+        (body.filter as { field?: string }[])[0]?.field === "productNumber"
+      ) {
+        return {
+          elements: [
+            product({ id: "v1", parentId: "p1", productNumber: "21-groß" }),
+          ],
+        };
+      }
+      if (path === "/product") {
+        return {
+          elements: [
+            product({ id: "p1", childCount: 1 }),
+            product({
+              id: "v1",
+              parentId: "p1",
+              productNumber: "21-groß",
+              optionIds: ["g"],
+            }),
+          ],
+        };
+      }
+      if (path.endsWith("/cross-selling")) return [];
+      return {
+        product: product({
+          id: "v1",
+          parentId: "p1",
+          productNumber: "21-groß",
+        }),
+        configurator: [],
+      };
+    });
+    expect(await catalog.findDishByNumber("21-groß")).toMatchObject({
+      id: "p1",
+      selectedVariantId: "v1",
+    });
+    // number, then detail, extras and the family in parallel
+    expect(post).toHaveBeenCalledTimes(4);
+  });
+
+  it("lists variants in a fixed order (by id), also for a partial choice", async () => {
+    const { catalog, post } = catalogOf(() => ({ elements: [] }));
+    await catalog.findVariant("p1", ["a"]);
+    expect(post.mock.calls[0]![1]).toMatchObject({
+      sort: [{ field: "id", order: "ASC" }],
+      limit: 1,
+    });
   });
 
   it("does not ask Shopware for an empty search or a variant without options", async () => {
@@ -331,6 +441,12 @@ describe("Shopware catalog mapping", () => {
       priceFrom: true,
       needsChoice: true,
     });
+  });
+
+  it("gives a section without SEO URL no path", () => {
+    expect(
+      toSections([{ id: "a", name: "Pizza", type: "page" }])[0]?.path,
+    ).toBeNull();
   });
 
   it("takes only categories of type page as menu sections", () => {

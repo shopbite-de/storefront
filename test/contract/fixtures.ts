@@ -1,4 +1,4 @@
-import { createMemoryBackend, DEMO_SEED } from "../../server/adapters/memory";
+import { createMemoryBackend, demoSeed } from "../../server/adapters/memory";
 import {
   createShopwareBackend,
   type StoreApi,
@@ -47,7 +47,7 @@ export const memoryShop: AdapterFixture<ShopScenario> = {
         })),
       },
       checkout: { shippingMethods: [] },
-      catalog: DEMO_SEED.catalog,
+      catalog: demoSeed().catalog,
     }),
 };
 
@@ -178,7 +178,7 @@ export const memoryCheckout: AdapterFixture<CheckoutScenario> = {
   adapter: "memory",
   create: (scenario) =>
     createMemoryBackend({
-      ...DEMO_SEED,
+      ...demoSeed(),
       checkout: {
         shippingMethods: scenario.shippingMethods.map((method) => ({
           id: method.id,
