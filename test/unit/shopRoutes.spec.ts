@@ -160,6 +160,29 @@ describe.each(ROUTES)("$path", ({ path, name, ttl, port, method }) => {
     });
   });
 
+  it("does not ask the backend for a fresh value while it is paused", async () => {
+    const { backend, spy } = backendWith(port, method, () =>
+      Promise.reject(new DomainError("backend_unavailable", "down")),
+    );
+    const { handler } = await load(path, backend);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(handler({ query: { fresh: "1" } })).rejects.toMatchObject({
+      statusCode: 503,
+    });
+    for (const query of [{ fresh: "1" }, {}]) {
+      await expect(handler({ query })).rejects.toMatchObject({
+        statusCode: 503,
+        data: { code: "backend_unavailable" },
+      });
+    }
+    expect(spy).toHaveBeenCalledOnce();
+
+    vi.setSystemTime(31_000);
+    await expect(handler({ query: { fresh: "1" } })).rejects.toThrow();
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
   it("fails fast with 503 without a last good answer", async () => {
     const { backend, spy } = backendWith(port, method, () =>
       Promise.reject(new DomainError("backend_unavailable", "down")),
@@ -168,7 +191,10 @@ describe.each(ROUTES)("$path", ({ path, name, ttl, port, method }) => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 
     for (let i = 0; i < 3; i++) {
-      await expect(handler({})).rejects.toMatchObject({ statusCode: 503 });
+      await expect(handler({})).rejects.toMatchObject({
+        statusCode: 503,
+        data: { code: "backend_unavailable" },
+      });
     }
     expect(spy).toHaveBeenCalledOnce();
   });

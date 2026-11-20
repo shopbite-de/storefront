@@ -50,10 +50,6 @@ mockNuxtImport("useShopConfig", () => () => ({
   checkAcceptsOrders: mocks.checkAcceptsOrders,
 }));
 
-mockNuxtImport("useShippingMethods", () => () => ({
-  refresh: vi.fn(),
-}));
-
 // A successful order navigates to the confirmation page; loading that
 // route after the test environment is torn down is an unhandled error.
 mockNuxtImport("navigateTo", () => vi.fn());
