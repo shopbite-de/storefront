@@ -6,24 +6,38 @@
  * rest still answers `not_implemented` (today's routes and composables
  * keep talking to Shopware directly until their step).
  */
+import {
+  timeZone as checkTimeZone,
+  type TimeZone,
+} from "../../../shared/domain";
 import type { Backend } from "../../ports";
 import { notImplemented } from "../notImplemented";
-import { createShopwareShop } from "./shop";
+import type { BackendRuntimeConfig } from "../runtimeConfig";
+import { createShopwareShop, type AdapterLog } from "./shop";
 import type { StoreApi } from "./storeApi";
 
 export type { StoreApi } from "./storeApi";
+export type { AdapterLog } from "./shop";
 
 export type ShopwareBackendOptions = Readonly<{
   storeApi: StoreApi;
   /** `public.storeUrl`: picks this storefront's branch. */
   storeUrl: string;
+  /** `shopBite.timeZone`: the plugin does not report one. */
+  timeZone: TimeZone;
+  /** Where dropped backend data is reported; console.warn by default. */
+  log?: AdapterLog;
 }>;
 
-export function createShopwareBackend({
-  storeApi,
-  storeUrl,
-}: ShopwareBackendOptions): Backend {
+export function createShopwareBackend(
+  options: ShopwareBackendOptions,
+): Backend {
   const name = "shopware";
+  const shop = createShopwareShop(options.storeApi, {
+    storeUrl: options.storeUrl,
+    timeZone: checkTimeZone(options.timeZone),
+    log: options.log ?? ((message, details) => console.warn(message, details)),
+  });
   return {
     name,
     catalog: notImplemented("catalog", name),
@@ -32,8 +46,25 @@ export function createShopwareBackend({
     checkout: notImplemented("checkout", name),
     customer: notImplemented("customer", name),
     orders: notImplemented("orders", name),
-    shop: createShopwareShop(storeApi, storeUrl),
+    shop,
     wishlist: notImplemented("wishlist", name),
     contact: notImplemented("contact", name),
   };
+}
+
+/**
+ * The Shopware adapter of the running storefront: the Store API through
+ * the Nitro utils `storeApiGet`/`storeApiPost` (storefront access key).
+ */
+export function shopwareFromRuntimeConfig(
+  config: BackendRuntimeConfig,
+): Backend {
+  return createShopwareBackend({
+    storeApi: {
+      get: (path, options) => storeApiGet(path, options),
+      post: (path, body) => storeApiPost(path, body),
+    },
+    storeUrl: config.public.storeUrl,
+    timeZone: config.shopBite.timeZone,
+  });
 }

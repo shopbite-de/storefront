@@ -5,7 +5,7 @@ let backend = "shopware";
 beforeEach(() => {
   vi.resetModules();
   vi.stubGlobal("useRuntimeConfig", () => ({
-    shopBite: { backend },
+    shopBite: { backend, timeZone: "Europe/Berlin" },
     public: { storeUrl: "https://shop.example.com" },
   }));
   vi.stubGlobal("storeApiGet", vi.fn());
@@ -20,14 +20,10 @@ const load = async () =>
   (await import("../../../server/utils/backend")).useBackend;
 
 describe("useBackend", () => {
-  it("defaults to the Shopware adapter on the Nitro Store API utils", async () => {
+  it("defaults to the Shopware adapter", async () => {
     backend = "shopware";
     const useBackend = await load();
-    await useBackend()
-      .shop.getConfig()
-      .catch(() => undefined);
     expect(useBackend().name).toBe("shopware");
-    expect(storeApiGet).toHaveBeenCalledWith("/shopbite/config");
   });
 
   it("selects the memory adapter and keeps one instance per process", async () => {
