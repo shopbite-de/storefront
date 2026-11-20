@@ -171,6 +171,32 @@ describe("useDeliveryTime", () => {
     expect(maxTime.value).toBe("01:30");
   });
 
+  it("names today's part of last night's opening", () => {
+    lead.minutes.value = 30;
+    expect(useDeliveryTime(at(21, "00:30")).helperText.value).toBe(
+      "Frühestmöglich ab 01:00 (heute), erlaubt: 00:00 – 01:30",
+    );
+  });
+
+  it("offers 23:55 as the last time of an opening until 24:00", () => {
+    lead.minutes.value = 30;
+    state.schedule = {
+      ...SCHEDULE,
+      openingHours: {
+        intervals: [{ weekday: 7, interval: interval("17:45", "24:00") }],
+      },
+    };
+    // Sunday 22 November, 23:20
+    const { minTime, maxTime, firstSlotTime, validate } = useDeliveryTime(
+      at(22, "23:20"),
+    );
+    expect(minTime.value).toBe("23:50");
+    expect(maxTime.value).toBe("23:55");
+    expect(firstSlotTime.value).toBe("23:50");
+    expect(validate("23:55")).toBeNull();
+    expect(validate("00:00")).toContain("vor dem frühestmöglichen Zeitpunkt");
+  });
+
   it("moves a time into the window on the grid", () => {
     const { slotFor, isWithinWindow } = useDeliveryTime(at(18, "12:03"));
     // earliest 12:48

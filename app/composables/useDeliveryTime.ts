@@ -60,7 +60,8 @@ export function useDeliveryTime(now: Ref<Date>) {
       return `Aktuell keine ${wording.value.time} verfügbar. Bitte später erneut versuchen.`;
     }
     const { ready, span } = current;
-    const range = `${formatClock(span.opens)} – ${formatClosing(span.closes)}`;
+    // today's part: a span carried over from last night starts at 00:00
+    const range = `${formatClock(Math.max(span.opens, 0))} – ${formatClosing(span.closes)}`;
     if (ready <= span.opens) return `Nächster möglicher Zeitraum: ${range}`;
     const today = ready < MINUTES_PER_DAY ? " (heute)" : "";
     return `Frühestmöglich ab ${formatClock(ready)}${today}, erlaubt: ${range}`;

@@ -194,8 +194,8 @@ export function weekdayName(weekday: Weekday): string {
   return DAY_NAMES[weekday - 1]!;
 }
 
-/** Whether the restaurant is open now, for the status pill. */
-export type StoreStatus =
+/** Whether the restaurant is open now, as the status pill says it. */
+export type StoreStatusText =
   | { open: true; closesAt: string }
   | { open: false; nextOpening: string | null };
 
@@ -229,7 +229,7 @@ function nextOpening(
 export function storeStatusAt(
   instant: Date,
   schedule: ServiceSchedule,
-): StoreStatus {
+): StoreStatusText {
   const now = restaurantNow(instant, schedule.timeZone);
   const current = servicePeriodsOn(schedule, now.date).find(
     (span) => span.opens <= now.minutes && now.minutes <= span.closes,
@@ -243,8 +243,9 @@ export function storeStatusAt(
  * an order: today (yesterday's late-night span included), not on a
  * holiday, within the span in which the order can be ready (now plus the
  * lead time) or the next one today. Minutes since today's midnight; a span
- * running past midnight ends after 1440. Pre-orders for a later service
- * day are not offered (the plugin refuses them).
+ * running past midnight ends after 1440, one up to 24:00 at 23:55.
+ * Pre-orders for a later service day are not offered (the plugin refuses
+ * them).
  */
 export type WishedTimeWindow =
   | Readonly<{ kind: "holiday" }>
@@ -278,14 +279,16 @@ export function wishedTimeWindow(
   const span =
     periods.find((period) => period.opens <= ready && ready <= period.closes) ??
     periods.find((period) => period.opens > ready);
-  if (!span) return { kind: "none_left" };
-  return {
-    kind: "open",
-    ready,
-    span,
-    earliest: Math.max(ready, span.opens),
-    latest: span.closes,
-  };
+  // A span up to the end of the day ends at the day's last slot: 00:00
+  // would read as this morning in the time input.
+  const latest =
+    span?.closes === MINUTES_PER_DAY
+      ? MINUTES_PER_DAY - WISHED_TIME_STEP
+      : span?.closes;
+  if (!span || latest === undefined) return { kind: "none_left" };
+  const earliest = Math.max(ready, span.opens);
+  if (earliest > latest) return { kind: "none_left" };
+  return { kind: "open", ready, span, earliest, latest };
 }
 
 /**

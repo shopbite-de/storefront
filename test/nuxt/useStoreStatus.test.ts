@@ -3,7 +3,7 @@ import { mockNuxtImport, mountSuspended } from "@nuxt/test-utils/runtime";
 import { defineComponent, ref } from "vue";
 import type { Ref } from "vue";
 import { useStoreStatus } from "../../app/composables/useStoreStatus";
-import type { StoreStatus } from "../../app/utils/restaurantTime";
+import type { StoreStatusText } from "../../app/utils/restaurantTime";
 
 const { state } = vi.hoisted(() => ({
   state: { schedule: null as unknown },
@@ -32,8 +32,8 @@ const BERLIN = {
 
 // The status needs a mounted component: the clock starts in onMounted.
 async function mountStatus() {
-  let status!: Ref<StoreStatus | null>;
-  let statusDuringSetup: StoreStatus | null | undefined;
+  let status!: Ref<StoreStatusText | null>;
+  let statusDuringSetup: StoreStatusText | null | undefined;
   await mountSuspended(
     defineComponent({
       setup() {
