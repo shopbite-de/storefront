@@ -18,8 +18,12 @@ import type {
 export interface ShopPort {
   getConfig(): Promise<ShopConfig>;
   getOpeningHours(): Promise<OpeningHours>;
-  /** Current and future holidays; past ones may be left out. */
+  /** Holidays as whole days; past ones may be left out. */
   getHolidays(): Promise<readonly Holiday[]>;
-  /** The restaurant's branches including this one; empty for one location. */
+  /**
+   * The branches of the restaurant's branch group, this storefront's own
+   * marked `current`; branches without a URL are left out. Empty when the
+   * restaurant has no branch group.
+   */
   listBranches(): Promise<readonly Branch[]>;
 }

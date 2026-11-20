@@ -1,5 +1,6 @@
 import type {
   BreadcrumbItem,
+  KnownPaths,
   Id,
   NavigationKind,
   NavigationNode,
@@ -26,4 +27,10 @@ export interface NavigationPort {
   resolvePath(path: string): Promise<ResolvedRoute | null>;
   /** Paths of all menu sections for the sitemap. */
   listSitemapEntries(): Promise<readonly SitemapEntry[]>;
+  /**
+   * Every current and former path of a menu section, so the storefront can
+   * answer a path no section ever had with a 404 without asking further
+   * (requests of vulnerability scanners).
+   */
+  listKnownPaths(): Promise<KnownPaths>;
 }

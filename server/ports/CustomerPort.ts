@@ -50,7 +50,11 @@ export interface CustomerPort {
     registration: Registration,
     confirmationUrl: string,
   ): Promise<Readonly<{ customer: Customer; confirmationRequired: boolean }>>;
-  /** Confirms a registration from the email link. */
+  /**
+   * Confirms a registration from the email link. `token` is opaque: the
+   * link's query parameters as they came (Shopware: `hash`, `em`), passed
+   * on to the adapter that wrote the link.
+   */
   confirmRegistration(
     session: BackendSession,
     token: Readonly<Record<string, string>>,
@@ -81,6 +85,8 @@ export interface CustomerPort {
     addressId: Id,
     use: "billing" | "delivery",
   ): Promise<Customer>;
+  /** Deletes the customer's account and logs the session out. */
+  deleteAccount(session: BackendSession): Promise<void>;
   /** Countries an address may be in. */
   listCountries(): Promise<readonly Country[]>;
 }

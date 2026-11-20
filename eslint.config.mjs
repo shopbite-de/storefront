@@ -1,6 +1,6 @@
 // @ts-check
-import withNuxt from './.nuxt/eslint.config.mjs'
-import eslintConfigPrettier from 'eslint-config-prettier'
+import withNuxt from "./.nuxt/eslint.config.mjs";
+import eslintConfigPrettier from "eslint-config-prettier";
 
 export default withNuxt(
   {
@@ -35,7 +35,8 @@ export default withNuxt(
           ],
           patterns: [
             {
-              group: ["@shopware/*"],
+              // `\\#` escapes the comment character for subpaths
+              group: ["\\#shopware/*", "@shopware/*"],
               message:
                 "Shopware belongs in server/adapters/shopware; use the ports and the domain types (shared/domain), see docs/adr/0001-backend-agnostic-storefront.md.",
             },

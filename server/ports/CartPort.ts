@@ -27,7 +27,10 @@ export interface CartPort {
     quantity: number,
   ): Promise<Cart>;
   removeLine(session: BackendSession, lineId: Id): Promise<Cart>;
-  /** Throws `voucher_invalid` when the code does not apply. */
+  /**
+   * Adds a voucher; it shows as a discount with its code. Throws
+   * `voucher_invalid` when the code does not apply.
+   */
   applyVoucher(session: BackendSession, code: string): Promise<Cart>;
   removeVoucher(session: BackendSession, code: string): Promise<Cart>;
 }

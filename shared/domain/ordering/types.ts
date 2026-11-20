@@ -85,17 +85,21 @@ export type CartMessage = Readonly<{
   subjectId: Id | null;
 }>;
 
-export type AppliedVoucher = Readonly<{
-  code: string;
+/**
+ * A price reduction of the cart: from a voucher the guest entered (`code`)
+ * or applied automatically (`code` null). `amount` is negative.
+ */
+export type CartDiscount = Readonly<{
+  code: string | null;
   name: string;
-  discount: Money;
+  amount: Money;
 }>;
 
 /** The guest's cart ("Warenkorb"). */
 export type Cart = Readonly<{
   lines: readonly CartLine[];
-  vouchers: readonly AppliedVoucher[];
-  /** Sum of the lines (after vouchers). */
+  discounts: readonly CartDiscount[];
+  /** Sum of the lines and the discounts. */
   subtotal: Money;
   shippingCosts: Money;
   total: Money;

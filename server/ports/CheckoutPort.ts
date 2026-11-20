@@ -10,7 +10,10 @@ import type {
 import type { BackendSession } from "./session";
 
 export type PlaceOrderCommand = Readonly<{
-  /** The guest's wished time; the storefront checked the ordering window. */
+  /**
+   * The guest's wished time (service date and time); the storefront
+   * checked it against the ordering window.
+   */
   wishedTime: WishedTime;
   /** The guest's note to the restaurant. */
   note: string | null;
@@ -53,6 +56,16 @@ export interface CheckoutPort {
   placeOrder(
     session: BackendSession,
     command: PlaceOrderCommand,
+  ): Promise<Order>;
+  /**
+   * Switches the payment method of a placed order whose payment failed or
+   * is still open, before `startPayment` retries it. Throws
+   * `payment_method_blocked`.
+   */
+  changePaymentMethod(
+    session: BackendSession,
+    orderId: Id,
+    paymentMethodId: Id,
   ): Promise<Order>;
   /** Starts the payment of an order (also a retry after a failure). */
   startPayment(
