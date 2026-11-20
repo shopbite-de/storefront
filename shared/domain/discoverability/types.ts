@@ -1,7 +1,7 @@
 import type { Id } from "../kernel";
 
-/** Which navigation of the shop. */
-export type NavigationKind = "main" | "footer" | "menu";
+/** Which navigation of the shop: header, footer, menu index, home page. */
+export type NavigationKind = "main" | "footer" | "menu" | "home";
 
 /** An entry of a navigation: a menu section, a content page or a link. */
 export type NavigationNode = Readonly<{
@@ -42,4 +42,10 @@ export type SitemapEntry = Readonly<{
   path: string;
   /** ISO 8601 date-time. */
   lastModified: string | null;
+}>;
+
+/** The paths menu sections have now and had before (redirects). */
+export type KnownPaths = Readonly<{
+  current: readonly string[];
+  former: readonly string[];
 }>;
