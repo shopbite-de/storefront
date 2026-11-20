@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addMoney,
+  currencyExponent,
   isDomainError,
   money,
   moneyFromDecimal,
@@ -64,5 +65,38 @@ describe("Money", () => {
 
   it("multiplies by whole quantities only", () => {
     expect(() => multiplyMoney(money(100, "EUR"), 1.5)).toThrowError();
+  });
+
+  it("takes the minor unit from the currency", () => {
+    expect(currencyExponent("EUR")).toBe(2);
+    expect(currencyExponent("JPY")).toBe(0);
+    expect(currencyExponent("KWD")).toBe(3);
+    expect(moneyFromDecimal(1050, "JPY").amountMinor).toBe(1050);
+    expect(toDecimal(money(1050, "JPY"))).toBe(1050);
+    expect(moneyFromDecimal(1.234, "KWD").amountMinor).toBe(1234);
+    expect(toDecimal(money(1234, "KWD"))).toBe(1.234);
+  });
+
+  it("rounds half away from zero", () => {
+    expect(moneyFromDecimal(1.005, "EUR").amountMinor).toBe(101);
+    expect(moneyFromDecimal(-1.005, "EUR").amountMinor).toBe(-101);
+    expect(moneyFromDecimal(1.2345, "KWD").amountMinor).toBe(1235);
+    expect(moneyFromDecimal(-1.2345, "KWD").amountMinor).toBe(-1235);
+    expect(moneyFromDecimal(0.5, "JPY").amountMinor).toBe(1);
+    expect(moneyFromDecimal(-0.5, "JPY").amountMinor).toBe(-1);
+  });
+
+  it("has no negative zero", () => {
+    expect(Object.is(moneyFromDecimal(-0.001, "EUR").amountMinor, 0)).toBe(
+      true,
+    );
+    expect(Object.is(money(-0, "EUR").amountMinor, 0)).toBe(true);
+    expect(Object.is(multiplyMoney(money(-5, "EUR"), 0).amountMinor, 0)).toBe(
+      true,
+    );
+  });
+
+  it("rejects a currency code the platform does not know as such", () => {
+    expect(() => currencyExponent("EURO")).toThrowError();
   });
 });
