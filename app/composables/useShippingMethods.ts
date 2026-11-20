@@ -6,7 +6,7 @@ export const SHIPPING_METHODS_KEY = "shipping-methods";
  * The shop's shipping methods with fulfillment and lead time
  * (`/api/checkout/shipping-methods`, CheckoutPort, shopbite#6): from the
  * server's cache (`cacheTtl.config`) for server-side rendering, live in the
- * browser (useLiveShopData, the checkout every 10 s), because the lead time
+ * browser once after hydration (useLiveShopData), because the lead time
  * decides the earliest wished time.
  */
 export function useShippingMethods() {
