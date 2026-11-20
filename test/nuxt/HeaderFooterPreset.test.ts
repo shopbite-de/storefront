@@ -43,8 +43,8 @@ mockNuxtImport("useCart", () => () => ({
 mockNuxtImport("useWishlist", () => () => ({
   count: computed(() => state.wishlistCount),
 }));
-mockNuxtImport("useShopBiteConfig", () => () => ({
-  isCheckoutEnabled: ref(true),
+mockNuxtImport("useShopConfig", () => () => ({
+  acceptsOrders: ref(true),
 }));
 function userApi() {
   return {
@@ -61,8 +61,8 @@ vi.mock("@shopware/composables", async (importOriginal) => ({
   useUser: () => userApi(),
 }));
 mockNuxtImport("useStoreStatus", () => () => ({ status: ref(null) }));
-mockNuxtImport("useBusinessHours", () => () => ({
-  businessHours: ref([]),
+mockNuxtImport("useOpeningHours", () => () => ({
+  openingHours: ref({ intervals: [] }),
   refresh: vi.fn(),
 }));
 

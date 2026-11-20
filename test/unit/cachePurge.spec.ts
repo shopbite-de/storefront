@@ -21,13 +21,17 @@ const LAYOUT_KEYS = [
   `cache:nitro:handlers:navigation:navigationmenu${PIZZA}.json`,
   `cache:nitro:handlers:navigation:navigationmainmainnavigation.json`,
   `cache:nitro:handlers:breadcrumb:breadcrumb${PIZZA}.json`,
-  `cache:nitro:handlers:business-hours:businesshours.json`,
-  `cache:nitro:handlers:holidays:holidays.json`,
   `cache:nitro:handlers:payment-methods:paymentmethods.json`,
   `cache:nitro:handlers:top-sellers:topsellers.json`,
   `cache:nitro:functions:seo-url:3f786850e387550fdab836ed7e6dc881de23001b.json`,
   `cache:nitro:functions:seo-paths:seo-paths.json`,
   `cache:nitro:functions:shopbite-config:shopbite-config.json`,
+  // restaurant operations behind the BFF (server/utils/shopData.ts)
+  `cache:nitro:functions:shop-config:shop-config.json`,
+  `cache:nitro:functions:shop-opening-hours:shop-opening-hours.json`,
+  `cache:nitro:functions:shop-holidays:shop-holidays.json`,
+  `cache:nitro:functions:shop-branches:shop-branches.json`,
+  `cache:nitro:functions:shipping-methods:shipping-methods.json`,
 ];
 const OTHER_FUNCTION = `cache:nitro:functions:_:abc.json`;
 

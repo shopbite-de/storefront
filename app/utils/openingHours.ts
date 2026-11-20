@@ -1,9 +1,10 @@
-type BusinessHourLike = {
-  /** 1 = Monday … 7 = Sunday */
-  dayOfWeek?: number;
-  openingTime?: string;
-  closingTime?: string;
-};
+import type { OpeningHours, Weekday } from "../../shared/domain";
+import {
+  formatClock,
+  formatClosing,
+  restaurantNow,
+  serviceSpans,
+} from "./restaurantTime";
 
 /** A run of consecutive weekdays with identical opening hours. */
 export type OpeningHoursRow = {
@@ -15,48 +16,47 @@ export type OpeningHoursRow = {
 
 const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
 
-const formatTime = (time: string) => time.slice(0, 5);
-
-/** Intervals of one weekday (1 = Monday … 7 = Sunday), e.g. `["11:30–14:30"]`. */
+/**
+ * Intervals of one weekday (1 = Monday … 7 = Sunday), e.g.
+ * `["11:30–14:30"]`; a late-night opening reads `17:00–01:30` on the day it
+ * starts.
+ */
 export function intervalsForDay(
-  businessHours: BusinessHourLike[],
-  dayOfWeek: number,
+  hours: OpeningHours,
+  weekday: Weekday,
 ): string[] {
-  return businessHours
-    .filter(
-      (bh) => bh.dayOfWeek === dayOfWeek && bh.openingTime && bh.closingTime,
-    )
-    .sort((a, b) => a.openingTime!.localeCompare(b.openingTime!))
-    .map(
-      (bh) => `${formatTime(bh.openingTime!)}–${formatTime(bh.closingTime!)}`,
-    );
+  return serviceSpans(hours, weekday).map(
+    (span) => `${formatClock(span.opens)}–${formatClosing(span.closes)}`,
+  );
 }
 
 /**
- * Today's hours as a sentence for the information cards (#332):
- * `Heute 11:30–14:30 und 17:30–23:00`, or `Heute Ruhetag` on a closed day.
+ * Today's hours in the restaurant's time zone as a sentence for the
+ * information cards (#332): `Heute 11:30–14:30 und 17:30–23:00`, or
+ * `Heute Ruhetag` on a closed day.
  */
 export function formatTodayHours(
-  businessHours: BusinessHourLike[],
-  date: Date,
+  hours: OpeningHours,
+  instant: Date,
+  timeZone: string,
 ): string {
-  const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
-  const intervals = intervalsForDay(businessHours, dayOfWeek);
+  const intervals = intervalsForDay(
+    hours,
+    restaurantNow(instant, timeZone).weekday,
+  );
   return intervals.length === 0
     ? "Heute Ruhetag"
     : `Heute ${intervals.join(" und ")}`;
 }
 
 /**
- * Groups business hours into display rows: consecutive days (Monday to
+ * Groups the opening hours into display rows: consecutive days (Monday to
  * Sunday) with the same intervals share a row. Returns an empty list if no
  * day has opening hours.
  */
-export function groupOpeningHours(
-  businessHours: BusinessHourLike[],
-): OpeningHoursRow[] {
+export function groupOpeningHours(hours: OpeningHours): OpeningHoursRow[] {
   const intervalsByDay = DAY_LABELS.map((_, index) =>
-    intervalsForDay(businessHours, index + 1),
+    intervalsForDay(hours, (index + 1) as Weekday),
   );
 
   if (intervalsByDay.every((intervals) => intervals.length === 0)) return [];

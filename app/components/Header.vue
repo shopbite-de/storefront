@@ -26,7 +26,7 @@ const {
 } = useCartQuickView();
 const { count: cartCount } = useCart();
 const { count: wishlistCount } = useWishlistEntries();
-const { isCheckoutEnabled } = useShopBiteConfig();
+const { acceptsOrders } = useShopConfig();
 const { isLoggedIn, isGuestSession, logout } = useUser();
 const { status } = useStoreStatus();
 
@@ -115,7 +115,7 @@ function logoutHandler() {
         >
           {{ item.label }}
         </NuxtLink>
-        <LazySalesChannelSwitch v-if="shopBite.feature.multiChannel" />
+        <LazyBranchSwitch v-if="shopBite.feature.multiChannel" />
       </nav>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
@@ -194,7 +194,7 @@ function logoutHandler() {
           </SbIconButton>
         </span>
         <SbButton
-          v-if="isCheckoutEnabled"
+          v-if="acceptsOrders"
           :key="cartPop"
           :class="{ 'motion-safe:animate-cart-pop': cartPop > 0 }"
           aria-haspopup="dialog"
@@ -281,7 +281,7 @@ function logoutHandler() {
       <SbButton variant="ghost" to="/merkliste">Merkliste</SbButton>
     </div>
     <div v-if="shopBite.feature.multiChannel" class="mt-4">
-      <LazySalesChannelSwitch />
+      <LazyBranchSwitch />
     </div>
   </SbSheet>
 

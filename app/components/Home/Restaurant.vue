@@ -17,11 +17,11 @@ const props = defineProps<{
 const titleParts = computed(() => splitHighlight(props.title ?? ""));
 
 const { site } = useRuntimeConfig().public;
-const { businessHours, refresh } = useBusinessHours();
+const { openingHours: hours, refresh } = useOpeningHours();
 onServerPrefetch(() => refresh());
 
 const openingHours = computed(() =>
-  groupOpeningHours(businessHours.value ?? []),
+  hours.value ? groupOpeningHours(hours.value) : [],
 );
 
 const address = [

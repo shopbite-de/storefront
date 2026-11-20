@@ -7,8 +7,8 @@ const { createOrder, selectedPaymentMethod, selectedShippingMethod } =
   useCheckout();
 const { refreshCart } = useCart();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
-const { isCheckoutEnabled, refresh, checkCheckoutEnabled } =
-  useShopBiteConfig();
+const { acceptsOrders, refresh, checkAcceptsOrders } = useShopConfig();
+const { refresh: refreshShippingMethods } = useShippingMethods();
 const { fulfillment } = useShippingLeadTime();
 const { trackOrder } = useTrackEvent();
 const { isLoading: isLoadingOpeningHours, hasFailed: hasOpeningHoursFailed } =
@@ -31,8 +31,14 @@ function reportError(message: { title: string; description: string }) {
   orderError.value = message;
 }
 
-onMounted(() => {
+// The switch that accepts orders and the lead times stay live (?fresh=1).
+function refreshLiveShopData() {
   refresh();
+  refreshShippingMethods();
+}
+
+onMounted(() => {
+  refreshLiveShopData();
   refreshUser({
     associations: {
       defaultShippingAddress: {},
@@ -46,7 +52,7 @@ onMounted(() => {
   });
 });
 
-useIntervalFn(refresh, 10000);
+useIntervalFn(refreshLiveShopData, 10000);
 
 const shippingMethodName = computed(
   () =>
@@ -92,11 +98,12 @@ async function hasAvailableCheckoutMethods(): Promise<boolean> {
 }
 
 /**
- * The checkout switch as Shopware has it now: the page may still show the
- * value of the server render, and the plugin accepts orders regardless.
+ * Whether the restaurant accepts orders as the backend has it now
+ * (uncached): the page may still show the value of the server render, and
+ * the backend takes an order regardless.
  */
 async function isCheckoutStillEnabled(): Promise<boolean> {
-  const enabled = await checkCheckoutEnabled();
+  const enabled = await checkAcceptsOrders();
   if (enabled) return true;
   reportError(
     enabled === false
@@ -179,7 +186,7 @@ const shippingAndPaymentSet = computed(
 const isValidToProceed = computed(
   () =>
     customerDataAvailable.value &&
-    isCheckoutEnabled.value &&
+    acceptsOrders.value &&
     isValidTime.value &&
     shippingAndPaymentSet.value &&
     !isShippingMethodBlocked.value &&
@@ -224,7 +231,7 @@ const checkoutButtonLabel = computed<string>(() => {
     return "Wir haben aktuell leider geschlossen";
   }
 
-  if (!isCheckoutEnabled.value) {
+  if (!acceptsOrders.value) {
     return "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen";
   }
 

@@ -1,8 +1,10 @@
 import {
+  leadTime,
   openingInterval,
   type Branch,
   type Holiday,
   type OpeningHours,
+  type ShippingMethod,
   type ShopConfig,
   type Weekday,
 } from "../../../shared/domain";
@@ -15,13 +17,18 @@ export type MemorySeed = Readonly<{
     holidays: readonly Holiday[];
     branches: readonly Branch[];
   }>;
+  checkout: Readonly<{
+    /** In the shop's order. */
+    shippingMethods: readonly ShippingMethod[];
+  }>;
 }>;
 
 const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];
 
 /**
  * The quickstart's demo restaurant: open around the clock every day,
- * placeholder contact data. The demo menu joins with CatalogPort (step 2).
+ * placeholder contact data, delivery in about 30 and pickup in about 15
+ * minutes. The demo menu joins with CatalogPort (step 2).
  */
 export const DEMO_SEED: MemorySeed = {
   shop: {
@@ -44,5 +51,25 @@ export const DEMO_SEED: MemorySeed = {
     },
     holidays: [],
     branches: [],
+  },
+  checkout: {
+    shippingMethods: [
+      {
+        id: "delivery",
+        name: "Lieferung",
+        description: null,
+        fulfillment: "delivery",
+        leadTime: leadTime(30),
+        media: null,
+      },
+      {
+        id: "pickup",
+        name: "Abholung",
+        description: null,
+        fulfillment: "pickup",
+        leadTime: leadTime(15),
+        media: null,
+      },
+    ],
   },
 };

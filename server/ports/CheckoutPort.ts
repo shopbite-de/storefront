@@ -37,9 +37,13 @@ export interface CheckoutPort {
   /**
    * The shop's active shipping methods with fulfillment and lead time,
    * including blocked ones (a delivery-area rule only matches once an
-   * address is known). Shop-wide, also for texts without a cart.
+   * address is known). Without a session shop-wide, also for texts without
+   * a cart (the BFF caches that answer); a backend that prices shipping per
+   * cart (Sylius) may use the session.
    */
-  listShippingMethods(): Promise<readonly ShippingMethod[]>;
+  listShippingMethods(
+    session?: BackendSession,
+  ): Promise<readonly ShippingMethod[]>;
   listPaymentMethods(
     session?: BackendSession,
   ): Promise<readonly PaymentMethod[]>;

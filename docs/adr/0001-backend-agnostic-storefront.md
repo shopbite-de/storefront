@@ -116,6 +116,18 @@ Each step moves one area behind its port, keeps the shop working, and ships as a
 | 7    | `WishlistPort`, `ContactPort`; no browser-direct backend call left                                           | 2.x minor |
 | 8    | Remove `@shopware/nuxt-module`, the `@shopware/composables` layer and the Shopware helpers outside the adapter; the lint guard becomes an error | 3.0.0 |
 
+### Progress
+
+**Step 1 (restaurant operations), done.** `ShopPort` and `CheckoutPort.listShippingMethods` behind the BFF: `GET /api/shop/config`, `/api/shop/opening-hours`, `/api/shop/holidays`, `/api/shop/branches`, `/api/checkout/shipping-methods` answer domain types; they replace `/api/shopbite/config`, `/business-hours` and `/holidays`. Each is cached for server-side rendering and `llms.txt` (`server/utils/shopData.ts`, `swr: false`, resilient loader, emptied by every purge and by `{ "layout": true }`); `?fresh=1` asks the port directly (no cache, no last good answer) for the browser's live values and for the check of the switch that accepts orders right before an order. `DomainError`s become HTTP answers in one place (`server/utils/domainHttp.ts`). The browser asks no Store API for configuration, hours, holidays, branches, lead times or the menu root (`/api/menu/root`). Store status, opening hours displays, the wished time choice, the Restaurant schema and `llms.txt` work in the restaurant's time zone, and a late-night opening reads and counts as one span (Fri 17:00–01:30). Lint guard: 105 warnings (111 at step 0).
+
+Deviations and open points of step 1:
+
+- The app does not use the domain's value objects and services (`earliestWishedTime`): a value import from `shared/` is still avoided in app code. `app/utils/restaurantTime.ts` computes store status and the wished time window on the domain types; it moves onto the domain services together with the ordering window.
+- Ordering window vs. plugin (note below): settled for now on the plugin's side. The wished time stays within today's spans plus yesterday's late-night span, never on a holiday, and no pre-order for a later service day is offered. A late-night opening that started on a holiday is not continued after midnight (the display joins the split intervals and keeps their origin day). DST slots are not treated specially (wall-clock minutes).
+- Lead times are live in the browser like the switch (`useLiveShopData`, the checkout every 10 s); the Shopware adapter needs two Store API requests for them (plugin config and `/shipping-method` names).
+- The menu root still comes from the Shopware plugin config on the server (`shopbite-config`, a second cache of `/shopbite/config` next to `shop-config`) until `NavigationPort` (step 3).
+- Behaviour changes allowed by the step: holidays are whole days in the restaurant's time zone (the Restaurant schema and `llms.txt` took the UTC date of the plugin's instants before); an interval up to the end of the day reads `24:00` instead of `00:00` (schema.org keeps `00:00`, a day open around the clock is `00:00`–`23:59`).
+
 ### Lint guard
 
 `@typescript-eslint/no-restricted-imports` forbids `#shopware`, `@shopware/*` and the `api-types` (`~~/api-types/*`, relative paths) outside `server/adapters/shopware/**`, the generated types and `shopware.d.ts`. It warns during steps 1 to 7 (111 warnings in 103 files at step 0, the number to bring down) and becomes an error in step 8. `#shopware/*` subpaths are covered too. It sees static `import` and `export … from` only: not type queries (`typeof import("#shopware")`, `import("…").Type` in a type position), not dynamic `import()`, and not composables auto-imported from the Shopware layer (`useShopwareContext`, `useCart`, …). Those disappear with the layer in step 8, and the typecheck finds what is left.
@@ -139,9 +151,9 @@ Recommendations from the review of step 0, to settle when the area moves:
 
 - **Catalog (step 2)**: `DishDetail` names the selected variant when opened by a variant's number; `Variant` gets its own name, media and main ingredients; an `Extra` can be unavailable; main ingredients get ids (removals by id, names only for display); list and strike-through prices.
 - **Cart (step 4)**: a structured variant label instead of one name string; removed ingredients are part of a line's identity, so two configurations that differ only in removals stay two lines (Shopware's container key today hashes dish and extras only); taxes as gross or net; subtotals before and after discounts.
-- **Checkout (step 1 and 5)**: `listShippingMethods` takes an optional session (Sylius prices shipping per cart). It is implemented in step 1 already, because ShopPort's consumers (home page, `llms.txt`, the time choice) need the lead times. Guest details stay editable after `registerGuest`.
+- **Checkout (step 1 and 5)**: `listShippingMethods` takes an optional session (Sylius prices shipping per cart; in the port since step 1, unused by both adapters). It is implemented in step 1 already, because ShopPort's consumers (home page, `llms.txt`, the time choice) need the lead times. Guest details stay editable after `registerGuest`.
 - **Orders (step 5)**: a guest opens an order by an e-mail deep link or token, without an account; `OrderLine` carries its `DishConfiguration` so an order can be repeated.
-- **BFF (step 1)**: one shared mapper from `DomainError` codes to HTTP answers for all routes.
+- **BFF (step 1, done)**: one shared mapper from `DomainError` codes to HTTP answers for all routes (`server/utils/domainHttp.ts`).
 - **Session (step 4)**: the backend token can rotate (login, logout) while parallel requests of the same visitor are in flight; writes to the session must not lose a newer token.
 
 ## Sylius as a sanity check

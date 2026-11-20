@@ -4,12 +4,12 @@
  * steppers, totals and "Zur Kasse". Phones use the cart bar and the sheet.
  * The cart loads on the client, so the panel renders after mounting.
  */
-const { isCheckoutEnabled } = useShopBiteConfig();
+const { acceptsOrders } = useShopConfig();
 </script>
 
 <template>
   <aside
-    v-if="isCheckoutEnabled"
+    v-if="acceptsOrders"
     aria-labelledby="cart-panel-title"
     class="sticky top-6 flex flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6 font-body text-sb-ink"
   >

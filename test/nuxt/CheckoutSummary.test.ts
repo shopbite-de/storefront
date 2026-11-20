@@ -6,7 +6,7 @@ import Summary from "~/components/Checkout/Summary.vue";
 const { state, mocks } = vi.hoisted(() => ({
   mocks: {
     createOrder: vi.fn(),
-    checkCheckoutEnabled: vi.fn(),
+    checkAcceptsOrders: vi.fn(),
   },
   state: {
     isLoading: true,
@@ -44,10 +44,14 @@ mockNuxtImport("useUser", () => () => ({
   refreshUser: vi.fn(),
 }));
 
-mockNuxtImport("useShopBiteConfig", () => () => ({
-  isCheckoutEnabled: ref(true),
+mockNuxtImport("useShopConfig", () => () => ({
+  acceptsOrders: ref(true),
   refresh: vi.fn(),
-  checkCheckoutEnabled: mocks.checkCheckoutEnabled,
+  checkAcceptsOrders: mocks.checkAcceptsOrders,
+}));
+
+mockNuxtImport("useShippingMethods", () => () => ({
+  refresh: vi.fn(),
 }));
 
 // A successful order navigates to the confirmation page; loading that
@@ -108,7 +112,7 @@ describe("Checkout Summary order button", () => {
     state.customer = true;
     state.fulfillment = "delivery";
     mocks.createOrder.mockReset();
-    mocks.checkCheckoutEnabled.mockReset();
+    mocks.checkAcceptsOrders.mockReset();
   });
 
   it("shows a loading state while the opening hours are not loaded", async () => {
@@ -185,13 +189,13 @@ describe("Checkout Summary order button", () => {
   it("does not order when Shopware says the checkout was switched off", async () => {
     state.isLoading = false;
     state.validTime = true;
-    mocks.checkCheckoutEnabled.mockResolvedValue(false);
+    mocks.checkAcceptsOrders.mockResolvedValue(false);
 
     const button = await mountSummary();
     await button.trigger("click");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(mocks.checkCheckoutEnabled).toHaveBeenCalled();
+    expect(mocks.checkAcceptsOrders).toHaveBeenCalled();
     expect(mocks.createOrder).not.toHaveBeenCalled();
     expect(button.element.closest(".grid")!.textContent).toContain(
       "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen",
@@ -201,7 +205,7 @@ describe("Checkout Summary order button", () => {
   it("does not order when the checkout switch cannot be checked", async () => {
     state.isLoading = false;
     state.validTime = true;
-    mocks.checkCheckoutEnabled.mockResolvedValue(null);
+    mocks.checkAcceptsOrders.mockResolvedValue(null);
 
     const button = await mountSummary();
     await button.trigger("click");
@@ -223,7 +227,7 @@ describe("Checkout Summary order button", () => {
       state.isLoading = false;
       state.validTime = true;
       state.fulfillment = fulfillment;
-      mocks.checkCheckoutEnabled.mockResolvedValue(true);
+      mocks.checkAcceptsOrders.mockResolvedValue(true);
       mocks.createOrder.mockResolvedValue({ id: "order-1" });
 
       const button = await mountSummary();

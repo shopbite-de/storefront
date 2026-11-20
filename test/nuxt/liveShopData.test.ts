@@ -4,96 +4,63 @@ import {
   mountSuspended,
   registerEndpoint,
 } from "@nuxt/test-utils/runtime";
+import { getQuery, type H3Event } from "h3";
 import { defineComponent, h } from "vue";
-import {
-  loadShopBiteConfig,
-  SHOPBITE_CONFIG_KEY,
-} from "~/composables/useShopBiteConfig";
-import {
-  BUSINESS_HOURS_KEY,
-  loadBusinessHours,
-} from "~/composables/useBusinessHours";
-import { HOLIDAYS_KEY, loadHolidays } from "~/composables/useHolidays";
+import { HOLIDAYS_KEY } from "~/composables/useHolidays";
 import { useLiveShopData } from "~/composables/useLiveShopData";
+import { OPENING_HOURS_KEY } from "~/composables/useOpeningHours";
+import { loadShopData } from "~/composables/useShopData";
+import { SHIPPING_METHODS_KEY } from "~/composables/useShippingMethods";
+import { SHOP_CONFIG_KEY } from "~/composables/useShopConfig";
 
-const { mockRefreshNuxtData, cached } = vi.hoisted(() => ({
+const { mockRefreshNuxtData, route } = vi.hoisted(() => ({
   mockRefreshNuxtData: vi.fn(),
-  cached: {
-    config: vi.fn(),
-    hours: vi.fn(),
-    holidays: vi.fn(),
-  },
+  route: vi.fn(),
 }));
 
 mockNuxtImport("refreshNuxtData", () => mockRefreshNuxtData);
 
-registerEndpoint("/api/shopbite/config", () => cached.config());
-registerEndpoint("/api/shopbite/business-hours", () => cached.hours());
-registerEndpoint("/api/shopbite/holidays", () => cached.holidays());
+registerEndpoint("/api/shop/config", (event: H3Event) =>
+  route(getQuery(event)),
+);
 
-const invoke = vi.fn();
-const apiClient = { invoke } as unknown as Parameters<
-  typeof loadShopBiteConfig
->[0];
-
-describe("shop data sources", () => {
+describe("restaurant operations through the BFF", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("renders the config from the server cache, the browser asks Shopware", async () => {
-    cached.config.mockReturnValue({ isCheckoutEnabled: false });
-    invoke.mockResolvedValue({ data: { isCheckoutEnabled: true } });
+  it("renders from the server's cache, the browser asks for the live value", async () => {
+    route.mockImplementation((query: Record<string, string>) => ({
+      acceptsOrders: query.fresh === "1",
+    }));
 
-    expect(await loadShopBiteConfig(apiClient, true)).toEqual({
-      isCheckoutEnabled: false,
+    expect(await loadShopData("/api/shop/config", false)).toEqual({
+      acceptsOrders: false,
     });
-    expect(invoke).not.toHaveBeenCalled();
-
-    expect(await loadShopBiteConfig(apiClient, false)).toEqual({
-      isCheckoutEnabled: true,
+    expect(await loadShopData("/api/shop/config", true)).toEqual({
+      acceptsOrders: true,
     });
-    expect(invoke).toHaveBeenCalledWith(
-      "shopbite.config.get get /shopbite/config",
-    );
+    expect(route).toHaveBeenNthCalledWith(1, {});
+    expect(route).toHaveBeenNthCalledWith(2, { fresh: "1" });
   });
 
-  it("retries the config in the browser like the opening hours", async () => {
-    invoke
-      .mockRejectedValueOnce(new Error("offline"))
-      .mockResolvedValue({ data: { isCheckoutEnabled: true } });
+  it("retries the live value in the browser like the opening hours", async () => {
+    route
+      .mockImplementationOnce(() => {
+        throw new Error("offline");
+      })
+      .mockReturnValue({ acceptsOrders: true });
 
-    expect(await loadShopBiteConfig(apiClient, false, [0])).toEqual({
-      isCheckoutEnabled: true,
+    expect(await loadShopData("/api/shop/config", true, [0])).toEqual({
+      acceptsOrders: true,
     });
-    expect(invoke).toHaveBeenCalledTimes(2);
-  });
-
-  it("reads business hours and holidays from the cache on the server", async () => {
-    const hours = [{ dayOfWeek: 1, openingTime: "11:00" }];
-    const holidays = [{ start: "2026-12-24", end: "2026-12-26" }];
-    cached.hours.mockReturnValue({ businessHours: hours });
-    cached.holidays.mockReturnValue({ holidays });
-
-    expect(await loadBusinessHours(apiClient, true)).toEqual(hours);
-    expect(await loadHolidays(apiClient, true)).toEqual(holidays);
-    expect(invoke).not.toHaveBeenCalled();
-  });
-
-  it("asks Shopware for business hours and holidays in the browser", async () => {
-    invoke.mockImplementation(async (operation: string) =>
-      operation.includes("business-hour")
-        ? { data: { businessHours: ["h"] } }
-        : { data: { holidays: ["d"] } },
-    );
-
-    expect(await loadBusinessHours(apiClient, false, [])).toEqual(["h"]);
-    expect(await loadHolidays(apiClient, false, [])).toEqual(["d"]);
+    // once per attempt: no hidden retries of ofetch on top
+    expect(route).toHaveBeenCalledTimes(2);
   });
 });
 
 describe("useLiveShopData", () => {
-  it("reloads config, hours and holidays from Shopware after hydration", async () => {
+  it("reloads the restaurant operations live after hydration", async () => {
     await mountSuspended(
       defineComponent({
         setup() {
@@ -106,9 +73,10 @@ describe("useLiveShopData", () => {
     // refreshNuxtData waits for the end of hydration; a refresh() during
     // hydration would return the server's (cached) payload
     expect(mockRefreshNuxtData).toHaveBeenCalledWith([
-      SHOPBITE_CONFIG_KEY,
-      BUSINESS_HOURS_KEY,
+      SHOP_CONFIG_KEY,
+      OPENING_HOURS_KEY,
       HOLIDAYS_KEY,
+      SHIPPING_METHODS_KEY,
     ]);
   });
 });

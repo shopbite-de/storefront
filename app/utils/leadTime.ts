@@ -1,54 +1,50 @@
 /**
- * Lead times per shipping method (shopbite#6): the ShopBite plugin reports
- * for every active shipping method of the sales channel whether it is a
- * delivery or a pickup and how many minutes the kitchen needs
- * (`shippingMethods` of `/store-api/shopbite/config`). Also imported by the
- * server (llms.txt), so it stays free of Nuxt imports.
+ * Lead times per shipping method (shopbite#6), from the shop's shipping
+ * methods (`/api/checkout/shipping-methods`, CheckoutPort): whether a
+ * method is a delivery or a pickup and how many minutes the kitchen needs.
+ * Also imported by the server (llms.txt), so it stays free of Nuxt imports.
  */
-export type Fulfillment = "delivery" | "pickup";
+import type { Fulfillment, ShippingMethod } from "../../shared/domain";
 
-export type ShippingMethodLeadTime = {
-  id: string;
+export type ShippingLeadTime = {
   fulfillment: Fulfillment;
-  leadTimeMinutes: number;
+  minutes: number | null;
 };
 
-export type LeadTimeConfig =
-  | { shippingMethods?: readonly ShippingMethodLeadTime[] | null }
-  | null
-  | undefined;
-
-export type LeadTime = { fulfillment: Fulfillment; minutes: number | null };
+type Methods = readonly ShippingMethod[] | null | undefined;
 
 /**
- * Fulfillment and lead time of a shipping method. A method the plugin does
- * not list (or none, or no configuration yet) counts as delivery without a
- * lead time.
+ * Fulfillment and lead time of a shipping method. A method the shop does
+ * not list (or none, or no list yet) counts as delivery without a lead
+ * time.
  */
 export function shippingLeadTime(
-  config: LeadTimeConfig,
-  method: { id?: string } | null | undefined,
-): LeadTime {
-  const entry = method?.id
-    ? config?.shippingMethods?.find((item) => item.id === method.id)
+  methods: Methods,
+  methodId: string | null | undefined,
+): ShippingLeadTime {
+  const method = methodId
+    ? methods?.find((candidate) => candidate.id === methodId)
     : undefined;
-  return entry
-    ? { fulfillment: entry.fulfillment, minutes: entry.leadTimeMinutes }
+  return method
+    ? {
+        fulfillment: method.fulfillment,
+        minutes: method.leadTime?.minutes ?? null,
+      }
     : { fulfillment: "delivery", minutes: null };
 }
 
 /**
  * Lead time of the first shipping method of a fulfillment, for texts that
  * are not about a selected method (home page, llms.txt); `null` when the
- * sales channel has no such method.
+ * shop has no such method or it has no lead time.
  */
 export function fulfillmentLeadTime(
-  config: LeadTimeConfig,
+  methods: Methods,
   fulfillment: Fulfillment,
 ): number | null {
   return (
-    config?.shippingMethods?.find((item) => item.fulfillment === fulfillment)
-      ?.leadTimeMinutes ?? null
+    methods?.find((method) => method.fulfillment === fulfillment)?.leadTime
+      ?.minutes ?? null
   );
 }
 

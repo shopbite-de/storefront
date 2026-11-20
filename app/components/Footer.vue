@@ -13,11 +13,11 @@ import {
 const { footerMenu } = useNavigation(true);
 
 const { site } = useRuntimeConfig().public;
-const { businessHours, refresh } = useBusinessHours();
+const { openingHours: hours, refresh } = useOpeningHours();
 onServerPrefetch(() => refresh());
 
 const openingHours = computed(() =>
-  groupOpeningHours(businessHours.value ?? []),
+  hours.value ? groupOpeningHours(hours.value) : [],
 );
 const locality = [site.address.postalCode, site.address.city]
   .filter(Boolean)

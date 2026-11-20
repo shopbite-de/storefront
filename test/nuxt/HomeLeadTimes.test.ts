@@ -13,7 +13,7 @@ const { times } = vi.hoisted(() => ({
   },
 }));
 
-mockNuxtImport("useShopBiteConfig", () => () => ({
+mockNuxtImport("useShippingMethods", () => () => ({
   deliveryTime: ref(times.delivery),
   pickupTime: ref(times.pickup),
 }));
@@ -22,8 +22,8 @@ mockNuxtImport("useStoreStatus", () => () => ({
   status: ref({ open: true, closesAt: "22:00" }),
 }));
 
-mockNuxtImport("useBusinessHours", () => () => ({
-  businessHours: ref(null),
+mockNuxtImport("useOpeningHours", () => () => ({
+  openingHours: ref(null),
 }));
 
 const features = [

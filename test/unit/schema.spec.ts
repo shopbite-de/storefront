@@ -6,25 +6,34 @@ import {
   buildRestaurantSchema,
   buildSpecialOpeningHoursSpecification,
 } from "../../app/utils/schema";
+import {
+  holiday,
+  openingInterval,
+  sortOpeningHours,
+  type Weekday,
+} from "../../shared/domain";
 
-const lunch = (dayOfWeek: number) => ({
-  dayOfWeek,
-  openingTime: "11:30:00",
-  closingTime: "14:30:00",
-});
-const dinner = (dayOfWeek: number) => ({
-  dayOfWeek,
-  openingTime: "17:30:00",
-  closingTime: "23:00:00",
-});
+type Row = [Weekday, string, string];
+const hours = (rows: Row[]) =>
+  sortOpeningHours(
+    rows.map(([weekday, opens, closes]) => ({
+      weekday,
+      interval: openingInterval(opens, closes),
+    })),
+  );
+const lunch = (day: Weekday): Row => [day, "11:30", "14:30"];
+const dinner = (day: Weekday): Row => [day, "17:30", "23:00"];
 
 describe("buildOpeningHoursSpecification", () => {
   it("groups days with identical intervals", () => {
     // Sunday listed before Saturday in the data, sorted in the output
-    const hours = [1, 7, 3, 4, 5].flatMap((day) => [lunch(day), dinner(day)]);
-    hours.push(dinner(6));
+    const rows = ([1, 7, 3, 4, 5] as Weekday[]).flatMap((day) => [
+      lunch(day),
+      dinner(day),
+    ]);
+    rows.push(dinner(6));
 
-    expect(buildOpeningHoursSpecification(hours)).toEqual([
+    expect(buildOpeningHoursSpecification(hours(rows))).toEqual([
       {
         "@type": "OpeningHoursSpecification",
         dayOfWeek: ["Monday", "Wednesday", "Thursday", "Friday", "Sunday"],
@@ -47,13 +56,40 @@ describe("buildOpeningHoursSpecification", () => {
     ]);
   });
 
-  it("skips incomplete entries", () => {
+  it("has no entries without opening hours", () => {
+    expect(buildOpeningHoursSpecification(hours([]))).toEqual([]);
+  });
+
+  it("closes a late-night opening after midnight, a full day at 23:59", () => {
     expect(
-      buildOpeningHoursSpecification([
-        { dayOfWeek: 8, openingTime: "11:30", closingTime: "14:30" },
-        { dayOfWeek: 1, openingTime: "11:30" },
-      ]),
-    ).toEqual([]);
+      buildOpeningHoursSpecification(
+        hours([
+          [5, "17:00", "24:00"],
+          [6, "00:00", "01:30"],
+          [7, "12:00", "24:00"],
+          [1, "00:00", "24:00"],
+        ]),
+      ),
+    ).toEqual([
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday"],
+        opens: "00:00",
+        closes: "23:59",
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Friday"],
+        opens: "17:00",
+        closes: "01:30",
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Sunday"],
+        opens: "12:00",
+        closes: "00:00",
+      },
+    ]);
   });
 });
 
@@ -61,11 +97,7 @@ describe("buildSpecialOpeningHoursSpecification", () => {
   it("marks closing days with opens and closes at 00:00", () => {
     expect(
       buildSpecialOpeningHoursSpecification([
-        {
-          start: "2025-12-29T20:57:00.000+00:00",
-          end: "2026-01-01T22:59:00.000+00:00",
-        },
-        { start: "2026-07-12T21:00:00.000+00:00" },
+        holiday({ id: "h", firstDay: "2025-12-29", lastDay: "2026-01-01" }),
       ]),
     ).toEqual([
       {
@@ -101,9 +133,9 @@ describe("buildRestaurantSchema", () => {
   it("builds a full Restaurant node with menu sections", () => {
     const schema = buildRestaurantSchema({
       site,
-      businessHours: [lunch(1)],
+      openingHours: hours([lunch(1)]),
       holidays: [
-        { start: "2026-07-12T21:00:00Z", end: "2026-08-05T22:00:00Z" },
+        holiday({ id: "h", firstDay: "2026-07-12", lastDay: "2026-08-05" }),
       ],
       menuUrl: "https://www.pizzeria-esempio.example/speisekarte",
       menuSections: [

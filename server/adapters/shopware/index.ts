@@ -13,6 +13,7 @@ import {
 import type { Backend } from "../../ports";
 import { notImplemented } from "../notImplemented";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
+import { createShopwareCheckout } from "./checkout";
 import { createShopwareShop, type AdapterLog } from "./shop";
 import type { StoreApi } from "./storeApi";
 
@@ -33,17 +34,19 @@ export function createShopwareBackend(
   options: ShopwareBackendOptions,
 ): Backend {
   const name = "shopware";
+  const log: AdapterLog =
+    options.log ?? ((message, details) => console.warn(message, details));
   const shop = createShopwareShop(options.storeApi, {
     storeUrl: options.storeUrl,
     timeZone: checkTimeZone(options.timeZone),
-    log: options.log ?? ((message, details) => console.warn(message, details)),
+    log,
   });
   return {
     name,
     catalog: notImplemented("catalog", name),
     navigation: notImplemented("navigation", name),
     cart: notImplemented("cart", name),
-    checkout: notImplemented("checkout", name),
+    checkout: createShopwareCheckout(options.storeApi, { name, log }),
     customer: notImplemented("customer", name),
     orders: notImplemented("orders", name),
     shop,

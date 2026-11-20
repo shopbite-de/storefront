@@ -9,14 +9,14 @@ const ADDED_LABEL_MS = 1800;
 
 const route = useRoute();
 const { count, subtotal } = useCart();
-const { isCheckoutEnabled } = useShopBiteConfig();
+const { acceptsOrders } = useShopConfig();
 const { getFormattedPrice } = useCommercePrice();
 const { show } = useCartQuickView();
 const { onCartItemAdded } = useProductEvents();
 
 const visible = computed(
   () =>
-    isCheckoutEnabled.value &&
+    acceptsOrders.value &&
     count.value > 0 &&
     !route.path.startsWith(CHECKOUT_PATH_PREFIX),
 );

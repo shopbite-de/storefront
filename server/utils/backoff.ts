@@ -1,3 +1,5 @@
+import { isDomainError } from "../../shared/domain";
+
 /** How long a failed Shopware request pauses the next ones. */
 export const FAILURE_BACKOFF_MS = 30_000;
 
@@ -25,9 +27,14 @@ function statusOf(error: unknown): number | undefined {
 
 /**
  * A 5xx, or a fetch error without a response (network, timeout). A 4xx is
- * an answer, and a programming error (TypeError) is no outage either.
+ * an answer, and a programming error (TypeError) is no outage either. A
+ * port's `backend_unavailable` is an outage unless its cause is an answer.
  */
 export function isOutage(error: unknown): boolean {
+  if (isDomainError(error)) {
+    if (error.code !== "backend_unavailable") return false;
+    return error.cause === undefined || isOutage(error.cause);
+  }
   const status = statusOf(error);
   if (status !== undefined) return status >= 500;
   return (error as { name?: string } | null)?.name === "FetchError";

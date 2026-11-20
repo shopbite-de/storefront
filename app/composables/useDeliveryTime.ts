@@ -1,166 +1,139 @@
 import { computed, type Ref } from "vue";
+import type { WishedTimeWindow } from "../utils/restaurantTime";
 
-function isTimeWithinBounds(
-  time: string,
-  min: string | null,
-  max: string | null,
-): boolean {
-  if (!min || !max) return false;
-  return time >= min && time <= max;
-}
-
+/**
+ * The wished time choice of the checkout ("Wann?"): the window in which
+ * the guest can choose a time now, in the restaurant's time zone, after the
+ * lead time of the selected shipping method (shopbite#6, 30 minutes until
+ * it is known), never on a holiday. Within today's spans only (yesterday's
+ * late-night span included), as the ShopBite plugin accepts an order;
+ * times are `HH:MM` on the 5-minute grid, and a window running past
+ * midnight ends at e.g. 01:30 (the time input's min > max).
+ */
 export function useDeliveryTime(now: Ref<Date>) {
-  // lead time of the selected shipping method (shopbite#6)
   const { leadTime, fulfillment } = useShippingLeadTime();
-  const {
-    getServiceIntervals,
-    getEarliestSelectableTime,
-    findActiveInterval,
-    businessHours,
-  } = useBusinessHours();
-  const { isClosedHoliday } = useHolidays();
+  const { schedule } = useServiceSchedule();
 
   const wording = computed(() => FULFILLMENT_WORDING[fulfillment.value]);
 
-  const earliest = computed<Date>(() =>
-    getEarliestSelectableTime(now.value, leadTime.value),
+  const choice = computed<WishedTimeWindow | null>(() =>
+    schedule.value
+      ? wishedTimeWindow(now.value, schedule.value, leadTime.value)
+      : null,
   );
 
-  const activeInterval = computed<ServiceInterval | null>(() =>
-    findActiveInterval(now.value, leadTime.value),
+  /** The open window with at least one slot on the grid. */
+  const open = computed(() => {
+    const current = choice.value;
+    if (current?.kind !== "open") return null;
+    return firstSlot(current.earliest, current.latest) === null
+      ? null
+      : current;
+  });
+
+  /** `undefined` until opening hours and holidays are loaded. */
+  const isHoliday = computed<boolean | undefined>(() =>
+    choice.value ? choice.value.kind === "holiday" : undefined,
   );
 
-  const minTime = computed<string | null>(() => {
-    if (isClosedHoliday(now.value) !== false) return null;
-    const interval = activeInterval.value;
-    if (!interval) return null;
-    const minDate = new Date(
-      Math.max(earliest.value.getTime(), interval.start.getTime()),
-    );
-    return toTimeString(minDate);
-  });
+  const minTime = computed<string | null>(() =>
+    open.value ? formatClock(open.value.earliest) : null,
+  );
+  const maxTime = computed<string | null>(() =>
+    open.value ? formatClock(open.value.latest) : null,
+  );
 
-  const maxTime = computed<string | null>(() => {
-    if (isClosedHoliday(now.value) !== false) return null;
-    const interval = activeInterval.value;
-    return interval ? toTimeString(interval.end) : null;
-  });
-
-  const isClosedToday = computed<boolean>(() => activeInterval.value === null);
+  const isClosedToday = computed<boolean>(() => open.value === null);
 
   const helperText = computed<string>(() => {
-    const isHoliday = isClosedHoliday(now.value);
-    if (isHoliday === undefined) {
-      return "Lade Informationen...";
-    }
-    if (isHoliday) {
-      return "Wegen Betriebsferien geschlossen.";
-    }
-
-    const interval = activeInterval.value;
-    if (!interval) {
-      const dayOfWeek = now.value.getDay();
-      const hasOpeningsToday =
-        businessHours.value?.some((bh) => bh.dayOfWeek === dayOfWeek) ?? false;
-
-      if (!hasOpeningsToday) {
-        const dayName = [
-          "Sonntag",
-          "Montag",
-          "Dienstag",
-          "Mittwoch",
-          "Donnerstag",
-          "Freitag",
-          "Samstag",
-        ][dayOfWeek];
-        return `Heute (${dayName}) ist Ruhetag. Bitte an einem anderen Tag bestellen.`;
-      }
-
-      const intervals = getServiceIntervals(now.value);
-      const lastInterval = intervals.at(-1);
-      if (lastInterval && earliest.value > lastInterval.end) {
+    const current = choice.value;
+    if (!current) return "Lade Informationen...";
+    switch (current.kind) {
+      case "holiday":
+        return "Wegen Betriebsferien geschlossen.";
+      case "closing_day":
+        return `Heute (${weekdayName(current.weekday)}) ist Ruhetag. Bitte an einem anderen Tag bestellen.`;
+      case "none_left":
         return `Heute sind keine ${wording.value.times} mehr verfügbar.`;
-      }
+    }
+    if (!open.value) {
       return `Aktuell keine ${wording.value.time} verfügbar. Bitte später erneut versuchen.`;
     }
-
-    const startStr = toTimeString(interval.start);
-    const endStr = toTimeString(interval.end);
-    const earliestStr = toTimeString(earliest.value);
-
-    return earliest.value <= interval.start
-      ? `Nächster möglicher Zeitraum: ${startStr} – ${endStr}`
-      : `Frühestmöglich ab ${earliestStr} (heute), erlaubt: ${startStr} – ${endStr}`;
+    const { ready, span } = current;
+    const range = `${formatClock(span.opens)} – ${formatClosing(span.closes)}`;
+    if (ready <= span.opens) return `Nächster möglicher Zeitraum: ${range}`;
+    const today = ready < MINUTES_PER_DAY ? " (heute)" : "";
+    return `Frühestmöglich ab ${formatClock(ready)}${today}, erlaubt: ${range}`;
   });
 
-  function clampTimeToInterval(
-    selectedTime: string,
-    min: string,
-    max: string,
-    baseDate: Date,
-  ): string {
-    const selected = parseTimeString(selectedTime, baseDate);
-    const minDate = parseTimeString(min, baseDate);
-    const maxDate = parseTimeString(max, baseDate);
+  /** The chosen time as minutes of the window, `null` outside `HH:MM`. */
+  function minutesOf(time: string): number | null {
+    return open.value
+      ? minutesInWindow(time, open.value.earliest, open.value.latest)
+      : null;
+  }
 
-    let clamped = selected;
-    if (selected < minDate) clamped = minDate;
-    if (selected > maxDate) clamped = maxDate;
+  /** The first slot of the window, to prefill the choice. */
+  const firstSlotTime = computed<string | null>(() => {
+    if (!open.value) return null;
+    const slot = firstSlot(open.value.earliest, open.value.latest);
+    return slot === null ? null : formatClock(slot);
+  });
 
-    return toTimeString(clamped);
+  /** Whether a chosen time lies in the window. */
+  function isWithinWindow(time: string): boolean {
+    const minutes = minutesOf(time);
+    return (
+      minutes !== null &&
+      open.value !== null &&
+      minutes >= open.value.earliest &&
+      minutes <= open.value.latest
+    );
+  }
+
+  /** A chosen time moved into the window, on the grid. */
+  function slotFor(time: string): string | null {
+    if (!open.value) return null;
+    const { earliest, latest } = open.value;
+    const minutes = minutesOf(time) ?? earliest;
+    const clamped = Math.min(Math.max(minutes, earliest), latest);
+    const slot = firstSlot(clamped, latest) ?? firstSlot(earliest, latest);
+    return slot === null ? null : formatClock(slot);
   }
 
   /**
-   * Validate a selected time and return a human-readable error message,
-   * or null if the time is valid (or empty).
+   * A human-readable error for a chosen time, or null if it is valid (or
+   * empty).
    */
   function validate(selectedTime: string | null | undefined): string | null {
-    // No value -> no error (let required-validation happen elsewhere if needed)
     if (!selectedTime) return null;
-
-    // Simple HH:MM check – prevents parse errors and immediate feedback
-    const isHHMM = /^\d{2}:\d{2}$/.test(selectedTime);
-    if (!isHHMM) {
+    if (!/^\d{2}:\d{2}$/.test(selectedTime)) {
       return "Bitte eine gültige Uhrzeit im Format HH:MM eingeben.";
     }
-
-    // Closed or no selectable window
-    if (isClosedToday.value || !minTime.value || !maxTime.value) {
-      return helperText.value;
-    }
-
-    // Bound checks (string compare works for HH:MM)
-    if (selectedTime < minTime.value) {
+    if (!open.value) return helperText.value;
+    const minutes = minutesOf(selectedTime);
+    if (minutes === null) return "Bitte eine gültige Uhrzeit auswählen.";
+    if (minutes < open.value.earliest) {
       return `Die Zeit liegt vor dem frühestmöglichen Zeitpunkt. Frühestens ab ${minTime.value}.`;
     }
-    if (selectedTime > maxTime.value) {
-      return `Die Zeit liegt nach dem spätestmöglichen Zeitpunkt. Spätestens bis ${maxTime.value}.`;
+    if (minutes > open.value.latest) {
+      return `Die Zeit liegt nach dem spätestmöglichen Zeitpunkt. Spätestens bis ${formatClosing(open.value.latest)}.`;
     }
-
-    // Optional: enforce 5-minute steps (step="300" in input)
-    try {
-      const parsed = parseTimeString(selectedTime, now.value);
-      const minutes = parsed.getHours() * 60 + parsed.getMinutes();
-      if (minutes % 5 !== 0) {
-        return "Bitte eine Zeit in 5-Minuten-Schritten auswählen.";
-      }
-    } catch {
-      // If parsing fails for some reason, show a generic message
-      return "Bitte eine gültige Uhrzeit auswählen.";
+    if (minutes % WISHED_TIME_STEP !== 0) {
+      return "Bitte eine Zeit in 5-Minuten-Schritten auswählen.";
     }
-
     return null;
   }
 
   return {
-    earliest,
-    activeInterval,
     minTime,
     maxTime,
     isClosedToday,
+    isHoliday,
     helperText,
-    clampTimeToInterval,
-    isTimeWithinBounds,
+    firstSlotTime,
+    isWithinWindow,
+    slotFor,
     validate,
   };
 }

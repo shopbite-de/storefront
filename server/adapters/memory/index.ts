@@ -6,8 +6,8 @@
  * `not_implemented`).
  */
 import { deepFreeze, sortOpeningHours, timeZone } from "../../../shared/domain";
-import type { Backend, ShopPort } from "../../ports";
-import { notImplemented } from "../notImplemented";
+import type { Backend, CheckoutPort, ShopPort } from "../../ports";
+import { notImplemented, partlyImplemented } from "../notImplemented";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { DEMO_SEED, type MemorySeed } from "./seed";
 
@@ -29,6 +29,16 @@ function createMemoryShop(seed: MemorySeed["shop"]): ShopPort {
   };
 }
 
+function createMemoryCheckout(
+  seed: MemorySeed["checkout"],
+  name: string,
+): CheckoutPort {
+  const shippingMethods = deepFreeze(structuredClone(seed.shippingMethods));
+  return partlyImplemented("checkout", name, {
+    listShippingMethods: async () => shippingMethods,
+  });
+}
+
 export function createMemoryBackend(seed: MemorySeed = DEMO_SEED): Backend {
   const name = "memory";
   return {
@@ -36,7 +46,7 @@ export function createMemoryBackend(seed: MemorySeed = DEMO_SEED): Backend {
     catalog: notImplemented("catalog", name),
     navigation: notImplemented("navigation", name),
     cart: notImplemented("cart", name),
-    checkout: notImplemented("checkout", name),
+    checkout: createMemoryCheckout(seed.checkout, name),
     customer: notImplemented("customer", name),
     orders: notImplemented("orders", name),
     shop: createMemoryShop(seed.shop),

@@ -1,6 +1,13 @@
 // Builders for the schema.org JSON-LD of the shop (#272). Pure functions, so
 // they stay platform-neutral and unit-testable; the composables gather the
 // data and hand it in.
+import type { Holiday, OpeningHours, Weekday } from "../../shared/domain";
+import {
+  formatClock,
+  MINUTES_PER_DAY,
+  serviceSpans,
+  type ServiceSpan,
+} from "./restaurantTime";
 
 const DAY_NAMES = [
   "Monday",
@@ -11,18 +18,6 @@ const DAY_NAMES = [
   "Saturday",
   "Sunday",
 ] as const;
-
-type BusinessHourLike = {
-  /** 1 = Monday … 7 = Sunday */
-  dayOfWeek?: number;
-  openingTime?: string;
-  closingTime?: string;
-};
-
-type HolidayLike = {
-  start?: string;
-  end?: string;
-};
 
 export type SiteInfo = {
   name: string;
@@ -77,33 +72,35 @@ function buildSuitableForDiet(diets: MenuItemInfo["diets"]) {
   return [...new Set((diets ?? []).flatMap((diet) => DIET_URLS[diet]))];
 }
 
-const formatTime = (time: string) => time.slice(0, 5);
+/**
+ * Closing time as schema.org reads it: a late-night opening closes before
+ * it opens (17:00–01:30), the end of the day is 00:00, and a day open
+ * around the clock is 00:00–23:59 (00:00–00:00 would mean closed).
+ */
+function schemaClosing(span: ServiceSpan): string {
+  if (span.closes === MINUTES_PER_DAY && span.opens === 0) return "23:59";
+  return formatClock(span.closes);
+}
 
 /**
  * Weekly opening hours. Days with identical intervals share one entry, so
  * `Mo–Fr 11:30–14:30` becomes a single specification with five days.
  */
-export function buildOpeningHoursSpecification(
-  businessHours: BusinessHourLike[],
-) {
+export function buildOpeningHoursSpecification(hours: OpeningHours) {
   const days = new Map<string, string[]>();
 
-  for (const bh of businessHours) {
-    const day = DAY_NAMES[(bh.dayOfWeek ?? 0) - 1];
-    if (!day || !bh.openingTime || !bh.closingTime) continue;
-    const key = `${formatTime(bh.openingTime)}-${formatTime(bh.closingTime)}`;
-    days.set(key, [...(days.get(key) ?? []), day]);
-  }
+  DAY_NAMES.forEach((day, index) => {
+    for (const span of serviceSpans(hours, (index + 1) as Weekday)) {
+      const key = `${formatClock(span.opens)}-${schemaClosing(span)}`;
+      days.set(key, [...(days.get(key) ?? []), day]);
+    }
+  });
 
   return [...days.entries()].map(([key, dayOfWeek]) => {
     const [opens, closes] = key.split("-");
     return {
       "@type": "OpeningHoursSpecification",
-      dayOfWeek: dayOfWeek.sort(
-        (a, b) =>
-          DAY_NAMES.indexOf(a as (typeof DAY_NAMES)[number]) -
-          DAY_NAMES.indexOf(b as (typeof DAY_NAMES)[number]),
-      ),
+      dayOfWeek,
       opens,
       closes,
     };
@@ -111,19 +108,19 @@ export function buildOpeningHoursSpecification(
 }
 
 /**
- * Closing days (holidays, vacation) as special opening hours. Google's
- * convention for a closed day is `opens` and `closes` at `00:00`.
+ * Holidays as special opening hours. Google's convention for a closed day
+ * is `opens` and `closes` at `00:00`.
  */
-export function buildSpecialOpeningHoursSpecification(holidays: HolidayLike[]) {
-  return holidays
-    .filter((holiday) => holiday.start && holiday.end)
-    .map((holiday) => ({
-      "@type": "OpeningHoursSpecification",
-      validFrom: holiday.start!.slice(0, 10),
-      validThrough: holiday.end!.slice(0, 10),
-      opens: "00:00",
-      closes: "00:00",
-    }));
+export function buildSpecialOpeningHoursSpecification(
+  holidays: readonly Holiday[],
+) {
+  return holidays.map((holiday) => ({
+    "@type": "OpeningHoursSpecification",
+    validFrom: holiday.firstDay,
+    validThrough: holiday.lastDay,
+    opens: "00:00",
+    closes: "00:00",
+  }));
 }
 
 function buildAddress(address: SiteInfo["address"]) {
@@ -178,8 +175,8 @@ function buildOrderAction(orderUrl: string | undefined, site: SiteInfo) {
  */
 export function buildRestaurantSchema(input: {
   site: SiteInfo;
-  businessHours?: BusinessHourLike[];
-  holidays?: HolidayLike[];
+  openingHours?: OpeningHours;
+  holidays?: readonly Holiday[];
   menuUrl?: string;
   menuSections?: MenuSectionInfo[];
   /** Set only when online ordering is enabled. */
@@ -189,7 +186,7 @@ export function buildRestaurantSchema(input: {
 }) {
   const { site } = input;
   const openingHours = buildOpeningHoursSpecification(
-    input.businessHours ?? [],
+    input.openingHours ?? { intervals: [] },
   );
   const specialHours = buildSpecialOpeningHoursSpecification(
     input.holidays ?? [],
