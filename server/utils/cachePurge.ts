@@ -15,23 +15,32 @@ const PER_PRODUCT = ["product", "variant", "cross-selling"];
 const LISTS = ["listing", "search", "top-sellers"];
 /**
  * Layout data of every page: navigations, SEO URL matches and breadcrumbs
- * (a renamed or moved section changes them), plugin config, hours, closing
- * days and payment methods. Small, so every purge takes all of it.
+ * (a renamed or moved section changes them) and payment methods; the
+ * restaurant operations are cached functions (`LAYOUT_FUNCTIONS`). Small,
+ * so every purge takes all of it.
  */
-export const LAYOUT = [
-  "navigation",
-  "breadcrumb",
-  "business-hours",
-  "holidays",
-  "payment-methods",
-];
+export const LAYOUT = ["navigation", "breadcrumb", "payment-methods"];
 /** Always purged: the lists and the layout data. */
 const SHARED = [...LISTS, ...LAYOUT];
 const ALL = [...PER_PRODUCT, "category", ...SHARED];
 const HANDLERS = "cache:nitro:handlers:";
-/** Cached functions: SEO URL matches, known SEO paths, plugin config. */
+/**
+ * Cached functions: SEO URL matches, known SEO paths, the plugin config of
+ * the menu root, and the restaurant operations of the BFF (configuration,
+ * opening hours, holidays, branches, shipping methods; `BACKEND_DATA_NAMES`
+ * in server/utils/shopData.ts).
+ */
 const FUNCTIONS = "cache:nitro:functions:";
-const LAYOUT_FUNCTIONS = ["seo-url", "seo-paths", "shopbite-config"];
+export const LAYOUT_FUNCTIONS = [
+  "seo-url",
+  "seo-paths",
+  "shopbite-config",
+  "shop-config",
+  "shop-opening-hours",
+  "shop-holidays",
+  "shop-branches",
+  "shipping-methods",
+];
 /** Route rules with `swr` (llms.txt lists the menu). */
 const ROUTES = "cache:nitro:routes:";
 

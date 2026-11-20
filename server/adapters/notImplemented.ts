@@ -47,3 +47,21 @@ export function notImplemented<P extends PortName>(
         : Reflect.get(target, key, receiver),
   });
 }
+
+/**
+ * A port of which the adapter implements some methods already: those
+ * answer, the rest reject with `not_implemented` like `notImplemented`.
+ */
+export function partlyImplemented<P extends PortName>(
+  port: P,
+  adapter: string,
+  implemented: Partial<Backend[P]>,
+): Backend[P] {
+  const rest = notImplemented(port, adapter);
+  return new Proxy(rest, {
+    get: (target, key, receiver) =>
+      typeof key === "string" && Object.hasOwn(implemented, key)
+        ? (implemented as Record<string, unknown>)[key]
+        : Reflect.get(target, key, receiver),
+  });
+}

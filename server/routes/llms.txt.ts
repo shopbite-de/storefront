@@ -6,6 +6,12 @@ import { fulfillmentLeadTime } from "../../app/utils/leadTime";
 import { productDeepLink } from "../../app/utils/productUrl";
 import { splitList, toAbsoluteUrl } from "../../app/utils/seo";
 import { buildLlmsTxt, type LlmsMenuSection } from "../utils/llmsTxt";
+import {
+  holidaysData,
+  openingHoursData,
+  shippingMethodsData,
+  shopConfigData,
+} from "../utils/shopData";
 
 type Schemas = components["schemas"];
 
@@ -69,32 +75,39 @@ export default defineEventHandler(async (event) => {
       body,
     });
 
-  const [navigation, products, hours, holidays, config, context, pages, home] =
-    await Promise.allSettled([
-      storeApi<Schemas["Category"][]>(
-        `/navigation/${menuRoot}/${menuRoot}`,
-        NAVIGATION_CRITERIA,
+  const [
+    navigation,
+    products,
+    hours,
+    holidays,
+    config,
+    shippingMethods,
+    context,
+    pages,
+    home,
+  ] = await Promise.allSettled([
+    storeApi<Schemas["Category"][]>(
+      `/navigation/${menuRoot}/${menuRoot}`,
+      NAVIGATION_CRITERIA,
+    ),
+    loadProducts((page) =>
+      storeApiPost<{ elements?: Schemas["Product"][] }>(
+        "/product",
+        { ...PRODUCT_CRITERIA, page },
+        { headers: { "sw-include-seo-urls": "true" } },
       ),
-      loadProducts((page) =>
-        storeApiPost<{ elements?: Schemas["Product"][] }>(
-          "/product",
-          { ...PRODUCT_CRITERIA, page },
-          { headers: { "sw-include-seo-urls": "true" } },
-        ),
-      ),
-      storeApi<{ businessHours?: Schemas["ShopbiteBusinessHour"][] }>(
-        "/shopbite/business-hour",
-      ),
-      storeApi<{ holidays?: { start?: string; end?: string }[] }>(
-        "/shopbite/holiday",
-      ),
-      storeApi<Schemas["ShopBiteConfig"]>("/shopbite/config"),
-      storeApi<Schemas["SalesChannelContext"]>("/context"),
-      queryCollection(event, "landingpages")
-        .select("path", "title", "description")
-        .all(),
-      queryCollection(event, "home").select("faq").first(),
-    ]);
+    ),
+    // restaurant operations through the ports (ADR 0001), cached
+    openingHoursData.cached(),
+    holidaysData.cached(),
+    shopConfigData.cached(),
+    shippingMethodsData.cached(),
+    storeApi<Schemas["SalesChannelContext"]>("/context"),
+    queryCollection(event, "landingpages")
+      .select("path", "title", "description")
+      .all(),
+    queryCollection(event, "home").select("faq").first(),
+  ]);
 
   const value = <T>(result: PromiseSettledResult<T>) =>
     result.status === "fulfilled" ? result.value : undefined;
@@ -131,12 +144,12 @@ export default defineEventHandler(async (event) => {
     telephone: site.telephone,
     googleBusinessProfileUrl: site.googleBusinessProfileUrl,
     deliveryAreas: splitList(site.deliveryAreas),
-    businessHours: value(hours)?.businessHours,
-    holidays: value(holidays)?.holidays,
-    isCheckoutEnabled: value(config)?.isCheckoutEnabled,
+    openingHours: value(hours),
+    holidays: value(holidays),
+    acceptsOrders: value(config)?.acceptsOrders,
     // lead times of the delivery and pickup methods (shopbite#6)
-    deliveryTime: fulfillmentLeadTime(value(config), "delivery"),
-    pickupTime: fulfillmentLeadTime(value(config), "pickup"),
+    deliveryTime: fulfillmentLeadTime(value(shippingMethods), "delivery"),
+    pickupTime: fulfillmentLeadTime(value(shippingMethods), "pickup"),
     menuUrl: toAbsoluteUrl(siteUrl, "/speisekarte"),
     menu: (value(navigation) ?? [])
       .filter((category) => category.type === "page")
@@ -158,6 +171,7 @@ export default defineEventHandler(async (event) => {
     faq: value(home)?.faq?.items,
     currency: value(context)?.currency?.isoCode,
     now: new Date(),
+    timeZone: value(config)?.timeZone ?? useRuntimeConfig().shopBite.timeZone,
   });
 
   event.res.headers.set("Content-Type", "text/markdown; charset=utf-8");

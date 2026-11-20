@@ -117,7 +117,7 @@ pnpm generate-types   # Regenerate Store API types after plugin changes
 Run a single test:
 
 ```bash
-pnpm vitest run test/nuxt/useBusinessHours.test.ts
+pnpm vitest run test/nuxt/useDeliveryTime.test.ts
 pnpm playwright test test/e2e/simple-checkout-as-recurring-customer.test.ts
 ```
 
@@ -126,11 +126,11 @@ pnpm playwright test test/e2e/simple-checkout-as-recurring-customer.test.ts
 ```
 app/
 ├── components/     Cart, Checkout, Product, Food, Navigation, Header, …
-├── composables/    Business logic — useBusinessHours, useDeliveryTime, useAddToCart, …
+├── composables/    Business logic — useOpeningHours, useDeliveryTime, useAddToCart, …
 ├── pages/          German routes: /speisekarte, /warenkorb, /konto, /bestellung
 ├── validation/     Zod schemas for forms
 └── assets/css/     Tailwind v4 theme tokens
-server/api/         Cached Store API proxies + the Geoapify key guard
+server/api/         BFF routes (domain types from the ports), cached Store API proxies, the Geoapify key guard
 api-types/          Auto-generated Store API types (pnpm generate-types)
 content/            Legal pages as Markdown (@nuxt/content)
 test/               unit · nuxt · e2e
@@ -142,10 +142,9 @@ API responses are validated with Zod before they reach a component.
 
 Key ones worth knowing:
 
-- **`useBusinessHours`** — opening hours with multiple intervals per day (Sunday is day 7)
-- **`useDeliveryTime`** — slot validation in 5-minute steps, prep time and holiday aware
+- **`useOpeningHours`**, **`useHolidays`**, **`useShopConfig`**, **`useShippingMethods`** — restaurant operations from the storefront's own routes (`/api/shop/*`, `/api/checkout/shipping-methods`), in the restaurant's time zone
+- **`useDeliveryTime`** — the wished time window in 5-minute steps, lead time and holiday aware
 - **`useAddToCart`** — extras/toppings become a container line item keyed by UUID v5
-- **`useShopBiteConfig`** — delivery config and checkout state from the plugin
 - **`useAddressAutocomplete`** — Geoapify behind `/api/address/autocomplete`
 
 ## Docker

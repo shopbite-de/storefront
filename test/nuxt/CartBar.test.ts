@@ -15,8 +15,8 @@ mockNuxtImport("useCart", () => () => ({
   count: computed(() => state.count),
   subtotal: computed(() => state.subtotal),
 }));
-mockNuxtImport("useShopBiteConfig", () => () => ({
-  isCheckoutEnabled: ref(true),
+mockNuxtImport("useShopConfig", () => () => ({
+  acceptsOrders: ref(true),
 }));
 mockNuxtImport("useCommercePrice", () => () => ({
   getFormattedPrice: (price: number) => `${price.toFixed(2)} €`,

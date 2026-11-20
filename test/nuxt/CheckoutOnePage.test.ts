@@ -34,10 +34,13 @@ mockNuxtImport("useUser", () => () => ({
   isGuestSession: ref(state.guest),
   refreshUser: vi.fn(),
 }));
-mockNuxtImport("useShopBiteConfig", () => () => ({
-  isCheckoutEnabled: ref(true),
+mockNuxtImport("useShopConfig", () => () => ({
+  acceptsOrders: ref(true),
   refresh: vi.fn(),
-  checkCheckoutEnabled: vi.fn().mockResolvedValue(true),
+  checkAcceptsOrders: vi.fn().mockResolvedValue(true),
+}));
+mockNuxtImport("useShippingMethods", () => () => ({
+  refresh: vi.fn(),
 }));
 mockNuxtImport("useShippingLeadTime", () => () => ({
   fulfillment: ref("delivery"),

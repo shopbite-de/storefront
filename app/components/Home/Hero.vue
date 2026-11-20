@@ -43,7 +43,7 @@ const rating = computed(() => {
 
 const { status } = useStoreStatus();
 // lead times of the delivery and pickup methods (shopbite#6)
-const { deliveryTime, pickupTime } = useShopBiteConfig();
+const { deliveryTime, pickupTime } = useShippingMethods();
 
 const statusLabel = computed(() => {
   if (!status.value) return "";

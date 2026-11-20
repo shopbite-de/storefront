@@ -33,13 +33,14 @@ if (sessionContextData.value) {
   useSessionContext(sessionContextData.value);
 }
 
-// Business hours, holidays and the checkout switch feed the store status
-// (HeaderStoreStatus), the delivery time selection and the order buttons.
-// The server renders them from its caches; after hydration the browser
-// loads them from Shopware (useLiveShopData).
-useBusinessHours();
+// Opening hours, holidays, the switch that accepts orders and the lead
+// times feed the store status (HeaderStoreStatus), the wished time choice
+// and the order buttons. The server renders them from its caches; after
+// hydration the browser loads their live values (useLiveShopData).
+useOpeningHours();
 useHolidays();
-useShopBiteConfig();
+useShopConfig();
+useShippingMethods();
 useLiveShopData();
 
 const { refreshCart } = useCart();

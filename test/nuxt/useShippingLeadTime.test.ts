@@ -8,15 +8,10 @@ import { useShippingLeadTime } from "~/composables/useShippingLeadTime";
 const DELIVERY = "0190a3b0c1d27e0f8a9b0c1d2e3f4a5b";
 const PICKUP = "0190a3b0c1d27e0f8a9b0c1d2e3f4a5c";
 
-const { mockInvoke, selected } = vi.hoisted(() => ({
-  mockInvoke: vi.fn(),
+const { selected } = vi.hoisted(() => ({
   selected: {
     current: null as null | { value: unknown },
   },
-}));
-
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: { invoke: mockInvoke },
 }));
 
 mockNuxtImport("useCheckout", () => () => ({
@@ -41,13 +36,10 @@ describe("useShippingLeadTime", () => {
   });
 
   it("switches between delivery and pickup with the shipping method", async () => {
-    configData.value = {
-      isCheckoutEnabled: true,
-      shippingMethods: [
-        { id: DELIVERY, fulfillment: "delivery", leadTimeMinutes: 45 },
-        { id: PICKUP, fulfillment: "pickup", leadTimeMinutes: 20 },
-      ],
-    };
+    configData.value = [
+      { id: DELIVERY, fulfillment: "delivery", leadTime: { minutes: 45 } },
+      { id: PICKUP, fulfillment: "pickup", leadTime: { minutes: 20 } },
+    ];
 
     const { fulfillment, leadTime } = useShippingLeadTime();
     expect(fulfillment.value).toBe("delivery");
@@ -58,7 +50,7 @@ describe("useShippingLeadTime", () => {
     expect(leadTime.value).toBe(20);
   });
 
-  it("defaults to delivery without a lead time before the config is loaded", () => {
+  it("defaults to delivery without a lead time before the shipping methods are loaded", () => {
     const { fulfillment, leadTime } = useShippingLeadTime();
     expect(fulfillment.value).toBe("delivery");
     expect(leadTime.value).toBeNull();

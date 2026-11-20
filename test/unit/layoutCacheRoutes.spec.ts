@@ -105,17 +105,6 @@ describe("/api/breadcrumb/[categoryId]", () => {
 });
 
 describe("time-critical layout data", () => {
-  it("never serves business hours or holidays older than their TTL", async () => {
-    stubNitro();
-    for (const name of ["business-hours", "holidays"]) {
-      vi.resetModules();
-      const { opts } = await load<CachedHandler>(
-        `../../server/api/shopbite/${name}.get`,
-      );
-      expect(opts.swr).toBe(false);
-    }
-  });
-
   it("keeps the plugin config for the config TTL, without stale answers", async () => {
     const stubs = stubNitro();
     stubs.storeApiGet!.mockResolvedValue({ isCheckoutEnabled: true });
@@ -413,7 +402,7 @@ describe("/api/_cache/purge", () => {
       readBody: async () => body,
       useStorage: () => ({
         getKeys: async () => [
-          "cache:nitro:handlers:holidays:holidays.json",
+          "cache:nitro:functions:shop-holidays:shop-holidays.json",
           "cache:nitro:handlers:listing:x1.json",
         ],
         removeItem,
@@ -431,7 +420,7 @@ describe("/api/_cache/purge", () => {
     const { result, removeItem } = await purge({ layout: true });
     expect(await result).toEqual({ purged: 1 });
     expect(removeItem).toHaveBeenCalledWith(
-      "cache:nitro:handlers:holidays:holidays.json",
+      "cache:nitro:functions:shop-holidays:shop-holidays.json",
     );
   });
 
@@ -464,8 +453,6 @@ describe("cold caches during a Shopware outage", () => {
       path: "../../server/api/navigation/[type].get",
       params: { type: "menu" },
     },
-    { path: "../../server/api/shopbite/business-hours.get", params: {} },
-    { path: "../../server/api/shopbite/holidays.get", params: {} },
     { path: "../../server/api/payment-methods.get", params: {} },
     { path: "../../server/api/top-sellers.get", params: {} },
     {
@@ -501,16 +488,19 @@ describe("cold caches during a Shopware outage", () => {
 
   it("serves the last good answer per key during an outage", async () => {
     const stubs = stubNitro();
-    const hours = { businessHours: [{ dayOfWeek: 1 }] };
-    stubs.storeApiGet!.mockResolvedValueOnce(hours).mockRejectedValue(DOWN);
+    stubs
+      .storeApiPost!.mockResolvedValueOnce({
+        elements: [{ name: "Barzahlung" }],
+      })
+      .mockRejectedValue(DOWN);
     const { handler } = await load<CachedHandler>(
-      "../../server/api/shopbite/business-hours.get",
+      "../../server/api/payment-methods.get",
     );
 
-    expect(await handler({})).toEqual(hours);
-    expect(await handler({})).toEqual(hours);
-    expect(await handler({})).toEqual(hours);
-    expect(stubs.storeApiGet).toHaveBeenCalledTimes(2);
+    expect(await handler({})).toEqual(["Barzahlung"]);
+    expect(await handler({})).toEqual(["Barzahlung"]);
+    expect(await handler({})).toEqual(["Barzahlung"]);
+    expect(stubs.storeApiPost).toHaveBeenCalledTimes(2);
   });
 
   it("does not take a client error for an outage", async () => {

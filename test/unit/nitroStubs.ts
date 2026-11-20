@@ -84,9 +84,14 @@ export function stubNitro(globals: Record<string, unknown> = {}) {
         shopware: { endpoint: "http://shopware/store-api", accessToken: "k" },
       },
     }),
-    createError: (input: { statusCode: number; statusMessage?: string }) =>
+    createError: (input: {
+      statusCode: number;
+      statusMessage?: string;
+      data?: unknown;
+    }) =>
       Object.assign(new Error(input.statusMessage ?? `${input.statusCode}`), {
         statusCode: input.statusCode,
+        data: input.data,
       }),
     getRouterParam: (event: TestEvent, name: string) => event.params?.[name],
     getQuery: (event: TestEvent) => event.query ?? {},

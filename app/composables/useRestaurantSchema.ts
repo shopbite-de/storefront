@@ -4,8 +4,8 @@ import { splitList, toAbsoluteUrl } from "../utils/seo";
 
 /**
  * `Restaurant` JSON-LD for the home page (#272): shop data from
- * `runtimeConfig.public.site`, weekly hours and closing days from the ShopBite
- * plugin, the menu sections from the menu navigation. Hours and holidays are
+ * `runtimeConfig.public.site`, opening hours and holidays from the shop
+ * backend (`/api/shop/*`), the menu sections from the menu navigation. Hours and holidays are
  * prefetched on the server so the schema is part of the HTML. Ordering,
  * delivery areas and payment methods (#401) tell AI assistants and search
  * engines how to order.
@@ -13,10 +13,10 @@ import { splitList, toAbsoluteUrl } from "../utils/seo";
 export function useRestaurantSchema() {
   const { site } = useRuntimeConfig().public;
   const siteConfig = useSiteConfig();
-  const { businessHours, refresh: refreshBusinessHours } = useBusinessHours();
+  const { openingHours, refresh: refreshOpeningHours } = useOpeningHours();
   const { holidays, refresh: refreshHolidays } = useHolidays();
   const { menuCardMenu } = useNavigation(true);
-  const { isCheckoutEnabled } = useShopBiteConfig();
+  const { acceptsOrders } = useShopConfig();
   const { currencyCode } = useCommercePrice();
 
   // Cached on the server (server/api/payment-methods).
@@ -34,7 +34,7 @@ export function useRestaurantSchema() {
   );
 
   onServerPrefetch(() =>
-    Promise.all([refreshBusinessHours(), refreshHolidays()]),
+    Promise.all([refreshOpeningHours(), refreshHolidays()]),
   );
 
   const toSection = (item: NavigationMenuItem): MenuSectionInfo => ({
@@ -67,11 +67,11 @@ export function useRestaurantSchema() {
         geo: site.geo,
         acceptsReservations: site.acceptsReservations,
       },
-      businessHours: businessHours.value ?? [],
+      openingHours: openingHours.value ?? undefined,
       holidays: holidays.value ?? [],
       menuUrl,
       menuSections: menuCardMenu.value.map(toSection),
-      orderUrl: isCheckoutEnabled.value ? menuUrl : undefined,
+      orderUrl: acceptsOrders.value ? menuUrl : undefined,
       paymentMethods: paymentMethods.value,
       currency: currencyCode.value,
     }),

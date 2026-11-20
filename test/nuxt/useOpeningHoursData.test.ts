@@ -5,22 +5,22 @@ import { defineComponent, h, nextTick, ref, type Ref } from "vue";
 // Refs are created per test in beforeEach; the mocks read them lazily.
 const { state } = vi.hoisted(() => ({
   state: {
-    refreshBusinessHours: vi.fn(),
+    refreshOpeningHours: vi.fn(),
     refreshHolidays: vi.fn(),
   } as {
-    businessHours: Ref<unknown>;
-    businessHoursStatus: Ref<string>;
+    openingHours: Ref<unknown>;
+    openingHoursStatus: Ref<string>;
     holidays: Ref<unknown>;
     holidaysStatus: Ref<string>;
-    refreshBusinessHours: ReturnType<typeof vi.fn>;
+    refreshOpeningHours: ReturnType<typeof vi.fn>;
     refreshHolidays: ReturnType<typeof vi.fn>;
   },
 }));
 
-mockNuxtImport("useBusinessHours", () => () => ({
-  businessHours: state.businessHours,
-  status: state.businessHoursStatus,
-  refresh: state.refreshBusinessHours,
+mockNuxtImport("useOpeningHours", () => () => ({
+  openingHours: state.openingHours,
+  status: state.openingHoursStatus,
+  refresh: state.refreshOpeningHours,
 }));
 
 mockNuxtImport("useHolidays", () => () => ({
@@ -48,15 +48,15 @@ async function mountComposable() {
 describe("useOpeningHoursData", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    state.businessHours = ref(null);
-    state.businessHoursStatus = ref("idle");
+    state.openingHours = ref(null);
+    state.openingHoursStatus = ref("idle");
     state.holidays = ref(null);
     state.holidaysStatus = ref("idle");
   });
 
-  it("is loading until business hours and holidays are there", async () => {
-    state.businessHours.value = [];
-    state.businessHoursStatus.value = "success";
+  it("is loading until opening hours and holidays are there", async () => {
+    state.openingHours.value = [];
+    state.openingHoursStatus.value = "success";
     state.holidaysStatus.value = "pending";
 
     const { isLoaded, isLoading, hasFailed } = await mountComposable();
@@ -74,7 +74,7 @@ describe("useOpeningHoursData", () => {
   });
 
   it("has failed when a request failed and none is running", async () => {
-    state.businessHoursStatus.value = "error";
+    state.openingHoursStatus.value = "error";
     state.holidaysStatus.value = "pending";
 
     const { isLoading, hasFailed } = await mountComposable();
@@ -90,7 +90,7 @@ describe("useOpeningHoursData", () => {
   });
 
   it("does not report a failure before mounting (hydration)", async () => {
-    state.businessHoursStatus.value = "error";
+    state.openingHoursStatus.value = "error";
     state.holidaysStatus.value = "error";
 
     const { hasFailed, hasFailedOnRender } = await mountComposable();
@@ -100,8 +100,8 @@ describe("useOpeningHoursData", () => {
   });
 
   it("loads again when retrying", async () => {
-    state.businessHours.value = [];
-    state.businessHoursStatus.value = "success";
+    state.openingHours.value = [];
+    state.openingHoursStatus.value = "success";
     state.holidaysStatus.value = "error";
 
     const { hasFailed, isLoading, retry } = await mountComposable();
@@ -113,7 +113,7 @@ describe("useOpeningHoursData", () => {
     await retry();
 
     expect(state.refreshHolidays).toHaveBeenCalledTimes(1);
-    expect(state.refreshBusinessHours).not.toHaveBeenCalled();
+    expect(state.refreshOpeningHours).not.toHaveBeenCalled();
     expect(hasFailed.value).toBe(false);
     expect(isLoading.value).toBe(true);
   });

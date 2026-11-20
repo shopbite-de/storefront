@@ -5,31 +5,40 @@ import {
   shippingLeadTime,
   wishedTimeComment,
 } from "../../app/utils/leadTime";
+import type { Fulfillment, ShippingMethod } from "../../shared/domain";
 
 const DELIVERY = "0190a3b0c1d27e0f8a9b0c1d2e3f4a5b";
 const PICKUP = "0190a3b0c1d27e0f8a9b0c1d2e3f4a5c";
 
-const config = {
-  shippingMethods: [
-    { id: DELIVERY, fulfillment: "delivery" as const, leadTimeMinutes: 45 },
-    { id: PICKUP, fulfillment: "pickup" as const, leadTimeMinutes: 20 },
-  ],
-};
+const method = (
+  id: string,
+  fulfillment: Fulfillment,
+  minutes: number | null,
+): ShippingMethod => ({
+  id,
+  name: id,
+  description: null,
+  fulfillment,
+  leadTime: minutes === null ? null : { minutes },
+  media: null,
+});
+
+const config = [method(DELIVERY, "delivery", 45), method(PICKUP, "pickup", 20)];
 
 describe("shippingLeadTime", () => {
-  it("takes the lead time and fulfillment the plugin reports", () => {
-    expect(shippingLeadTime(config, { id: DELIVERY })).toEqual({
+  it("takes the lead time and fulfillment of the method", () => {
+    expect(shippingLeadTime(config, DELIVERY)).toEqual({
       fulfillment: "delivery",
       minutes: 45,
     });
-    expect(shippingLeadTime(config, { id: PICKUP })).toEqual({
+    expect(shippingLeadTime(config, PICKUP)).toEqual({
       fulfillment: "pickup",
       minutes: 20,
     });
   });
 
-  it("has no lead time for a method the plugin does not list", () => {
-    expect(shippingLeadTime(config, { id: "other" })).toEqual({
+  it("has no lead time for a method the shop does not list", () => {
+    expect(shippingLeadTime(config, "other")).toEqual({
       fulfillment: "delivery",
       minutes: null,
     });
@@ -42,25 +51,21 @@ describe("shippingLeadTime", () => {
 
 describe("fulfillmentLeadTime", () => {
   it("returns the lead time of the first method of the fulfillment", () => {
-    const many = {
-      shippingMethods: [
-        ...config.shippingMethods,
-        { id: "x", fulfillment: "delivery" as const, leadTimeMinutes: 60 },
-      ],
-    };
+    const many = [...config, method("x", "delivery", 60)];
     expect(fulfillmentLeadTime(many, "delivery")).toBe(45);
     expect(fulfillmentLeadTime(many, "pickup")).toBe(20);
   });
 
   it("is null without a method of the fulfillment", () => {
-    expect(
-      fulfillmentLeadTime(
-        { shippingMethods: [config.shippingMethods[1]!] },
-        "delivery",
-      ),
-    ).toBeNull();
-    expect(fulfillmentLeadTime({ shippingMethods: [] }, "pickup")).toBeNull();
+    expect(fulfillmentLeadTime([config[1]!], "delivery")).toBeNull();
+    expect(fulfillmentLeadTime([], "pickup")).toBeNull();
     expect(fulfillmentLeadTime(undefined, "delivery")).toBeNull();
+  });
+
+  it("is null when the first method of the fulfillment has no lead time", () => {
+    expect(
+      fulfillmentLeadTime([method("p", "pickup", null)], "pickup"),
+    ).toBeNull();
   });
 });
 

@@ -26,7 +26,10 @@ type Schemas = components["schemas"];
 export type AdapterLog = (message: string, details: unknown) => void;
 
 /** Any failure of the Store API becomes `backend_unavailable`. */
-async function call<T>(what: string, request: () => Promise<T>): Promise<T> {
+export async function call<T>(
+  what: string,
+  request: () => Promise<T>,
+): Promise<T> {
   try {
     return await request();
   } catch (cause) {

@@ -3,201 +3,187 @@ import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref } from "vue";
 import { useDeliveryTime } from "~/composables/useDeliveryTime";
 
-const { mockDeliveryTime, mockFulfillment, mockBusinessHours, mockHolidays } =
-  vi.hoisted(() => ({
-    mockDeliveryTime: { value: 45 },
-    mockFulfillment: { value: "delivery" as "delivery" | "pickup" },
-    mockBusinessHours: {
-      value: [
-        { dayOfWeek: 1, openingTime: "11:30", closingTime: "14:30" },
-        { dayOfWeek: 1, openingTime: "17:30", closingTime: "23:00" },
-        { dayOfWeek: 3, openingTime: "11:30", closingTime: "14:30" },
-        { dayOfWeek: 3, openingTime: "17:30", closingTime: "23:00" },
-        { dayOfWeek: 4, openingTime: "11:30", closingTime: "14:30" },
-        { dayOfWeek: 4, openingTime: "17:30", closingTime: "23:00" },
-        { dayOfWeek: 5, openingTime: "11:30", closingTime: "14:30" },
-        { dayOfWeek: 5, openingTime: "17:30", closingTime: "23:00" },
-        { dayOfWeek: 6, openingTime: "17:30", closingTime: "23:30" },
-        { dayOfWeek: 0, openingTime: "11:30", closingTime: "14:30" },
-        { dayOfWeek: 0, openingTime: "17:30", closingTime: "23:00" },
-      ],
-    },
-    mockHolidays: { value: [] as { start: string; end: string }[] | null },
-  }));
+const { lead, state } = vi.hoisted(() => ({
+  lead: {
+    minutes: { value: 45 as number | null },
+    fulfillment: { value: "delivery" as "delivery" | "pickup" },
+  },
+  state: { schedule: null as unknown },
+}));
 
 mockNuxtImport("useShippingLeadTime", () => () => ({
-  leadTime: mockDeliveryTime,
-  fulfillment: mockFulfillment,
+  leadTime: lead.minutes,
+  fulfillment: lead.fulfillment,
 }));
 
-mockNuxtImport("useBusinessHours", () => () => ({
-  businessHours: mockBusinessHours,
-  getServiceIntervals: (date: Date) => {
-    const dayOfWeek = date.getDay();
-    return mockBusinessHours.value
-      .filter((bh) => bh.dayOfWeek === dayOfWeek)
-      .map((bh) => {
-        const startParts = bh.openingTime.split(":").map(Number);
-        const endParts = bh.closingTime.split(":").map(Number);
-        const startH = startParts[0] ?? 0;
-        const startM = startParts[1] ?? 0;
-        const endH = endParts[0] ?? 0;
-        const endM = endParts[1] ?? 0;
-        const start = new Date(date);
-        start.setHours(startH, startM, 0, 0);
-        const end = new Date(date);
-        end.setHours(endH, endM, 0, 0);
-        return { start, end };
-      });
-  },
-  getEarliestSelectableTime: (
-    currentTime: Date,
-    currentDeliveryTime: number | null,
-  ) => {
-    const earliest = new Date(currentTime);
-    earliest.setMinutes(earliest.getMinutes() + (currentDeliveryTime ?? 30));
-    earliest.setSeconds(0, 0);
-    return earliest;
-  },
-  findActiveInterval: (
-    currentTime: Date,
-    currentDeliveryTime: number | null,
-  ) => {
-    const intervals = [
-      { dayOfWeek: 1, openingTime: "11:30", closingTime: "14:30" },
-      { dayOfWeek: 1, openingTime: "17:30", closingTime: "23:00" },
-      { dayOfWeek: 3, openingTime: "11:30", closingTime: "14:30" },
-      { dayOfWeek: 3, openingTime: "17:30", closingTime: "23:00" },
-      { dayOfWeek: 4, openingTime: "11:30", closingTime: "14:30" },
-      { dayOfWeek: 4, openingTime: "17:30", closingTime: "23:00" },
-      { dayOfWeek: 5, openingTime: "11:30", closingTime: "14:30" },
-      { dayOfWeek: 5, openingTime: "17:30", closingTime: "23:00" },
-      { dayOfWeek: 6, openingTime: "17:30", closingTime: "23:30" },
-      { dayOfWeek: 0, openingTime: "11:30", closingTime: "14:30" },
-      { dayOfWeek: 0, openingTime: "17:30", closingTime: "23:00" },
-    ]
-      .filter((bh) => bh.dayOfWeek === currentTime.getDay())
-      .map((bh) => {
-        const startParts = bh.openingTime.split(":").map(Number);
-        const endParts = bh.closingTime.split(":").map(Number);
-        const startH = startParts[0] ?? 0;
-        const startM = startParts[1] ?? 0;
-        const endH = endParts[0] ?? 0;
-        const endM = endParts[1] ?? 0;
-        const start = new Date(currentTime);
-        start.setHours(startH, startM, 0, 0);
-        const end = new Date(currentTime);
-        end.setHours(endH, endM, 0, 0);
-        return { start, end };
-      });
-
-    const earliest = new Date(currentTime);
-    earliest.setMinutes(earliest.getMinutes() + (currentDeliveryTime ?? 30));
-    earliest.setSeconds(0, 0);
-
-    if (intervals.length === 0) return null;
-    const current = intervals.find(
-      (i) => earliest >= i.start && earliest <= i.end,
-    );
-    if (current) return current;
-    return intervals.find((i) => i.start > earliest) ?? null;
-  },
+mockNuxtImport("useServiceSchedule", () => () => ({
+  schedule: ref(state.schedule),
 }));
 
-mockNuxtImport("useHolidays", () => () => ({
-  isClosedHoliday: (date: Date) => {
-    if (!mockHolidays.value) return undefined;
-    const formattedDate = date.toISOString().split("T")[0]!;
-    return mockHolidays.value.some((h: { start: string; end: string }) => {
-      const start = h.start.split("T")[0] as string;
-      const end = h.end.split("T")[0] as string;
-      return formattedDate >= start && formattedDate <= end;
-    });
+const interval = (opens: string, closes: string) => {
+  const minutes = (time: string) => {
+    const [h, m] = time.split(":").map(Number);
+    return h! * 60 + m!;
+  };
+  return {
+    opens: { minutes: minutes(opens) },
+    closes: { minutes: minutes(closes) },
+  };
+};
+
+/**
+ * Berlin; closed on Tuesday; lunch and dinner on the other days, Saturday
+ * dinner until 23:30, Friday night until 01:30 (split at midnight).
+ */
+const SCHEDULE = {
+  timeZone: "Europe/Berlin",
+  openingHours: {
+    intervals: [
+      ...[1, 3, 4, 5, 7].flatMap((weekday) => [
+        { weekday, interval: interval("11:30", "14:30") },
+        ...(weekday === 5
+          ? []
+          : [{ weekday, interval: interval("17:30", "23:00") }]),
+      ]),
+      { weekday: 5, interval: interval("17:30", "24:00") },
+      { weekday: 6, interval: interval("00:00", "01:30") },
+      { weekday: 6, interval: interval("17:30", "23:30") },
+    ],
   },
-}));
+  holidays: [] as { id: string; firstDay: string; lastDay: string }[],
+};
+
+// Berlin wall-clock time in November 2026 (UTC+1); the 18th is a Wednesday
+const at = (day: number, time: string) =>
+  ref(new Date(`2026-11-${day}T${time}:00+01:00`));
 
 describe("useDeliveryTime", () => {
-  const now = ref(new Date("2023-10-27T12:00:00")); // A Friday
-
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockFulfillment.value = "delivery";
+    lead.minutes.value = 45;
+    lead.fulfillment.value = "delivery";
+    state.schedule = SCHEDULE;
   });
 
   // shopbite#6: the lead time of the selected shipping method
-  it("uses the lead time of the selected shipping method", () => {
-    mockDeliveryTime.value = 20;
-    mockFulfillment.value = "pickup";
-    const { earliest } = useDeliveryTime(now);
-    expect(earliest.value.getHours()).toBe(12);
-    expect(earliest.value.getMinutes()).toBe(20);
+  it("starts at now plus the lead time of the selected shipping method", () => {
+    lead.minutes.value = 20;
+    const { minTime, maxTime, helperText } = useDeliveryTime(at(18, "12:00"));
+    expect(minTime.value).toBe("12:20");
+    expect(maxTime.value).toBe("14:30");
+    expect(helperText.value).toBe(
+      "Frühestmöglich ab 12:20 (heute), erlaubt: 11:30 – 14:30",
+    );
+  });
+
+  it("assumes 30 minutes while the lead time is unknown", () => {
+    lead.minutes.value = null;
+    expect(useDeliveryTime(at(18, "12:00")).minTime.value).toBe("12:30");
+  });
+
+  it("offers the next span before it opens", () => {
+    const { minTime, helperText, firstSlotTime } = useDeliveryTime(
+      at(18, "15:00"),
+    );
+    expect(minTime.value).toBe("17:30");
+    expect(firstSlotTime.value).toBe("17:30");
+    expect(helperText.value).toBe("Nächster möglicher Zeitraum: 17:30 – 23:00");
   });
 
   it("speaks of pickup times for a pickup method", () => {
-    mockDeliveryTime.value = 30;
-    const late = ref(new Date("2023-10-27T22:45:00"));
-    mockFulfillment.value = "pickup";
+    lead.minutes.value = 30;
+    const late = at(18, "22:45");
+    lead.fulfillment.value = "pickup";
     expect(useDeliveryTime(late).helperText.value).toBe(
       "Heute sind keine Abholzeiten mehr verfügbar.",
     );
-    mockFulfillment.value = "delivery";
+    lead.fulfillment.value = "delivery";
     expect(useDeliveryTime(late).helperText.value).toBe(
       "Heute sind keine Lieferzeiten mehr verfügbar.",
     );
   });
 
-  it("should calculate earliest selectable time", () => {
-    mockDeliveryTime.value = 30;
-    const { earliest } = useDeliveryTime(now);
-    // 12:00 + 30 mins = 12:30
-    expect(earliest.value.getHours()).toBe(12);
-    expect(earliest.value.getMinutes()).toBe(30);
-  });
-
-  it("should identify if closed today (e.g., Tuesday)", () => {
-    const tuesday = ref(new Date("2023-10-24T12:00:00"));
-    const { isClosedToday, helperText } = useDeliveryTime(tuesday);
+  it("names the weekly closing day", () => {
+    const { isClosedToday, helperText } = useDeliveryTime(at(17, "12:00"));
     expect(isClosedToday.value).toBe(true);
-    expect(helperText.value).toContain("Dienstag");
-  });
-
-  it("should validate valid time", () => {
-    const { validate, minTime, maxTime } = useDeliveryTime(now);
-    if (minTime.value && maxTime.value) {
-      expect(validate(minTime.value)).toBeNull();
-    }
-  });
-
-  it("should return error for invalid format", () => {
-    const { validate } = useDeliveryTime(now);
-    expect(validate("invalid")).toBe(
-      "Bitte eine gültige Uhrzeit im Format HH:MM eingeben.",
+    expect(helperText.value).toBe(
+      "Heute (Dienstag) ist Ruhetag. Bitte an einem anderen Tag bestellen.",
     );
   });
 
-  it("should return error for time before minTime", () => {
-    const { validate, minTime } = useDeliveryTime(now);
-    if (minTime.value) {
-      // Assuming minTime is something like "12:30"
-      const [hours, mins] = minTime.value.split(":").map(Number);
-      const earlyTime = new Date(now.value);
-      earlyTime.setHours(hours as number);
-      earlyTime.setMinutes((mins as number) - 5);
-      const earlyTimeStr =
-        earlyTime.getHours().toString().padStart(2, "0") +
-        ":" +
-        earlyTime.getMinutes().toString().padStart(2, "0");
-
-      expect(validate(earlyTimeStr)).toContain(
-        "vor dem frühestmöglichen Zeitpunkt",
-      );
-    }
+  it("is closed on a holiday", () => {
+    state.schedule = {
+      ...SCHEDULE,
+      holidays: [{ id: "h", firstDay: "2026-11-18", lastDay: "2026-11-18" }],
+    };
+    const { isHoliday, isClosedToday, helperText } = useDeliveryTime(
+      at(18, "12:00"),
+    );
+    expect(isHoliday.value).toBe(true);
+    expect(isClosedToday.value).toBe(true);
+    expect(helperText.value).toBe("Wegen Betriebsferien geschlossen.");
   });
 
-  it("should return loading message when holidays are not loaded", () => {
-    mockHolidays.value = null;
-    const { helperText } = useDeliveryTime(now);
+  it("decides by the restaurant's clock, not the visitor's", () => {
+    // 12:00 in Berlin is 06:00 in New York, before lunch there
+    state.schedule = { ...SCHEDULE, timeZone: "America/New_York" };
+    const { minTime, helperText } = useDeliveryTime(at(18, "12:00"));
+    expect(minTime.value).toBe("11:30");
+    expect(helperText.value).toBe("Nächster möglicher Zeitraum: 11:30 – 14:30");
+  });
+
+  it("validates format, bounds and the 5-minute grid", () => {
+    const { validate } = useDeliveryTime(at(18, "12:00"));
+    expect(validate("12:45")).toBeNull();
+    expect(validate("")).toBeNull();
+    expect(validate("invalid")).toBe(
+      "Bitte eine gültige Uhrzeit im Format HH:MM eingeben.",
+    );
+    expect(validate("12:40")).toBe(
+      "Die Zeit liegt vor dem frühestmöglichen Zeitpunkt. Frühestens ab 12:45.",
+    );
+    expect(validate("15:00")).toBe(
+      "Die Zeit liegt nach dem spätestmöglichen Zeitpunkt. Spätestens bis 14:30.",
+    );
+    expect(validate("12:47")).toBe(
+      "Bitte eine Zeit in 5-Minuten-Schritten auswählen.",
+    );
+  });
+
+  it("runs past midnight in a late-night opening", () => {
+    lead.minutes.value = 30;
+    const { minTime, maxTime, validate, helperText } = useDeliveryTime(
+      at(20, "23:40"),
+    );
+    expect(minTime.value).toBe("00:10");
+    expect(maxTime.value).toBe("01:30");
+    expect(helperText.value).toBe(
+      "Frühestmöglich ab 00:10, erlaubt: 17:30 – 01:30",
+    );
+    expect(validate("00:30")).toBeNull();
+    expect(validate("23:55")).toContain("vor dem frühestmöglichen Zeitpunkt");
+    expect(validate("02:00")).toContain("Spätestens bis 01:30");
+  });
+
+  it("serves the rest of last night's opening after midnight", () => {
+    lead.minutes.value = 30;
+    const { minTime, maxTime } = useDeliveryTime(at(21, "00:30"));
+    expect(minTime.value).toBe("01:00");
+    expect(maxTime.value).toBe("01:30");
+  });
+
+  it("moves a time into the window on the grid", () => {
+    const { slotFor, isWithinWindow } = useDeliveryTime(at(18, "12:03"));
+    // earliest 12:48
+    expect(isWithinWindow("12:40")).toBe(false);
+    expect(slotFor("12:40")).toBe("12:50");
+    expect(slotFor("16:00")).toBe("14:30");
+    expect(isWithinWindow("13:00")).toBe(true);
+  });
+
+  it("is loading until opening hours and holidays are there", () => {
+    state.schedule = null;
+    const { helperText, isHoliday } = useDeliveryTime(at(18, "12:00"));
     expect(helperText.value).toBe("Lade Informationen...");
-    mockHolidays.value = []; // Reset for other tests
+    expect(isHoliday.value).toBeUndefined();
   });
 });

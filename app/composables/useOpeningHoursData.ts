@@ -1,8 +1,8 @@
-/** Delays before the browser requests business hours or holidays again. */
+/** Delays before the browser requests opening hours or holidays again. */
 export const OPENING_HOURS_RETRY_DELAYS = [1000, 3000] as const;
 
 /**
- * Load state of business hours and holidays, which app.vue fetches after
+ * Load state of opening hours and holidays, which app.vue fetches after
  * mounting (#349, #355). `hasFailed` once a request failed after its retries
  * and no attempt is running; `retry()` requests the missing data again.
  *
@@ -12,10 +12,10 @@ export const OPENING_HOURS_RETRY_DELAYS = [1000, 3000] as const;
  */
 export function useOpeningHoursData() {
   const {
-    businessHours,
-    status: businessHoursStatus,
-    refresh: refreshBusinessHours,
-  } = useBusinessHours();
+    openingHours,
+    status: openingHoursStatus,
+    refresh: refreshOpeningHours,
+  } = useOpeningHours();
   const {
     holidays,
     status: holidaysStatus,
@@ -28,13 +28,13 @@ export function useOpeningHoursData() {
   });
 
   const isLoaded = computed(() =>
-    Boolean(businessHours.value && holidays.value),
+    Boolean(openingHours.value && holidays.value),
   );
 
   const hasFailed = computed(() => {
     if (!isMounted.value || isLoaded.value) return false;
     const missing = [
-      businessHours.value ? null : businessHoursStatus.value,
+      openingHours.value ? null : openingHoursStatus.value,
       holidays.value ? null : holidaysStatus.value,
     ].filter((status) => status !== null);
     return missing.includes("error") && !missing.includes("pending");
@@ -44,7 +44,7 @@ export function useOpeningHoursData() {
 
   async function retry(): Promise<void> {
     await Promise.all([
-      businessHours.value ? undefined : refreshBusinessHours(),
+      openingHours.value ? undefined : refreshOpeningHours(),
       holidays.value ? undefined : refreshHolidays(),
     ]);
   }

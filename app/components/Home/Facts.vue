@@ -17,14 +17,16 @@ export type FeatureCardProps = {
  */
 const props = defineProps<{ features: FeatureCardProps[] }>();
 
-const { businessHours } = useBusinessHours();
-const { deliveryTime, pickupTime } = useShopBiteConfig();
+const { openingHours } = useOpeningHours();
+const { timeZone } = useShopConfig();
+const { deliveryTime, pickupTime } = useShippingMethods();
 
 const items = computed(() =>
   props.features.map((feature) => {
     let lead = feature.lead ?? "";
-    if (feature.kind === "hours" && businessHours.value) {
-      lead = formatTodayHours(businessHours.value, new Date());
+    // today in the restaurant's time zone; rendered in the browser only
+    if (feature.kind === "hours" && openingHours.value) {
+      lead = formatTodayHours(openingHours.value, new Date(), timeZone.value);
     }
     // lead times of the delivery and pickup methods (shopbite#6)
     if (feature.kind === "delivery" && deliveryTime.value !== null) {

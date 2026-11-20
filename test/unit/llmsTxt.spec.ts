@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { buildLlmsTxt } from "../../server/utils/llmsTxt";
+import {
+  holiday,
+  openingInterval,
+  sortOpeningHours,
+  type Weekday,
+} from "../../shared/domain";
 
 const now = new Date("2026-10-05T12:00:00Z");
 
@@ -17,17 +23,22 @@ describe("buildLlmsTxt", () => {
       },
       telephone: "+49 123 456789",
       deliveryAreas: ["12345 Musterstadt", "12346 Beispieldorf"],
-      businessHours: [1, 2, 3, 4, 5].map((dayOfWeek) => ({
-        dayOfWeek,
-        openingTime: "11:30:00",
-        closingTime: "22:00:00",
-      })),
+      openingHours: sortOpeningHours(
+        ([1, 2, 3, 4, 5] as Weekday[]).map((weekday) => ({
+          weekday,
+          interval: openingInterval("11:30", "22:00"),
+        })),
+      ),
       holidays: [
         // ended before `now`: left out
-        { start: "2026-07-12T21:00:00Z", end: "2026-08-05T22:00:00Z" },
-        { start: "2026-12-24T00:00:00Z", end: "2026-12-26T00:00:00Z" },
+        holiday({
+          id: "summer",
+          firstDay: "2026-07-13",
+          lastDay: "2026-08-05",
+        }),
+        holiday({ id: "xmas", firstDay: "2026-12-24", lastDay: "2026-12-26" }),
       ],
-      isCheckoutEnabled: true,
+      acceptsOrders: true,
       deliveryTime: 30,
       pickupTime: 20,
       menuUrl: "https://www.pizzeria-esempio.example/speisekarte",
@@ -84,6 +95,7 @@ describe("buildLlmsTxt", () => {
       ],
       currency: "EUR",
       now,
+      timeZone: "Europe/Berlin",
     });
 
     expect(text).toBe(`# Pizzeria Esempio
@@ -136,6 +148,21 @@ Nach Musterstadt und Beispieldorf.
 `);
   });
 
+  it("keeps a holiday until its last day in the restaurant's time zone", () => {
+    const text = buildLlmsTxt({
+      name: "ShopBite",
+      url: "https://example.com",
+      openingHours: { intervals: [] },
+      holidays: [
+        holiday({ id: "h", firstDay: "2026-10-04", lastDay: "2026-10-05" }),
+      ],
+      // still 5 October in Berlin, already 6 October in UTC
+      now: new Date("2026-10-05T23:30:00+02:00"),
+      timeZone: "Europe/Berlin",
+    });
+    expect(text).toContain("- Geschlossen: 04.10.2026 – 05.10.2026");
+  });
+
   it("names other names of the shop under Kontakt", () => {
     expect(
       buildLlmsTxt({
@@ -143,6 +170,7 @@ Nach Musterstadt und Beispieldorf.
         alternateNames: ["Esempio / Alter Hof", "Alter Hof"],
         url: "https://www.pizzeria-esempio.example",
         now,
+        timeZone: "Europe/Berlin",
       }),
     ).toContain(`## Kontakt
 
@@ -158,6 +186,7 @@ Nach Musterstadt und Beispieldorf.
         alternateNames: [],
         url: "https://example.com",
         now,
+        timeZone: "Europe/Berlin",
       }),
     ).toBe(`# ShopBite
 

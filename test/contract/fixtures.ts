@@ -1,14 +1,16 @@
-import { createMemoryBackend } from "../../server/adapters/memory";
+import { createMemoryBackend, DEMO_SEED } from "../../server/adapters/memory";
 import {
   createShopwareBackend,
   type StoreApi,
 } from "../../server/adapters/shopware";
 import {
   holiday,
+  leadTime,
   openingInterval,
   zonedDateTime,
   type Weekday,
 } from "../../shared/domain";
+import type { CheckoutScenario } from "./checkout.contract";
 import type { AdapterFixture } from "./harness";
 import type { ShopScenario } from "./shop.contract";
 
@@ -44,6 +46,7 @@ export const memoryShop: AdapterFixture<ShopScenario> = {
           current: branch.url === scenario.storeUrl,
         })),
       },
+      checkout: { shippingMethods: [] },
     }),
 };
 
@@ -164,6 +167,86 @@ export const shopwareShop: AdapterFixture<ShopScenario> = {
       storeApi,
       storeUrl: scenario.storeUrl,
       timeZone: config.timeZone,
+      log: () => {},
+    });
+  },
+};
+
+/** The memory adapter, seeded with the scenario's shipping methods. */
+export const memoryCheckout: AdapterFixture<CheckoutScenario> = {
+  adapter: "memory",
+  create: (scenario) =>
+    createMemoryBackend({
+      ...DEMO_SEED,
+      checkout: {
+        shippingMethods: scenario.shippingMethods.map((method) => ({
+          id: method.id,
+          name: method.name,
+          description: method.description,
+          fulfillment: method.fulfillment,
+          leadTime:
+            method.leadTimeMinutes === null
+              ? null
+              : leadTime(method.leadTimeMinutes),
+          media: null,
+        })),
+      },
+    }),
+};
+
+/**
+ * The Shopware adapter against a fake Store API: the ShopBite plugin lists
+ * fulfillment and lead time per method (a missing lead time is left out of
+ * its entry), the Store API's `/shipping-method` names them in the shop's
+ * order. The plugin's list is reversed: its order says nothing.
+ */
+export const shopwareCheckout: AdapterFixture<CheckoutScenario> = {
+  adapter: "shopware",
+  create: (scenario) => {
+    const config = {
+      isCheckoutEnabled: true,
+      menuCategoryId: "018dadb399837af3aa669c8fff4f4d6c",
+      shippingMethods: scenario.shippingMethods
+        .map((method) => ({
+          id: method.id,
+          fulfillment: method.fulfillment,
+          ...(method.leadTimeMinutes === null
+            ? {}
+            : { leadTimeMinutes: method.leadTimeMinutes }),
+        }))
+        .reverse(),
+    };
+    const shippingMethods = {
+      total: scenario.shippingMethods.length,
+      elements: scenario.shippingMethods.map((method, position) => ({
+        id: method.id,
+        name: method.name,
+        description: method.description,
+        position,
+        translated: {
+          name: method.name,
+          description: method.description,
+        },
+        media: null,
+      })),
+    };
+    const storeApi: StoreApi = {
+      get: async <T>(path: string) => {
+        if (path !== "/shopbite/config")
+          throw new Error(`unexpected GET ${path}`);
+        return structuredClone(config) as T;
+      },
+      post: async <T>(path: string) => {
+        if (path !== "/shipping-method") {
+          throw new Error(`unexpected POST ${path}`);
+        }
+        return structuredClone(shippingMethods) as T;
+      },
+    };
+    return createShopwareBackend({
+      storeApi,
+      storeUrl: "https://nord.example.com",
+      timeZone: "Europe/Berlin",
       log: () => {},
     });
   },

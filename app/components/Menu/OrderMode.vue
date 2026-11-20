@@ -5,14 +5,14 @@
  * and renders nothing when there is no choice.
  */
 const { options, selectable, selectedId, load } = useOrderMode();
-const { isCheckoutEnabled } = useShopBiteConfig();
+const { acceptsOrders } = useShopConfig();
 
 onMounted(load);
 </script>
 
 <template>
   <SbSegmentedControl
-    v-if="isCheckoutEnabled && selectable && selectedId"
+    v-if="acceptsOrders && selectable && selectedId"
     v-model="selectedId"
     label="Bestellart"
     :options="options"

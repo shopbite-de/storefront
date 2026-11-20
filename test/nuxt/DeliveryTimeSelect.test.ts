@@ -5,7 +5,7 @@ import DeliveryTimeSelect from "~/components/Checkout/DeliveryTimeSelect.vue";
 
 // The time field follows the selected shipping method (shopbite#6):
 // lead time and wording of delivery or pickup.
-const { lead, hours } = vi.hoisted(() => ({
+const { lead } = vi.hoisted(() => ({
   lead: {
     fulfillment: "delivery" as "delivery" | "pickup",
     leadTime: 45 as number | null,
@@ -15,8 +15,6 @@ const { lead, hours } = vi.hoisted(() => ({
       leadTime: Ref<number | null>;
     },
   },
-  // "past": today's only interval has ended; "open": 11:00 to 22:00
-  hours: { mode: "past" as "past" | "open" },
 }));
 
 mockNuxtImport("useShippingLeadTime", () => () => {
@@ -33,57 +31,45 @@ mockNuxtImport("useOpeningHoursData", () => () => ({
   retry: vi.fn(),
 }));
 
-mockNuxtImport("useHolidays", () => () => ({
-  isClosedHoliday: () => false,
+/** Open 11:00 to 22:00 every day, in Berlin. */
+const DAILY = {
+  timeZone: "Europe/Berlin",
+  openingHours: {
+    intervals: [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
+      weekday,
+      interval: { opens: { minutes: 660 }, closes: { minutes: 1320 } },
+    })),
+  },
+  holidays: [],
+};
+
+const { schedule } = vi.hoisted(() => ({
+  schedule: { current: null as unknown },
 }));
 
-// "past": today's only interval ended an hour ago, no times are left.
-mockNuxtImport("useBusinessHours", () => () => {
-  const interval = (date: Date) => {
-    if (hours.mode === "open") {
-      const start = new Date(date);
-      start.setHours(11, 0, 0, 0);
-      const end = new Date(date);
-      end.setHours(22, 0, 0, 0);
-      return { start, end };
-    }
-    const end = new Date(Date.now() - 60 * 60_000);
-    return { start: new Date(end.getTime() - 60 * 60_000), end };
-  };
-  const getEarliestSelectableTime = (now: Date, minutes: number | null) => {
-    const earliest = new Date(now.getTime() + (minutes ?? 30) * 60_000);
-    earliest.setSeconds(0, 0);
-    return earliest;
-  };
-  return {
-    businessHours: ref([
-      {
-        dayOfWeek: new Date().getDay(),
-        openingTime: "00:00",
-        closingTime: "00:01",
-      },
-    ]),
-    getServiceIntervals: (date: Date) => [interval(date)],
-    getEarliestSelectableTime,
-    findActiveInterval: (now: Date, minutes: number | null) => {
-      if (hours.mode === "past") return null;
-      const current = interval(now);
-      return getEarliestSelectableTime(now, minutes) <= current.end
-        ? current
-        : null;
-    },
-  };
-});
+mockNuxtImport("useServiceSchedule", () => () => ({
+  schedule: ref(schedule.current),
+}));
 
 async function mountSelect() {
   return await mountSuspended(DeliveryTimeSelect);
 }
 
+beforeEach(() => {
+  schedule.current = DAILY;
+});
+
 describe("DeliveryTimeSelect wording per fulfillment", () => {
   beforeEach(() => {
     lead.fulfillment = "delivery";
     lead.leadTime = 45;
-    hours.mode = "past";
+    // today's opening has ended: no times are left
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-19T23:00:00+01:00"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("asks for the delivery time with the delivery lead time", async () => {
@@ -122,8 +108,8 @@ describe("DeliveryTimeSelect wording per fulfillment", () => {
 describe("DeliveryTimeSelect after a shipping method switch", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date(2026, 10, 19, 16, 13, 20));
-    hours.mode = "open";
+    // 16:13 in Berlin, whatever the visitor's clock says
+    vi.setSystemTime(new Date("2026-11-19T16:13:20+01:00"));
   });
 
   afterEach(() => {
@@ -177,5 +163,46 @@ describe("DeliveryTimeSelect after a shipping method switch", () => {
     expect(timeInput(wrapper).element.value).toBe("18:00");
     await switchTo("delivery", 30);
     expect(timeInput(wrapper).element.value).toBe("18:00");
+  });
+});
+
+describe("DeliveryTimeSelect in a late-night opening", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    // Friday 23:50 in Berlin
+    vi.setSystemTime(new Date("2026-11-20T23:50:00+01:00"));
+    lead.fulfillment = "delivery";
+    lead.leadTime = 30;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("offers times after midnight until the late-night opening closes", async () => {
+    // Friday 17:00–24:00 and Saturday 00:00–01:30, as the domain keeps it
+    schedule.current = {
+      timeZone: "Europe/Berlin",
+      openingHours: {
+        intervals: [
+          {
+            weekday: 5,
+            interval: { opens: { minutes: 1020 }, closes: { minutes: 1440 } },
+          },
+          {
+            weekday: 6,
+            interval: { opens: { minutes: 0 }, closes: { minutes: 90 } },
+          },
+        ],
+      },
+      holidays: [],
+    };
+    const wrapper = await mountSelect();
+    const input = wrapper.get<HTMLInputElement>('input[type="time"]');
+
+    expect(input.element.value).toBe("00:20");
+    expect(input.attributes("min")).toBe("00:20");
+    expect(input.attributes("max")).toBe("01:30");
+    expect(wrapper.emitted("update:valid")!.at(-1)).toEqual([true]);
   });
 });

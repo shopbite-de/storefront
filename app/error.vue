@@ -13,8 +13,9 @@ const pageTitle = computed(() => `${statusCode} | ${site?.name}`);
 
 console.error(props.error);
 
-// error.vue replaces app.vue: load the checkout switch, hours and closing
-// days from Shopware after hydration here as well (useLiveShopData).
+// error.vue replaces app.vue: load the switch that accepts orders, hours,
+// holidays and lead times live after hydration here as well
+// (useLiveShopData).
 useLiveShopData();
 
 const statusCode = props.error.statusCode;

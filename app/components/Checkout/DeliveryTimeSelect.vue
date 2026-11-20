@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, computed } from "vue";
-import { useDeliveryTime } from "~/composables/useDeliveryTime";
-import { useHolidays } from "~/composables/useHolidays";
 
 const props = defineProps<{
   modelValue?: string;
@@ -36,17 +34,20 @@ onUnmounted(() => {
   }
 });
 
+// Times in the restaurant's time zone; a window running past midnight has
+// min > max, which the time input allows (reversed range).
 const {
   minTime,
   maxTime,
   isClosedToday,
+  isHoliday,
   helperText,
-  clampTimeToInterval,
-  isTimeWithinBounds,
+  firstSlotTime,
+  isWithinWindow,
+  slotFor,
   validate,
 } = useDeliveryTime(now);
 
-const { isClosedHoliday } = useHolidays();
 const {
   isLoaded: isOpeningHoursLoaded,
   hasFailed: hasOpeningHoursFailed,
@@ -59,7 +60,7 @@ const validationError = computed<string | null>(() =>
 
 const isValid = computed<boolean>(() => {
   if (!selected.value) return false;
-  if (isClosedHoliday(now.value) === true) return false;
+  if (isHoliday.value === true) return false;
   return validate(selected.value) === null;
 });
 
@@ -80,33 +81,6 @@ watch(
   },
 );
 
-function roundToNext5MinInterval(timeString: string | null): string {
-  if (!timeString) return "";
-  const parts = timeString.split(":").map(Number);
-  const hours = parts[0] ?? 0;
-  const minutes = parts[1] ?? 0;
-  const totalMinutes = hours * 60 + minutes;
-  const roundedMinutes = Math.ceil(totalMinutes / 5) * 5;
-  const newHours = Math.floor(roundedMinutes / 60) % 24;
-  const newMinutes = roundedMinutes % 60;
-  return `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
-}
-
-/**
- * A 5-minute slot within min and max: rounded up, else the last slot before
- * max. A clamped raw minimum such as 16:43 failed the 5-minute check.
- */
-function slotWithin(time: string, min: string, max: string): string {
-  const rounded = roundToNext5MinInterval(time);
-  if (rounded <= max) return rounded;
-  const parts = max.split(":").map(Number);
-  const total = Math.floor(((parts[0] ?? 0) * 60 + (parts[1] ?? 0)) / 5) * 5;
-  const last = `${Math.floor(total / 60)
-    .toString()
-    .padStart(2, "0")}:${(total % 60).toString().padStart(2, "0")}`;
-  return last >= min ? last : rounded;
-}
-
 // Whether the time is the one filled in here (earliest slot), not one the
 // guest chose: it follows the earliest slot, e.g. to an earlier one after a
 // switch from delivery to pickup (shopbite#6).
@@ -118,31 +92,30 @@ function setSelected(time: string): void {
   emit("update:modelValue", time);
 }
 
+function clearSelected(): void {
+  if (!selected.value) return;
+  selected.value = "";
+  emit("update:modelValue", null);
+}
+
 watch(
   [minTime, maxTime],
   () => {
-    if (!minTime.value || !maxTime.value) {
-      if (selected.value) {
-        selected.value = "";
-        emit("update:modelValue", null);
-      }
+    if (!minTime.value || !maxTime.value || !firstSlotTime.value) {
+      clearSelected();
       return;
     }
 
     if (!selected.value || isPrefilled.value) {
-      setSelected(slotWithin(minTime.value, minTime.value, maxTime.value));
+      setSelected(firstSlotTime.value);
       isPrefilled.value = true;
       return;
     }
 
-    if (!isTimeWithinBounds(selected.value, minTime.value, maxTime.value)) {
-      const clampedTime = clampTimeToInterval(
-        selected.value,
-        minTime.value,
-        maxTime.value,
-        now.value,
-      );
-      setSelected(slotWithin(clampedTime, minTime.value, maxTime.value));
+    if (!isWithinWindow(selected.value)) {
+      const slot = slotFor(selected.value);
+      if (slot) setSelected(slot);
+      else clearSelected();
     }
   },
   { immediate: true },
@@ -176,7 +149,7 @@ function handleTimeInput(event: Event): void {
       >
     </div>
     <p
-      v-else-if="isOpeningHoursLoaded && isClosedHoliday(now) === true"
+      v-else-if="isOpeningHoursLoaded && isHoliday === true"
       role="status"
       class="rounded-sb-control bg-sb-muted p-4 font-semibold"
     >

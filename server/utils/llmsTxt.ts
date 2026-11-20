@@ -1,4 +1,6 @@
 import { groupOpeningHours } from "../../app/utils/openingHours";
+import { restaurantNow } from "../../app/utils/restaurantTime";
+import type { Holiday, OpeningHours } from "../../shared/domain";
 
 // Builder for /llms.txt (#402, https://llmstxt.org): a Markdown summary of
 // the shop for language models. Pure, so it is unit-testable; the route
@@ -33,13 +35,10 @@ export type LlmsTxtInput = {
   telephone?: string;
   googleBusinessProfileUrl?: string;
   deliveryAreas?: string[];
-  businessHours?: {
-    dayOfWeek?: number;
-    openingTime?: string;
-    closingTime?: string;
-  }[];
-  holidays?: { start?: string; end?: string }[];
-  isCheckoutEnabled?: boolean;
+  openingHours?: OpeningHours;
+  holidays?: readonly Holiday[];
+  /** The restaurant accepts online orders. */
+  acceptsOrders?: boolean;
   /** Minutes until delivery (lead time of the delivery method). */
   deliveryTime?: number | null;
   /** Minutes until an order is ready for pickup (pickup method). */
@@ -50,8 +49,10 @@ export type LlmsTxtInput = {
   /** FAQ of the home page (#404). */
   faq?: { question: string; answer: string }[];
   currency?: string;
-  /** Closing days that ended before this date are left out. */
+  /** Holidays that ended before this day are left out. */
   now: Date;
+  /** The restaurant's time zone, in which `now` is read. */
+  timeZone: string;
 };
 
 const DIET_LABELS = { vegetarian: "vegetarisch", vegan: "vegan" } as const;
@@ -62,9 +63,9 @@ function formatPrice(price: number, currency: string) {
     .replace(/\u00a0/g, " ");
 }
 
-/** `2026-07-12T21:00:00Z` → `12.07.2026` (date part as in the Restaurant schema). */
-function formatDay(isoDate: string) {
-  const [year, month, day] = isoDate.slice(0, 10).split("-");
+/** `2026-07-12` → `12.07.2026`. */
+function formatDay(date: string) {
+  const [year, month, day] = date.split("-");
   return `${day}.${month}.${year}`;
 }
 
@@ -121,7 +122,7 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
     input.cuisine && city
       ? `${input.name}: ${input.cuisine} in ${city}.`
       : `${input.name}${city ? ` in ${city}` : ""}.`,
-    input.isCheckoutEnabled
+    input.acceptsOrders
       ? `Online bestellen zur Lieferung oder Abholung unter ${input.url}.`
       : undefined,
   ]
@@ -147,22 +148,21 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
       : undefined,
   ].filter((line): line is string => Boolean(line));
 
-  const hours = groupOpeningHours(input.businessHours ?? []).map(
+  const hours = groupOpeningHours(input.openingHours ?? { intervals: [] }).map(
     (row) =>
       `- ${row.days}: ${row.intervals.length ? row.intervals.join(", ") : "Ruhetag"}`,
   );
 
-  const today = input.now.toISOString().slice(0, 10);
+  const today = restaurantNow(input.now, input.timeZone).date;
   const closingDays = (input.holidays ?? [])
-    .filter((holiday) => holiday.start && holiday.end)
-    .filter((holiday) => holiday.end!.slice(0, 10) >= today)
+    .filter((holiday) => holiday.lastDay >= today)
     .map((holiday) => {
-      const start = formatDay(holiday.start!);
-      const end = formatDay(holiday.end!);
+      const start = formatDay(holiday.firstDay);
+      const end = formatDay(holiday.lastDay);
       return `- Geschlossen: ${start === end ? start : `${start} – ${end}`}`;
     });
 
-  const ordering = input.isCheckoutEnabled
+  const ordering = input.acceptsOrders
     ? [
         `- Online bestellen: ${input.menuUrl ?? input.url}`,
         input.deliveryAreas?.length
