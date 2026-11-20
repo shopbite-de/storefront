@@ -210,7 +210,11 @@ describe("/api/top-sellers and /api/menu/upsell", () => {
       });
 
       for (let i = 0; i < 3; i++) {
-        await expect(handler({})).rejects.toMatchObject({ statusCode: 503 });
+        // paused or failing: the same answer as every BFF route
+        await expect(handler({})).rejects.toMatchObject({
+          statusCode: 503,
+          data: { code: "backend_unavailable" },
+        });
       }
       expect(listTopSellers).toHaveBeenCalledTimes(1);
       vi.setSystemTime(31_000);

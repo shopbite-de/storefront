@@ -50,12 +50,23 @@ describe("keysToPurge", () => {
       KEYS[0],
       KEYS[1],
       KEYS[2],
+      KEYS[4],
       KEYS[5],
       KEYS[6],
       KEYS[8],
       KEYS[9],
       KEYS[10],
     ]);
+  });
+
+  it("purges every section with any menu target, as a parent groups by its sub-sections", () => {
+    const other = `cache:nitro:handlers:menu-section:section${MARGHERITA}.json`;
+    expect(keysToPurge([...KEYS, other], { categories: [PIZZA] })).toContain(
+      other,
+    );
+    expect(keysToPurge([...KEYS, other], { products: [SCHNITZEL] })).toContain(
+      other,
+    );
   });
 
   it("purges a section and the lists, not the variants", () => {

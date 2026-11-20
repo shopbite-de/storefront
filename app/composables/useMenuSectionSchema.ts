@@ -24,12 +24,14 @@ export function useMenuSectionSchema(
     return buildMenuSectionSchema({
       name: current.name,
       description: current.description ?? undefined,
-      url: toAbsoluteUrl(siteConfig.url, current.path),
+      url: current.path
+        ? toAbsoluteUrl(siteConfig.url, current.path)
+        : undefined,
       image: current.media?.url,
       currency: dishes.value[0]?.price.currency ?? currencyCode.value,
       restaurantUrl: siteConfig.url,
       items: dishes.value.map((dish) => {
-        const link = dishLink(dish, current.path);
+        const link = dishLink(dish, current.path ?? undefined);
         return {
           name: dish.name,
           url: link ? toAbsoluteUrl(siteConfig.url, link) : undefined,

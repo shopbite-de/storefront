@@ -83,11 +83,11 @@ export function toLlmsMenu(
   }
   const toSection = (section: MenuSection): LlmsMenuSection => ({
     name: section.name,
-    url: toAbsoluteUrl(siteUrl, section.path),
+    url: section.path ? toAbsoluteUrl(siteUrl, section.path) : undefined,
     items: [...(bySection.get(section.id) ?? [])]
       .sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }))
       .map((dish) => {
-        const link = dishLink(dish, section.path);
+        const link = dishLink(dish, section.path ?? undefined);
         return {
           name: dish.name,
           url: link ? toAbsoluteUrl(siteUrl, link) : undefined,

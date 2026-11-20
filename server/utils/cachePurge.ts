@@ -11,14 +11,14 @@ import { timingSafeEqual } from "node:crypto";
 
 /** Entries keyed by one dish: its variants by options. */
 const PER_PRODUCT = ["variant"];
-/** Entries keyed by one menu section. */
-const PER_CATEGORY = ["menu-section"];
 /**
- * Entries any product or section change can reach: the lists, and the
- * dish sheets with their extras (an extra's price reaches every dish that
- * offers it), also by menu number.
+ * Entries any product or section change can reach: the lists, the dish
+ * sheets with their extras (an extra's price reaches every dish that
+ * offers it), also by menu number, and the sections, whose sub-sections
+ * group a parent's listing (a renamed sub-section changes its parent).
  */
 const LISTS = [
+  "menu-section",
   "listing",
   "search",
   "top-sellers",
@@ -35,7 +35,7 @@ const LISTS = [
 export const LAYOUT = ["navigation", "breadcrumb", "payment-methods"];
 /** Always purged: the lists and the layout data. */
 const SHARED = [...LISTS, ...LAYOUT];
-const ALL = [...PER_PRODUCT, ...PER_CATEGORY, ...SHARED];
+const ALL = [...PER_PRODUCT, ...SHARED];
 const HANDLERS = "cache:nitro:handlers:";
 /**
  * Cached functions: SEO URL matches, known SEO paths, the plugin config of
@@ -96,8 +96,6 @@ export function keysToPurge(
     if (LAYOUT.includes(handler)) return true;
     if (layoutOnly) return false;
     if (everything || SHARED.includes(handler)) return true;
-    if (PER_CATEGORY.includes(handler))
-      return categories.some((id) => key.includes(id));
     return products.some((id) => key.includes(id));
   });
 }

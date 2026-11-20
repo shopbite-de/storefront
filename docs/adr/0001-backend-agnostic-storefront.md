@@ -145,7 +145,12 @@ Behaviour changes allowed by the step (otherwise identical, compared on SSR HTML
 - The removable ingredients of the dish sheet are in the order of the menu card (the sheet listed them in the backend's order of assignment before).
 - Search results know a parent with variants: "ab" price and the choice button instead of adding the parent, which the cart silently left out.
 - A dish sheet opened by a variant's number (deep link, wishlist) shows the dish's description, diets and food labels.
-- The section page's `CollectionPage` JSON-LD leaves out a missing description instead of `null`.
+
+For shops that extend the layer (release notes; breaking only for overrides and own uses):
+
+- Removed routes: `/api/product/[productId]`, `/api/product/[productId]/cross-selling`, `/api/product/variant`, `/api/category/[categoryId]`. `/api/listing/[sectionId]`, `/api/search` and `/api/top-sellers` keep their paths but answer `MenuListing`/`Dish[]`; the listing's `properties` parameter is `filters`, `manufacturer` and `query` are gone.
+- Removed composables and utils: `useCategoryById` (now `useMenuSection`), `useProductConfigurator`, `useProductVariantsZwei`, `useProductVariants`, `useProductCrossSelling`, `app/utils/product.ts` (`getMainIngredients`, `getDiets`, `getFoodLabels`, `allergensChecked`, `productIsAvailable`, `productNeedsChoice`, `lineItemHoldsProduct`; now `Dish` fields and `app/utils/dish.ts`), `productDeepLink` (now `dishLink`), `findCategory`, `types/Association`. A shop's own `useProductConfigurator` no longer shadows a project composable; the layer's original is auto-imported again.
+- Changed props and returns: `MenuBonCard` `product` → `dish` (emits `select` with the dish), `ProductQuickView` `product` → `dish`, `ProductDetail` `productId` → `dishId`, `ProductConfigurator` takes `dishId`, `groups`, `selectedOptionIds`, `ProductDeselectIngredient` `product` → `ingredients`, `ProductCrossSelling` `associations` → `groups`, `ProductFoodLabels` `product` → `labels`, `MenuSectionHeader` `category` → `section`, `CategoryFilterGroup` takes a `ListingFilter`; `useProductQuickView` returns `dish` instead of `product`; `useAddToCart` has `setSelectedDish`/`setSelectedExtras`/`setRemovedIngredients` (`selectedDish`, `removedIngredients`); `useCartUpsell` has `loadUpsellDishes`/`addUpsellDish`; `useCategoryListing` and `useListingSearch` return `dishes`, `sortings`, `currentSorting`, `filters`; `useProductEvents`' cart addition carries `dish`.
 
 Open points for later steps:
 
@@ -153,6 +158,7 @@ Open points for later steps:
 - Step 4: `useAddToCart` builds Shopware line items from the domain types; the cart lines are still Shopware's (`cartLineHoldsDish` reads them structurally). Removals by ingredient id belong in `DishConfiguration` then.
 - A partial variant choice (one of two groups) silently takes the first matching variant while the other group stays unselected in the sheet, as before; the sheet could select the found variant's options or resolve locally from `DishDetail.variants`.
 - An unavailable extra is still offered in the sheet.
+- The wishlist loads one dish sheet per entry (cached per dish); a batch route would need a port method for several dishes.
 
 ### Lint guard
 

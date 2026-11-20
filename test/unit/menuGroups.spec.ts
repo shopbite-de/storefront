@@ -45,6 +45,21 @@ describe("groupBySubsections (#487)", () => {
     ]);
   });
 
+  it("is null for the menu root, whose listing is one list", () => {
+    expect(
+      groupBySubsections([product("p1", ["spaghetti"])], nudeln.children, {
+        sectionId: "speisekarte",
+        menuRootId: "speisekarte",
+      }),
+    ).toBeNull();
+    expect(
+      groupBySubsections([product("p1", ["spaghetti"])], nudeln.children, {
+        sectionId: "nudeln",
+        menuRootId: "speisekarte",
+      }),
+    ).not.toBeNull();
+  });
+
   it("is null for a section without sub-sections", () => {
     expect(groupBySubsections([product("p1", ["pizza"])], [])).toBeNull();
   });
