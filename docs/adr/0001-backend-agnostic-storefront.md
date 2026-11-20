@@ -132,6 +132,11 @@ Each step moves one area behind its port, keeps the shop working, and ships as a
 
 Recommendations from the review of step 0, to settle when the area moves:
 
+- **Ordering window vs. the ShopBite plugin (settle before the UI uses `earliestWishedTime`, step 1 or 4).**
+  - *Pre-orders for the next day:* at 23:30 the domain offers 11:30 of the next day, but the plugin's ordering window only looks at yesterday's and today's intervals and refuses such an order at checkout. Either the plugin accepts orders for a later service date, or the storefront limits wished times to the plugin's window.
+  - *Overnight interval after a holiday:* the plugin ignores the after-midnight part of an interval that started on a holiday; splitting rows into weekday intervals loses that origin, so the domain treats it as open. Keep the origin day of a split interval (or apply the holiday to the continuation) when this matters.
+  - *DST:* a wished time can land in the spring-forward gap or the ambiguous fall-back hour, and the 24 h search limit is wall-clock time. Decide whether to skip such slots.
+
 - **Catalog (step 2)**: `DishDetail` names the selected variant when opened by a variant's number; `Variant` gets its own name, media and main ingredients; an `Extra` can be unavailable; main ingredients get ids (removals by id, names only for display); list and strike-through prices.
 - **Cart (step 4)**: a structured variant label instead of one name string; removed ingredients are part of a line's identity, so two configurations that differ only in removals stay two lines (Shopware's container key today hashes dish and extras only); taxes as gross or net; subtotals before and after discounts.
 - **Checkout (step 1 and 5)**: `listShippingMethods` takes an optional session (Sylius prices shipping per cart). It is implemented in step 1 already, because ShopPort's consumers (home page, `llms.txt`, the time choice) need the lead times. Guest details stay editable after `registerGuest`.
