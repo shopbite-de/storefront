@@ -62,6 +62,17 @@ Do not name a project composable like one from the `@shopware/composables` layer
 
 ## Architecture
 
+### Backend-agnostic storefront (ADR 0001)
+
+The storefront is moving to ports and adapters so it works against any shop backend; Shopware becomes one adapter. Read [`docs/adr/0001-backend-agnostic-storefront.md`](docs/adr/0001-backend-agnostic-storefront.md) (BFF, session, bounded contexts, migration steps 0–8) and use the words of [`GLOSSARY.md`](GLOSSARY.md) in code, tests and docs (dish, not product; cart line, not line item; path, not SEO URL).
+
+- `shared/domain/<context>/` (`kernel`, `menu`, `ordering`, `customer`, `restaurant`, `discoverability`): domain types, value objects with validating constructors (`money`, `leadTime`, `wishedTime`, `openingInterval`, `dishConfiguration`, `timeOfDay`), pure domain services, `DomainError` codes. Pure TypeScript; the server imports it relatively, app code imports types only (see Layer imports).
+- `server/ports/`: the nine port interfaces and `Backend`; visitor-specific ports take a `BackendSession`.
+- `server/adapters/shopware/` (the only place that may import `#shopware`, `@shopware/*`, `api-types`) and `server/adapters/memory/` (demo restaurant in memory); `registry.ts` creates them, unimplemented ports reject with `not_implemented`. Server routes get the adapter set with `useBackend(event)` (`server/utils/backend.ts`, runtime config `shopBite.backend`: `shopware` default, `memory`). Caching and backoff stay in the routes, not in the adapters.
+- `test/contract/`: one contract suite per port (`*.contract.ts`, scenario in domain terms) run against every adapter fixture by `runContract` (`*.spec.ts`, part of `pnpm test:unit`). A port method you implement gets its contract tests first, for both adapters.
+
+Rule for new code: use the ports and the domain types; no Shopware import outside `server/adapters/shopware/`. ESLint (`shopbite/backend-agnostic`) warns on such imports until step 8 makes it an error (111 warnings in 103 files at step 0); do not add new ones. Code not yet moved still uses the Shopware layer as described below.
+
 ### Stack
 
 - **Nuxt 4** with `app/` directory convention (not `src/`)
@@ -174,7 +185,7 @@ Shops extend the storefront as a Nuxt layer, so paths must resolve from the stor
 
 Two Vitest projects in `vitest.config.ts`:
 
-- **`unit`** – `test/unit/`, Node environment, pure function tests
+- **`unit`** – `test/unit/**` and `test/contract/**`, Node environment, pure function, domain, adapter and contract tests
 - **`nuxt`** – `test/nuxt/`, Nuxt environment via `@nuxt/test-utils`, for composables and components
 
 In `test/nuxt/`, a `mockNuxtImport("useRuntimeConfig")` without `app.baseURL` breaks the router setup of the test environment (`useRouter()` is undefined, see `useAddressAutocomplete.test.ts` for a working mock). For config values, prefer setting them on the real config, e.g. `Object.assign(useRuntimeConfig().public.site, { … })`.

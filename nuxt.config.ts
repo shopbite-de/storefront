@@ -50,6 +50,12 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    shopBite: {
+      // Shop backend adapter behind the server routes (ADR 0001):
+      // "shopware" or "memory" (in-memory demo restaurant),
+      // NUXT_SHOP_BITE_BACKEND. Only routes moved to the ports use it.
+      backend: "shopware",
+    },
     shopware: {
       adminClientId: "",
       adminClientSecret: "",
