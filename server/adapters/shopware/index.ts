@@ -54,6 +54,7 @@ export function createShopwareBackend(
     name,
     catalog: createShopwareCatalog(storeApi, {
       menuCategoryId: options.menuCategoryId,
+      log,
     }),
     navigation: notImplemented("navigation", name),
     cart: notImplemented("cart", name),

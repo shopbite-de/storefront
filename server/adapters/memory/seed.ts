@@ -34,7 +34,18 @@ const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];
  * placeholder contact data, delivery in about 30 and pickup in about 15
  * minutes, and the quickstart's demo menu (`demoMenu.ts`).
  */
-export const DEMO_SEED: MemorySeed = {
+let demo: MemorySeed | undefined;
+
+/**
+ * The demo restaurant, built on first use: a storefront on another backend
+ * never builds the demo menu.
+ */
+export function demoSeed(): MemorySeed {
+  demo ??= buildDemoSeed();
+  return demo;
+}
+
+const buildDemoSeed = (): MemorySeed => ({
   shop: {
     config: {
       acceptsOrders: true,
@@ -77,4 +88,4 @@ export const DEMO_SEED: MemorySeed = {
     ],
   },
   catalog: demoMenu(),
-};
+});

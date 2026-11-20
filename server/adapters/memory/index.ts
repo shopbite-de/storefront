@@ -10,9 +10,9 @@ import type { Backend, CheckoutPort, ShopPort } from "../../ports";
 import { notImplemented, partlyImplemented } from "../notImplemented";
 import { createMemoryCatalog } from "./catalog";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
-import { DEMO_SEED, type MemorySeed } from "./seed";
+import { demoSeed, type MemorySeed } from "./seed";
 
-export { DEMO_SEED, type MemorySeed } from "./seed";
+export { demoSeed, type MemorySeed } from "./seed";
 export type { MemoryCatalog, MemoryDish, MemoryVariant } from "./catalog";
 
 function createMemoryShop(seed: MemorySeed["shop"]): ShopPort {
@@ -41,7 +41,7 @@ function createMemoryCheckout(
   });
 }
 
-export function createMemoryBackend(seed: MemorySeed = DEMO_SEED): Backend {
+export function createMemoryBackend(seed: MemorySeed = demoSeed()): Backend {
   const name = "memory";
   return {
     name,
@@ -59,12 +59,13 @@ export function createMemoryBackend(seed: MemorySeed = DEMO_SEED): Backend {
 
 /** The demo restaurant in the storefront's time zone (`shopBite.timeZone`). */
 export function memoryFromRuntimeConfig(config: BackendRuntimeConfig): Backend {
+  const demo = demoSeed();
   return createMemoryBackend({
-    ...DEMO_SEED,
+    ...demo,
     shop: {
-      ...DEMO_SEED.shop,
+      ...demo.shop,
       config: {
-        ...DEMO_SEED.shop.config,
+        ...demo.shop.config,
         timeZone: timeZone(config.shopBite.timeZone),
       },
     },

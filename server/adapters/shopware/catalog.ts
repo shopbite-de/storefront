@@ -1,6 +1,7 @@
 import {
   deepFreeze,
   DomainError,
+  isDomainError,
   moneyFromDecimal,
   type CurrencyCode,
   type Diet,
@@ -21,7 +22,7 @@ import {
   type VariantGroup,
 } from "../../../shared/domain";
 import type { CatalogPort } from "../../ports";
-import { text } from "./shop";
+import { text, type AdapterLog } from "./shop";
 import type { StoreApi } from "./storeApi";
 
 /*
@@ -202,18 +203,37 @@ const statusOf = (error: unknown): number | undefined => {
   return value?.statusCode ?? value?.status ?? value?.response?.status;
 };
 
+/** Shopware's answer to a listing page after the last one. */
+const PAGE_OUT_OF_RANGE = "PRODUCT__LISTING_PAGE_OUT_OF_RANGE";
+
+const errorCodes = (error: unknown): string[] =>
+  (
+    (error as { data?: { errors?: { code?: string }[] } } | null)?.data
+      ?.errors ?? []
+  ).flatMap((entry) => (entry.code ? [entry.code] : []));
+
 /**
  * A Store API request as the port answers its failure: 404 is `not_found`,
- * every other failure `backend_unavailable`.
+ * 400 (e.g. an id that is no Shopware id) `invalid_value`, every other
+ * failure `backend_unavailable`.
  */
 async function request<T>(what: string, run: () => Promise<T>): Promise<T> {
   try {
     return await run();
   } catch (cause) {
-    if (statusOf(cause) === 404) {
+    const status = statusOf(cause);
+    if (status === 404) {
       throw new DomainError(
         "not_found",
         `Shopware knows no ${what}.`,
+        {},
+        { cause },
+      );
+    }
+    if (status === 400) {
+      throw new DomainError(
+        "invalid_value",
+        `Shopware refused the request for ${what}.`,
         {},
         { cause },
       );
@@ -419,7 +439,7 @@ export function toSection(category: SwCategory): MenuSection {
     description: text(translated(category, "description")),
     icon: text(customField(category, ICON_FIELD)),
     media: toMedia(category.media),
-    path: category.seoUrl || `/navigation/${category.id}`,
+    path: category.seoUrl || null,
     seo: {
       title: text(translated(category, "metaTitle")),
       description: text(translated(category, "metaDescription")),
@@ -510,18 +530,49 @@ function checkSorting(listing: SwListing, query: ListingQuery): void {
 export type ShopwareCatalogOptions = Readonly<{
   /** `public.shopBite.menuCategoryId`: overrides the plugin's menu root. */
   menuCategoryId?: string;
+  /** Where a part left out of an answer is reported. */
+  log?: AdapterLog;
+  /** How long the sales channel's currency is kept, in ms. */
+  currencyTtlMs?: number;
 }>;
+
+/** The sales channel's currency changes with its settings only. */
+const CURRENCY_TTL_MS = 10 * 60_000;
+
+/**
+ * Variants in a fixed order, their ids (the order Shopware lists them in
+ * without a sorting), so a partial choice always finds the same variant.
+ */
+const VARIANT_ORDER = [{ field: "id", order: "ASC" }];
+
+const EXTRAS_CRITERIA = {
+  includes: {
+    cross_selling_element: ["crossSelling", "products"],
+    cross_selling: ["id", "name", "translated"],
+    product: [
+      "id",
+      "productNumber",
+      "name",
+      "translated",
+      "calculatedPrice",
+      "available",
+    ],
+    calculated_price: ["unitPrice", "totalPrice"],
+  },
+};
 
 /**
  * CatalogPort over the Store API with the ShopBite conventions: property
  * groups by name, `productList` cross-sellings as extras, child products
- * as variants, custom fields of the ShopBite plugin. No caching here
- * (ADR 0001); the prices are in the sales channel's currency.
+ * as variants, custom fields of the ShopBite plugin. No caching of menu
+ * data here (ADR 0001); only the sales channel's currency, in which every
+ * price is, is kept for a while.
  */
 export function createShopwareCatalog(
   storeApi: StoreApi,
   options: ShopwareCatalogOptions = {},
 ): CatalogPort {
+  const log: AdapterLog = options.log ?? (() => {});
   const post = <T>(
     what: string,
     path: string,
@@ -530,11 +581,24 @@ export function createShopwareCatalog(
   ) =>
     request(what, () => storeApi.post<T>(path, body, headers && { headers }));
 
-  const currency = async (): Promise<CurrencyCode> => {
-    const context = await request("the context", () =>
-      storeApi.get<{ currency?: { isoCode?: string } }>("/context"),
-    );
-    return context.currency?.isoCode ?? "EUR";
+  // One request for the currency instead of one per answer; a failure is
+  // not kept.
+  let kept: { at: number; code: Promise<CurrencyCode> } | undefined;
+  const currency = (): Promise<CurrencyCode> => {
+    const ttl = options.currencyTtlMs ?? CURRENCY_TTL_MS;
+    if (!kept || Date.now() - kept.at > ttl) {
+      const entry = {
+        at: Date.now(),
+        code: request("the context", () =>
+          storeApi.get<{ currency?: { isoCode?: string } }>("/context"),
+        ).then((context) => context.currency?.isoCode ?? "EUR"),
+      };
+      kept = entry;
+      entry.code.catch(() => {
+        if (kept === entry) kept = undefined;
+      });
+    }
+    return kept.code;
   };
 
   async function menuRoot(): Promise<string> {
@@ -565,29 +629,71 @@ export function createShopwareCatalog(
       DISH_HEADERS,
     ).then((result) => result.elements ?? []);
 
+  /** A parent and its variants. */
+  const family = (parentId: string) =>
+    searchProducts(`the variants of ${parentId}`, {
+      filter: [
+        {
+          type: "multi",
+          operator: "or",
+          queries: [
+            { type: "equals", field: "id", value: parentId },
+            { type: "equals", field: "parentId", value: parentId },
+          ],
+        },
+      ],
+      sort: VARIANT_ORDER,
+      limit: PAGE_SIZE,
+    });
+
   async function listing(
     what: string,
     path: string,
     body: Record<string, unknown>,
     query: ListingQuery,
   ): Promise<MenuListing> {
+    const page = query.page ?? 1;
     const [result, code] = await Promise.all([
       post<SwListing>(
         what,
         path,
         { ...listingCriteria(query), ...body },
-        {
-          "sw-include-seo-urls": "true",
-        },
-      ),
+        { "sw-include-seo-urls": "true" },
+      ).catch((error: unknown) => {
+        // Shopware refuses a page after the last one; the port answers it
+        // empty
+        if (
+          page > 1 &&
+          isDomainError(error, "not_found") &&
+          errorCodes(error.cause).includes(PAGE_OUT_OF_RANGE)
+        ) {
+          return null;
+        }
+        throw error;
+      }),
       currency(),
     ]);
+    if (!result) {
+      return deepFreeze({
+        ...EMPTY_LISTING,
+        page,
+        sorting: query.sorting ?? null,
+        filterOptionIds: [...new Set(query.filterOptionIds ?? [])],
+      });
+    }
     checkSorting(result, query);
     return deepFreeze(toListing(result, code));
   }
 
-  async function getDish(dishId: Id): Promise<DishDetail> {
-    const [detail, crossSellings, code] = await Promise.all([
+  /**
+   * The dish sheet. A known parent (from the number search) lets its
+   * variants load together with the detail instead of after it.
+   */
+  async function getDish(
+    dishId: Id,
+    knownParentId: string | null = null,
+  ): Promise<DishDetail> {
+    const [detail, crossSellings, code, knownFamily] = await Promise.all([
       post<{ product: SwProduct; configurator?: SwGroup[] }>(
         `the dish ${dishId}`,
         `/product/${dishId}`,
@@ -597,47 +703,31 @@ export function createShopwareCatalog(
       post<SwCrossSelling[]>(
         `the extras of ${dishId}`,
         `/product/${dishId}/cross-selling`,
-        {
-          includes: {
-            cross_selling_element: ["crossSelling", "products"],
-            cross_selling: ["id", "name", "translated"],
-            product: [
-              "id",
-              "productNumber",
-              "name",
-              "translated",
-              "calculatedPrice",
-              "available",
-            ],
-            calculated_price: ["unitPrice", "totalPrice"],
-          },
-        },
-      ),
+        EXTRAS_CRITERIA,
+      ).catch((error: unknown) => {
+        // the sheet opens without extras rather than not at all
+        log("Shopware: left out the extras of a dish that did not load.", {
+          dishId,
+          error,
+        });
+        return [] as SwCrossSelling[];
+      }),
       currency(),
+      knownParentId ? family(knownParentId) : undefined,
     ]);
     const product = detail.product;
     // the detail route answers a parent with its default variant
     const parentId =
       product.parentId ?? ((product.childCount ?? 0) > 0 ? product.id : null);
-    const family = parentId
-      ? await searchProducts(`the variants of ${parentId}`, {
-          filter: [
-            {
-              type: "multi",
-              operator: "or",
-              queries: [
-                { type: "equals", field: "id", value: parentId },
-                { type: "equals", field: "parentId", value: parentId },
-              ],
-            },
-          ],
-          limit: PAGE_SIZE,
-        })
-      : [];
+    const members = !parentId
+      ? []
+      : parentId === knownParentId && knownFamily
+        ? knownFamily
+        : await family(parentId);
     const parent =
-      family.find((candidate) => candidate.id === parentId) ?? product;
+      members.find((candidate) => candidate.id === parentId) ?? product;
     const dish = toDish(parent, code);
-    const variants = family
+    const variants = members
       .filter((candidate) => candidate.parentId === parent.id)
       .map((candidate) => toVariant(candidate, dish, code));
     return deepFreeze({
@@ -699,13 +789,16 @@ export function createShopwareCatalog(
           .map((product) => toDish(product, code)),
       );
     },
-    getDish,
+    getDish: (dishId) => getDish(dishId),
     findDishByNumber: async (number) => {
       const [product] = await searchProducts(`the dish number ${number}`, {
         filter: [{ type: "equals", field: "productNumber", value: number }],
         limit: 1,
       });
-      return product ? getDish(product.id) : null;
+      if (!product) return null;
+      const parentId =
+        product.parentId ?? ((product.childCount ?? 0) > 0 ? product.id : null);
+      return getDish(product.id, parentId);
     },
     findVariant: async (dishId, optionIds) => {
       if (!optionIds.length) return null;
@@ -719,7 +812,12 @@ export function createShopwareCatalog(
               value: id,
             })),
           ],
+          sort: VARIANT_ORDER,
           limit: 1,
+        }).catch((error: unknown) => {
+          // an id Shopware does not take has no variants
+          if (isDomainError(error, "invalid_value")) return [];
+          throw error;
         }),
         currency(),
       ]);

@@ -34,7 +34,10 @@ export type ScenarioDish = Readonly<{
   topSeller?: boolean;
   upsell?: boolean;
   variantGroups?: readonly VariantGroup[];
-  /** In the dish's order; the first available one is the default. */
+  /**
+   * In the dish's order (by id, as a backend without positions lists them);
+   * the first available one is the default.
+   */
   variants?: readonly Readonly<{
     id: Id;
     number: string;
@@ -208,14 +211,14 @@ export const MENU: CatalogScenario = {
       ],
       variants: [
         {
-          id: "margherita-normal",
+          id: "margherita-1-normal",
           number: "21-normal",
           optionIds: ["normal"],
           price: 7,
           available: true,
         },
         {
-          id: "margherita-gross",
+          id: "margherita-2-gross",
           number: "21-groß",
           optionIds: ["gross"],
           price: 10,
@@ -311,28 +314,28 @@ export const MENU: CatalogScenario = {
       ],
       variants: [
         {
-          id: "bistecca-pommes-medium",
+          id: "bistecca-1-pommes-medium",
           number: "123-pommes-medium",
           optionIds: ["pommes", "medium"],
           price: 24,
           available: false,
         },
         {
-          id: "bistecca-pommes-durch",
+          id: "bistecca-2-pommes-durch",
           number: "123-pommes-durch",
           optionIds: ["pommes", "durch"],
           price: 24,
           available: true,
         },
         {
-          id: "bistecca-reis-medium",
+          id: "bistecca-3-reis-medium",
           number: "123-reis-medium",
           optionIds: ["reis", "medium"],
           price: 25,
           available: true,
         },
         {
-          id: "bistecca-reis-durch",
+          id: "bistecca-4-reis-durch",
           number: "123-reis-durch",
           optionIds: ["reis", "durch"],
           price: 25,
@@ -511,7 +514,7 @@ export const catalogContract = defineContract<"catalog", CatalogScenario>(
     it("answers a page after the last one empty", async () => {
       const catalog = await given(MENU);
       const listing = await catalog.listDishes("salate", { page: 2 });
-      expect(listing).toMatchObject({ dishes: [], total: 3, page: 2 });
+      expect(listing).toMatchObject({ dishes: [], page: 2 });
     });
 
     it("rejects the listing of an unknown section with not_found", async () => {
@@ -567,7 +570,7 @@ export const catalogContract = defineContract<"catalog", CatalogScenario>(
         variantGroups: MENU.dishes[0]!.variantGroups,
         variants: [
           {
-            id: "margherita-normal",
+            id: "margherita-1-normal",
             number: "21-normal",
             name: "Pizza Margherita",
             optionIds: ["normal"],
@@ -578,12 +581,12 @@ export const catalogContract = defineContract<"catalog", CatalogScenario>(
             ingredients: [TOMATO, CHEESE],
           },
           expect.objectContaining({
-            id: "margherita-gross",
+            id: "margherita-2-gross",
             number: "21-groß",
             price: EUR(1000),
           }),
         ],
-        selectedVariantId: "margherita-normal",
+        selectedVariantId: "margherita-1-normal",
         extraGroups: [EXTRAS],
         upsell: true,
       });
@@ -592,7 +595,7 @@ export const catalogContract = defineContract<"catalog", CatalogScenario>(
     it("starts with the first available variant", async () => {
       const catalog = await given(MENU);
       const bistecca = await catalog.getDish("bistecca");
-      expect(bistecca.selectedVariantId).toBe("bistecca-pommes-durch");
+      expect(bistecca.selectedVariantId).toBe("bistecca-2-pommes-durch");
       expect(bistecca.variantGroups.map((group) => group.name)).toEqual([
         "Beilage",
         "Garstufe",
@@ -603,11 +606,11 @@ export const catalogContract = defineContract<"catalog", CatalogScenario>(
 
     it("answers the id of a variant with its dish and that variant selected", async () => {
       const catalog = await given(MENU);
-      const detail = await catalog.getDish("margherita-gross");
+      const detail = await catalog.getDish("margherita-2-gross");
       expect(detail).toMatchObject({
         id: "margherita",
         number: "21",
-        selectedVariantId: "margherita-gross",
+        selectedVariantId: "margherita-2-gross",
         extraGroups: [EXTRAS],
       });
     });
@@ -638,7 +641,7 @@ export const catalogContract = defineContract<"catalog", CatalogScenario>(
       });
       expect(await catalog.findDishByNumber("21-groß")).toMatchObject({
         id: "margherita",
-        selectedVariantId: "margherita-gross",
+        selectedVariantId: "margherita-2-gross",
       });
       expect(await catalog.findDishByNumber("999")).toBeNull();
     });
@@ -646,7 +649,7 @@ export const catalogContract = defineContract<"catalog", CatalogScenario>(
     it("finds the variant with the chosen options", async () => {
       const catalog = await given(MENU);
       expect(await catalog.findVariant("margherita", ["gross"])).toEqual({
-        id: "margherita-gross",
+        id: "margherita-2-gross",
         number: "21-groß",
         name: "Pizza Margherita",
         optionIds: ["gross"],
@@ -658,13 +661,13 @@ export const catalogContract = defineContract<"catalog", CatalogScenario>(
       });
       expect(
         (await catalog.findVariant("bistecca", ["durch", "reis"]))?.id,
-      ).toBe("bistecca-reis-durch");
+      ).toBe("bistecca-4-reis-durch");
     });
 
     it("takes the first variant that has a partial choice", async () => {
       const catalog = await given(MENU);
       expect((await catalog.findVariant("bistecca", ["reis"]))?.id).toBe(
-        "bistecca-reis-medium",
+        "bistecca-3-reis-medium",
       );
     });
 
@@ -692,15 +695,15 @@ export const catalogContract = defineContract<"catalog", CatalogScenario>(
         "Pizza Margherita",
       ]);
       expect(ids(upsell).sort()).toEqual([
-        "margherita-gross",
-        "margherita-normal",
+        "margherita-1-normal",
+        "margherita-2-gross",
         "verde",
       ]);
       expect(upsell.every((dish) => !dish.needsChoice && !dish.priceFrom)).toBe(
         true,
       );
       expect(
-        upsell.find((dish) => dish.id === "margherita-gross"),
+        upsell.find((dish) => dish.id === "margherita-2-gross"),
       ).toMatchObject({
         number: "21-groß",
         price: EUR(1000),

@@ -21,8 +21,8 @@ export type MenuSection = Readonly<{
   /** Icon name (icones.js.org, e.g. `i-lucide-pizza`). */
   icon: string | null;
   media: Media | null;
-  /** Storefront path of the section, e.g. `/Speisekarte/Pizza/`. */
-  path: string;
+  /** Storefront path of the section, e.g. `/Speisekarte/Pizza/`; null without one. */
+  path: string | null;
   seo: SectionSeo;
   /** Sub-sections in menu order. */
   children: readonly MenuSection[];
