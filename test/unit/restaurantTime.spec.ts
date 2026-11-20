@@ -240,6 +240,23 @@ describe("wishedTimeWindow", () => {
     });
   });
 
+  it("ends a span up to 24:00 at the last slot of the day", () => {
+    // Sunday 12:00–24:00: 00:00 would read as the morning of the same day
+    expect(wishedTimeWindow(berlin(22, "22:00"), SCHEDULE, 30)).toMatchObject({
+      kind: "open",
+      earliest: 1350,
+      latest: 1435,
+    });
+    expect(wishedTimeWindow(berlin(22, "23:10"), SCHEDULE, 25)).toMatchObject({
+      kind: "open",
+      earliest: 1415,
+      latest: 1435,
+    });
+    expect(wishedTimeWindow(berlin(22, "23:40"), SCHEDULE, 30)).toEqual({
+      kind: "none_left",
+    });
+  });
+
   it("offers no pre-order for the next day", () => {
     // Wednesday 23:30: the plugin refuses an order for Thursday's lunch
     expect(wishedTimeWindow(berlin(18, "23:30"), SCHEDULE, 30).kind).toBe(

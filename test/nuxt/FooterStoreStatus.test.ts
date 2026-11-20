@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref } from "vue";
 import FooterStoreStatus from "~/components/Footer/StoreStatus.vue";
-import type { StoreStatus } from "~/utils/restaurantTime";
+import type { StoreStatusText } from "~/utils/restaurantTime";
 
 const { state } = vi.hoisted(() => ({
-  state: { status: null as StoreStatus | null },
+  state: { status: null as StoreStatusText | null },
 }));
 
 mockNuxtImport("useStoreStatus", () => () => ({

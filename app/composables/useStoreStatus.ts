@@ -1,5 +1,5 @@
 import { useIntervalFn } from "@vueuse/core";
-import type { StoreStatus } from "../utils/restaurantTime";
+import type { StoreStatusText } from "../utils/restaurantTime";
 
 /**
  * Whether the restaurant is open right now, with the closing time of the
@@ -19,7 +19,7 @@ export function useStoreStatus() {
   onMounted(tick);
   useIntervalFn(tick, 60_000);
 
-  const status = computed<StoreStatus | null>(() =>
+  const status = computed<StoreStatusText | null>(() =>
     now.value && schedule.value
       ? storeStatusAt(now.value, schedule.value)
       : null,
