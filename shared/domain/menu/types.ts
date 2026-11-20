@@ -169,6 +169,10 @@ export type ListingQuery = Readonly<{
 /** One page of dishes of a section or a search. */
 export type MenuListing = Readonly<{
   dishes: readonly Dish[];
+  /**
+   * Dishes of all pages; on a page after the last one a backend may not
+   * know it and answers 0 (Shopware).
+   */
   total: number;
   page: number;
   limit: number;

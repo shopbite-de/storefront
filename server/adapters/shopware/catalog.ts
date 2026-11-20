@@ -705,11 +705,18 @@ export function createShopwareCatalog(
         `/product/${dishId}/cross-selling`,
         EXTRAS_CRITERIA,
       ).catch((error: unknown) => {
-        // the sheet opens without extras rather than not at all
-        log("Shopware: left out the extras of a dish that did not load.", {
-          dishId,
-          error,
-        });
+        // the sheet opens without extras rather than not at all; a refusal
+        // or an unknown dish is an answer (the detail request reports it),
+        // only an outage is worth a log entry
+        if (
+          !isDomainError(error, "invalid_value") &&
+          !isDomainError(error, "not_found")
+        ) {
+          log("Shopware: left out the extras of a dish that did not load.", {
+            dishId,
+            error,
+          });
+        }
         return [] as SwCrossSelling[];
       }),
       currency(),
