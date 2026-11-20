@@ -57,7 +57,7 @@ Caching, backoff and the resilient loaders stay in the server routes around the 
 - **Guest & Account**: who orders; guests, customers, addresses, wishlist.
 - **Restaurant operations**: opening hours, holidays, store status, branches, the switch that accepts orders, contact.
 - **Discoverability**: paths, navigations, SEO, sitemap, `llms.txt`.
-- **Shared kernel** (`shared/domain/kernel`): `Money`, `Media`, `TimeOfDay`, `Id`, `DomainError`.
+- **Shared kernel** (`shared/domain/kernel`): `Money`, `Media`, `TimeOfDay`, `CalendarDate`, `TimeZone`, `Weekday`, `Id`, `DomainError`.
 
 ```mermaid
 flowchart LR
@@ -83,15 +83,20 @@ Upstream contexts publish their types; downstream contexts use them as they are 
 ### Scope of DDD
 
 - **Strategic DDD in full**: the glossary, the contexts, the context map, an anti-corruption layer per adapter.
-- **Tactical DDD where the storefront owns the rule**: value objects as immutable types with validating constructors (`money`, `leadTime`, `wishedTime`, `openingInterval`, `dishConfiguration`, `timeOfDay`), domain services as pure functions (e.g. `earliestWishedTime`; the ordering window and store status follow when their logic moves), domain errors with codes (`DomainError`).
+- **Tactical DDD where the storefront owns the rule**: value objects as immutable types with validating constructors (`money`, `timeOfDay`, `calendarDate`, `timeZone`, `leadTime`, `wishedTime`, `openingInterval`, `holiday`, `dishConfiguration`), domain services as pure functions (e.g. `earliestWishedTime`; the ordering window and store status follow when their logic moves), domain errors with codes (`DomainError`).
 - **Not** repositories or aggregates with persistence: the backend owns the state, ports are gateways that answer with the backend's result (a cart port returns the cart the backend calculated). **Not** domain events across contexts: the contexts share one process and call each other's pure functions.
 
 Within this frame:
 
-- IDs are opaque strings. Money is integer minor units with an ISO 4217 code (Sylius stores minor units; Shopware's decimals are converted at the adapter).
+- IDs are opaque strings. Money is integer minor units with an ISO 4217 code; the number of minor digits comes from the currency (EUR 2, JPY 0, KWD 3, `Intl.NumberFormat`), decimals round half away from zero, and there is no negative zero (Sylius stores minor units; Shopware's decimals are converted at the adapter).
 - Countries are ISO 3166-1 alpha-2 codes; the Shopware adapter maps them to country ids.
-- Times of day are minutes since midnight in the restaurant's time zone; an opening interval never crosses midnight.
-- The order's wished time is a field of `Order` and `PlaceOrderCommand`; putting it into Shopware's customer comment ("Wunschlieferzeit: 18:40") is the Shopware adapter's job.
+- **Time** belongs to the restaurant, not to the server or the browser: `ShopConfig.timeZone` (IANA). The ShopBite plugin decides in the sales channel's business time zone, else Europe/Berlin, but does not report it, so the Shopware adapter takes runtime config `shopBite.timeZone` (default `Europe/Berlin`). Dates and wall-clock times of an instant are read in that zone (`zonedDateTime`), also across DST switches.
+- Times of day are minutes since midnight. An opening interval never crosses midnight and may close at 24:00 (1440, the end of the day); a late-night opening is two intervals. The Shopware adapter maps plugin rows by the plugin's rule: a closing time at or before the opening time runs into the next day and is split at midnight, closing at 00:00 or 24:00 is the end of the day. Rows it cannot read are logged and dropped.
+- Holidays are whole days (`firstDay`, `lastDay`, both included) in the restaurant's time zone.
+- A wished time is a service date plus a time on the 5-minute grid, so an order before midnight can be wished for after it. `earliestWishedTime` looks at today's and tomorrow's opening intervals and holidays, at most 24 hours ahead. It is a field of `Order` and `PlaceOrderCommand`; putting it into Shopware's customer comment ("Wunschlieferzeit: 18:40") is the Shopware adapter's job.
+- A cart has discounts, each with the voucher code it came from or none (an automatic discount).
+- Adapters answer frozen values and build themselves from the runtime config (`shopwareFromRuntimeConfig`, `memoryFromRuntimeConfig`); the registry only picks one by name.
+- Building a `srcset` from `Media` is presentation and lives in app utils, not in the domain.
 - Visitor-specific ports take a `BackendSession`; shop-wide ports (catalog, navigation, shop, contact) take none, so their answers can be cached across visitors.
 - The app imports types only from `shared/domain` for now: a value import of `shared/` from app code broke the Nitro server bundle of shops in 2.0.1. The first step that needs a value object in the app checks it with the layer build (`pnpm nuxt build test/layer`) first.
 
@@ -113,7 +118,7 @@ Each step moves one area behind its port, keeps the shop working, and ships as a
 
 ### Lint guard
 
-`@typescript-eslint/no-restricted-imports` forbids `#shopware`, `@shopware/*` and the `api-types` (`~~/api-types/*`, relative paths) outside `server/adapters/shopware/**`, the generated types and `shopware.d.ts`. It warns during steps 1 to 7 (111 warnings in 103 files at step 0, the number to bring down) and becomes an error in step 8. It sees imports only: composables auto-imported from the Shopware layer (`useShopwareContext`, `useCart`, …) disappear with the layer in step 8, and the typecheck finds what is left.
+`@typescript-eslint/no-restricted-imports` forbids `#shopware`, `@shopware/*` and the `api-types` (`~~/api-types/*`, relative paths) outside `server/adapters/shopware/**`, the generated types and `shopware.d.ts`. It warns during steps 1 to 7 (111 warnings in 103 files at step 0, the number to bring down) and becomes an error in step 8. `#shopware/*` subpaths are covered too. It sees static `import` and `export … from` only: not type queries (`typeof import("#shopware")`, `import("…").Type` in a type position), not dynamic `import()`, and not composables auto-imported from the Shopware layer (`useShopwareContext`, `useCart`, …). Those disappear with the layer in step 8, and the typecheck finds what is left.
 
 ## Consequences
 
@@ -122,6 +127,17 @@ Each step moves one area behind its port, keeps the shop working, and ships as a
 - Values that gate an order and are cached for rendering today (the checkout switch, hours, holidays; the browser reloads them from Shopware after hydration) have to stay fresh through the BFF: an uncached or short-lived route for the browser, the cached one for SSR.
 - Shops that override Shopware composables of the layer have to move to the ports by 3.0.0; the 2.x releases keep their overrides working.
 - A new backend means a new folder in `server/adapters/` that passes the contract suites, plus a value of `shopBite.backend`. The memory adapter can later run e2e and a11y tests without a Shopware instance.
+
+## Notes for later steps
+
+Recommendations from the review of step 0, to settle when the area moves:
+
+- **Catalog (step 2)**: `DishDetail` names the selected variant when opened by a variant's number; `Variant` gets its own name, media and main ingredients; an `Extra` can be unavailable; main ingredients get ids (removals by id, names only for display); list and strike-through prices.
+- **Cart (step 4)**: a structured variant label instead of one name string; removed ingredients are part of a line's identity, so two configurations that differ only in removals stay two lines (Shopware's container key today hashes dish and extras only); taxes as gross or net; subtotals before and after discounts.
+- **Checkout (step 1 and 5)**: `listShippingMethods` takes an optional session (Sylius prices shipping per cart). It is implemented in step 1 already, because ShopPort's consumers (home page, `llms.txt`, the time choice) need the lead times. Guest details stay editable after `registerGuest`.
+- **Orders (step 5)**: a guest opens an order by an e-mail deep link or token, without an account; `OrderLine` carries its `DishConfiguration` so an order can be repeated.
+- **BFF (step 1)**: one shared mapper from `DomainError` codes to HTTP answers for all routes.
+- **Session (step 4)**: the backend token can rotate (login, logout) while parallel requests of the same visitor are in flight; writes to the session must not lose a newer token.
 
 ## Sylius as a sanity check
 

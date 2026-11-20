@@ -92,8 +92,12 @@ _Avoid_: line item, container, position
 What the shop backend says about the cart ("nicht mehr verfügbar"); an error message blocks the order.
 _Avoid_: error, notice
 
+**Discount**:
+A price reduction of the cart, either from a voucher or applied automatically by the restaurant's rules.
+_Avoid_: promotion, rebate
+
 **Voucher** ("Gutschein"):
-A code that lowers the price of the cart.
+A code the guest enters to get a discount.
 _Avoid_: promotion, coupon
 
 **Fulfillment** ("Lieferung oder Abholung"):
@@ -116,11 +120,11 @@ The minutes the kitchen needs before an order is delivered or ready for pickup; 
 _Avoid_: delivery time (the backend's entity of that name is something else), preparation time
 
 **Wished time** ("Wunschlieferzeit", "Wunschabholzeit"):
-The time today at which the guest wants the order, on the 5-minute grid.
+The service date and time at which the guest wants the order, on the 5-minute grid; shortly after midnight is the next service date.
 _Avoid_: slot, requested time, delivery time
 
 **Ordering window** ("Wann"):
-The wished times a guest can choose now: from now plus the lead time to the end of the current or next opening interval, never on a holiday.
+The wished times a guest can choose now: from now plus the lead time to the end of the current or next opening interval within the next 24 hours, never on a holiday.
 _Avoid_: delivery window, time range
 
 **Checkout** ("Kasse"):
@@ -184,12 +188,16 @@ _Avoid_: context, context token
 
 ## Restaurant operations
 
+**Restaurant time zone**:
+The time zone in which opening hours, holidays and wished times are meant, whatever the visitor's or server's clock says.
+_Avoid_: server time, local time
+
 **Opening hours** ("Öffnungszeiten"):
 The weekly times the restaurant is open and takes orders.
 _Avoid_: business hours, service hours
 
 **Opening interval** ("11:30–14:30"):
-One span of a weekday in the opening hours; it never crosses midnight, a late-night opening is two intervals.
+One span of a weekday in the opening hours, at the latest until 24:00 (the end of the day); a late-night opening is two intervals, one until 24:00 and one from 00:00 of the next weekday.
 _Avoid_: shift, service interval
 
 **Weekly closing day** ("Ruhetag"):
@@ -197,7 +205,7 @@ A weekday without opening intervals.
 _Avoid_: day off
 
 **Holiday** ("Betriebsferien"):
-A period in which the restaurant stays closed although the opening hours say open.
+Whole days, from a first to a last day, on which the restaurant stays closed although the opening hours say open.
 _Avoid_: closing day, vacation, exception
 
 **Store status** ("Geöffnet", "Geschlossen"):
@@ -258,6 +266,7 @@ These Shopware words stay inside the Shopware adapter. Code outside it, the UI a
 | customer comment                                    | note (and the wished time it carries)             |
 | state machine state                                 | order status, payment status                      |
 | business hour, holiday (plugin entities)            | opening interval, holiday                         |
+| promotion, promotion line item                      | discount, voucher                                 |
 | `isCheckoutEnabled`                                 | accepts orders                                    |
 | custom fields `shopbite_*`, criteria, includes      | named fields of the domain types                  |
 | `countryId`, salutation entity                      | country code, salutation (`mr`, `mrs`, not given) |
