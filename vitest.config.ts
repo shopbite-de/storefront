@@ -7,7 +7,11 @@ export default defineConfig({
       {
         test: {
           name: "unit",
-          include: ["test/unit/*.{test,spec}.ts"],
+          include: [
+            "test/unit/**/*.{test,spec}.ts",
+            // port contract suites against every adapter (ADR 0001)
+            "test/contract/**/*.{test,spec}.ts",
+          ],
           environment: "node",
         },
       },

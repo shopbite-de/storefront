@@ -1,0 +1,264 @@
+# Glossary
+
+The ubiquitous language of the ShopBite storefront: an online ordering storefront for restaurants that works against any shop backend. Code, docs and tests use these terms in English; the German word in quotes is what guests see in the UI. The terms are grouped by bounded context; how the contexts relate is in [ADR 0001](docs/adr/0001-backend-agnostic-storefront.md).
+
+## Storefront
+
+**Restaurant**:
+The business that sells through the storefront: its menu, hours, branches and orders.
+_Avoid_: merchant, store owner
+
+**Shop**:
+One restaurant's storefront as it is deployed (a shop extends the storefront layer).
+_Avoid_: site, instance
+
+**Shop backend**:
+The system that owns the restaurant's data and orders (Shopware today); the storefront reaches it only through its ports.
+_Avoid_: API, commerce engine
+
+## Menu
+
+**Menu** ("Speisekarte"):
+Everything the restaurant offers, as a tree of menu sections.
+_Avoid_: catalog (except in the port's name), assortment
+
+**Menu section** ("Pizza", "Nudeln"):
+A named group of dishes on the menu; a section can have sub-sections.
+_Avoid_: category, collection, taxon
+
+**Dish**:
+Something on the menu that can be ordered, with a menu number, a price and its main ingredients. Drinks and side orders are dishes too.
+_Avoid_: product, article, item
+
+**Menu number** ("Nr. 21"):
+The number of a dish on the printed menu; guests and the kitchen use it to name the dish.
+_Avoid_: SKU, product number (outside the Shopware adapter)
+
+**Variant** ("Groß 40 cm", "Pommes frites"):
+One orderable form of a dish, chosen by one option per variant group; it has its own menu number and price.
+_Avoid_: child product, SKU
+
+**Variant group** ("Größe", "Beilage", "Garstufe"):
+A choice that tells the variants of a dish apart.
+_Avoid_: property group, option set
+
+**Main ingredient**:
+An ingredient listed with the dish; each one is a removable ingredient.
+_Avoid_: property, attribute
+
+**Removable ingredient** ("ohne Zwiebeln"):
+A main ingredient the guest can leave out at no charge.
+_Avoid_: deselected ingredient, modifier
+
+**Extra** ("Extra Käse"):
+An optional addition to a dish with its own price.
+_Avoid_: topping (too narrow), add-on, cross-selling
+
+**Extra group** ("Extras", "Beilagen"):
+A named list of extras offered for a dish.
+_Avoid_: cross-selling, association
+
+**Dish configuration** ("Anpassen"):
+A dish (or variant) together with its chosen extras and removed ingredients; two configurations with the same parts are the same.
+_Avoid_: product configuration, customisation
+
+**Dish sheet**:
+The panel in which a guest configures a dish before adding it to the cart; its configuration is part of the dish's link.
+_Avoid_: quick view, product page
+
+**Diet** ("Vegetarisch", "Vegan"):
+A badge that tells which diet a dish suits.
+_Avoid_: tag
+
+**Allergen** ("Allergene", A–R) and **Additive** ("Zusatzstoffe", 1–12):
+Food labels the law requires; a dish's lists are either checked (complete) or the guest is asked to call.
+_Avoid_: property
+
+**Upsell dish** ("Dazu passt"):
+A dish suggested on the confirmation step before the order is placed.
+_Avoid_: cross-sell
+
+## Ordering
+
+**Cart** ("Warenkorb"):
+The dishes a visitor is about to order, priced by the shop backend.
+_Avoid_: basket, bag
+
+**Cart line**:
+One dish configuration in the cart with its quantity; a dish with extras and removed ingredients is one line, priced as a whole.
+_Avoid_: line item, container, position
+
+**Cart message**:
+What the shop backend says about the cart ("nicht mehr verfügbar"); an error message blocks the order.
+_Avoid_: error, notice
+
+**Voucher** ("Gutschein"):
+A code that lowers the price of the cart.
+_Avoid_: promotion, coupon
+
+**Fulfillment** ("Lieferung oder Abholung"):
+How the order reaches the guest: delivery or pickup.
+_Avoid_: shipping, order mode
+
+**Delivery** ("Lieferung"):
+The restaurant brings the order to the guest's delivery address.
+
+**Pickup** ("Abholung"):
+The guest collects the order at the restaurant.
+_Avoid_: collection, takeaway
+
+**Shipping method** ("Lieferung", "Abholung"):
+A way to get the order, with its fulfillment and lead time; a shop can have several per fulfillment.
+_Avoid_: delivery option
+
+**Lead time** ("Lieferzeit ca. 30 Minuten", "Abholbereit in ca. 15 Minuten"):
+The minutes the kitchen needs before an order is delivered or ready for pickup; set per shipping method.
+_Avoid_: delivery time (the backend's entity of that name is something else), preparation time
+
+**Wished time** ("Wunschlieferzeit", "Wunschabholzeit"):
+The time today at which the guest wants the order, on the 5-minute grid.
+_Avoid_: slot, requested time, delivery time
+
+**Ordering window** ("Wann"):
+The wished times a guest can choose now: from now plus the lead time to the end of the current or next opening interval, never on a holiday.
+_Avoid_: delivery window, time range
+
+**Checkout** ("Kasse"):
+The page on which the guest chooses fulfillment, wished time, details and payment, and places the order.
+_Avoid_: checkout steps
+
+**Payment method** ("Zahlungsart", "Barzahlung"):
+A way to pay; some send the guest to another site after the order.
+
+**Order** ("Bestellung"):
+A placed cart with the guest's details, fulfillment and wished time.
+_Avoid_: purchase, transaction
+
+**Order number** ("Bestellnummer"):
+The number of an order shown to the guest and the restaurant.
+
+**Order status**:
+Where the order stands for the restaurant: open, in progress, completed or cancelled.
+_Avoid_: state, state machine state
+
+**Payment status**:
+Where the payment stands: open, paid, failed, cancelled or refunded.
+
+**Note**:
+The guest's free text to the restaurant on an order (the checkout does not ask for one yet).
+_Avoid_: customer comment, remark
+
+## Guest & Account
+
+**Visitor**:
+Anyone using the storefront, before they identify themselves.
+_Avoid_: user, session
+
+**Guest** ("Als Gast bestellen"):
+A visitor who orders with their details but without an account.
+_Avoid_: anonymous customer
+
+**Customer** ("Kundenkonto"):
+A person with an account: login, saved addresses, order history, wishlist.
+_Avoid_: user, account holder, member
+
+**Address**:
+A postal address of a guest or customer, used as billing address ("Rechnungsadresse") or delivery address ("Lieferadresse").
+_Avoid_: shipping address
+
+**Registration** ("Registrierung"):
+Creating an account; with double opt-in the customer confirms the email first.
+_Avoid_: sign-up
+
+**Wishlist** ("Merkliste"):
+The configured dishes a guest or customer keeps for later; the same dish can be kept twice with different configurations.
+_Avoid_: favourites, wish list (two words)
+
+**Wishlist entry**:
+One dish configuration on the wishlist.
+_Avoid_: wishlist item
+
+**Session**:
+The storefront's own record of a visitor (cart, login) behind its cookie; what the shop backend needs to recognise the visitor is kept inside it.
+_Avoid_: context, context token
+
+## Restaurant operations
+
+**Opening hours** ("Öffnungszeiten"):
+The weekly times the restaurant is open and takes orders.
+_Avoid_: business hours, service hours
+
+**Opening interval** ("11:30–14:30"):
+One span of a weekday in the opening hours; it never crosses midnight, a late-night opening is two intervals.
+_Avoid_: shift, service interval
+
+**Weekly closing day** ("Ruhetag"):
+A weekday without opening intervals.
+_Avoid_: day off
+
+**Holiday** ("Betriebsferien"):
+A period in which the restaurant stays closed although the opening hours say open.
+_Avoid_: closing day, vacation, exception
+
+**Store status** ("Geöffnet", "Geschlossen"):
+Whether the restaurant is open right now, with the closing time or the next opening.
+_Avoid_: shop state
+
+**Accepts orders**:
+The restaurant's switch to take online orders at all; when it is off, nothing can be ordered even within the opening hours.
+_Avoid_: checkout enabled
+
+**Branch** ("Filiale"):
+Another location of the same restaurant with its own shop; guests switch between branches.
+_Avoid_: sales channel, store, channel
+
+**Contact message** ("Kontakt"):
+A message from a visitor to the restaurant through the contact form.
+
+## Discoverability
+
+**Path**:
+A URL path of the storefront, such as `/Speisekarte/Pizza/`; paths belong to the storefront, the shop backend only says what they name.
+_Avoid_: SEO URL, slug, route
+
+**Canonical path**:
+The one path a menu section is linked and indexed under; other spellings and old paths redirect to it.
+_Avoid_: canonical URL
+
+**Navigation** (main, footer, menu):
+A list of links in the header, the footer or the menu index.
+_Avoid_: navigation tree, main-navigation
+
+**Breadcrumb**:
+The menu sections above the current one ("Speisekarte › Pizza").
+
+**Content page**:
+A page the storefront writes itself (imprint, delivery area); never a shop backend matter.
+_Avoid_: CMS page, landing page
+
+**Sitemap** and **llms.txt**:
+The lists of paths for search engines and of shop facts for AI assistants.
+
+## Backend words that must not leak
+
+These Shopware words stay inside the Shopware adapter. Code outside it, the UI and the docs use the term on the right.
+
+| Shopware                                            | Storefront term                                   |
+| --------------------------------------------------- | ------------------------------------------------- |
+| sales channel                                       | shop; branch (multi-channel group)                |
+| category, navigation root, main-navigation          | menu section, menu, navigation                    |
+| product, product number                             | dish, menu number                                 |
+| child product, variant product                      | variant                                           |
+| property group / option (`Hauptzutaten`)            | main ingredient, variant group, diet, filter      |
+| cross-selling (`productList`)                       | extra group                                       |
+| line item, `container` line item, children, payload | cart line with extras and removed ingredients     |
+| context token (`sw-context-token`)                  | session                                           |
+| SEO URL, `seoPathInfo`, `pathInfo`                  | path, canonical path                              |
+| delivery time (entity)                              | lead time                                         |
+| customer comment                                    | note (and the wished time it carries)             |
+| state machine state                                 | order status, payment status                      |
+| business hour, holiday (plugin entities)            | opening interval, holiday                         |
+| `isCheckoutEnabled`                                 | accepts orders                                    |
+| custom fields `shopbite_*`, criteria, includes      | named fields of the domain types                  |
+| `countryId`, salutation entity                      | country code, salutation (`mr`, `mrs`, not given) |
+| guest customer (`guest: true`)                      | guest                                             |
