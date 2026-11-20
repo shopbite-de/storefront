@@ -16,14 +16,14 @@ const { data: topSellers } = await useAsyncData("top-sellers", () =>
   loadTopSellers(),
 );
 
-const products = computed(() => topSellers.value ?? []);
-const quickView = useProductQuickView(products);
+const dishes = computed(() => topSellers.value ?? []);
+const quickView = useProductQuickView(dishes);
 const { menuView } = useThemePreset();
 </script>
 
 <template>
   <section
-    v-if="products.length"
+    v-if="dishes.length"
     id="highlights"
     aria-labelledby="home-highlights-title"
     class="mx-auto w-full max-w-(--sb-container) px-4 py-14 sm:px-6 lg:px-8 sm:py-24"
@@ -44,18 +44,18 @@ const { menuView } = useThemePreset();
     </div>
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
       <MenuBonCard
-        v-for="product in products"
-        :key="product.id"
-        :product="product"
+        v-for="dish in dishes"
+        :key="dish.id"
+        :dish="dish"
         :photo="menuView === 'bonPhoto'"
-        :href="productDeepLink(product)"
+        :href="dishLink(dish)"
         @select="quickView.show"
       />
     </div>
     <LazyProductQuickView
       v-if="quickView.mounted.value"
       v-model:open="quickView.open.value"
-      :product="quickView.product.value"
+      :dish="quickView.dish.value"
     />
   </section>
 </template>

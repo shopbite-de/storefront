@@ -1,58 +1,14 @@
 import { queryCollection } from "@nuxt/content/server";
 import { defineEventHandler } from "nuxt/server";
-import type { components } from "~~/api-types/storeApiTypes";
-import { getDiets, getMainIngredients } from "../../app/utils/product";
 import { fulfillmentLeadTime } from "../../app/utils/leadTime";
-import { productDeepLink } from "../../app/utils/productUrl";
 import { splitList, toAbsoluteUrl } from "../../app/utils/seo";
-import { buildLlmsTxt, type LlmsMenuSection } from "../utils/llmsTxt";
+import { buildLlmsTxt, toLlmsMenu } from "../utils/llmsTxt";
 import {
   holidaysData,
   openingHoursData,
   shippingMethodsData,
   shopConfigData,
 } from "../utils/shopData";
-
-type Schemas = components["schemas"];
-
-// Store API maximum per request.
-const PRODUCT_PAGE_SIZE = 100;
-// A menu has a few hundred products at most (a real menu: 390 incl. extras).
-const MAX_PRODUCT_PAGES = 10;
-
-const NAVIGATION_CRITERIA = {
-  depth: 10,
-  buildTree: true,
-  includes: {
-    category: ["id", "name", "translated", "seoUrl", "type", "children"],
-  },
-};
-
-const PRODUCT_CRITERIA = {
-  limit: PRODUCT_PAGE_SIZE,
-  // Main products only; variants are summed up as "ab <cheapest price>".
-  filter: [{ type: "equals", field: "parentId", value: null }],
-  associations: { properties: { associations: { group: {} } } },
-  includes: {
-    product: [
-      "id",
-      "name",
-      "translated",
-      "categoryIds",
-      "childCount",
-      "calculatedPrice",
-      "calculatedCheapestPrice",
-      "sortedProperties",
-      "productNumber",
-      "seoUrls",
-    ],
-    seo_url: ["seoPathInfo", "isCanonical"],
-    calculated_price: ["unitPrice"],
-    calculated_cheapest_price: ["unitPrice"],
-    property_group: ["name", "translated", "options"],
-    property_group_option: ["name", "translated"],
-  },
-};
 
 /**
  * `/llms.txt` (#402): the shop, its hours, ordering and the menu as Markdown
@@ -63,71 +19,31 @@ const PRODUCT_CRITERIA = {
  * `getPathRobotConfig()` of @nuxtjs/robots 7 reads.
  */
 export default defineEventHandler(async (event) => {
-  const { shopware, site } = useRuntimeConfig().public;
+  const { site } = useRuntimeConfig().public;
   const siteUrl = getSiteConfig(event).url;
-  const headers = { "sw-access-key": shopware.accessToken };
-  const menuRoot = await menuRootId();
+  const { catalog } = useBackend();
 
-  const storeApi = <T>(path: string, body?: Record<string, unknown>) =>
-    $fetch<T>(`${shopware.endpoint}${path}`, {
-      method: body ? "POST" : "GET",
-      headers: { ...headers, "sw-include-seo-urls": "true" },
-      body,
-    });
-
-  const [
-    navigation,
-    products,
-    hours,
-    holidays,
-    config,
-    shippingMethods,
-    context,
-    pages,
-    home,
-  ] = await Promise.allSettled([
-    storeApi<Schemas["Category"][]>(
-      `/navigation/${menuRoot}/${menuRoot}`,
-      NAVIGATION_CRITERIA,
-    ),
-    loadProducts((page) =>
-      storeApiPost<{ elements?: Schemas["Product"][] }>(
-        "/product",
-        { ...PRODUCT_CRITERIA, page },
-        { headers: { "sw-include-seo-urls": "true" } },
-      ),
-    ),
-    // restaurant operations through the ports (ADR 0001), cached
-    openingHoursData.cached(),
-    holidaysData.cached(),
-    shopConfigData.cached(),
-    shippingMethodsData.cached(),
-    storeApi<Schemas["SalesChannelContext"]>("/context"),
-    queryCollection(event, "landingpages")
-      .select("path", "title", "description")
-      .all(),
-    queryCollection(event, "home").select("faq").first(),
-  ]);
+  const [menu, dishes, hours, holidays, config, shippingMethods, pages, home] =
+    await Promise.allSettled([
+      // the menu through the catalog (ADR 0001, step 2); the route's `swr`
+      // caches the file
+      catalog.getMenu(),
+      catalog.listMenuDishes(),
+      // restaurant operations through the ports (ADR 0001), cached
+      openingHoursData.cached(),
+      holidaysData.cached(),
+      shopConfigData.cached(),
+      shippingMethodsData.cached(),
+      queryCollection(event, "landingpages")
+        .select("path", "title", "description")
+        .all(),
+      queryCollection(event, "home").select("faq").first(),
+    ]);
 
   const value = <T>(result: PromiseSettledResult<T>) =>
     result.status === "fulfilled" ? result.value : undefined;
 
-  const productsByCategory = groupByCategory(value(products) ?? []);
-  const toSection = (category: Schemas["Category"]): LlmsMenuSection => ({
-    name: category.translated?.name ?? category.name,
-    url: category.seoUrl ? toAbsoluteUrl(siteUrl, category.seoUrl) : undefined,
-    items: (productsByCategory.get(category.id) ?? []).map((product) => {
-      const deepLink = productDeepLink(product, category.seoUrl);
-      return {
-        ...toMenuItem(product),
-        url: deepLink ? toAbsoluteUrl(siteUrl, deepLink) : undefined,
-      };
-    }),
-    sections: (category.children ?? [])
-      .filter((child) => child.type === "page")
-      .map(toSection),
-  });
-
+  const menuDishes = value(dishes) ?? [];
   const body = buildLlmsTxt({
     name: site.name,
     alternateNames: splitList(site.alternateNames),
@@ -151,9 +67,7 @@ export default defineEventHandler(async (event) => {
     deliveryTime: fulfillmentLeadTime(value(shippingMethods), "delivery"),
     pickupTime: fulfillmentLeadTime(value(shippingMethods), "pickup"),
     menuUrl: toAbsoluteUrl(siteUrl, "/speisekarte"),
-    menu: (value(navigation) ?? [])
-      .filter((category) => category.type === "page")
-      .map(toSection),
+    menu: toLlmsMenu(value(menu) ?? [], menuDishes, siteUrl),
     pages: (value(pages) ?? [])
       // Pages the shop keeps out of robots.txt (legal pages) stay out here.
       .filter(
@@ -169,7 +83,7 @@ export default defineEventHandler(async (event) => {
         description: page.description,
       })),
     faq: value(home)?.faq?.items,
-    currency: value(context)?.currency?.isoCode,
+    currency: menuDishes[0]?.price.currency,
     now: new Date(),
     timeZone: value(config)?.timeZone ?? useRuntimeConfig().shopBite.timeZone,
   });
@@ -177,57 +91,3 @@ export default defineEventHandler(async (event) => {
   event.res.headers.set("Content-Type", "text/markdown; charset=utf-8");
   return body;
 });
-
-async function loadProducts(
-  loadPage: (page: number) => Promise<{ elements?: Schemas["Product"][] }>,
-) {
-  const products: Schemas["Product"][] = [];
-  for (let page = 1; page <= MAX_PRODUCT_PAGES; page++) {
-    const elements = (await loadPage(page)).elements ?? [];
-    products.push(...elements);
-    if (elements.length < PRODUCT_PAGE_SIZE) break;
-  }
-  return products;
-}
-
-/** Products by the categories they are assigned to directly. */
-function groupByCategory(products: Schemas["Product"][]) {
-  const byCategory = new Map<string, Schemas["Product"][]>();
-  for (const product of products) {
-    for (const categoryId of product.categoryIds ?? []) {
-      byCategory.set(categoryId, [
-        ...(byCategory.get(categoryId) ?? []),
-        product,
-      ]);
-    }
-  }
-  // Alphabetical, numbers in natural order ("Pizza 9" before "Pizza 10").
-  for (const items of byCategory.values()) {
-    items.sort((a, b) =>
-      (a.translated?.name ?? a.name).localeCompare(
-        b.translated?.name ?? b.name,
-        "de",
-        { numeric: true },
-      ),
-    );
-  }
-  return byCategory;
-}
-
-function toMenuItem(product: Schemas["Product"]) {
-  const properties = product.sortedProperties as
-    Schemas["PropertyGroup"][] | undefined;
-  const hasVariants = (product.childCount ?? 0) > 0;
-  return {
-    name: product.translated?.name ?? product.name,
-    price: hasVariants
-      ? (product.calculatedCheapestPrice?.unitPrice ??
-        product.calculatedPrice?.unitPrice)
-      : product.calculatedPrice?.unitPrice,
-    fromPrice: hasVariants,
-    ingredients: getMainIngredients(properties).map(
-      (option) => option.translated?.name ?? option.name,
-    ),
-    diets: getDiets(properties),
-  };
-}

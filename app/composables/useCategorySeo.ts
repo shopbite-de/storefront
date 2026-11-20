@@ -1,17 +1,14 @@
-import type { Schemas } from "#shopware";
+import type { MenuSection } from "../../shared/domain";
 import { formatPageTitle, toAbsoluteUrl } from "../utils/seo";
 
-export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
+/** Title, description, canonical path and image of a menu section's page. */
+export function useCategorySeo(section: Ref<MenuSection | null | undefined>) {
   const config = useRuntimeConfig();
   const siteConfig = useSiteConfig();
   const storeName = config.public.site?.name || "";
 
   const pageTitle = computed(
-    () =>
-      category.value?.translated?.metaTitle ??
-      category.value?.metaTitle ??
-      category.value?.translated?.name ??
-      category.value?.name,
+    () => section.value?.seo.title ?? section.value?.name,
   );
 
   // <title> gets the template via app.vue; og/twitter titles need it spelled out.
@@ -25,24 +22,21 @@ export function useCategorySeo(category: Ref<Schemas["Category"] | undefined>) {
 
   const pageDescription = computed(
     () =>
-      category.value?.translated?.metaDescription ??
-      category.value?.metaDescription ??
-      category.value?.translated?.description ??
-      category.value?.description,
+      section.value?.seo.description ?? section.value?.description ?? undefined,
   );
 
   const seoUrl = computed(() =>
-    toAbsoluteUrl(siteConfig.url, category.value?.seoUrl || ""),
+    toAbsoluteUrl(siteConfig.url, section.value?.path || ""),
   );
 
-  const ogImage = computed(() => category.value?.media?.url);
+  const ogImage = computed(() => section.value?.media?.url);
 
   const siteName = computed(() => config.public.site?.name || "");
 
-  // Only inactive categories get their own rule; otherwise @nuxtjs/robots
+  // Only a section off the menu gets its own rule; otherwise @nuxtjs/robots
   // renders the site rule, which is noindex on the demo shop.
   const robots = computed(() =>
-    category.value?.active === false ? "noindex,nofollow" : undefined,
+    section.value?.seo.indexable === false ? "noindex,nofollow" : undefined,
   );
 
   const canonicalUrl = computed(() => seoUrl.value || "");

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { nextTick, ref } from "vue";
-import type { Schemas } from "#shopware";
+import { dish } from "../support/dishes";
 import { useSearchTracking } from "../../app/composables/useSearchTracking";
 
 const { mockTrackSearch } = vi.hoisted(() => ({ mockTrackSearch: vi.fn() }));
@@ -14,7 +14,7 @@ mockNuxtImport("useTrackEvent", () => () => ({
 }));
 
 const products = (...numbers: string[]) =>
-  numbers.map((productNumber) => ({ productNumber }) as Schemas["Product"]);
+  numbers.map((number) => dish({ id: number, number }));
 
 describe("useSearchTracking", () => {
   beforeEach(() => {

@@ -1,76 +1,51 @@
-import type { Schemas } from "#shopware";
-import type { AssociationItemProduct } from "~/types/Association";
+import type { DishDetail } from "../../shared/domain";
 
-export function useProductDetail(getProductId: () => string) {
+/**
+ * The dish sheet's data (`/api/menu/dishes/[dishId]`, DishDetail: variants,
+ * extras, removable ingredients, food labels) and the configuration that
+ * goes into the cart. The id of a variant opens its dish with that variant
+ * selected. One request, so the sheet does not re-render in stages
+ * (skeleton, options, extras).
+ */
+export function useProductDetail(getDishId: () => string) {
   const { trackProductView } = useTrackEvent();
 
-  const { data: productDetails, pending: isDetailLoading } = useFetch<{
-    product: Schemas["Product"];
-    configurator?: Schemas["PropertyGroup"][];
-  }>(() => `/api/product/${getProductId()}`, {
-    key: () => `product-${getProductId() ?? "none"}`,
-  });
-
-  // The extras belong to the product family: the backend resolves the
-  // cross-selling of a variant to the one of its parent. Keyed by the listing
-  // product, the request runs alongside the detail request instead of after
-  // it, and switching a variant does not reload the extras. Together with the
-  // single loading state below this keeps the quick view from re-rendering
-  // in stages (skeleton, options, extras).
-  const { associationItems, isAssociationsLoading } =
-    useProductCrossSelling(getProductId);
-
-  const pending = computed(
-    () => isDetailLoading.value || isAssociationsLoading.value,
+  const { data: detail, pending } = useFetch<DishDetail>(
+    () => `/api/menu/dishes/${getDishId()}`,
+    { key: () => `dish-${getDishId() ?? "none"}` },
   );
 
   const {
-    selectedProduct,
+    selectedDish,
     selectedQuantity,
     isLoading,
     addToCart,
-    setSelectedProduct,
+    setSelectedDish,
     setSelectedExtras,
-    setDeselectedIngredients,
+    setRemovedIngredients,
   } = useAddToCart();
 
   watch(
-    () => productDetails.value?.product,
-    (product) => {
-      if (product) {
-        setSelectedProduct(product);
-      }
+    detail,
+    (value) => {
+      if (!value) return;
+      // the variant the sheet starts with, or the dish itself
+      const orderable = orderableOf(value);
+      setSelectedDish(orderable);
+      trackProductView(orderable);
     },
     { immediate: true },
   );
-
-  watch(
-    productDetails,
-    () => {
-      if (!productDetails.value) return;
-      trackProductView(productDetails.value.product);
-    },
-    { immediate: true },
-  );
-
-  const onExtrasSelected = (extras: AssociationItemProduct[]) => {
-    setSelectedExtras(extras);
-  };
-
-  const onIngredientsDeselected = (deselected: string[]) => {
-    setDeselectedIngredients(deselected);
-  };
 
   return {
-    productDetails,
-    associationItems,
+    detail,
     pending,
-    selectedProduct,
+    selectedDish,
     selectedQuantity,
     isLoading,
     addToCart,
-    setSelectedProduct,
-    onExtrasSelected,
-    onIngredientsDeselected,
+    setSelectedDish,
+    onExtrasSelected: setSelectedExtras,
+    onIngredientsDeselected: setRemovedIngredients,
   };
 }

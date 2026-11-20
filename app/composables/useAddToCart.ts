@@ -1,5 +1,5 @@
-import type { Schemas, operations } from "#shopware";
-import type { AssociationItemProduct } from "~/types/Association";
+import type { Extra } from "../../shared/domain";
+import type { OrderableDish } from "../utils/dish";
 import { v5 as uuidv5, v4 as uuidv4 } from "uuid";
 import { computed, ref } from "vue";
 
@@ -7,57 +7,58 @@ const UUID_NAMESPACE = "b098ef7e-0fa2-4073-b002-7ceec4360fbf";
 const LINE_ITEM_PRODUCT = "product";
 const LINE_ITEM_CONTAINER = "container";
 
+type CartItems = Parameters<
+  ReturnType<typeof useCartMutations>["addLineItems"]
+>[0];
+
+/**
+ * Adds a dish configuration to the cart: the dish (or the chosen variant)
+ * with its extras and removed ingredients, as the domain types of the
+ * menu (ADR 0001, step 2). The cart is still Shopware's until step 4: a
+ * dish with extras or removals is a `container` line item whose id is the
+ * whole configuration.
+ */
 export function useAddToCart() {
   const { addLineItems } = useCartMutations();
   // Feedback is the cart bar / header badge animation, not a toast (#325).
   const { triggerCartItemAdded } = useProductEvents();
   const { trackAddToCart: trackAddToCartEvent } = useTrackEvent();
 
-  const selectedExtras = ref<AssociationItemProduct[]>([]);
-  const deselectedIngredients = ref<string[]>([]);
+  const selectedExtras = ref<Extra[]>([]);
+  const removedIngredients = ref<string[]>([]);
   const selectedQuantity = ref(1);
-  const selectedProduct = ref<Schemas["Product"] | null>(null);
+  const selectedDish = ref<OrderableDish | null>(null);
   const isLoading = ref(false);
 
   const cartItemLabel = computed(() => {
-    if (!selectedProduct.value) return "";
+    if (!selectedDish.value) return "";
 
-    const formatIngredientModifications = (
-      items: Array<{ label: string } | string>,
-      prefix: string,
-    ): string => {
-      if (!items.length) return "";
-
-      const labels = items.map((item) =>
-        typeof item === "string" ? item : item.label,
-      );
+    const formatModifications = (labels: string[], prefix: string): string => {
+      if (!labels.length) return "";
       const separator = " " + prefix;
       return " " + prefix + labels.join(separator);
     };
 
-    const extrasFormatted = formatIngredientModifications(
-      selectedExtras.value,
+    const extrasFormatted = formatModifications(
+      selectedExtras.value.map((extra) => extra.name),
       "+",
     );
-    const removedFormatted = formatIngredientModifications(
-      deselectedIngredients.value,
-      "-",
-    );
+    const removedFormatted = formatModifications(removedIngredients.value, "-");
 
-    return `${selectedProduct.value.translated.name}${extrasFormatted}${removedFormatted}`;
+    return `${selectedDish.value.name}${extrasFormatted}${removedFormatted}`;
   });
 
   const createExtras = () =>
     selectedExtras.value.map((extra) => ({
-      id: extra.value,
+      id: extra.id,
       type: LINE_ITEM_PRODUCT,
       quantity: selectedQuantity.value,
     }));
 
   /** The removed ingredients as the plugin takes them (`payload.without`). */
-  const removedIngredients = () => [
+  const removedNames = () => [
     ...new Set(
-      deselectedIngredients.value
+      removedIngredients.value
         .map((name) => name.trim())
         .filter((name) => name !== ""),
     ),
@@ -67,16 +68,16 @@ export function useAddToCart() {
    * Seed of the container line item id. Shopware merges a line item into an
    * existing one with the same id (quantity added, label and children kept),
    * so the whole configuration belongs in it: the extras and the removed
-   * ingredients. Without removals the seed stays the product id plus the
+   * ingredients. Without removals the seed stays the dish id plus the
    * sorted extra ids, so lines already in a cart keep their id.
    */
   const generateLineItemSeed = (
     baseId: string,
-    extras: AssociationItemProduct[],
+    extras: Extra[],
     without: string[],
   ) => {
     const extrasSeed = extras
-      .map((extra) => extra.value)
+      .map((extra) => extra.id)
       .sort()
       .join("");
     const withoutSeed = [
@@ -90,29 +91,29 @@ export function useAddToCart() {
       : `${baseId}${extrasSeed}`;
   };
 
-  function createCartItems(): operations["addLineItem post /checkout/cart/line-item"]["body"]["items"] {
-    if (!selectedProduct.value) return [];
+  function createCartItems(): CartItems {
+    if (!selectedDish.value) return [];
 
     const extras = createExtras();
-    const without = removedIngredients();
+    const without = removedNames();
 
-    // Simple product when no extras and nothing removed
+    // A plain line without extras and removals
     if (extras.length === 0 && without.length === 0) {
       return [
         {
-          id: selectedProduct.value.id,
+          id: selectedDish.value.id,
           quantity: selectedQuantity.value,
           type: LINE_ITEM_PRODUCT,
         },
       ];
     }
 
-    // Container product when extras are selected or ingredients removed
+    // A container line when extras are selected or ingredients removed
     return [
       {
         id: uuidv5(
           generateLineItemSeed(
-            selectedProduct.value.id,
+            selectedDish.value.id,
             selectedExtras.value,
             without,
           ),
@@ -124,7 +125,7 @@ export function useAddToCart() {
         // @ts-expect-error
         label: cartItemLabel.value,
         payload: {
-          productNumber: selectedProduct.value.productNumber,
+          productNumber: selectedDish.value.number,
           without,
         },
         children: [
@@ -132,7 +133,7 @@ export function useAddToCart() {
             id: uuidv4().replaceAll("-", ""),
             quantity: selectedQuantity.value,
             type: LINE_ITEM_PRODUCT,
-            referencedId: selectedProduct.value.id,
+            referencedId: selectedDish.value.id,
           },
           ...extras,
         ],
@@ -141,7 +142,7 @@ export function useAddToCart() {
   }
 
   async function addToCart(onSuccess?: () => void) {
-    if (!selectedProduct.value || isLoading.value) return;
+    if (!selectedDish.value || isLoading.value) return;
     isLoading.value = true;
 
     try {
@@ -149,36 +150,36 @@ export function useAddToCart() {
       const newCart = await addLineItems(createCartItems());
       if (!newCart) return;
 
-      triggerCartItemAdded(selectedProduct.value, selectedQuantity.value);
-      trackAddToCartEvent(selectedProduct.value, selectedQuantity.value);
+      triggerCartItemAdded(selectedDish.value, selectedQuantity.value);
+      trackAddToCartEvent(selectedDish.value, selectedQuantity.value);
       onSuccess?.();
     } finally {
       isLoading.value = false;
     }
   }
 
-  function setSelectedProduct(product: Schemas["Product"]) {
-    selectedProduct.value = product;
+  function setSelectedDish(dish: OrderableDish) {
+    selectedDish.value = dish;
   }
 
-  function setSelectedExtras(extras: AssociationItemProduct[]) {
+  function setSelectedExtras(extras: Extra[]) {
     selectedExtras.value = extras;
   }
 
-  function setDeselectedIngredients(ingredients: string[]) {
-    deselectedIngredients.value = ingredients;
+  function setRemovedIngredients(ingredients: string[]) {
+    removedIngredients.value = ingredients;
   }
 
   return {
-    selectedProduct,
+    selectedDish,
     selectedExtras,
-    deselectedIngredients,
+    removedIngredients,
     selectedQuantity,
     cartItemLabel,
     isLoading,
     addToCart,
-    setSelectedProduct,
+    setSelectedDish,
     setSelectedExtras,
-    setDeselectedIngredients,
+    setRemovedIngredients,
   };
 }

@@ -2,17 +2,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createStorage } from "unstorage";
 import { stubNitro, type CachedHandler } from "./nitroStubs";
 
-const CATEGORY = "018dadb399837af3aa669c8fff4f4d6c";
+const SECTION = "018dadb399837af3aa669c8fff4f4d6c";
 const A = "0197baf0a6a971eaada59ed5c84138de";
 const B = "018dbccef8257618b0b3a541f513aa9e";
 
 const load = async <T>(path: string): Promise<T> =>
   (await import(/* @vite-ignore */ path)).default as T;
 
-async function route(path: string) {
+/** The route with the listing helpers and a catalog whose calls are spies. */
+async function route(path: string, globals: Record<string, unknown> = {}) {
   const params = await import("../../server/utils/listingParams");
-  const stubs = stubNitro({ ...params, $fetch: vi.fn(), MEDIA_INCLUDES: {} });
-  return { stubs, ...(await load<CachedHandler>(path)) };
+  const { answerDomain } = await import("../../server/utils/domainHttp");
+  const catalog = {
+    listDishes: vi.fn(async () => ({ dishes: [] })),
+    searchDishes: vi.fn(async () => ({ dishes: [] })),
+  };
+  const stubs = stubNitro({
+    ...params,
+    answerDomain,
+    useBackend: () => ({ catalog }),
+    ...globals,
+  });
+  return { stubs, catalog, ...(await load<CachedHandler>(path)) };
 }
 
 beforeEach(() => {
@@ -23,63 +34,59 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const LISTING = "../../server/api/listing/[sectionId].get";
 const listingEvent = (query: Record<string, unknown>) => ({
-  params: { categoryId: CATEGORY },
+  params: { sectionId: SECTION },
   query,
 });
 
-describe("/api/listing/[categoryId] cache key", () => {
-  it("keys property and manufacturer filters as sorted lower-case ids", async () => {
-    const { opts, handler, stubs } = await route(
-      "../../server/api/listing/[categoryId].get",
-    );
-    const query = { properties: `${B.toUpperCase()}|${A}|${A}`, p: "2" };
+describe("/api/listing/[sectionId] cache key", () => {
+  it("keys the filter options as sorted lower-case ids and asks the port", async () => {
+    const { opts, handler, catalog } = await route(LISTING);
+    const query = { filters: `${B.toUpperCase()}|${A}|${A}`, p: "2" };
 
     expect(await opts.getKey(listingEvent(query))).toBe(
-      [CATEGORY, "", `${B}|${A}`, "", "", 2].join("|"),
+      [SECTION, "", `${B}|${A}`, 2].join("|"),
     );
     await handler(listingEvent(query));
-    expect(stubs.storeApiPost).toHaveBeenCalledWith(
-      `/product-listing/${CATEGORY}`,
-      expect.objectContaining({ properties: `${B}|${A}`, p: 2 }),
-      expect.anything(),
-    );
+    expect(catalog.listDishes).toHaveBeenCalledWith(SECTION, {
+      filterOptionIds: [B, A],
+      page: 2,
+    });
   });
 
   it.each([
-    ["properties", "Käse"],
-    ["properties", `${A}|`],
-    ["properties", Array.from({ length: 51 }, () => A).join("|")],
-    ["manufacturer", "x".repeat(32)],
+    ["filters", "Käse"],
+    ["filters", `${A}|`],
+    ["filters", Array.from({ length: 51 }, () => A).join("|")],
     ["order", "random-key"],
     ["p", "21"],
     ["p", "0"],
     ["p", "1.5"],
-    ["query", "x".repeat(101)],
-    ["properties", [A, B]],
+    ["filters", [A, B]],
   ])("rejects %s=%s with 400 before it becomes a key", async (name, value) => {
-    const { opts, handler, stubs } = await route(
-      "../../server/api/listing/[categoryId].get",
-    );
+    const { opts, handler, catalog } = await route(LISTING);
     const event = listingEvent({ [name]: value });
 
     expect(() => opts.getKey(event)).toThrow(
       expect.objectContaining({ statusCode: 400 }),
     );
     await expect(handler(event)).rejects.toMatchObject({ statusCode: 400 });
-    expect(stubs.storeApiPost).not.toHaveBeenCalled();
+    expect(catalog.listDishes).not.toHaveBeenCalled();
   });
 
-  it("rejects a category id that is not 32 hex characters", async () => {
-    const { opts } = await route("../../server/api/listing/[categoryId].get");
+  it("rejects a section id that is no id", async () => {
+    const { opts } = await route(LISTING);
 
-    expect(() =>
-      opts.getKey({ params: { categoryId: "pizza" }, query: {} }),
-    ).toThrow(expect.objectContaining({ statusCode: 400 }));
+    for (const sectionId of ["../x", "a".repeat(65), "", "Pizza Salami"]) {
+      expect(() => opts.getKey({ params: { sectionId }, query: {} })).toThrow(
+        expect.objectContaining({ statusCode: 400 }),
+      );
+    }
   });
 
   it("accepts Shopware's standard sortings", async () => {
-    const { opts } = await route("../../server/api/listing/[categoryId].get");
+    const { opts } = await route(LISTING);
 
     for (const order of ["name-asc", "name-desc", "price-asc", "topseller"]) {
       expect(await opts.getKey(listingEvent({ order }))).toContain(order);
@@ -87,31 +94,17 @@ describe("/api/listing/[categoryId] cache key", () => {
   });
 
   it("accepts the sortings configured for the shop", async () => {
-    const params = await import("../../server/utils/listingParams");
-    stubNitro({
-      ...params,
-      MEDIA_INCLUDES: {},
+    const { opts } = await route(LISTING, {
       useRuntimeConfig: () => ({
         listingSortings: "name-asc, menu-number",
         public: { shopBite: { cacheTtl: { listing: 1 } } },
       }),
     });
-    const { opts } = await load<CachedHandler>(
-      "../../server/api/listing/[categoryId].get",
-    );
 
     expect(await opts.getKey(listingEvent({ order: "menu-number" }))).toContain(
       "menu-number",
     );
     expect(() => opts.getKey(listingEvent({ order: "price-asc" }))).toThrow();
-  });
-
-  it("normalises whitespace of the text query", async () => {
-    const { opts } = await route("../../server/api/listing/[categoryId].get");
-
-    expect(
-      await opts.getKey(listingEvent({ query: "  Pizza   Salami " })),
-    ).toBe([CATEGORY, "", "", "", "Pizza Salami", 1].join("|"));
   });
 });
 
@@ -122,7 +115,9 @@ describe("/api/search cache key", () => {
     [{ query: "pizza", p: "99" }],
     [{ query: ["pizza", "salami"] }],
   ])("rejects %o with 400", async (query) => {
-    const { opts, handler, stubs } = await route("../../server/api/search.get");
+    const { opts, handler, catalog } = await route(
+      "../../server/api/search.get",
+    );
 
     expect(() => opts.getKey({ query })).toThrow(
       expect.objectContaining({ statusCode: 400 }),
@@ -130,15 +125,20 @@ describe("/api/search cache key", () => {
     await expect(handler({ query })).rejects.toMatchObject({
       statusCode: 400,
     });
-    expect(stubs.$fetch).not.toHaveBeenCalled();
+    expect(catalog.searchDishes).not.toHaveBeenCalled();
   });
 
-  it("keys a valid search", async () => {
-    const { opts } = await route("../../server/api/search.get");
+  it("keys a valid search with whitespace collapsed", async () => {
+    const { opts, handler, catalog } = await route(
+      "../../server/api/search.get",
+    );
+    const query = { query: "  pizza   salami ", order: "score" };
 
-    expect(
-      await opts.getKey({ query: { query: " pizza ", order: "score" } }),
-    ).toBe("pizza|score|1");
+    expect(await opts.getKey({ query })).toBe("pizza salami|score|1");
+    await handler({ query });
+    expect(catalog.searchDishes).toHaveBeenCalledWith("pizza salami", {
+      sorting: "score",
+    });
   });
 });
 
@@ -209,13 +209,13 @@ describe("bounded cache storage", () => {
   it("still lets the purge find and remove the entries", async () => {
     const storage = await mountWith({ maxEntries: 100, maxSizeMb: 1 });
     const { keysToPurge } = await import("../../server/utils/cachePurge");
-    await storage.setItem(`cache:nitro:handlers:product:product${A}.json`, {
+    await storage.setItem(`cache:nitro:handlers:variant:variant${A}x.json`, {
       value: 1,
     });
-    await storage.setItem(`cache:nitro:handlers:product:product${B}.json`, {
+    await storage.setItem(`cache:nitro:handlers:variant:variant${B}x.json`, {
       value: 2,
     });
-    await storage.setItem(`cache:nitro:handlers:listing:${CATEGORY}1.json`, {
+    await storage.setItem(`cache:nitro:handlers:listing:${SECTION}1.json`, {
       value: 3,
     });
 
@@ -225,7 +225,7 @@ describe("bounded cache storage", () => {
     await Promise.all(keys.map((key) => storage.removeItem(key)));
 
     expect(await storage.getKeys("cache:nitro")).toEqual([
-      `cache:nitro:handlers:product:product${B}.json`,
+      `cache:nitro:handlers:variant:variant${B}x.json`,
     ]);
   });
 });

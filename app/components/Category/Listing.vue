@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
 import Breadcrumb from "~/components/Category/Breadcrumb.vue";
 import MenuBonCard from "~/components/Menu/BonCard.vue";
 
-// A menu category lists up to 100 products; hydrating every card up front
+// A menu section lists up to 100 dishes; hydrating every card up front
 // costs ~1 s of main-thread time on phones (#314).
 const MenuBonCardWhenVisible = hydrateWhenVisible(MenuBonCard);
 
@@ -14,9 +13,9 @@ const props = defineProps<{
   id: string;
 }>();
 
-const { id: categoryId } = toRefs(props);
+const { id: sectionId } = toRefs(props);
 
-const { category } = await useCategoryById(categoryId);
+const { section } = await useMenuSection(sectionId);
 
 const selectedPropertyFilters = useState<string[]>(
   "listing-property-filters",
@@ -26,11 +25,10 @@ const selectedPropertyFilters = useState<string[]>(
 const {
   showSkeleton,
   loading,
-  elements,
-  sortingOrders,
-  currentSortingOrder,
-  availableFilters,
-  currentFilters,
+  dishes,
+  sortings,
+  currentSorting: currentSortingOrder,
+  filters: propertyFilters,
   changeSorting,
   setFilters,
   resetFilters: resetListingFilters,
@@ -41,58 +39,36 @@ async function resetFilters() {
   await resetListingFilters();
 }
 
-useCategorySeo(category);
-useMenuSectionSchema(category, elements);
+useCategorySeo(section);
+useMenuSectionSchema(section, dishes);
 
-const quickView = useProductQuickView(elements);
+const quickView = useProductQuickView(dishes);
 
 // A section with sub-sections lists its dishes under their sub-section (#487):
 // direct dishes first, then one heading per sub-section in backoffice order.
 // Navigation to them is the chip row (phones) and the word-list index (desktop).
-const { menuCardNavigation } = useNavigation(true);
 const grouped = computed(() =>
-  groupBySubsections(
-    elements.value,
-    findCategory(menuCardNavigation.value ?? undefined, props.id)?.children ??
-      undefined,
-  ),
+  groupBySubsections(dishes.value, section.value?.children),
 );
 
 // Derived from the listing data instead of snapshotted at setup time, which
 // would be a hydration mismatch (#239); see useSortingSelection.
 const { currentSorting } = useSortingSelection(currentSortingOrder);
-const presetSortingOptions = computed(() =>
-  toSortingOptions(sortingOrders.value),
-);
+const presetSortingOptions = computed(() => toSortingOptions(sortings.value));
 
-const propertyFilters = computed<Schemas["PropertyGroup"][]>(
-  () =>
-    (availableFilters.value?.filter(
-      (availableFilter) => availableFilter.code === "properties",
-    ) ?? []) as unknown as Schemas["PropertyGroup"][],
-);
 const selectedPropertyFiltersString = computed(() =>
-  selectedPropertyFilters.value?.join("|"),
+  selectedPropertyFilters.value.join("|"),
 );
 
-const selectedListingFilters = computed<ShortcutFilterParam[]>(() => {
-  return [
-    {
-      code: "properties",
-      value: selectedPropertyFiltersString.value,
-    },
-  ];
-});
-
-// When the listing loads for a new category, drop any persisted filters whose
-// option IDs don't exist in this category's available options.
+// When the listing loads for a new section, drop any persisted filters whose
+// option IDs don't exist in this section's available options.
 watch(
   propertyFilters,
   (filters) => {
     if (selectedPropertyFilters.value.length === 0) return;
 
     const availableOptionIds = new Set(
-      filters.flatMap((f) => f.options?.map((o) => o.id) ?? []),
+      filters.flatMap((f) => f.options.map((o) => o.id)),
     );
     const valid = selectedPropertyFilters.value.filter((id) =>
       availableOptionIds.has(id),
@@ -107,24 +83,21 @@ watch(
 
 let filterChain = Promise.resolve();
 
-watch(selectedListingFilters, (newFilters, oldFilters) => {
-  if (newFilters[0]?.value === oldFilters?.[0]?.value) return;
+watch(selectedPropertyFiltersString, (newFilters, oldFilters) => {
+  if (newFilters === oldFilters) return;
   // setFilters doesn't send an order, so the response falls back to the
   // default sorting; drop the override so the select follows it (#249).
   currentSorting.value = SORTING_PLACEHOLDER;
+  const ids = [...selectedPropertyFilters.value];
   filterChain = filterChain
     .catch(() => {})
-    .then(() => setFilters(newFilters))
+    .then(() => setFilters(ids))
     .catch(() => {});
 });
 
 watch(currentSorting, async (val) => {
   if (val === SORTING_PLACEHOLDER || val === currentSortingOrder.value) return;
-  const sortingQuery = {
-    query: currentFilters.value?.search,
-    properties: currentFilters.value?.properties?.join("|"),
-  };
-  await changeSorting(val, sortingQuery);
+  await changeSorting(val);
 });
 
 const moreThanOneFilterAndOption = computed<boolean>(
@@ -156,11 +129,11 @@ async function openFilterDrawer() {
     </aside>
 
     <div class="min-w-0">
-      <Breadcrumb :category-id="category?.id" />
+      <Breadcrumb :category-id="section?.id" />
       <MenuSectionHeader
-        v-if="category"
-        :category="category"
-        :count="elements.length"
+        v-if="section"
+        :section="section"
+        :count="dishes.length"
       />
       <MenuOrderMode class="mb-4 lg:hidden" />
       <CategorySearchInput class="mb-4" />
@@ -205,7 +178,7 @@ async function openFilterDrawer() {
                   >Zurücksetzen</SbButton
                 >
                 <SbButton block @click="filterDrawerOpen = false"
-                  >{{ elements.length }} Gerichte zeigen</SbButton
+                  >{{ dishes.length }} Gerichte zeigen</SbButton
                 >
               </div>
             </template>
@@ -228,11 +201,11 @@ async function openFilterDrawer() {
       >
         <div v-if="grouped.direct.length" class="grid grid-cols-1 gap-3">
           <MenuBonCardWhenVisible
-            v-for="product in grouped.direct"
-            :key="product.id"
-            :product="product"
+            v-for="dish in grouped.direct"
+            :key="dish.id"
+            :dish="dish"
             :photo="menuView === 'bonPhoto'"
-            :href="productDeepLink(product, category?.seoUrl)"
+            :href="dishLink(dish, section?.path)"
             @select="quickView.show"
           />
         </div>
@@ -251,11 +224,11 @@ async function openFilterDrawer() {
           </h2>
           <div class="grid grid-cols-1 gap-3">
             <MenuBonCardWhenVisible
-              v-for="product in group.products"
-              :key="product.id"
-              :product="product"
+              v-for="dish in group.dishes"
+              :key="dish.id"
+              :dish="dish"
               :photo="menuView === 'bonPhoto'"
-              :href="productDeepLink(product, category?.seoUrl)"
+              :href="dishLink(dish, section?.path)"
               @select="quickView.show"
             />
           </div>
@@ -267,18 +240,18 @@ async function openFilterDrawer() {
         :class="{ 'pointer-events-none opacity-40': loading }"
       >
         <MenuBonCardWhenVisible
-          v-for="product in elements"
-          :key="product.id"
-          :product="product"
+          v-for="dish in dishes"
+          :key="dish.id"
+          :dish="dish"
           :photo="menuView === 'bonPhoto'"
-          :href="productDeepLink(product, category?.seoUrl)"
+          :href="dishLink(dish, section?.path)"
           @select="quickView.show"
         />
       </div>
       <LazyProductQuickView
         v-if="quickView.mounted.value"
         v-model:open="quickView.open.value"
-        :product="quickView.product.value"
+        :dish="quickView.dish.value"
       />
     </div>
 

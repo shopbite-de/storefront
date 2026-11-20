@@ -1,138 +1,118 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
 import type { LocationQueryRaw } from "vue-router";
-import type { AssociationItemProduct } from "~/types/Association";
+import type { Dish, DishDetail, Extra } from "../../shared/domain";
 import type { WishlistEntry } from "~/composables/useWishlistEntries";
+import type { OrderableDish } from "~/utils/dish";
 import { withQuickViewConfiguration } from "~/utils/productUrl";
 
 /**
  * The wishlist with configured dishes (#467). Each row names the dish with
  * its configuration ("+Extra Salami, ohne Pilze"), shows today's price of
- * dish and extras, adds it to the cart as the product sheet would (same
+ * dish and extras, adds it to the cart as the dish sheet would (same
  * container line item, `useAddToCart`) and opens the sheet with the saved
- * configuration ("Anpassen", the quick view URL of #411 on this page).
+ * configuration ("Anpassen", the dish sheet URL of #411 on this page). The
+ * dishes come from the BFF's dish sheets (`/api/menu/dishes/[dishId]`).
  */
 withDefaults(defineProps<{ showMenuButton?: boolean }>(), {
   showMenuButton: false,
 });
 
 const route = useRoute();
-const { apiClient } = useShopwareContext();
-const { getFormattedPrice } = useCommercePrice();
+const { getFormattedMoney } = useCommercePrice();
 const { entries, loaded, remove, clear } = useWishlistEntries();
 const {
-  setSelectedProduct,
+  setSelectedDish,
   setSelectedExtras,
-  setDeselectedIngredients,
+  setRemovedIngredients,
   selectedQuantity,
   addToCart,
 } = useAddToCart();
 
-const products = ref<Schemas["Product"][]>([]);
-const extras = ref<Schemas["Product"][]>([]);
-const loadingProducts = ref(false);
+/** The dish sheet of each saved dish or variant, by its id. */
+const details = ref<Record<string, DishDetail>>({});
+const loadingDishes = ref(false);
 
-async function loadProducts(list: WishlistEntry[]) {
-  const productIds = [...new Set(list.map((entry) => entry.productId))];
-  const extraNumbers = [...new Set(list.flatMap((entry) => entry.extras))];
-  if (!productIds.length) {
-    products.value = [];
-    extras.value = [];
+async function loadDishes(list: WishlistEntry[]) {
+  const ids = [...new Set(list.map((entry) => entry.productId))];
+  if (!ids.length) {
+    details.value = {};
     return;
   }
-  loadingProducts.value = true;
+  loadingDishes.value = true;
   try {
-    const [dishes, extraProducts] = await Promise.all([
-      apiClient.invoke("readProduct post /product", {
-        // @ts-expect-error sw-inheritance is missing from the generated header type
-        headers: { "sw-inheritance": "true" },
-        body: { ids: productIds, limit: productIds.length },
-      }),
-      extraNumbers.length
-        ? apiClient.invoke("readProduct post /product", {
-            body: {
-              filter: [
-                {
-                  type: "equalsAny",
-                  field: "productNumber",
-                  value: extraNumbers.join("|"),
-                },
-              ],
-              limit: extraNumbers.length,
-            },
-          })
-        : Promise.resolve(undefined),
-    ]);
-    products.value = dishes.data.elements ?? [];
-    extras.value = extraProducts?.data.elements ?? [];
-  } catch (error) {
-    console.error("[wishlist][loadProducts]", error);
+    const answers = await Promise.allSettled(
+      ids.map((id) => $fetch<DishDetail>(`/api/menu/dishes/${id}`)),
+    );
+    const found: Record<string, DishDetail> = {};
+    answers.forEach((answer, index) => {
+      if (answer.status === "fulfilled") found[ids[index]!] = answer.value;
+      // a dish taken off the menu leaves its row out
+      else console.error("[wishlist][loadDishes]", answer.reason);
+    });
+    details.value = found;
   } finally {
-    loadingProducts.value = false;
+    loadingDishes.value = false;
   }
 }
 
 watch(
   () => entries.value.map((entry) => entry.id).join(),
-  () => loadProducts(entries.value),
+  () => loadDishes(entries.value),
   { immediate: true },
 );
 
-function nameOf(product: Schemas["Product"] | undefined) {
-  return product?.translated?.name ?? product?.name ?? "";
-}
-
 type Row = {
   entry: WishlistEntry;
-  product: Schemas["Product"];
-  extras: Schemas["Product"][];
+  /** What the row and the dish sheet show: the dish or the saved variant. */
+  dish: Dish;
+  orderable: OrderableDish;
+  extras: Extra[];
   configuration: string;
-  price: number;
+  price: Dish["price"];
   // a parent with variants (saved before #467) needs a choice first
   needsChoice: boolean;
 };
 
 const rows = computed<Row[]>(() =>
   entries.value.flatMap((entry) => {
-    const product = products.value.find(
+    const detail = details.value[entry.productId];
+    if (!detail) return [];
+    const variant = detail.variants.find(
       (candidate) => candidate.id === entry.productId,
     );
-    if (!product) return [];
+    const dish = variant ? variantAsDish(detail, variant) : detail;
+    const offered = detail.extraGroups.flatMap((group) => group.extras);
     const chosenExtras = entry.extras
-      .map((number) =>
-        extras.value.find((extra) => extra.productNumber === number),
-      )
-      .filter((extra): extra is Schemas["Product"] => !!extra);
+      .map((number) => offered.find((extra) => extra.number === number))
+      .filter((extra): extra is Extra => !!extra);
     const configuration = [
-      ...chosenExtras.map((extra) => `+${nameOf(extra)}`),
+      ...chosenExtras.map((extra) => `+${extra.name}`),
       ...entry.without.map((name) => `ohne ${name}`),
     ].join(", ");
-    const price =
-      (product.calculatedPrice?.unitPrice ?? 0) +
-      chosenExtras.reduce(
-        (sum, extra) => sum + (extra.calculatedPrice?.unitPrice ?? 0),
-        0,
-      );
     return [
       {
         entry,
-        product,
+        dish,
+        orderable: variant ?? detail,
         extras: chosenExtras,
         configuration,
-        price,
-        needsChoice: (product.childCount ?? 0) > 0,
+        price: sumMoney(
+          [dish.price, ...chosenExtras.map((extra) => extra.price)],
+          dish.price.currency,
+        ),
+        needsChoice: !variant && detail.variants.length > 0,
       },
     ];
   }),
 );
 
-// "Anpassen" opens the product sheet on this page.
-const quickView = useProductQuickView(products);
+// "Anpassen" opens the dish sheet on this page.
+const quickView = useProductQuickView(() => rows.value.map((row) => row.dish));
 
 function customizeLink(row: Row) {
   return {
     query: withQuickViewConfiguration(route.query, {
-      productNumber: row.product.productNumber,
+      productNumber: row.dish.number,
       without: row.entry.without,
       extras: row.entry.extras,
     }) as LocationQueryRaw,
@@ -141,34 +121,24 @@ function customizeLink(row: Row) {
 
 function rowLabel(row: Row) {
   return row.configuration
-    ? `${nameOf(row.product)} (${row.configuration})`
-    : nameOf(row.product);
+    ? `${row.dish.name} (${row.configuration})`
+    : row.dish.name;
 }
 
-const addingId = ref<string | null>(null);
-const addingAll = ref(false);
-const failed = ref<string | null>(null);
-
-function asExtra(extra: Schemas["Product"]): AssociationItemProduct {
-  return {
-    label: nameOf(extra),
-    value: extra.id,
-    productNumber: extra.productNumber,
-    price: getFormattedPrice(extra.calculatedPrice?.unitPrice),
-    unitPrice: extra.calculatedPrice?.unitPrice,
-  };
-}
-
-/** Adds one row with the same line item the product sheet creates. */
+/** Adds one row with the same cart line the dish sheet creates. */
 async function addRow(row: Row) {
-  setSelectedProduct(row.product);
-  setSelectedExtras(row.extras.map(asExtra));
-  setDeselectedIngredients(row.entry.without);
+  setSelectedDish(row.orderable);
+  setSelectedExtras(row.extras);
+  setRemovedIngredients(row.entry.without);
   selectedQuantity.value = 1;
   let added = false;
   await addToCart(() => (added = true));
   return added;
 }
+
+const addingId = ref<string | null>(null);
+const addingAll = ref(false);
+const failed = ref<string | null>(null);
 
 async function addOne(row: Row) {
   addingId.value = row.entry.id;
@@ -226,7 +196,7 @@ async function clearAll() {
 <template>
   <div class="flex flex-col gap-6 font-body text-sb-ink">
     <p
-      v-if="!loaded || (loadingProducts && !rows.length)"
+      v-if="!loaded || (loadingDishes && !rows.length)"
       role="status"
       class="text-sb-ink-muted"
     >
@@ -258,7 +228,7 @@ async function clearAll() {
           <p class="min-w-0">
             <span
               class="block font-bold [overflow-wrap:anywhere] hyphens-auto"
-              >{{ nameOf(row.product) }}</span
+              >{{ row.dish.name }}</span
             >
             <span
               v-if="row.configuration"
@@ -266,8 +236,8 @@ async function clearAll() {
               >{{ row.configuration }}</span
             >
             <span class="text-sm text-sb-ink-muted tabular-nums"
-              >Nr. {{ row.product.productNumber }} ·
-              {{ getFormattedPrice(row.price) }}</span
+              >Nr. {{ row.dish.number }} ·
+              {{ getFormattedMoney(row.price) }}</span
             >
           </p>
           <SbIconButton
@@ -324,7 +294,7 @@ async function clearAll() {
     <LazyProductQuickView
       v-if="quickView.mounted.value"
       v-model:open="quickView.open.value"
-      :product="quickView.product.value"
+      :dish="quickView.dish.value"
     />
   </div>
 </template>

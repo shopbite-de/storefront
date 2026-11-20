@@ -1,22 +1,18 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { MenuSection } from "../../../shared/domain";
 
 /**
- * Title of a menu category in the presets (#441): name in the display
- * font, dish count, the category description as a note. Replaces the photo
+ * Title of a menu section in the presets (#441): name in the display
+ * font, dish count, the section description as a note. Replaces the photo
  * banner, which made the menu look like a delivery platform.
  */
 const props = defineProps<{
-  category: Schemas["Category"];
+  section: MenuSection;
   count: number;
 }>();
 
-const name = computed(
-  () => props.category.translated?.name ?? props.category.name ?? "",
-);
-const description = computed(
-  () => props.category.translated?.description ?? props.category.description,
-);
+const name = computed(() => props.section.name);
+const description = computed(() => props.section.description);
 </script>
 
 <template>

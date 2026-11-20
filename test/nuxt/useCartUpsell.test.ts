@@ -1,23 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { mockNuxtImport, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { useCartUpsell } from "~/composables/useCartUpsell";
-import type { Schemas } from "#shopware";
+import { dish } from "../support/dishes";
 
 const {
-  mockInvoke,
+  mockUpsell,
   mockAddLineItems,
   mockTriggerCartItemAdded,
   mockTrackUpsellAdd,
 } = vi.hoisted(() => ({
-  mockInvoke: vi.fn(),
+  mockUpsell: vi.fn(),
   mockAddLineItems: vi.fn(),
   mockTriggerCartItemAdded: vi.fn(),
   mockTrackUpsellAdd: vi.fn(),
 }));
 
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: { invoke: mockInvoke },
-}));
+registerEndpoint("/api/menu/upsell", () => mockUpsell());
 mockNuxtImport("useCartMutations", () => () => ({
   addLineItems: mockAddLineItems,
 }));
@@ -28,63 +26,34 @@ mockNuxtImport("useTrackEvent", () => () => ({
   trackUpsellAdd: mockTrackUpsellAdd,
 }));
 
-const tiramisu = {
-  id: "tiramisu",
-  productNumber: "D1",
-  translated: { name: "Tiramisu" },
-} as unknown as Schemas["Product"];
+const tiramisu = dish({ id: "tiramisu", number: "D1", name: "Tiramisu" });
 
 describe("useCartUpsell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("loads the flagged products without variant parents", async () => {
-    mockInvoke.mockResolvedValue({ data: { elements: [tiramisu] } });
+  it("loads the suggested dishes from the BFF", async () => {
+    mockUpsell.mockReturnValue([tiramisu]);
 
-    const result = await useCartUpsell().loadUpsellProducts();
-
-    expect(result).toEqual([tiramisu]);
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "readProduct post /product",
-      expect.objectContaining({
-        headers: { "sw-inheritance": "true" },
-        body: expect.objectContaining({
-          limit: 6,
-          filter: [
-            {
-              type: "equals",
-              field: "customFields.shopbite_cart_upsell",
-              value: true,
-            },
-            // Variants have no child count (null), main products 0.
-            {
-              type: "multi",
-              operator: "or",
-              queries: [
-                { type: "equals", field: "childCount", value: 0 },
-                { type: "equals", field: "childCount", value: null },
-              ],
-            },
-          ],
-        }),
-      }),
-    );
+    expect(await useCartUpsell().loadUpsellDishes()).toEqual([tiramisu]);
   });
 
   it("returns an empty list when the request fails", async () => {
-    mockInvoke.mockRejectedValue(new Error("Network error"));
+    mockUpsell.mockImplementation(() => {
+      throw new Error("Network error");
+    });
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    expect(await useCartUpsell().loadUpsellProducts()).toEqual([]);
+    expect(await useCartUpsell().loadUpsellDishes()).toEqual([]);
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
 
-  it("adds the product with quantity 1 and reports the add", async () => {
+  it("adds the dish with quantity 1 and reports the add", async () => {
     mockAddLineItems.mockResolvedValue({ id: "cart" });
 
-    await useCartUpsell().addUpsellProduct(tiramisu);
+    await useCartUpsell().addUpsellDish(tiramisu);
 
     expect(mockAddLineItems).toHaveBeenCalledWith([
       { id: "tiramisu", quantity: 1, type: "product" },
@@ -97,26 +66,26 @@ describe("useCartUpsell", () => {
     // useCartMutations re-syncs the cart itself and resolves undefined.
     mockAddLineItems.mockResolvedValue(undefined);
 
-    await useCartUpsell().addUpsellProduct(tiramisu);
+    await useCartUpsell().addUpsellDish(tiramisu);
 
     expect(mockTriggerCartItemAdded).not.toHaveBeenCalled();
     expect(mockTrackUpsellAdd).not.toHaveBeenCalled();
   });
 
-  it("marks the product as pending while the add is queued", async () => {
+  it("marks the dish as pending while the add is queued", async () => {
     let resolveAdd: (cart: unknown) => void = () => {};
     mockAddLineItems.mockReturnValue(
       new Promise((resolve) => {
         resolveAdd = resolve;
       }),
     );
-    const { addUpsellProduct, isAdding } = useCartUpsell();
+    const { addUpsellDish, isAdding } = useCartUpsell();
 
-    const adding = addUpsellProduct(tiramisu);
+    const adding = addUpsellDish(tiramisu);
     expect(isAdding("tiramisu")).toBe(true);
 
-    // A second click while queued does not add the product twice.
-    await addUpsellProduct(tiramisu);
+    // A second click while queued does not add the dish twice.
+    await addUpsellDish(tiramisu);
     expect(mockAddLineItems).toHaveBeenCalledTimes(1);
 
     resolveAdd({ id: "cart" });

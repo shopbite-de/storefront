@@ -1,20 +1,23 @@
 import { describe, expect, it } from "vitest";
-import type { Schemas } from "#shopware";
-import { findCategory, groupBySubsections } from "../../app/utils/menuGroups";
+import type { MenuSection } from "../../shared/domain";
+import { groupBySubsections } from "../../app/utils/menuGroups";
+import { dish } from "../support/dishes";
 
 const category = (
   id: string,
   name: string,
-  children: Schemas["Category"][] = [],
-) =>
-  ({
-    id,
-    name,
-    translated: { name },
-    children,
-  }) as unknown as Schemas["Category"];
-const product = (id: string, categoryIds: string[]) =>
-  ({ id, categoryIds }) as unknown as Schemas["Product"];
+  children: MenuSection[] = [],
+): MenuSection => ({
+  id,
+  name,
+  description: null,
+  icon: null,
+  media: null,
+  path: `/${name}/`,
+  seo: { title: null, description: null, indexable: true },
+  children,
+});
+const product = (id: string, sectionIds: string[]) => dish({ id, sectionIds });
 
 const nudeln = category("nudeln", "Nudeln", [
   category("spaghetti", "Spaghetti"),
@@ -35,7 +38,7 @@ describe("groupBySubsections (#487)", () => {
     );
     expect(result?.direct.map((p) => p.id)).toEqual(["p3"]);
     expect(
-      result?.groups.map((g) => [g.name, g.products.map((p) => p.id)]),
+      result?.groups.map((g) => [g.name, g.dishes.map((p) => p.id)]),
     ).toEqual([
       ["Spaghetti", ["p2"]],
       ["Penne", ["p1", "p4"]],
@@ -44,13 +47,5 @@ describe("groupBySubsections (#487)", () => {
 
   it("is null for a section without sub-sections", () => {
     expect(groupBySubsections([product("p1", ["pizza"])], [])).toBeNull();
-  });
-
-  it("finds a category anywhere in the tree", () => {
-    expect(
-      findCategory([category("pizza", "Pizza"), nudeln], "penne-al-forno")
-        ?.name,
-    ).toBe("Al forno");
-    expect(findCategory([nudeln], "x")).toBeUndefined();
   });
 });

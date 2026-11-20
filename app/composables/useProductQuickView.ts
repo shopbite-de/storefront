@@ -1,5 +1,5 @@
-import type { Schemas } from "#shopware";
 import type { LocationQueryRaw } from "vue-router";
+import type { Dish, DishDetail } from "../../shared/domain";
 import {
   EXTRAS_PARAM,
   PRODUCT_QUICK_VIEW_PARAM,
@@ -10,24 +10,22 @@ import {
 } from "../utils/productUrl";
 
 // Numbers the open quick view switched to itself (variant switch, #411):
-// the URL follows the selection, but the drawer keeps its product.
+// the URL follows the selection, but the drawer keeps its dish.
 const SWITCHED_NUMBERS_KEY = "quick-view-switched-numbers";
 
 /**
- * The product quick view (options, quantity, add to cart) is a drawer over
- * the listing whose state lives in the URL: `?produkt=<productNumber>` opens
- * it, so a product can be linked and the back button closes it (#325).
- * A number that is not in the list (a variant, #289) is loaded from the
- * Store API; the quick view then opens with the variant's options selected.
- * The configuration (variant, deselected ingredients, extras) is kept in the
- * URL as well, see useQuickViewConfiguration (#411).
+ * The dish sheet (options, quantity, add to cart) is a drawer over the
+ * listing whose state lives in the URL: `?produkt=<menu number>` opens it,
+ * so a dish can be linked and the back button closes it (#325). A number
+ * that is not in the list (a variant, #289) is loaded from the BFF
+ * (`/api/menu/dishes?number=`); the sheet then opens with the variant's
+ * options selected. The configuration (variant, deselected ingredients,
+ * extras) is kept in the URL as well, see useQuickViewConfiguration
+ * (#411).
  */
-export function useProductQuickView(
-  products: MaybeRefOrGetter<Schemas["Product"][]>,
-) {
+export function useProductQuickView(dishes: MaybeRefOrGetter<readonly Dish[]>) {
   const route = useRoute();
   const router = useRouter();
-  const { apiClient } = useShopwareContext();
   const switchedNumbers = useState<string[]>(SWITCHED_NUMBERS_KEY, () => []);
 
   const requestedNumber = computed(() => {
@@ -37,24 +35,24 @@ export function useProductQuickView(
 
   const listed = computed(() =>
     requestedNumber.value
-      ? toValue(products).find(
-          (candidate) => candidate.productNumber === requestedNumber.value,
+      ? toValue(dishes).find(
+          (candidate) => candidate.number === requestedNumber.value,
         )
       : undefined,
   );
 
-  const loaded = shallowRef<Schemas["Product"]>();
+  const loaded = shallowRef<Dish>();
   watch(
-    [requestedNumber, () => toValue(products).length],
+    [requestedNumber, () => toValue(dishes).length],
     async ([number, count]) => {
       // Only in the browser (the drawer is client-only) and once the list
-      // is there, so a listed product never costs a request.
+      // is there, so a listed dish never costs a request.
       if (!import.meta.client || !number || count === 0 || listed.value) {
         return;
       }
       if (switchedNumbers.value.includes(number)) return;
-      if (loaded.value?.productNumber === number) return;
-      const result = await loadProductByNumber(apiClient, number);
+      if (loaded.value?.number === number) return;
+      const result = await loadDishByNumber(number);
       if (requestedNumber.value === number) loaded.value = result;
     },
     { immediate: true },
@@ -63,13 +61,13 @@ export function useProductQuickView(
   const resolved = computed(
     () =>
       listed.value ??
-      (loaded.value && loaded.value.productNumber === requestedNumber.value
+      (loaded.value && loaded.value.number === requestedNumber.value
         ? loaded.value
         : undefined),
   );
 
-  const opened = shallowRef<Schemas["Product"]>();
-  const product = computed(() => {
+  const opened = shallowRef<Dish>();
+  const dish = computed(() => {
     const number = requestedNumber.value;
     if (!number) return undefined;
     if (opened.value && switchedNumbers.value.includes(number)) {
@@ -79,7 +77,7 @@ export function useProductQuickView(
   });
 
   watch(
-    product,
+    dish,
     (value) => {
       if (value === opened.value) return;
       opened.value = value;
@@ -91,7 +89,7 @@ export function useProductQuickView(
   // The drawer is created on first use, not with the page (#314).
   const mounted = ref(false);
   watch(
-    product,
+    dish,
     (value) => {
       if (value) mounted.value = true;
     },
@@ -99,17 +97,17 @@ export function useProductQuickView(
   );
 
   const open = computed({
-    get: () => product.value !== undefined,
+    get: () => dish.value !== undefined,
     set: (value) => {
       if (!value) close();
     },
   });
 
-  function show(candidate: Schemas["Product"]) {
-    if (requestedNumber.value === candidate.productNumber) return;
+  function show(candidate: Dish) {
+    if (requestedNumber.value === candidate.number) return;
     router.push({
       query: withQuickViewConfiguration(route.query, {
-        productNumber: candidate.productNumber,
+        productNumber: candidate.number,
         without: [],
         extras: [],
       }) as LocationQueryRaw,
@@ -126,12 +124,12 @@ export function useProductQuickView(
     });
   }
 
-  return { product, open, mounted, show, close };
+  return { dish, open, mounted, show, close };
 }
 
 /**
  * The configuration of the open quick view in the URL (#411): `initial` is
- * what the URL carries (the detail components read it once, when a product
+ * what the URL carries (the detail components read it once, when a dish
  * opens), `update` writes the current selection back (replace, no history
  * entry).
  */
@@ -165,46 +163,15 @@ export function useQuickViewConfiguration() {
   return { initial, update };
 }
 
-/** A product (usually a variant) by its number, as the quick view needs it. */
-async function loadProductByNumber(
-  apiClient: ReturnType<typeof useShopwareContext>["apiClient"],
-  productNumber: string,
-): Promise<Schemas["Product"] | undefined> {
+/** A dish (usually a variant) by its menu number, as the sheet opens it. */
+async function loadDishByNumber(number: string): Promise<Dish | undefined> {
   try {
-    const result = await apiClient.invoke("readProduct post /product", {
-      // Variants inherit name, cover and properties from their parent.
-
-      // @ts-expect-error sw-inheritance is missing from the generated header type
-      headers: { "sw-inheritance": "true" },
-      body: {
-        filter: [
-          { type: "equals", field: "productNumber", value: productNumber },
-        ],
-        limit: 1,
-        includes: {
-          product: [
-            "id",
-            "parentId",
-            "productNumber",
-            "name",
-            "translated",
-            "description",
-            "sortedProperties",
-            // Allergens checked (#485); includes filter `translated` as well,
-            // so custom fields only come back when listed here.
-            "customFields",
-          ],
-          property_group: ["id", "name", "translated", "options"],
-          property_group_option: ["id", "name", "translated", "customFields"],
-        },
-        associations: {
-          properties: { associations: { group: {} } },
-        },
-      },
+    const detail = await $fetch<DishDetail>("/api/menu/dishes", {
+      query: { number },
     });
-    return result.data.elements?.[0];
+    return dishForNumber(detail, number);
   } catch (error) {
-    console.error("[useProductQuickView] product not found", error);
+    console.error("[useProductQuickView] dish not found", error);
     return undefined;
   }
 }

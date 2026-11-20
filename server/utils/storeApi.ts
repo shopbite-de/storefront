@@ -1,17 +1,6 @@
 import type { NitroFetchOptions } from "nitropack";
 
 /**
- * Field projection for media entities, shared by the routes that return
- * category or product images: the URL plus the thumbnails and intrinsic size
- * the storefront needs for `srcset` and `width`/`height` (#273).
- */
-export const MEDIA_INCLUDES = {
-  media: ["url", "alt", "thumbnails", "metaData"],
-  media_thumbnail: ["url", "width", "height"],
-  product_media: ["media"],
-};
-
-/**
  * Calls the Shopware Store API with a criteria in the request body.
  *
  * Criteria must travel as a POST body: sent as `_criteria` query parameters

@@ -74,6 +74,10 @@ _Avoid_: tag
 Food labels the law requires; a dish's lists are either checked (complete) or the guest is asked to call.
 _Avoid_: property
 
+**Top seller** ("Oft bestellt"):
+A dish the restaurant marks for the home page.
+_Avoid_: highlight, bestseller
+
 **Upsell dish** ("Dazu passt"):
 A dish suggested on the confirmation step before the order is placed.
 _Avoid_: cross-sell

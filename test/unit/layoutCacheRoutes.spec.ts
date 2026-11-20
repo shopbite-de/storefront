@@ -454,7 +454,7 @@ describe("cold caches during a Shopware outage", () => {
       params: { type: "menu" },
     },
     { path: "../../server/api/payment-methods.get", params: {} },
-    { path: "../../server/api/top-sellers.get", params: {} },
+    // the top sellers: test/unit/catalogRoutes.spec.ts
     {
       path: "../../server/api/breadcrumb/[categoryId].get",
       params: { categoryId: SECTION },

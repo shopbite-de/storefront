@@ -1,6 +1,14 @@
+import { moneyAmount } from "../../app/utils/money";
 import { groupOpeningHours } from "../../app/utils/openingHours";
+import { dishLink } from "../../app/utils/productUrl";
 import { restaurantNow } from "../../app/utils/restaurantTime";
-import type { Holiday, OpeningHours } from "../../shared/domain";
+import { toAbsoluteUrl } from "../../app/utils/seo";
+import type {
+  Dish,
+  Holiday,
+  MenuSection,
+  OpeningHours,
+} from "../../shared/domain";
 
 // Builder for /llms.txt (#402, https://llmstxt.org): a Markdown summary of
 // the shop for language models. Pure, so it is unit-testable; the route
@@ -56,6 +64,43 @@ export type LlmsTxtInput = {
 };
 
 const DIET_LABELS = { vegetarian: "vegetarisch", vegan: "vegan" } as const;
+
+/**
+ * The menu part from the catalog: each section lists the dishes assigned
+ * to it directly, alphabetically (numbers in natural order, "Pizza 9"
+ * before "Pizza 10"), with their link, price and main ingredients.
+ */
+export function toLlmsMenu(
+  sections: readonly MenuSection[],
+  dishes: readonly Dish[],
+  siteUrl: string,
+): LlmsMenuSection[] {
+  const bySection = new Map<string, Dish[]>();
+  for (const dish of dishes) {
+    for (const id of dish.sectionIds) {
+      bySection.set(id, [...(bySection.get(id) ?? []), dish]);
+    }
+  }
+  const toSection = (section: MenuSection): LlmsMenuSection => ({
+    name: section.name,
+    url: toAbsoluteUrl(siteUrl, section.path),
+    items: [...(bySection.get(section.id) ?? [])]
+      .sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }))
+      .map((dish) => {
+        const link = dishLink(dish, section.path);
+        return {
+          name: dish.name,
+          url: link ? toAbsoluteUrl(siteUrl, link) : undefined,
+          price: moneyAmount(dish.price),
+          fromPrice: dish.priceFrom,
+          ingredients: dish.ingredients.map((ingredient) => ingredient.name),
+          diets: [...dish.diets],
+        };
+      }),
+    sections: section.children.map(toSection),
+  });
+  return sections.map(toSection);
+}
 
 function formatPrice(price: number, currency: string) {
   return new Intl.NumberFormat("de-DE", { style: "currency", currency })

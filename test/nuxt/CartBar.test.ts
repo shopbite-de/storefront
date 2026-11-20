@@ -6,7 +6,7 @@ import CartBar from "~/components/Cart/Bar.vue";
 const state = reactive({ count: 0, subtotal: 0, path: "/c/Pizza/" });
 const showCalls = vi.hoisted(() => ({ value: 0 }));
 type Addition = {
-  product: { name: string; translated: { name: string } };
+  dish: { id: string; number: string; name: string };
   quantity: number;
 };
 const listeners: Array<(addition: Addition) => void> = [];
@@ -78,14 +78,14 @@ describe("CartBar", () => {
     expect(showCalls.value).toBe(1);
   });
 
-  it("names the added product for a moment instead of a toast", async () => {
+  it("names the added dish for a moment instead of a toast", async () => {
     vi.useFakeTimers();
     state.count = 2;
     state.subtotal = 15.5;
     const wrapper = await mountSuspended(CartBar);
     for (const listener of listeners) {
       listener({
-        product: { name: "Pizza Salami", translated: { name: "Pizza Salami" } },
+        dish: { id: "d22", number: "22", name: "Pizza Salami" },
         quantity: 2,
       });
     }

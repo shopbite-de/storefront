@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
 import type { NitroFetchRequest } from "nitropack";
+import type { Dish, MenuListing } from "../../shared/domain";
 import MenuBonCard from "~/components/Menu/BonCard.vue";
 
 // Cards hydrate as they scroll into view, see Category/Listing.vue (#314).
@@ -23,9 +23,9 @@ const searchQuery = computed(() => String(route.query.q ?? "").trim());
 const {
   showSkeleton,
   loading,
-  elements,
-  sortingOrders,
-  currentSortingOrder,
+  dishes,
+  sortings,
+  currentSorting: currentSortingOrder,
   applySearch,
   changeSorting,
 } = useListingSearch(searchQuery.value);
@@ -43,7 +43,7 @@ watch(searchQuery, (q) => {
   return applySearch(q);
 });
 
-useSearchTracking(searchQuery, elements, showSkeleton);
+useSearchTracking(searchQuery, dishes, showSkeleton);
 
 // Fallback: fetch a curated category listing when search returns no results.
 // The category should have a dynamic product group assigned in Shopware.
@@ -51,31 +51,31 @@ const showFallback = computed(
   () =>
     !showSkeleton.value &&
     !loading.value &&
-    elements.value.length === 0 &&
+    dishes.value.length === 0 &&
     !!searchFallbackCategoryId,
 );
 
-const { data: fallbackProducts, refresh: refreshFallback } = useLazyAsyncData<
-  Schemas["Product"][]
+const { data: fallbackDishes, refresh: refreshFallback } = useLazyAsyncData<
+  readonly Dish[]
 >(
   "search-fallback-listing",
   async () => {
-    const result = await $fetch(
+    const result = await $fetch<MenuListing>(
       `/api/listing/${searchFallbackCategoryId}` as NitroFetchRequest,
     );
-    return (result as { elements?: Schemas["Product"][] }).elements ?? [];
+    return result.dishes;
   },
   { immediate: false },
 );
 
-// One quick view for the results and the fallback suggestions (#325).
+// One dish sheet for the results and the fallback suggestions (#325).
 const quickView = useProductQuickView(() => [
-  ...elements.value,
-  ...(fallbackProducts.value ?? []),
+  ...dishes.value,
+  ...(fallbackDishes.value ?? []),
 ]);
 
 watch(showFallback, (visible) => {
-  if (visible && !fallbackProducts.value) {
+  if (visible && !fallbackDishes.value) {
     refreshFallback();
   }
 });
@@ -89,11 +89,11 @@ const searchInput = ref(searchQuery.value);
 
 // Presets (#445): bon cards, a labelled search form and a native select.
 const { menuView } = useThemePreset();
-const sortingOptions = computed(() => toSortingOptions(sortingOrders.value));
+const sortingOptions = computed(() => toSortingOptions(sortings.value));
 const resultLabel = computed(() =>
-  elements.value.length === 1
+  dishes.value.length === 1
     ? "1 Gericht gefunden"
-    : `${elements.value.length} Gerichte gefunden`,
+    : `${dishes.value.length} Gerichte gefunden`,
 );
 
 function submitSearch() {
@@ -110,7 +110,7 @@ function submitSearch() {
     <LazyProductQuickView
       v-if="quickView.mounted.value"
       v-model:open="quickView.open.value"
-      :product="quickView.product.value"
+      :dish="quickView.dish.value"
     />
     <h1 class="font-display text-4xl leading-tight sm:text-5xl">Suche</h1>
     <form
@@ -147,7 +147,7 @@ function submitSearch() {
         <template v-else>{{ resultLabel }} für „{{ searchQuery }}“</template>
       </p>
       <SbSelect
-        v-if="sortingOptions.length > 1 && elements.length > 1"
+        v-if="sortingOptions.length > 1 && dishes.length > 1"
         v-model="currentSorting"
         label="Sortierung"
         placeholder="Bitte wählen"
@@ -157,29 +157,29 @@ function submitSearch() {
     </div>
 
     <div
-      v-if="elements.length > 0"
+      v-if="dishes.length > 0"
       class="grid max-w-3xl grid-cols-1 gap-3"
       :class="{ 'pointer-events-none opacity-40': loading }"
     >
       <MenuBonCardWhenVisible
-        v-for="product in elements"
-        :key="product.id"
-        :product="product"
+        v-for="dish in dishes"
+        :key="dish.id"
+        :dish="dish"
         :photo="menuView === 'bonPhoto'"
-        :href="productDeepLink(product)"
+        :href="dishLink(dish)"
         @select="quickView.show"
       />
     </div>
     <template v-else-if="searchQuery && !showSkeleton && !loading">
-      <template v-if="showFallback && fallbackProducts?.length">
+      <template v-if="showFallback && fallbackDishes?.length">
         <h2 class="font-display text-2xl">Vielleicht schmeckt Ihnen das</h2>
         <div class="grid max-w-3xl grid-cols-1 gap-3">
           <MenuBonCardWhenVisible
-            v-for="product in fallbackProducts"
-            :key="product.id"
-            :product="product"
+            v-for="dish in fallbackDishes"
+            :key="dish.id"
+            :dish="dish"
             :photo="menuView === 'bonPhoto'"
-            :href="productDeepLink(product)"
+            :href="dishLink(dish)"
             @select="quickView.show"
           />
         </div>

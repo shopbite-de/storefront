@@ -1,47 +1,35 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Dish } from "../../../shared/domain";
 
 /**
  * Menu item of the presets (#441): the "bon". The menu number sits on a
  * strip with a perforation, like on a kitchen ticket; `photo` puts the
- * cover on top (grill preset). The name is a link stretched over the card
- * and opens the quick view; the button adds a product without variants
+ * dish's image on top (grill preset). The name is a link stretched over the
+ * card and opens the dish sheet; the button adds a dish without variants
  * straight to the cart and shows the quantity once it is in there.
  */
 const props = defineProps<{
-  product: Schemas["Product"];
+  dish: Dish;
   href?: string;
   photo?: boolean;
 }>();
 
 const emit = defineEmits<{
-  select: [product: Schemas["Product"]];
+  select: [dish: Dish];
 }>();
 
-const name = computed(
-  () => props.product.translated?.name ?? props.product.name ?? "",
-);
-const sortedProperties = computed(
-  () =>
-    props.product.sortedProperties as Schemas["PropertyGroup"][] | undefined,
-);
+const name = computed(() => props.dish.name);
 const ingredients = computed(() =>
-  getMainIngredients(sortedProperties.value)
-    .map((option) => option.translated?.name ?? option.name)
-    .join(", "),
+  props.dish.ingredients.map((ingredient) => ingredient.name).join(", "),
 );
-const diets = computed(() =>
-  getDiets(sortedProperties.value).map((diet) =>
-    diet === "vegan" ? "Vegan" : "Vegetarisch",
-  ),
-);
+const diets = computed(() => dietLabels(props.dish.diets));
 // Read before the name; the strip with the number is aria-hidden. Built in
 // script: a trailing space in the template would be condensed away.
 // The strip has a fixed width so the cards line up (#441); menu numbers
 // are "21" in most shops, but can be "LF-30" or "LF-35-normal": the type
 // shrinks, very long numbers wrap.
 const numberSize = computed(() => {
-  const length = props.product.productNumber.length;
+  const length = props.dish.number.length;
   if (length <= 2) return "text-2xl sm:text-[28px] whitespace-nowrap";
   if (length === 3) return "text-xl sm:text-[22px] whitespace-nowrap";
   if (length <= 5) return "text-[15px] sm:text-lg whitespace-nowrap";
@@ -49,24 +37,20 @@ const numberSize = computed(() => {
   // Variant numbers like "LF-35-normal": two lines, broken anywhere.
   return "text-xs sm:text-[13px] leading-tight [overflow-wrap:anywhere]";
 });
-const numberLabel = computed(() => `Nr. ${props.product.productNumber} `);
-const cover = computed(() =>
-  props.photo ? props.product.cover?.media : undefined,
-);
+const numberLabel = computed(() => `Nr. ${props.dish.number} `);
+const cover = computed(() => (props.photo ? props.dish.media : null));
 
-const needsChoice = computed(() => productNeedsChoice(props.product));
-const available = computed(() => productIsAvailable(props.product));
+const needsChoice = computed(() => props.dish.needsChoice);
+const available = computed(() => props.dish.available);
 
-const { getFormattedPrice } = useCommercePrice();
+const { getFormattedMoney } = useCommercePrice();
 const price = computed(() => {
-  const formatted = getFormattedPrice(
-    props.product.calculatedPrice?.totalPrice,
-  );
-  return needsChoice.value ? `ab ${formatted}` : formatted;
+  const formatted = getFormattedMoney(props.dish.price);
+  return props.dish.priceFrom ? `ab ${formatted}` : formatted;
 });
 
-const { quantity } = useProductCartQuantity(() => props.product.id);
-const { setSelectedProduct, addToCart, isLoading } = useAddToCart();
+const { quantity } = useProductCartQuantity(() => props.dish.id);
+const { setSelectedDish, addToCart, isLoading } = useAddToCart();
 
 const buttonLabel = computed(() => {
   if (needsChoice.value) return `${name.value} auswählen`;
@@ -76,7 +60,7 @@ const buttonLabel = computed(() => {
 });
 
 function select() {
-  emit("select", props.product);
+  emit("select", props.dish);
 }
 
 async function add() {
@@ -84,7 +68,7 @@ async function add() {
     select();
     return;
   }
-  setSelectedProduct(props.product);
+  setSelectedDish(props.dish);
   await addToCart();
 }
 
@@ -122,7 +106,7 @@ function onLinkClick(event: MouseEvent) {
           numberSize,
         ]"
       >
-        {{ product.productNumber }}
+        {{ dish.number }}
       </span>
       <div class="flex min-w-0 flex-col gap-1.5 py-4 pr-4 pl-4 sm:pl-[18px]">
         <h3

@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 
 import { useAddToCart } from "~/composables/useAddToCart";
-import type { Schemas } from "#shopware";
+import type { Extra } from "../../shared/domain";
 import { nextTick } from "vue";
 import { v5 as uuidv5 } from "uuid";
+import { dish, eur } from "../support/dishes";
 
 // Use vi.hoisted for variables used in mocks
 const {
@@ -60,13 +61,18 @@ vi.stubGlobal("useTrackEvent", () => ({
 }));
 
 describe("useAddToCart", () => {
-  const mockProduct = {
+  const mockProduct = dish({
     id: "product-123",
-    productNumber: "SW10123",
-    translated: {
-      name: "Test Pizza",
-    },
-  } as unknown as Schemas["Product"];
+    number: "SW10123",
+    name: "Test Pizza",
+  });
+  const cheese: Extra = {
+    id: "cheese",
+    number: "900",
+    name: "Extra Cheese",
+    price: eur(100),
+    available: true,
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -74,50 +80,50 @@ describe("useAddToCart", () => {
 
   it("should initialize with default values", () => {
     const {
-      selectedProduct,
+      selectedDish,
       selectedExtras,
-      deselectedIngredients,
+      removedIngredients,
       selectedQuantity,
       isLoading,
     } = useAddToCart();
 
-    expect(selectedProduct.value).toBeNull();
+    expect(selectedDish.value).toBeNull();
     expect(selectedExtras.value).toEqual([]);
-    expect(deselectedIngredients.value).toEqual([]);
+    expect(removedIngredients.value).toEqual([]);
     expect(selectedQuantity.value).toBe(1);
     expect(isLoading.value).toBe(false);
   });
 
-  it("should set selected product", () => {
-    const { setSelectedProduct, selectedProduct } = useAddToCart();
-    setSelectedProduct(mockProduct);
-    expect(selectedProduct.value).toEqual(mockProduct);
+  it("should set the selected dish", () => {
+    const { setSelectedDish, selectedDish } = useAddToCart();
+    setSelectedDish(mockProduct);
+    expect(selectedDish.value).toEqual(mockProduct);
   });
 
   it("should generate correct cartItemLabel for simple product", async () => {
-    const { setSelectedProduct, cartItemLabel } = useAddToCart();
-    setSelectedProduct(mockProduct);
+    const { setSelectedDish, cartItemLabel } = useAddToCart();
+    setSelectedDish(mockProduct);
     await nextTick();
     expect(cartItemLabel.value).toBe("Test Pizza");
   });
 
   it("should generate correct cartItemLabel with extras and deselected ingredients", async () => {
     const {
-      setSelectedProduct,
+      setSelectedDish,
       setSelectedExtras,
-      setDeselectedIngredients,
+      setRemovedIngredients,
       cartItemLabel,
     } = useAddToCart();
-    setSelectedProduct(mockProduct);
-    setSelectedExtras([{ label: "Extra Cheese", value: "cheese", price: "" }]);
-    setDeselectedIngredients(["Onions"]);
+    setSelectedDish(mockProduct);
+    setSelectedExtras([cheese]);
+    setRemovedIngredients(["Onions"]);
     await nextTick();
     expect(cartItemLabel.value).toBe("Test Pizza +Extra Cheese -Onions");
   });
 
   it("should add simple product to cart", async () => {
-    const { setSelectedProduct, addToCart, isLoading } = useAddToCart();
-    setSelectedProduct(mockProduct);
+    const { setSelectedDish, addToCart, isLoading } = useAddToCart();
+    setSelectedDish(mockProduct);
 
     mockAddProducts.mockResolvedValue({ id: "cart-123" });
     mockRefreshCart.mockResolvedValue({});
@@ -137,8 +143,8 @@ describe("useAddToCart", () => {
   });
 
   it("should not report success when adding to cart failed", async () => {
-    const { setSelectedProduct, addToCart, isLoading } = useAddToCart();
-    setSelectedProduct(mockProduct);
+    const { setSelectedDish, addToCart, isLoading } = useAddToCart();
+    setSelectedDish(mockProduct);
 
     // useCartMutations reports the failure itself and resolves undefined
     mockAddProducts.mockResolvedValue(undefined);
@@ -151,8 +157,8 @@ describe("useAddToCart", () => {
   });
 
   it("should reset isLoading when the mutation throws", async () => {
-    const { setSelectedProduct, addToCart, isLoading } = useAddToCart();
-    setSelectedProduct(mockProduct);
+    const { setSelectedDish, addToCart, isLoading } = useAddToCart();
+    setSelectedDish(mockProduct);
 
     mockAddProducts.mockRejectedValue(new Error("boom"));
 
@@ -161,9 +167,9 @@ describe("useAddToCart", () => {
   });
 
   it("should add product with extras to cart as container", async () => {
-    const { setSelectedProduct, setSelectedExtras, addToCart } = useAddToCart();
-    setSelectedProduct(mockProduct);
-    setSelectedExtras([{ label: "Extra Cheese", value: "cheese", price: "" }]);
+    const { setSelectedDish, setSelectedExtras, addToCart } = useAddToCart();
+    setSelectedDish(mockProduct);
+    setSelectedExtras([cheese]);
 
     mockAddProducts.mockResolvedValue({ id: "cart-123" });
 
@@ -186,21 +192,21 @@ describe("useAddToCart", () => {
     ]);
   });
   describe("line identity of configured dishes", () => {
-    const extra = { label: "Extra Cheese", value: "cheese", price: "" };
+    const extra = cheese;
 
     async function addConfigured(
       without: string[],
       extras: (typeof extra)[] = [],
     ) {
       const {
-        setSelectedProduct,
+        setSelectedDish,
         setSelectedExtras,
-        setDeselectedIngredients,
+        setRemovedIngredients,
         addToCart,
       } = useAddToCart();
-      setSelectedProduct(mockProduct);
+      setSelectedDish(mockProduct);
       setSelectedExtras(extras);
-      setDeselectedIngredients(without);
+      setRemovedIngredients(without);
       mockAddProducts.mockResolvedValue({ id: "cart-123" });
       await addToCart();
       const items = mockAddProducts.mock.calls.at(-1)![0];

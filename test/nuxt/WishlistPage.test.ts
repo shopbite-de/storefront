@@ -1,13 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
+import {
+  mountSuspended,
+  mockNuxtImport,
+  registerEndpoint,
+} from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
 import { ref } from "vue";
 import Wishlist from "~/components/Wishlist.vue";
+import { dishDetail, eur, pizzaWithSizes } from "../support/dishes";
 
-const { invoke, addLineItems } = vi.hoisted(() => ({
+const { invoke, addLineItems, dishes } = vi.hoisted(() => ({
   invoke: vi.fn(),
   addLineItems: vi.fn(),
+  dishes: vi.fn(),
 }));
+// the dish sheets the BFF answers per wishlist entry
+registerEndpoint("/api/menu/dishes/p1", () => dishes("p1"));
+registerEndpoint("/api/menu/dishes/v21-gross", () => dishes("v21-gross"));
+registerEndpoint("/api/menu/dishes/d21", () => dishes("d21"));
 mockNuxtImport("useShopwareContext", () => () => ({
   apiClient: { invoke },
 }));
@@ -17,30 +27,38 @@ mockNuxtImport("useCartMutations", () => () => ({
   isMutating: ref(false),
 }));
 
-const pizza = {
+const pizza = dishDetail({
   id: "p1",
-  productNumber: "21",
+  number: "21",
   name: "Pizza Mix",
-  translated: { name: "Pizza Mix" },
-  calculatedPrice: { unitPrice: 8.5 },
-  childCount: 0,
-};
-const salami = {
-  id: "x1",
-  productNumber: "X1",
-  name: "Extra Salami",
-  translated: { name: "Extra Salami" },
-  calculatedPrice: { unitPrice: 1.5 },
-};
+  price: eur(850),
+  extraGroups: [
+    {
+      id: "extras",
+      name: "Extras",
+      extras: [
+        {
+          id: "x1",
+          number: "X1",
+          name: "Extra Salami",
+          price: eur(150),
+          available: true,
+        },
+      ],
+    },
+  ],
+});
 
 describe("wishlist page (#467)", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     localStorage.clear();
-    invoke.mockImplementation(
-      async (_operation: string, options: { body: { ids?: string[] } }) => ({
-        data: { elements: options.body.ids ? [pizza] : [salami] },
-      }),
+    dishes.mockImplementation((id: string) =>
+      id === "p1"
+        ? pizza
+        : pizzaWithSizes({
+            selectedVariantId: id === "v21-gross" ? "v21-gross" : "v21-normal",
+          }),
     );
     addLineItems.mockResolvedValue({ id: "cart" });
     const wishlist = useWishlistEntries();
@@ -66,7 +84,7 @@ describe("wishlist page (#467)", () => {
     expect(row.text()).toMatch(/10,00\s?€/);
   });
 
-  it("adds the same container line item as the product sheet", async () => {
+  it("adds the same container line item as the dish sheet", async () => {
     const wrapper = await mountSuspended(Wishlist);
     await flushPromises();
 
@@ -92,7 +110,36 @@ describe("wishlist page (#467)", () => {
     );
   });
 
-  it("opens the product sheet with the saved configuration", async () => {
+  it("shows a saved variant by its number and price, a saved parent as a choice", async () => {
+    const wishlist = useWishlistEntries();
+    wishlist.entries.value = [];
+    await wishlist.add({
+      productId: "v21-gross",
+      productNumber: "21-groß",
+      without: [],
+      extras: ["900"],
+    });
+    await wishlist.add({
+      productId: "d21",
+      productNumber: "21",
+      without: [],
+      extras: [],
+    });
+    const wrapper = await mountSuspended(Wishlist);
+    await flushPromises();
+
+    const rows = wrapper.findAll("li");
+    const variantRow = rows.find((row) => row.text().includes("21-groß"));
+    const parentRow = rows.find((row) => !row.text().includes("21-groß"));
+    expect(variantRow!.text()).toContain("Nr. 21-groß");
+    // the variant plus Extra Käse
+    expect(variantRow!.text()).toMatch(/11,00\s?€/);
+    expect(variantRow!.text()).toContain("In den Warenkorb");
+    expect(parentRow!.text()).toContain("Auswählen");
+    expect(parentRow!.text()).not.toContain("In den Warenkorb");
+  });
+
+  it("opens the dish sheet with the saved configuration", async () => {
     const wrapper = await mountSuspended(Wishlist);
     await flushPromises();
 

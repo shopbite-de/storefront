@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { FoodLabels } from "../../../shared/domain";
 import {
   PopoverContent,
   PopoverPortal,
@@ -15,16 +15,11 @@ import {
  * the phone (#485). The content stays inside the sheet (no teleport), so
  * the dialog's focus trap keeps working.
  */
-const props = defineProps<{ product: Schemas["Product"] }>();
+const props = defineProps<{ labels: FoodLabels }>();
 
 const { site } = useRuntimeConfig().public;
-const labels = computed(() =>
-  getFoodLabels(
-    props.product.sortedProperties as Schemas["PropertyGroup"][] | undefined,
-  ),
-);
-const checked = computed(() => allergensChecked(props.product));
-const text = computed(() => foodLabelText(labels.value));
+const checked = computed(() => props.labels.checked);
+const text = computed(() => foodLabelText(props.labels));
 </script>
 
 <template>

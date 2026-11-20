@@ -1,56 +1,19 @@
-import type { components } from "~~/api-types/storeApiTypes";
+import type { Dish } from "../../shared/domain";
 import { createResilientLoader } from "../utils/backoff";
+import { askCatalog, TOP_SELLERS_LIMIT } from "../utils/catalogData";
 
-const TOP_SELLERS_LIMIT = 8;
+const load = createResilientLoader<readonly Dish[]>();
 
-const criteria = {
-  filter: [{ type: "equals", field: "markAsTopseller", value: true }],
-  limit: TOP_SELLERS_LIMIT,
-  // What the compact card and the quick view need (#327).
-  includes: {
-    product: [
-      "id",
-      "productNumber",
-      "name",
-      "translated",
-      "description",
-      "calculatedPrice",
-      "available",
-      "cover",
-      "sortedProperties",
-      // Allergens checked (#485); includes filter `translated` as well,
-      // so custom fields only come back when listed here.
-      "customFields",
-      // Card link to the quick view deep link (#289).
-      "seoUrls",
-    ],
-    seo_url: ["seoPathInfo", "isCanonical"],
-    product_media: ["media"],
-    media: ["url", "thumbnails"],
-    media_thumbnail: ["width", "url"],
-    property_group: ["id", "name", "translated", "options"],
-    property_group_option: ["id", "name", "translated", "customFields"],
-  },
-  associations: {
-    cover: { associations: { media: {} } },
-    properties: { associations: { group: {} } },
-  },
-};
-
-const load = createResilientLoader<components["schemas"]["Product"][]>();
-
-/** The dishes marked as top sellers, for the home page (useTopSellers). */
+/**
+ * The dishes marked as top sellers (Dish[]), for the home page. Every
+ * page view of the home page renders them, so an outage serves the last
+ * good answer and pauses the backend (`createResilientLoader`).
+ */
 export default defineCachedEventHandler(
-  (): Promise<components["schemas"]["Product"][]> =>
-    load("top-sellers", async () => {
-      const result = await storeApiPost<{
-        elements?: components["schemas"]["Product"][];
-      }>("/product", criteria, {
-        // Variants marked as top sellers inherit name, cover and properties.
-        headers: { "sw-inheritance": "true", "sw-include-seo-urls": "true" },
-      });
-      return result.elements ?? [];
-    }),
+  (event) =>
+    askCatalog(event, (catalog) =>
+      load("top-sellers", () => catalog.listTopSellers(TOP_SELLERS_LIMIT)),
+    ),
   {
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.listing,
     name: "top-sellers",

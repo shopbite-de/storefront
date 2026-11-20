@@ -1,43 +1,47 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
-import type { AssociationItemProduct } from "~/types/Association";
+import type { Extra, Variant } from "../../../shared/domain";
 import type { QuickViewConfiguration } from "~/utils/productUrl";
 import type { WishlistConfiguration } from "~/composables/useWishlistEntries";
 
 const props = defineProps<{
-  productId: string;
-  // Configuration from the quick view URL (#411).
+  /** A dish, or a variant (its dish opens with the variant selected). */
+  dishId: string;
+  // Configuration from the dish sheet URL (#411).
   initialWithout?: string[];
   initialExtras?: string[];
 }>();
 
 const emit = defineEmits<{
   "product-added": [];
-  "variant-selected": [variant: Schemas["Product"]];
+  "variant-selected": [variant: Variant];
   "configuration-changed": [configuration: QuickViewConfiguration];
   // The dish as configured right now, for the save button (#467).
   "selection-changed": [selection: WishlistConfiguration];
 }>();
 
 const {
-  productDetails,
-  associationItems,
+  detail,
   pending,
-  selectedProduct,
+  selectedDish,
   selectedQuantity,
   isLoading,
   addToCart,
-  setSelectedProduct,
+  setSelectedDish,
   onExtrasSelected,
   onIngredientsDeselected,
-} = useProductDetail(() => props.productId);
+} = useProductDetail(() => props.dishId);
 
-const { getFormattedPrice } = useCommercePrice();
+const { getFormattedMoney } = useCommercePrice();
 
-const selectedExtras = ref<AssociationItemProduct[]>([]);
+const selectedExtras = ref<Extra[]>([]);
 const deselectedIngredients = ref<string[]>([]);
 
-function onExtras(extras: AssociationItemProduct[]) {
+/** The options of the variant the sheet starts with. */
+const startOptionIds = computed(() =>
+  detail.value ? (selectedVariant(detail.value)?.optionIds ?? []) : [],
+);
+
+function onExtras(extras: Extra[]) {
   selectedExtras.value = extras;
   onExtrasSelected(extras);
   emitConfiguration();
@@ -50,28 +54,24 @@ function onIngredients(deselected: string[]) {
 }
 
 function emitConfiguration() {
-  const productNumber = selectedProduct.value?.productNumber;
-  if (!productNumber) return;
+  const number = selectedDish.value?.number;
+  if (!number) return;
   emit("configuration-changed", {
-    productNumber,
+    productNumber: number,
     without: deselectedIngredients.value,
-    extras: selectedExtras.value
-      .map((extra) => extra.productNumber)
-      .filter((number): number is string => !!number),
+    extras: selectedExtras.value.map((extra) => extra.number),
   });
 }
 
 watch(
   () => {
-    const product = selectedProduct.value;
-    if (!product?.productNumber) return undefined;
+    const dish = selectedDish.value;
+    if (!dish?.number) return undefined;
     return {
-      productId: product.id,
-      productNumber: product.productNumber,
+      productId: dish.id,
+      productNumber: dish.number,
       without: [...deselectedIngredients.value],
-      extras: selectedExtras.value
-        .map((extra) => extra.productNumber)
-        .filter((number): number is string => !!number),
+      extras: selectedExtras.value.map((extra) => extra.number),
     };
   },
   (selection) => {
@@ -80,38 +80,34 @@ watch(
   { immediate: true, deep: true },
 );
 
-// Unit price plus extras, times the quantity: what the button will add.
+// Dish plus extras, times the quantity: what the button will add.
 const total = computed(() => {
-  const unitPrice = selectedProduct.value?.calculatedPrice.unitPrice ?? 0;
-  const extrasPrice = selectedExtras.value.reduce(
-    (sum, extra) => sum + (extra.unitPrice ?? 0),
-    0,
+  const dish = selectedDish.value;
+  if (!dish) return null;
+  return sumMoney(
+    [dish.price, ...selectedExtras.value.map((extra) => extra.price)],
+    dish.price.currency,
+    selectedQuantity.value,
   );
-  return (unitPrice + extrasPrice) * selectedQuantity.value;
 });
 
-const isAvailable = computed(() =>
-  selectedProduct.value ? productIsAvailable(selectedProduct.value) : true,
-);
+const isAvailable = computed(() => selectedDish.value?.available ?? true);
 
-const onVariantSwitched = (variant: Schemas["Product"]) => {
-  setSelectedProduct(variant);
+const onVariantSwitched = (variant: Variant) => {
+  setSelectedDish(variant);
   emit("variant-selected", variant);
   emitConfiguration();
 };
 
 const onAddToCart = () => emit("product-added");
 
-const productName = computed(
-  () => selectedProduct.value?.translated?.name ?? "Gericht",
-);
+const dishName = computed(() => selectedDish.value?.name || "Gericht");
 </script>
 
 <template>
   <div class="flex flex-1 flex-col gap-5">
     <!-- One placeholder in the shape of the loaded body (options,
-         ingredients, extras), shown until product and extras are both
-         loaded. -->
+         ingredients, extras), shown until the dish is loaded. -->
     <div
       v-if="pending"
       class="flex flex-col gap-5 motion-safe:animate-pulse"
@@ -139,21 +135,22 @@ const productName = computed(
         />
       </div>
     </div>
-    <template v-else-if="productDetails?.configurator">
+    <template v-else-if="detail">
       <ProductConfigurator
-        :p="productDetails.product"
-        :c="productDetails.configurator"
+        :dish-id="detail.id"
+        :groups="detail.variantGroups"
+        :selected-option-ids="startOptionIds"
         @variant-switched="onVariantSwitched"
       />
       <ProductDeselectIngredient
-        v-if="selectedProduct"
-        :product="selectedProduct"
+        v-if="selectedDish"
+        :ingredients="selectedDish.ingredients"
         :initial-deselected="initialWithout"
         @ingredients-deselected="onIngredients"
       />
       <ProductCrossSelling
-        v-if="associationItems.length > 0"
-        :associations="associationItems"
+        v-if="detail.extraGroups.length > 0"
+        :groups="detail.extraGroups"
         :initial-extras="initialExtras"
         @extras-selected="onExtras"
       />
@@ -166,7 +163,7 @@ const productName = computed(
     >
       <SbStepper
         v-model="selectedQuantity"
-        :item-name="productName"
+        :item-name="dishName"
         :max="100"
         size="lg"
       />
@@ -179,7 +176,7 @@ const productName = computed(
       >
         <span>{{ isAvailable ? "In den Warenkorb" : "Ausverkauft" }}</span>
         <span v-if="isAvailable && !pending" class="tabular-nums">
-          {{ getFormattedPrice(total) }}
+          {{ getFormattedMoney(total) }}
         </span>
       </SbButton>
     </div>

@@ -1,52 +1,43 @@
 import type { Ref } from "vue";
-import type { Schemas } from "#shopware";
-import { getDiets, getMainIngredients } from "../utils/product";
-import { productDeepLink } from "../utils/productUrl";
+import type { Dish, MenuSection } from "../../shared/domain";
+import { moneyAmount } from "../utils/money";
+import { dishLink } from "../utils/productUrl";
 import { buildMenuSectionSchema } from "../utils/schema";
 import { toAbsoluteUrl } from "../utils/seo";
 
 /**
- * `MenuSection` JSON-LD for a category page (#272): the category with its
- * products as `MenuItem`s incl. prices, from the listing that is loaded for
- * the page anyway. Ingredients and diets come from the product properties
- * (#400).
+ * `MenuSection` JSON-LD for a section page (#272): the section with its
+ * dishes as `MenuItem`s incl. prices, from the listing that is loaded for
+ * the page anyway, with their main ingredients and diets (#400).
  */
 export function useMenuSectionSchema(
-  category: Ref<Schemas["Category"] | undefined>,
-  products: Ref<Schemas["Product"][]>,
+  section: Ref<MenuSection | null | undefined>,
+  dishes: Ref<readonly Dish[]>,
 ) {
   const siteConfig = useSiteConfig();
   const { currencyCode } = useCommercePrice();
 
   const schema = computed(() => {
-    const current = category.value;
+    const current = section.value;
     if (!current) return undefined;
 
     return buildMenuSectionSchema({
-      name: current.translated?.name ?? current.name,
-      description:
-        current.translated?.description ?? current.description ?? undefined,
-      url: current.seoUrl
-        ? toAbsoluteUrl(siteConfig.url, current.seoUrl)
-        : undefined,
+      name: current.name,
+      description: current.description ?? undefined,
+      url: toAbsoluteUrl(siteConfig.url, current.path),
       image: current.media?.url,
-      currency: currencyCode.value,
+      currency: dishes.value[0]?.price.currency ?? currencyCode.value,
       restaurantUrl: siteConfig.url,
-      items: products.value.map((product) => {
-        const properties = product.sortedProperties as
-          Schemas["PropertyGroup"][] | undefined;
-        const deepLink = productDeepLink(product, current.seoUrl);
+      items: dishes.value.map((dish) => {
+        const link = dishLink(dish, current.path);
         return {
-          name: product.translated?.name ?? product.name,
-          url: deepLink ? toAbsoluteUrl(siteConfig.url, deepLink) : undefined,
-          description:
-            product.translated?.description ?? product.description ?? undefined,
-          ingredients: getMainIngredients(properties).map(
-            (option) => option.translated?.name ?? option.name,
-          ),
-          diets: getDiets(properties),
-          image: product.cover?.media?.url,
-          price: product.calculatedPrice?.unitPrice,
+          name: dish.name,
+          url: link ? toAbsoluteUrl(siteConfig.url, link) : undefined,
+          description: dish.description ?? undefined,
+          ingredients: dish.ingredients.map((ingredient) => ingredient.name),
+          diets: [...dish.diets],
+          image: dish.media?.url,
+          price: moneyAmount(dish.price),
         };
       }),
     });

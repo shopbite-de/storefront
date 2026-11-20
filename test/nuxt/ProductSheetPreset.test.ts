@@ -1,41 +1,41 @@
 import { describe, expect, it } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
-import type { Schemas } from "#shopware";
+import type { ExtraGroup } from "../../shared/domain";
 import ProductDeselectIngredient from "~/components/Product/DeselectIngredient.vue";
 import ProductCrossSelling from "~/components/Product/CrossSelling.vue";
-import type { AssociationItem } from "~/types/Association";
+import { eur } from "../support/dishes";
 
-// The product sheet of a shop with a style preset (#442).
+// The dish sheet of a shop with a style preset (#442).
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
   menuView: "bon",
 }));
 mockNuxtImport("useCommercePrice", () => () => ({
-  getFormattedPrice: (price: number) => `${price.toFixed(2)} €`,
+  getFormattedMoney: (price: { amountMinor: number }) =>
+    `${(price.amountMinor / 100).toFixed(2)} €`,
 }));
 
-const product = {
-  properties: ["Pilze", "Salami", "Schinken"].map((name) => ({
-    group: { name: "Hauptzutaten" },
-    translated: { name },
-  })),
-} as unknown as Schemas["Product"];
+const ingredients = ["Pilze", "Salami", "Schinken"].map((name) => ({
+  id: name.toLowerCase(),
+  name,
+}));
 
-const extras = (count: number): AssociationItem => ({
-  label: "Extras",
-  products: Array.from({ length: count }, (_, index) => ({
-    label: `Extra ${index + 1}`,
-    value: `extra-${index + 1}`,
-    productNumber: `E${index + 1}`,
-    price: "1.00 €",
-    unitPrice: 1,
+const extras = (count: number): ExtraGroup => ({
+  id: "extras",
+  name: "Extras",
+  extras: Array.from({ length: count }, (_, index) => ({
+    id: `extra-${index + 1}`,
+    number: `E${index + 1}`,
+    name: `Extra ${index + 1}`,
+    price: eur(100),
+    available: true,
   })),
 });
 
-describe("product sheet with a preset (#442)", () => {
+describe("dish sheet with a preset (#442)", () => {
   it("shows the ingredients as chips, pressed while included", async () => {
     const wrapper = await mountSuspended(ProductDeselectIngredient, {
-      props: { product, initialDeselected: ["Pilze"] },
+      props: { ingredients, initialDeselected: ["Pilze"] },
     });
 
     const group = wrapper.find('[role="group"]');
@@ -67,7 +67,7 @@ describe("product sheet with a preset (#442)", () => {
 
   it("lists the extras as labelled checkboxes with their price", async () => {
     const wrapper = await mountSuspended(ProductCrossSelling, {
-      props: { associations: [extras(3)], initialExtras: ["E2"] },
+      props: { groups: [extras(3)], initialExtras: ["E2"] },
     });
 
     const checkboxes = wrapper.findAll('[role="checkbox"]');
@@ -85,14 +85,14 @@ describe("product sheet with a preset (#442)", () => {
 
     await checkboxes[0]!.trigger("click");
     const emitted = wrapper.emitted("extras-selected")?.at(-1)?.[0] as {
-      value: string;
+      id: string;
     }[];
-    expect(emitted.map((extra) => extra.value)).toEqual(["extra-2", "extra-1"]);
+    expect(emitted.map((extra) => extra.id)).toEqual(["extra-2", "extra-1"]);
   });
 
   it("adds a labelled search field above a long list", async () => {
     const wrapper = await mountSuspended(ProductCrossSelling, {
-      props: { associations: [extras(20)] },
+      props: { groups: [extras(20)] },
     });
 
     const input = wrapper.find('input[type="search"]');

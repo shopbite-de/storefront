@@ -1,31 +1,31 @@
 import type { Ref } from "vue";
-import type { Schemas } from "#shopware";
+import type { Dish } from "../../shared/domain";
 
 /**
  * Reports a site search to Matomo once its results are settled, once per
  * search term.
  *
  * Runs immediately on the client so a page loaded directly (results already
- * in the SSR payload, so `elements` never changes) is tracked too (#296).
+ * in the SSR payload, so `dishes` never changes) is tracked too (#296).
  * Sorting changes re-fetch the same term and are not reported again.
  */
 export function useSearchTracking(
   query: Ref<string>,
-  elements: Ref<Schemas["Product"][]>,
+  dishes: Ref<readonly Dish[]>,
   showSkeleton: Ref<boolean>,
 ) {
   const { trackSearch } = useTrackEvent();
   let lastTrackedTerm: string | null = null;
 
   watch(
-    [elements, showSkeleton],
-    ([products, skeleton]) => {
+    [dishes, showSkeleton],
+    ([found, skeleton]) => {
       const term = query.value;
       if (!term || skeleton || term === lastTrackedTerm) return;
       lastTrackedTerm = term;
       trackSearch(
         term,
-        products.map((product) => product.productNumber),
+        found.map((dish) => dish.number),
       );
     },
     { immediate: import.meta.client },

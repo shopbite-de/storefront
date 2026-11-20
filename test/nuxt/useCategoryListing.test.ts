@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { flushPromises } from "@vue/test-utils";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { defineComponent, h } from "vue";
+import type { MenuListing } from "../../shared/domain";
 import { useCategoryListing } from "~/composables/useCategoryListing";
+import { dish } from "../support/dishes";
 
 // ---- mock helpers ------------------------------------------------------------
 
@@ -12,19 +14,24 @@ const { mockFetch } = vi.hoisted(() => ({ mockFetch: vi.fn() }));
 // would not reach the composable.
 mockNuxtImport("$fetch", () => mockFetch);
 
-const emptyListing = (properties: string[] = []) => ({
-  elements: [],
-  aggregations: {},
-  availableSortings: [],
-  sorting: null,
-  currentFilters: { properties },
+/** A MenuListing as the BFF answers it. */
+const listing = (fields: Partial<MenuListing> = {}): MenuListing => ({
+  dishes: [],
+  total: 0,
+  page: 1,
+  limit: 100,
+  filters: [],
+  sortings: [],
+  sorting: "name-asc",
+  filterOptionIds: [],
+  ...fields,
 });
 
 // ---- helpers ----------------------------------------------------------------
 
-let categoryCounter = 0;
-/** Returns a unique category ID per test to prevent useLazyAsyncData key collisions. */
-const uniqueId = () => `cat-${++categoryCounter}`;
+let sectionCounter = 0;
+/** A unique section id per test to prevent useLazyAsyncData key collisions. */
+const uniqueId = () => `section-${++sectionCounter}`;
 
 /**
  * Mounts a minimal component that calls useCategoryListing so that
@@ -32,15 +39,15 @@ const uniqueId = () => `cat-${++categoryCounter}`;
  * component context).
  */
 async function mountWithListing(
-  categoryId: string,
-  initialProperties: string[] = [],
+  sectionId: string,
+  initialFilters: string[] = [],
 ) {
   let result!: ReturnType<typeof useCategoryListing>;
 
   await mountSuspended(
     defineComponent({
       setup() {
-        result = useCategoryListing(categoryId, initialProperties);
+        result = useCategoryListing(sectionId, initialFilters);
         return () => h("div");
       },
     }),
@@ -54,167 +61,117 @@ async function mountWithListing(
 
 describe("useCategoryListing", () => {
   beforeEach(() => {
-    mockFetch.mockResolvedValue(emptyListing());
+    mockFetch.mockResolvedValue(listing());
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  // ---- initial fetch (requires component context for useLazyAsyncData) ------
-
   describe("initial fetch", () => {
-    it("fetches without properties when none are provided", async () => {
+    it("fetches without filters when none are provided", async () => {
       const id = uniqueId();
       await mountWithListing(id);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        `/api/listing/${id}`,
-        expect.objectContaining({
-          query: expect.objectContaining({ properties: undefined }),
-        }),
-      );
+      expect(mockFetch).toHaveBeenCalledWith(`/api/listing/${id}`, {
+        query: { order: undefined, filters: undefined },
+      });
     });
 
-    it("fetches with persisted properties joined by pipe", async () => {
+    it("fetches with persisted filter options joined by pipe", async () => {
       const id = uniqueId();
       await mountWithListing(id, ["opt-a", "opt-b"]);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        `/api/listing/${id}`,
-        expect.objectContaining({
-          query: expect.objectContaining({ properties: "opt-a|opt-b" }),
-        }),
-      );
-    });
-
-    it("does not include properties param when initialProperties is empty", async () => {
-      const id = uniqueId();
-      await mountWithListing(id, []);
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        `/api/listing/${id}`,
-        expect.objectContaining({
-          query: expect.objectContaining({ properties: undefined }),
-        }),
-      );
+      expect(mockFetch).toHaveBeenCalledWith(`/api/listing/${id}`, {
+        query: { order: undefined, filters: "opt-a|opt-b" },
+      });
     });
   });
 
-  // ---- setFilters ------------------------------------------------------------
-
   describe("setFilters", () => {
-    it("re-fetches with the given property filter", async () => {
-      const { setFilters } = useCategoryListing("cat-1");
+    it("re-fetches with the given filter options and the default sorting", async () => {
+      const { setFilters } = useCategoryListing("section-x");
 
-      await setFilters([{ code: "properties", value: "opt-x|opt-y" }]);
+      await setFilters(["opt-x", "opt-y"]);
 
-      expect(mockFetch).toHaveBeenLastCalledWith(
-        "/api/listing/cat-1",
-        expect.objectContaining({
-          query: expect.objectContaining({ properties: "opt-x|opt-y" }),
-        }),
-      );
+      expect(mockFetch).toHaveBeenLastCalledWith("/api/listing/section-x", {
+        query: { order: undefined, filters: "opt-x|opt-y" },
+      });
     });
 
     it("sets loading true during fetch and false after", async () => {
       let resolve!: (v: unknown) => void;
-      const { setFilters, loading } = useCategoryListing("cat-1");
+      const { setFilters, loading } = useCategoryListing("section-x");
 
       mockFetch.mockReturnValueOnce(new Promise((r) => (resolve = r)));
-      const promise = setFilters([{ code: "properties", value: "opt-x" }]);
+      const promise = setFilters(["opt-x"]);
 
       expect(loading.value).toBe(true);
-      resolve(emptyListing());
+      resolve(listing());
       await promise;
       expect(loading.value).toBe(false);
     });
-
-    it("overwrites existing currentFilters properties with the new value", async () => {
-      mockFetch.mockResolvedValueOnce(emptyListing(["old-opt"]));
-      const { setFilters } = useCategoryListing("cat-1");
-
-      await setFilters([{ code: "properties", value: "new-opt" }]);
-
-      expect(mockFetch).toHaveBeenLastCalledWith(
-        "/api/listing/cat-1",
-        expect.objectContaining({
-          query: expect.objectContaining({ properties: "new-opt" }),
-        }),
-      );
-    });
   });
 
-  // ---- resetFilters ----------------------------------------------------------
-
   describe("resetFilters", () => {
-    it("re-fetches with all filter params cleared", async () => {
-      const { resetFilters } = useCategoryListing("cat-1", ["opt-a"]);
+    it("re-fetches without filters and sorting", async () => {
+      const { resetFilters } = useCategoryListing("section-x", ["opt-a"]);
 
       await resetFilters();
 
-      expect(mockFetch).toHaveBeenLastCalledWith(
-        "/api/listing/cat-1",
-        expect.objectContaining({
-          query: {
-            properties: undefined,
-            order: undefined,
-            manufacturer: undefined,
-            query: undefined,
-            p: undefined,
-          },
-        }),
-      );
+      expect(mockFetch).toHaveBeenLastCalledWith("/api/listing/section-x", {
+        query: { order: undefined, filters: undefined },
+      });
     });
   });
 
-  // ---- changeSorting ---------------------------------------------------------
-
   describe("changeSorting", () => {
-    it("re-fetches with the given sort order", async () => {
-      const { changeSorting } = useCategoryListing("cat-1");
+    it("re-fetches with the sorting and keeps the applied filters", async () => {
+      const id = uniqueId();
+      mockFetch.mockResolvedValueOnce(listing({ filterOptionIds: ["veg"] }));
+      const { changeSorting } = await mountWithListing(id, ["veg"]);
 
       await changeSorting("price-asc");
 
-      expect(mockFetch).toHaveBeenLastCalledWith(
-        "/api/listing/cat-1",
-        expect.objectContaining({
-          query: expect.objectContaining({ order: "price-asc" }),
-        }),
-      );
+      expect(mockFetch).toHaveBeenLastCalledWith(`/api/listing/${id}`, {
+        query: { order: "price-asc", filters: "veg" },
+      });
     });
   });
 
-  // ---- derived state ---------------------------------------------------------
-
   describe("derived state", () => {
-    it("exposes elements from the listing response", async () => {
-      const products = [{ id: "p1" }, { id: "p2" }];
-      mockFetch.mockResolvedValueOnce({
-        ...emptyListing(),
-        elements: products,
+    it("exposes the dishes, sortings, filters and the applied ones", async () => {
+      const dishes = [dish({ id: "p1" }), dish({ id: "p2" })];
+      const answer = listing({
+        dishes,
+        sortings: [{ key: "name-asc", label: "Name A-Z" }],
+        sorting: "name-asc",
+        filters: [
+          {
+            id: "veg",
+            name: "Vegetarisch",
+            options: [{ id: "ja", name: "Ja" }],
+          },
+        ],
+        filterOptionIds: ["ja"],
       });
+      mockFetch.mockResolvedValueOnce(answer);
 
-      const { elements, setFilters } = useCategoryListing(uniqueId());
-      await setFilters([]);
+      const state = useCategoryListing(uniqueId());
+      await state.setFilters(["ja"]);
       await flushPromises();
 
-      expect(elements.value).toEqual(products);
+      expect(state.dishes.value).toEqual(dishes);
+      expect(state.sortings.value).toEqual(answer.sortings);
+      expect(state.currentSorting.value).toBe("name-asc");
+      expect(state.filters.value).toEqual(answer.filters);
+      expect(state.filterOptionIds.value).toEqual(["ja"]);
     });
 
-    it("defaults elements to empty array before data loads", async () => {
-      const { elements } = useCategoryListing(uniqueId());
-      expect(elements.value).toEqual([]);
-    });
-
-    it("exposes currentFilters from the listing response", async () => {
-      mockFetch.mockResolvedValueOnce(emptyListing(["opt-x"]));
-
-      const { currentFilters, setFilters } = useCategoryListing(uniqueId());
-      await setFilters([]);
-      await flushPromises();
-
-      expect(currentFilters.value?.properties).toEqual(["opt-x"]);
+    it("defaults to no dishes before data loads", async () => {
+      const { dishes, currentSorting } = useCategoryListing(uniqueId());
+      expect(dishes.value).toEqual([]);
+      expect(currentSorting.value).toBeUndefined();
     });
   });
 });

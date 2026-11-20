@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildLlmsTxt } from "../../server/utils/llmsTxt";
+import { buildLlmsTxt, toLlmsMenu } from "../../server/utils/llmsTxt";
 import {
   holiday,
   openingInterval,
   sortOpeningHours,
+  type MenuSection,
   type Weekday,
 } from "../../shared/domain";
+import { dish } from "../support/dishes";
 
 const now = new Date("2026-10-05T12:00:00Z");
 
@@ -196,5 +198,85 @@ Nach Musterstadt und Beispieldorf.
 
 - Website: https://example.com
 `);
+  });
+});
+
+describe("toLlmsMenu", () => {
+  const section = (
+    id: string,
+    name: string,
+    path: string,
+    children: MenuSection[] = [],
+  ): MenuSection => ({
+    id,
+    name,
+    description: null,
+    icon: null,
+    media: null,
+    path,
+    seo: { title: null, description: null, indexable: true },
+    children,
+  });
+
+  it("lists each section's own dishes by name with link, price and ingredients", () => {
+    const menu = toLlmsMenu(
+      [
+        section("pizza", "Pizza", "/Speisekarte/Pizza/", [
+          section("spezial", "Spezial", "/Speisekarte/Pizza/Spezial/"),
+        ]),
+      ],
+      [
+        dish({
+          id: "p10",
+          name: "Pizza 10",
+          number: "10",
+          sectionIds: ["pizza"],
+        }),
+        dish({
+          id: "p9",
+          name: "Pizza 9",
+          number: "9",
+          sectionIds: ["pizza"],
+          priceFrom: true,
+          path: "/Speisekarte/Pizza/?produkt=9",
+        }),
+        dish({
+          id: "s",
+          name: "Salami",
+          number: "22",
+          sectionIds: ["spezial"],
+          diets: [],
+        }),
+      ],
+      "https://pizza.example.com",
+    );
+    expect(menu).toEqual([
+      {
+        name: "Pizza",
+        url: "https://pizza.example.com/Speisekarte/Pizza/",
+        items: [
+          {
+            name: "Pizza 9",
+            url: "https://pizza.example.com/Speisekarte/Pizza/?produkt=9",
+            price: 7,
+            fromPrice: true,
+            ingredients: ["Tomatensoße", "Käse"],
+            diets: ["vegetarian"],
+          },
+          expect.objectContaining({
+            name: "Pizza 10",
+            url: "https://pizza.example.com/Speisekarte/Pizza/?produkt=10",
+          }),
+        ],
+        sections: [
+          {
+            name: "Spezial",
+            url: "https://pizza.example.com/Speisekarte/Pizza/Spezial/",
+            items: [expect.objectContaining({ name: "Salami", diets: [] })],
+            sections: [],
+          },
+        ],
+      },
+    ]);
   });
 });
