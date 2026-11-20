@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createShopwareBackend,
+  type ShopwareBackendOptions,
   type StoreApi,
 } from "../../../server/adapters/shopware";
 import { formatTimeOfDay, isDomainError } from "../../../shared/domain";
@@ -10,26 +11,58 @@ const answering = (answers: Record<string, unknown>): StoreApi => ({
   post: () => Promise.reject(new Error("no POST")),
 });
 
+const shopOf = (options: Partial<ShopwareBackendOptions>) =>
+  createShopwareBackend({
+    storeApi: answering({}),
+    storeUrl: "",
+    timeZone: "Europe/Berlin",
+    log: () => {},
+    ...options,
+  }).shop;
+
+const hoursOf = async (
+  rows: Record<string, unknown>[],
+  log: ShopwareBackendOptions["log"] = () => {},
+) => {
+  const { intervals } = await shopOf({
+    storeApi: answering({ "/shopbite/business-hour": { businessHours: rows } }),
+    log,
+  }).getOpeningHours();
+  return intervals.map(
+    ({ weekday, interval }) =>
+      `${weekday} ${formatTimeOfDay(interval.opens)}–${formatTimeOfDay(interval.closes)}`,
+  );
+};
+
+const row = (
+  dayOfWeek: unknown,
+  openingTime?: string,
+  closingTime?: string,
+) => ({
+  id: `${dayOfWeek}-${openingTime}`,
+  dayOfWeek,
+  openingTime,
+  closingTime,
+});
+
 describe("Shopware ShopPort adapter (anti-corruption)", () => {
-  it("reports an unreachable Shopware as backend_unavailable", async () => {
-    const shop = createShopwareBackend({
+  it("reports an unreachable Shopware as backend_unavailable with the cause", async () => {
+    const cause = Object.assign(new Error("[GET] fetch failed"), {
+      name: "FetchError",
+    });
+    const shop = shopOf({
       storeApi: {
-        get: () =>
-          Promise.reject(
-            Object.assign(new Error("[GET] fetch failed"), {
-              name: "FetchError",
-            }),
-          ),
+        get: () => Promise.reject(cause),
         post: () => Promise.reject(new Error("no POST")),
       },
-      storeUrl: "",
-    }).shop;
+    });
     const failure = await shop.getConfig().catch((error) => error);
     expect(isDomainError(failure, "backend_unavailable")).toBe(true);
+    expect(failure.cause).toBe(cause);
   });
 
   it("treats empty contact fields and a partial address as not configured", async () => {
-    const shop = createShopwareBackend({
+    const shop = shopOf({
       storeApi: answering({
         "/shopbite/config": {
           isCheckoutEnabled: true,
@@ -41,50 +74,120 @@ describe("Shopware ShopPort adapter (anti-corruption)", () => {
           addressCity: "Musterstadt",
         },
       }),
-      storeUrl: "",
-    }).shop;
+      timeZone: "Europe/Vienna",
+    });
     expect(await shop.getConfig()).toEqual({
       acceptsOrders: true,
+      timeZone: "Europe/Vienna",
       telephone: null,
       address: null,
       googleBusinessProfileUrl: null,
     });
   });
 
-  it("drops opening hours rows it cannot read instead of failing", async () => {
-    const shop = createShopwareBackend({
+  it("splits a row that runs past midnight at midnight (closing at or before opening)", async () => {
+    expect(
+      await hoursOf([row(2, "18:00", "02:00"), row(7, "20:00", "01:00")]),
+    ).toEqual([
+      "1 00:00–01:00",
+      "2 18:00–24:00",
+      "3 00:00–02:00",
+      "7 20:00–24:00",
+    ]);
+  });
+
+  it("reads closing at 00:00 or 24:00 as the end of the day", async () => {
+    expect(
+      await hoursOf([row(2, "18:00", "00:00"), row(3, "18:00", "24:00")]),
+    ).toEqual(["2 18:00–24:00", "3 18:00–24:00"]);
+  });
+
+  it("reads equal opening and closing as open around the clock", async () => {
+    expect(
+      await hoursOf([row(4, "00:00", "00:00"), row(5, "12:00", "12:00")]),
+    ).toEqual(["4 00:00–24:00", "5 12:00–24:00", "6 00:00–12:00"]);
+  });
+
+  it("accepts times with seconds", async () => {
+    expect(await hoursOf([row(2, "11:30:00", "14:30:00")])).toEqual([
+      "2 11:30–14:30",
+    ]);
+  });
+
+  it("logs and drops rows it cannot read", async () => {
+    const log = vi.fn();
+    expect(
+      await hoursOf(
+        [
+          row(2, "11:30", "14:30"),
+          row(8, "11:00", "12:00"),
+          row(3),
+          row(4, "25:00", "26:00"),
+          row(5, "24:00", "02:00"),
+        ],
+        log,
+      ),
+    ).toEqual(["2 11:30–14:30"]);
+    expect(log).toHaveBeenCalledTimes(4);
+    expect(log.mock.calls[0]![0]).toMatch(/opening hours row/);
+  });
+
+  it("turns holiday instants into whole days in the restaurant's time zone", async () => {
+    const log = vi.fn();
+    const shop = shopOf({
       storeApi: answering({
-        "/shopbite/business-hour": {
-          businessHours: [
-            { dayOfWeek: 2, openingTime: "11:30:00", closingTime: "14:30:00" },
-            { dayOfWeek: 2, openingTime: "18:00:00", closingTime: "02:00:00" },
-            { dayOfWeek: 8, openingTime: "11:00:00", closingTime: "12:00:00" },
-            { dayOfWeek: 3 },
+        "/shopbite/holiday": {
+          holidays: [
+            {
+              id: "summer",
+              start: "2026-07-19T22:00:00.000+00:00",
+              end: "2026-08-02T21:59:59.000+00:00",
+            },
+            {
+              id: "christmas",
+              start: "2026-12-24T00:00:00+01:00",
+              end: "2026-12-26T23:59:59+01:00",
+            },
+            { id: "broken", start: "soon", end: "2026-12-26T23:59:59+01:00" },
+            {
+              id: "backwards",
+              start: "2026-12-26T00:00:00+01:00",
+              end: "2026-12-24T00:00:00+01:00",
+            },
           ],
         },
       }),
-      storeUrl: "",
-    }).shop;
-    const { intervals } = await shop.getOpeningHours();
-    expect(
-      intervals.map(
-        ({ weekday, interval }) =>
-          `${weekday} ${formatTimeOfDay(interval.opens)}`,
-      ),
-    ).toEqual(["2 11:30"]);
+      log,
+    });
+    expect(await shop.getHolidays()).toEqual([
+      { id: "summer", firstDay: "2026-07-20", lastDay: "2026-08-02" },
+      { id: "christmas", firstDay: "2026-12-24", lastDay: "2026-12-26" },
+    ]);
+    expect(log).toHaveBeenCalledTimes(2);
   });
 
   it("answers no hours, holidays or branches for an empty plugin answer", async () => {
-    const shop = createShopwareBackend({
+    const shop = shopOf({
       storeApi: answering({
         "/shopbite/business-hour": {},
         "/shopbite/holiday": {},
         "/shopbite/multi-channel-group": {},
       }),
-      storeUrl: "",
-    }).shop;
+    });
     expect(await shop.getOpeningHours()).toEqual({ intervals: [] });
     expect(await shop.getHolidays()).toEqual([]);
     expect(await shop.listBranches()).toEqual([]);
+  });
+
+  it("answers frozen values", async () => {
+    const shop = shopOf({
+      storeApi: answering({
+        "/shopbite/business-hour": {
+          businessHours: [row(2, "11:30", "14:30")],
+        },
+      }),
+    });
+    const hours = await shop.getOpeningHours();
+    expect(Object.isFrozen(hours.intervals[0])).toBe(true);
   });
 });

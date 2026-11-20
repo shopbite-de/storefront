@@ -3,11 +3,18 @@ import {
   createShopwareBackend,
   type StoreApi,
 } from "../../server/adapters/shopware";
-import { openingInterval, type Weekday } from "../../shared/domain";
+import {
+  holiday,
+  openingInterval,
+  zonedDateTime,
+  type Weekday,
+} from "../../shared/domain";
 import type { AdapterFixture } from "./harness";
 import type { ShopScenario } from "./shop.contract";
 
-function intervalsOf(scenario: ShopScenario) {
+type Row = { weekday: Weekday; opens: string; closes: string };
+
+function intervalsOf(scenario: ShopScenario): Row[] {
   return Object.entries(scenario.hours).flatMap(([weekday, intervals]) =>
     (intervals ?? []).map((written) => {
       const [opens, closes] = written.split("–") as [string, string];
@@ -31,7 +38,7 @@ export const memoryShop: AdapterFixture<ShopScenario> = {
             }),
           ),
         },
-        holidays: scenario.holidays,
+        holidays: scenario.holidays.map(holiday),
         branches: scenario.branches.map((branch) => ({
           ...branch,
           current: branch.url === scenario.storeUrl,
@@ -41,8 +48,51 @@ export const memoryShop: AdapterFixture<ShopScenario> = {
 };
 
 /**
+ * Business hour rows as the ShopBite plugin keeps them: an interval up to
+ * 24:00 followed by one from 00:00 the next weekday is one overnight row
+ * (closing before opening); 24:00 alone is written 00:00.
+ */
+function pluginRows(rows: Row[]): Row[] {
+  const next = (weekday: Weekday) => ((weekday % 7) + 1) as Weekday;
+  const merged: Row[] = [];
+  const used = new Set<Row>();
+  for (const row of rows) {
+    if (used.has(row)) continue;
+    if (row.closes === "24:00") {
+      const after = rows.find(
+        (other) =>
+          other.weekday === next(row.weekday) &&
+          other.opens === "00:00" &&
+          !used.has(other),
+      );
+      if (after) used.add(after);
+      merged.push({ ...row, closes: after ? after.closes : "00:00" });
+    } else {
+      merged.push(row);
+    }
+    used.add(row);
+  }
+  return merged;
+}
+
+/** The UTC instant of a wall-clock time in a time zone. */
+function instant(date: string, time: string, timeZone: string): string {
+  const wanted = Date.parse(`${date}T${time}Z`);
+  let guess = wanted;
+  for (let i = 0; i < 2; i++) {
+    const zoned = zonedDateTime(new Date(guess), timeZone);
+    const seen = Date.parse(
+      `${zoned.date}T${String(Math.floor(zoned.time.minutes / 60)).padStart(2, "0")}:${String(zoned.time.minutes % 60).padStart(2, "0")}:${time.slice(6) || "00"}Z`,
+    );
+    guess += wanted - seen;
+  }
+  return new Date(guess).toISOString();
+}
+
+/**
  * The Shopware adapter against a fake Store API that answers the scenario
- * as the ShopBite plugin does (seconds in times, `null` for unset fields).
+ * as the ShopBite plugin does (`HH:MM` times, overnight rows, holidays as
+ * instants, `null` for unset fields).
  */
 export const shopwareShop: AdapterFixture<ShopScenario> = {
   adapter: "shopware",
@@ -61,19 +111,21 @@ export const shopwareShop: AdapterFixture<ShopScenario> = {
       },
       "/shopbite/business-hour": {
         // reversed: the plugin does not promise an order
-        businessHours: intervalsOf(scenario)
+        businessHours: pluginRows(intervalsOf(scenario))
           .reverse()
           .map(({ weekday, opens, closes }, index) => ({
             id: `bh${index}`,
             dayOfWeek: weekday,
-            openingTime: `${opens}:00`,
-            closingTime: `${closes}:00`,
+            openingTime: opens,
+            closingTime: closes,
             translated: [],
           })),
       },
       "/shopbite/holiday": {
-        holidays: scenario.holidays.map((holiday) => ({
-          ...holiday,
+        holidays: scenario.holidays.map((entry) => ({
+          id: entry.id,
+          start: instant(entry.firstDay, "00:00:00", config.timeZone),
+          end: instant(entry.lastDay, "23:59:59", config.timeZone),
           salesChannelId: "sc",
           translated: [],
         })),
@@ -85,11 +137,14 @@ export const shopwareShop: AdapterFixture<ShopScenario> = {
                 id: "group",
                 name: "Musterstadt",
                 translated: [],
-                salesChannels: scenario.branches.map((branch) => ({
+                salesChannels: scenario.branches.map((branch, index) => ({
                   id: branch.id,
                   name: branch.name,
-                  // the storefront's domain first, as Shopware lists them
-                  domains: [{ url: branch.url }, { url: `${branch.url}/en` }],
+                  // the first branch lists this storefront's domain second
+                  domains:
+                    index === 0
+                      ? [{ url: `${branch.url}/en` }, { url: branch.url }]
+                      : [{ url: branch.url }],
                 })),
               },
             ]
@@ -105,6 +160,11 @@ export const shopwareShop: AdapterFixture<ShopScenario> = {
         throw new Error(`unexpected POST ${path}`);
       },
     };
-    return createShopwareBackend({ storeApi, storeUrl: scenario.storeUrl });
+    return createShopwareBackend({
+      storeApi,
+      storeUrl: scenario.storeUrl,
+      timeZone: config.timeZone,
+      log: () => {},
+    });
   },
 };

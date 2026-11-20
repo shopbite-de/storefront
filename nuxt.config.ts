@@ -55,6 +55,10 @@ export default defineNuxtConfig({
       // "shopware" or "memory" (in-memory demo restaurant),
       // NUXT_SHOP_BITE_BACKEND. Only routes moved to the ports use it.
       backend: "shopware",
+      // IANA time zone of opening hours, holidays and wished times
+      // (NUXT_SHOP_BITE_TIME_ZONE); the ShopBite plugin uses the sales
+      // channel's business time zone, else Europe/Berlin.
+      timeZone: "Europe/Berlin",
     },
     shopware: {
       adminClientId: "",

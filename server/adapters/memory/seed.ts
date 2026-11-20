@@ -20,13 +20,14 @@ export type MemorySeed = Readonly<{
 const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];
 
 /**
- * The quickstart's demo restaurant: open every day from 00:00 to 23:59,
+ * The quickstart's demo restaurant: open around the clock every day,
  * placeholder contact data. The demo menu joins with CatalogPort (step 2).
  */
 export const DEMO_SEED: MemorySeed = {
   shop: {
     config: {
       acceptsOrders: true,
+      timeZone: "Europe/Berlin",
       telephone: "+49 123 456789",
       address: {
         street: "Musterstraße 1",
@@ -38,7 +39,7 @@ export const DEMO_SEED: MemorySeed = {
     openingHours: {
       intervals: WEEK.map((weekday) => ({
         weekday,
-        interval: openingInterval("00:00", "23:59"),
+        interval: openingInterval("00:00", "24:00"),
       })),
     },
     holidays: [],

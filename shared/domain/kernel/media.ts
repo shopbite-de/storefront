@@ -3,7 +3,8 @@ export type MediaSource = Readonly<{ url: string; width: number }>;
 
 /**
  * An image of a dish, menu section or the shop: the original plus smaller
- * renditions, so the browser picks the size it needs.
+ * renditions, so the browser picks the size it needs. Building `srcset`
+ * from it is presentation (app utils).
  */
 export type Media = Readonly<{
   url: string;
@@ -14,13 +15,3 @@ export type Media = Readonly<{
   /** Renditions, any order. */
   sources: readonly MediaSource[];
 }>;
-
-/** `srcset` of a media (narrowest first), `undefined` without renditions. */
-export function mediaSrcSet(
-  media: Media | null | undefined,
-): string | undefined {
-  const sources = [...(media?.sources ?? [])].sort((a, b) => a.width - b.width);
-  return sources.length
-    ? sources.map((source) => `${source.url} ${source.width}w`).join(", ")
-    : undefined;
-}

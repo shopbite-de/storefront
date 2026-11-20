@@ -1,38 +1,13 @@
-import type { Id, TimeOfDay } from "../kernel";
-import type { OpeningInterval } from "./openingInterval";
-
-/** ISO weekday: 1 = Monday … 7 = Sunday. */
-export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-/**
- * The weekly opening hours ("Öffnungszeiten"). A weekday without intervals
- * is a weekly closing day ("Ruhetag").
- */
-export type OpeningHours = Readonly<{
-  intervals: readonly Readonly<{
-    weekday: Weekday;
-    interval: OpeningInterval;
-  }>[];
-}>;
-
-/**
- * A period in which the restaurant stays closed although the weekly hours
- * say open ("Betriebsferien", a holiday). `start`/`end` are ISO 8601
- * date-times, both included.
- */
-export type Holiday = Readonly<{
-  id: Id;
-  start: string;
-  end: string;
-}>;
+import type { Salutation } from "../customer";
+import type { CalendarDate, Id, TimeOfDay, TimeZone } from "../kernel";
 
 /** Whether the restaurant is open right now ("Geöffnet"/"Geschlossen"). */
 export type StoreStatus =
   | Readonly<{ open: true; closesAt: TimeOfDay }>
   | Readonly<{
       open: false;
-      /** Next opening (ISO 8601 date-time), null if none is known. */
-      nextOpening: string | null;
+      /** Next opening in the restaurant's time zone, null if none is known. */
+      nextOpening: Readonly<{ date: CalendarDate; time: TimeOfDay }> | null;
     }>;
 
 /**
@@ -60,6 +35,8 @@ export type PostalAddress = Readonly<{
 export type ShopConfig = Readonly<{
   /** The checkout switch: the restaurant takes online orders now. */
   acceptsOrders: boolean;
+  /** IANA time zone of opening hours, holidays and wished times. */
+  timeZone: TimeZone;
   telephone: string | null;
   address: PostalAddress | null;
   googleBusinessProfileUrl: string | null;
@@ -67,7 +44,9 @@ export type ShopConfig = Readonly<{
 
 /** A message from a visitor to the restaurant ("Kontakt"). */
 export type ContactMessage = Readonly<{
-  name: string | null;
+  salutation: Salutation | null;
+  firstName: string | null;
+  lastName: string | null;
   email: string;
   phone: string | null;
   subject: string;

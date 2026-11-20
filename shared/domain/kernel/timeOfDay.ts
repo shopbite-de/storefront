@@ -1,7 +1,7 @@
 import { invalidValue } from "./errors";
 
 /**
- * A wall-clock time within one day, in the restaurant's time zone, as
+ * A wall-clock time within one day in the restaurant's time zone, as
  * minutes since midnight (0 = 00:00, 1439 = 23:59). Created only by
  * `timeOfDay()`.
  */
@@ -28,13 +28,8 @@ export function timeOfDay(value: string | number): TimeOfDay {
   });
 }
 
-/** The local wall-clock time of a date (seconds dropped). */
-export function timeOfDayFromDate(date: Date): TimeOfDay {
-  return timeOfDay(date.getHours() * 60 + date.getMinutes());
-}
-
-/** `HH:MM`. */
-export function formatTimeOfDay(time: TimeOfDay): string {
+/** `HH:MM`; 1440 minutes (the end of a day) is `24:00`. */
+export function formatTimeOfDay(time: Readonly<{ minutes: number }>): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(Math.floor(time.minutes / 60))}:${pad(time.minutes % 60)}`;
 }

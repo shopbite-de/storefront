@@ -1,36 +1,32 @@
 import type { Backend } from "../ports";
-import { createMemoryBackend } from "./memory";
-import { createShopwareBackend, type StoreApi } from "./shopware";
+import { memoryFromRuntimeConfig } from "./memory";
+import type { BackendRuntimeConfig } from "./runtimeConfig";
+import { shopwareFromRuntimeConfig } from "./shopware";
+
+export type { BackendRuntimeConfig } from "./runtimeConfig";
+
+/** Each adapter builds itself from the runtime config. */
+const ADAPTERS = {
+  shopware: shopwareFromRuntimeConfig,
+  memory: memoryFromRuntimeConfig,
+} satisfies Record<string, (config: BackendRuntimeConfig) => Backend>;
 
 /** Values of `shopBite.backend` (`NUXT_SHOP_BITE_BACKEND`). */
-export const BACKEND_NAMES = ["shopware", "memory"] as const;
+export const BACKEND_NAMES = Object.keys(ADAPTERS) as (keyof typeof ADAPTERS)[];
 
-export type BackendName = (typeof BACKEND_NAMES)[number];
+export type BackendName = keyof typeof ADAPTERS;
 
 export function isBackendName(name: string): name is BackendName {
-  return (BACKEND_NAMES as readonly string[]).includes(name);
+  return Object.hasOwn(ADAPTERS, name);
 }
 
-/** What the adapters need from the running storefront. */
-export type BackendDependencies = Readonly<{
-  storeApi: StoreApi;
-  storeUrl: string;
-}>;
-
-/** A new adapter set; `useBackend()` keeps one per process. */
-export function createBackend(
-  name: string,
-  dependencies: BackendDependencies,
-): Backend {
+/** A new adapter set for `shopBite.backend`; `useBackend()` keeps one. */
+export function createBackend(config: BackendRuntimeConfig): Backend {
+  const name = config.shopBite.backend;
   if (!isBackendName(name)) {
     throw new Error(
       `Unknown shopBite.backend "${name}"; use one of ${BACKEND_NAMES.join(", ")}.`,
     );
   }
-  switch (name) {
-    case "shopware":
-      return createShopwareBackend(dependencies);
-    case "memory":
-      return createMemoryBackend();
-  }
+  return ADAPTERS[name](config);
 }

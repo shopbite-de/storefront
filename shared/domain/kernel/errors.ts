@@ -45,8 +45,10 @@ export class DomainError extends Error {
     message: string,
     /** Field names or ids the error is about, e.g. `{ field: "email" }`. */
     readonly details: Readonly<Record<string, unknown>> = {},
+    /** `cause`: the backend error behind it, for logs. */
+    options?: ErrorOptions,
   ) {
-    super(message);
+    super(message, options);
   }
 }
 

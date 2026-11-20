@@ -11,6 +11,10 @@ import { defineContract } from "./harness";
 export type ShopScenario = Readonly<{
   config: ShopConfig;
   /** Weekday → intervals as `HH:MM–HH:MM`, any order. */
+  /**
+   * Weekday → intervals as `HH:MM–HH:MM`, any order. `24:00` is the end of
+   * the day; a late-night opening is `…–24:00` plus `00:00–…` next day.
+   */
   hours: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6 | 7, string[]>>>;
   holidays: readonly Holiday[];
   /** This storefront's URL, for `Branch.current`. */
@@ -21,6 +25,7 @@ export type ShopScenario = Readonly<{
 export const RESTAURANT: ShopScenario = {
   config: {
     acceptsOrders: true,
+    timeZone: "Europe/Berlin",
     telephone: "+49 123 456789",
     address: {
       street: "Musterstraße 1",
@@ -33,16 +38,15 @@ export const RESTAURANT: ShopScenario = {
     1: [],
     2: ["17:30–23:00", "11:30–14:30"],
     3: ["11:30–14:30", "17:30–23:00"],
-    5: ["11:30–23:59"],
+    // Friday evening runs into Saturday (one overnight row in Shopware)
+    5: ["11:30–14:30", "17:00–24:00"],
     6: ["00:00–01:30", "17:00–23:59"],
-    7: ["12:00–22:00"],
+    // up to the end of the day, nothing after midnight
+    7: ["12:00–24:00"],
   },
   holidays: [
-    {
-      id: "summer-break",
-      start: "2026-07-20T00:00:00.000Z",
-      end: "2026-08-02T23:59:59.000Z",
-    },
+    { id: "summer-break", firstDay: "2026-07-20", lastDay: "2026-08-02" },
+    { id: "christmas", firstDay: "2026-12-24", lastDay: "2026-12-26" },
   ],
   storeUrl: "https://nord.example.com",
   branches: [
@@ -72,6 +76,7 @@ export const shopContract = defineContract<"shop", ShopScenario>(
         ...RESTAURANT,
         config: {
           acceptsOrders: true,
+          timeZone: "Europe/Berlin",
           telephone: null,
           address: null,
           googleBusinessProfileUrl: null,
@@ -79,6 +84,7 @@ export const shopContract = defineContract<"shop", ShopScenario>(
       });
       expect(await shop.getConfig()).toEqual({
         acceptsOrders: true,
+        timeZone: "Europe/Berlin",
         telephone: null,
         address: null,
         googleBusinessProfileUrl: null,
@@ -97,10 +103,11 @@ export const shopContract = defineContract<"shop", ShopScenario>(
         "2 17:30–23:00",
         "3 11:30–14:30",
         "3 17:30–23:00",
-        "5 11:30–23:59",
+        "5 11:30–14:30",
+        "5 17:00–24:00",
         "6 00:00–01:30",
         "6 17:00–23:59",
-        "7 12:00–22:00",
+        "7 12:00–24:00",
       ]);
     });
 
@@ -111,7 +118,7 @@ export const shopContract = defineContract<"shop", ShopScenario>(
       expect(intervals.filter(({ weekday }) => weekday === 4)).toEqual([]);
     });
 
-    it("answers the holidays", async () => {
+    it("answers the holidays as whole days", async () => {
       const shop = await given(RESTAURANT);
       expect(await shop.getHolidays()).toEqual(RESTAURANT.holidays);
     });
@@ -122,6 +129,16 @@ export const shopContract = defineContract<"shop", ShopScenario>(
         { ...RESTAURANT.branches[0], current: true },
         { ...RESTAURANT.branches[1], current: false },
       ]);
+    });
+
+    it("answers values a caller cannot change", async () => {
+      const shop = await given(RESTAURANT);
+      expect(Object.isFrozen(await shop.getConfig())).toBe(true);
+      expect(Object.isFrozen((await shop.getOpeningHours()).intervals)).toBe(
+        true,
+      );
+      expect(Object.isFrozen((await shop.getHolidays())[0])).toBe(true);
+      expect(Object.isFrozen(await shop.listBranches())).toBe(true);
     });
 
     it("has no branches for a single location", async () => {
