@@ -4,6 +4,7 @@ import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { useAddToCart } from "~/composables/useAddToCart";
 import type { Schemas } from "#shopware";
 import { nextTick } from "vue";
+import { v5 as uuidv5 } from "uuid";
 
 // Use vi.hoisted for variables used in mocks
 const {
@@ -183,5 +184,89 @@ describe("useAddToCart", () => {
         ]),
       }),
     ]);
+  });
+  describe("line identity of configured dishes", () => {
+    const extra = { label: "Extra Cheese", value: "cheese", price: "" };
+
+    async function addConfigured(
+      without: string[],
+      extras: (typeof extra)[] = [],
+    ) {
+      const {
+        setSelectedProduct,
+        setSelectedExtras,
+        setDeselectedIngredients,
+        addToCart,
+      } = useAddToCart();
+      setSelectedProduct(mockProduct);
+      setSelectedExtras(extras);
+      setDeselectedIngredients(without);
+      mockAddProducts.mockResolvedValue({ id: "cart-123" });
+      await addToCart();
+      const items = mockAddProducts.mock.calls.at(-1)![0];
+      return items[0] as {
+        id: string;
+        type: string;
+        label: string;
+        payload: { productNumber: string; without: string[] };
+      };
+    }
+
+    it("keeps dishes that differ only in removed ingredients apart", async () => {
+      const withoutOnions = await addConfigured(["Zwiebeln"]);
+      const withoutOlives = await addConfigured(["Oliven"]);
+
+      expect(withoutOnions.type).toBe("container");
+      expect(withoutOlives.type).toBe("container");
+      expect(withoutOnions.id).not.toBe(withoutOlives.id);
+      expect(withoutOnions.label).toBe("Test Pizza -Zwiebeln");
+      expect(withoutOlives.label).toBe("Test Pizza -Oliven");
+    });
+
+    it("keeps dishes with the same extras but other removals apart", async () => {
+      const a = await addConfigured(["Zwiebeln"], [extra]);
+      const b = await addConfigured(["Oliven"], [extra]);
+      const c = await addConfigured([], [extra]);
+
+      expect(new Set([a.id, b.id, c.id]).size).toBe(3);
+    });
+
+    it("gives the same configuration the same id, so the cart adds up the quantity", async () => {
+      const first = await addConfigured(["Zwiebeln", "Oliven"], [extra]);
+      const second = await addConfigured(["Zwiebeln", "Oliven"], [extra]);
+
+      expect(first.id).toBe(second.id);
+    });
+
+    it("does not depend on the order or case of the removed ingredients", async () => {
+      const a = await addConfigured(["Zwiebeln", "Oliven"]);
+      const b = await addConfigured(["Oliven", "Zwiebeln"]);
+      const c = await addConfigured([" oliven", "ZWIEBELN "]);
+
+      expect(b.id).toBe(a.id);
+      expect(c.id).toBe(a.id);
+    });
+
+    it("keeps the id of dishes without removed ingredients", async () => {
+      const item = await addConfigured([], [extra]);
+
+      expect(item.id).toBe(
+        uuidv5("product-123cheese", "b098ef7e-0fa2-4073-b002-7ceec4360fbf"),
+      );
+    });
+
+    it("sends the removed ingredients as payload.without", async () => {
+      const removed = await addConfigured(["Zwiebeln", "Oliven"]);
+      const extrasOnly = await addConfigured([], [extra]);
+
+      expect(removed.payload).toEqual({
+        productNumber: "SW10123",
+        without: ["Zwiebeln", "Oliven"],
+      });
+      expect(extrasOnly.payload).toEqual({
+        productNumber: "SW10123",
+        without: [],
+      });
+    });
   });
 });
