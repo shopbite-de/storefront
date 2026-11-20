@@ -8,6 +8,8 @@ import {
   type ShopConfig,
   type Weekday,
 } from "../../../shared/domain";
+import type { MemoryCatalog } from "./catalog";
+import { demoMenu } from "./demoMenu";
 
 /** What the memory adapter's restaurant looks like, in domain terms. */
 export type MemorySeed = Readonly<{
@@ -21,6 +23,7 @@ export type MemorySeed = Readonly<{
     /** In the shop's order. */
     shippingMethods: readonly ShippingMethod[];
   }>;
+  catalog: MemoryCatalog;
 }>;
 
 const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];
@@ -29,7 +32,7 @@ const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];
  * The quickstart's demo restaurant: open 00:00–23:59 every day (like the
  * quickstart's opening hours),
  * placeholder contact data, delivery in about 30 and pickup in about 15
- * minutes. The demo menu joins with CatalogPort (step 2).
+ * minutes, and the quickstart's demo menu (`demoMenu.ts`).
  */
 export const DEMO_SEED: MemorySeed = {
   shop: {
@@ -73,4 +76,5 @@ export const DEMO_SEED: MemorySeed = {
       },
     ],
   },
+  catalog: demoMenu(),
 };

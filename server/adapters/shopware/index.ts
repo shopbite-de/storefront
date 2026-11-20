@@ -13,6 +13,7 @@ import {
 import type { Backend } from "../../ports";
 import { notImplemented } from "../notImplemented";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
+import { createShopwareCatalog } from "./catalog";
 import { createShopwareCheckout } from "./checkout";
 import { createShopwareShop, type AdapterLog } from "./shop";
 import { sharingRequestsInFlight, type StoreApi } from "./storeApi";
@@ -28,6 +29,8 @@ export type ShopwareBackendOptions = Readonly<{
   timeZone: TimeZone;
   /** Where dropped backend data is reported; console.warn by default. */
   log?: AdapterLog;
+  /** `public.shopBite.menuCategoryId`: overrides the plugin's menu root. */
+  menuCategoryId?: string;
 }>;
 
 export function createShopwareBackend(
@@ -36,9 +39,11 @@ export function createShopwareBackend(
   const name = "shopware";
   const log: AdapterLog =
     options.log ?? ((message, details) => console.warn(message, details));
-  // ShopPort and CheckoutPort both read the plugin configuration
+  // ShopPort, CheckoutPort and the menu root read the plugin
+  // configuration, every catalog answer the currency of the context
   const storeApi = sharingRequestsInFlight(options.storeApi, [
     "/shopbite/config",
+    "/context",
   ]);
   const shop = createShopwareShop(storeApi, {
     storeUrl: options.storeUrl,
@@ -47,7 +52,9 @@ export function createShopwareBackend(
   });
   return {
     name,
-    catalog: notImplemented("catalog", name),
+    catalog: createShopwareCatalog(storeApi, {
+      menuCategoryId: options.menuCategoryId,
+    }),
     navigation: notImplemented("navigation", name),
     cart: notImplemented("cart", name),
     checkout: createShopwareCheckout(storeApi, { name, log }),
@@ -69,9 +76,10 @@ export function shopwareFromRuntimeConfig(
   return createShopwareBackend({
     storeApi: {
       get: (path, options) => storeApiGet(path, options),
-      post: (path, body) => storeApiPost(path, body),
+      post: (path, body, options) => storeApiPost(path, body, options),
     },
     storeUrl: config.public.storeUrl,
     timeZone: config.shopBite.timeZone,
+    menuCategoryId: config.public.shopBite?.menuCategoryId || undefined,
   });
 }

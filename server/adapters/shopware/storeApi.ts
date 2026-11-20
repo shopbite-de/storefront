@@ -8,13 +8,18 @@ export interface StoreApi {
     path: string,
     options?: { query?: Record<string, unknown> },
   ): Promise<T>;
-  post<T>(path: string, body: Record<string, unknown>): Promise<T>;
+  post<T>(
+    path: string,
+    body: Record<string, unknown>,
+    options?: { headers?: Record<string, string> },
+  ): Promise<T>;
 }
 
 /**
  * Lets concurrent GETs of the same path share one request while it is in
  * flight (the browser asks for the configuration and the shipping methods
- * at once, both read the plugin's `/shopbite/config`). Nothing is kept
+ * at once, both read the plugin's `/shopbite/config`; every catalog answer
+ * reads the currency of `/context`). Nothing is kept
  * after the answer: caching stays in the server routes (ADR 0001).
  */
 export function sharingRequestsInFlight(
@@ -33,6 +38,7 @@ export function sharingRequestsInFlight(
       }
       return request as Promise<T>;
     },
-    post: (path, body) => storeApi.post(path, body),
+    post: (path, body, options) =>
+      options ? storeApi.post(path, body, options) : storeApi.post(path, body),
   };
 }
