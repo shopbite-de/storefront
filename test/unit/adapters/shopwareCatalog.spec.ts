@@ -200,6 +200,22 @@ describe("Shopware CatalogPort adapter (anti-corruption)", () => {
     expect(log).toHaveBeenCalledOnce();
   });
 
+  it("opens the sheet without extras quietly when Shopware refuses or knows them not", async () => {
+    for (const status of [400, 404]) {
+      const log = vi.fn();
+      const { catalog } = catalogOf(
+        (path) => {
+          if (path.endsWith("/cross-selling")) throw fetchError(status);
+          return { product: product(), configurator: [] };
+        },
+        { log },
+      );
+      expect((await catalog.getDish("p1")).extraGroups).toEqual([]);
+      // an answer, no outage: nothing to log
+      expect(log).not.toHaveBeenCalled();
+    }
+  });
+
   it("reads the currency once for several answers", async () => {
     const { catalog, get } = catalogOf(() => ({ elements: [] }));
     await catalog.listTopSellers(8);
@@ -211,11 +227,13 @@ describe("Shopware CatalogPort adapter (anti-corruption)", () => {
   });
 
   it("asks for a variant of a dish number with its family at once", async () => {
-    const { catalog, post } = catalogOf((path, body) => {
-      if (
-        path === "/product" &&
-        (body.filter as { field?: string }[])[0]?.field === "productNumber"
-      ) {
+    let releaseDetail = () => {};
+    const detailAnswered = new Promise<void>((resolve) => {
+      releaseDetail = resolve;
+    });
+    const { catalog, post } = catalogOf(async (path, body) => {
+      const filter = (body.filter as { field?: string }[] | undefined)?.[0];
+      if (path === "/product" && filter?.field === "productNumber") {
         return {
           elements: [
             product({ id: "v1", parentId: "p1", productNumber: "21-groß" }),
@@ -236,6 +254,7 @@ describe("Shopware CatalogPort adapter (anti-corruption)", () => {
         };
       }
       if (path.endsWith("/cross-selling")) return [];
+      await detailAnswered;
       return {
         product: product({
           id: "v1",
@@ -245,11 +264,11 @@ describe("Shopware CatalogPort adapter (anti-corruption)", () => {
         configurator: [],
       };
     });
-    expect(await catalog.findDishByNumber("21-groß")).toMatchObject({
-      id: "p1",
-      selectedVariantId: "v1",
-    });
-    // number, then detail, extras and the family in parallel
+    const found = catalog.findDishByNumber("21-groß");
+    // the family is asked for while the detail is still open: 2 round trips
+    await vi.waitFor(() => expect(post).toHaveBeenCalledTimes(4));
+    releaseDetail();
+    expect(await found).toMatchObject({ id: "p1", selectedVariantId: "v1" });
     expect(post).toHaveBeenCalledTimes(4);
   });
 
