@@ -15,11 +15,15 @@ type OrderPage = {
 export function useAccountOrders() {
   const page = useState<OrderPage | null>("account-orders", () => null);
 
-  async function load(number = 1): Promise<OrderPage> {
-    const answer = await $fetch<OrderPage>("/api/account/orders", {
-      query: { page: number },
-    });
-    page.value = answer;
+  /** A page of orders; null when the customer switched meanwhile. */
+  async function load(number = 1): Promise<OrderPage | null> {
+    const answer = await guardedAccountRead((signal) =>
+      $fetch<OrderPage>("/api/account/orders", {
+        query: { page: number },
+        signal,
+      }),
+    );
+    if (answer) page.value = answer;
     return answer;
   }
 

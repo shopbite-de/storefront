@@ -43,6 +43,7 @@ export function useCustomer() {
   const orders = useState<unknown>("account-orders", () => null);
   const switchTo = (next: Customer | null) => {
     if (next?.id !== customer.value?.id) {
+      switchAccount();
       addresses.value = null;
       orders.value = null;
     }
@@ -52,7 +53,11 @@ export function useCustomer() {
   const fetcher = import.meta.server ? useRequestFetch() : $fetch;
 
   async function refresh(): Promise<Customer | null> {
-    const answer = await fetcher<{ customer: Customer | null }>("/api/account");
+    const answer = await guardedAccountRead((signal) =>
+      fetcher<{ customer: Customer | null }>("/api/account", { signal }),
+    );
+    // a login or logout while it ran: that answer is the newer one
+    if (!answer) return customer.value ?? null;
     switchTo(answer.customer);
     return answer.customer;
   }
@@ -70,6 +75,7 @@ export function useCustomer() {
     await write("/api/account/logout", "POST");
     switchTo(null);
     // also when the customer was never loaded in this tab
+    switchAccount();
     addresses.value = null;
     orders.value = null;
   }
@@ -117,11 +123,16 @@ export function useCustomer() {
   }
 
   /** `loggedIn: false`: changed, the customer logs in again with it. */
-  const changePassword = (currentPassword: string, newPassword: string) =>
-    write<{ loggedIn: boolean }>("/api/account/password", "POST", {
-      currentPassword,
-      newPassword,
-    });
+  async function changePassword(currentPassword: string, newPassword: string) {
+    const answer = await write<{ loggedIn: boolean }>(
+      "/api/account/password",
+      "POST",
+      { currentPassword, newPassword },
+    );
+    // the backend logged the session out: the tab shows it so
+    if (answer?.loggedIn === false) switchTo(null);
+    return answer;
+  }
 
   const requestPasswordReset = (email: string) =>
     write<null>("/api/account/password-reset", "POST", { email });

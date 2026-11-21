@@ -7,6 +7,41 @@ import type { NitroFetchOptions } from "nitropack";
  */
 const STORE_API_TIMEOUT_MS = 10_000;
 
+/** How long the Store API counts as down after a request found no answer. */
+export const STORE_API_OUTAGE_MS = 30_000;
+
+let downUntil = 0;
+
+/**
+ * A short outage breaker per process (step 6 review): a request that ran
+ * into its deadline or found no connection marks the Store API as down
+ * for `STORE_API_OUTAGE_MS`; meanwhile every request fails at once with
+ * 503, so a rendered page waits for one deadline instead of one per read
+ * (the cached routes' backoff does the same per route). An answer of
+ * Shopware, also a refusal or a 5xx, never opens it.
+ */
+async function guarded<T>(request: () => Promise<T>): Promise<T> {
+  if (Date.now() < downUntil) {
+    throw Object.assign(new Error("The Store API is down."), {
+      name: "StoreApiDown",
+      statusCode: 503,
+    });
+  }
+  try {
+    return await request();
+  } catch (error) {
+    const value = error as {
+      statusCode?: number;
+      status?: number;
+      response?: { status?: number };
+    } | null;
+    const status =
+      value?.statusCode ?? value?.status ?? value?.response?.status;
+    if (status === undefined) downUntil = Date.now() + STORE_API_OUTAGE_MS;
+    throw error;
+  }
+}
+
 /**
  * Calls the Shopware Store API with a criteria in the request body.
  *
@@ -24,15 +59,18 @@ export function storeApiPost<T>(
 
   // Nitro's typed $fetch resolves the response type per internal route; for
   // a generic T on an external URL it cannot, so the type is asserted.
-  return $fetch<T>(`${endpoint}${path}`, {
-    method: "POST",
-    headers: { "sw-access-key": accessToken, ...options.headers },
-    body,
-    // a failing request reaches Shopware once (the cached routes back off
-    // instead)
-    retry: 0,
-    timeout: STORE_API_TIMEOUT_MS,
-  }) as Promise<T>;
+  return guarded(
+    () =>
+      $fetch<T>(`${endpoint}${path}`, {
+        method: "POST",
+        headers: { "sw-access-key": accessToken, ...options.headers },
+        body,
+        // a failing request reaches Shopware once (the cached routes back
+        // off instead)
+        retry: 0,
+        timeout: STORE_API_TIMEOUT_MS,
+      }) as Promise<T>,
+  );
 }
 
 /**
@@ -45,14 +83,17 @@ export function storeApiGet<T>(
 ): Promise<T> {
   const { endpoint, accessToken } = useRuntimeConfig().public.shopware;
 
-  return $fetch<T>(`${endpoint}${path}`, {
-    headers: { "sw-access-key": accessToken, ...options.headers },
-    query: options.query,
-    // ofetch retries a GET once by default; during an outage that doubles
-    // every request
-    retry: 0,
-    timeout: STORE_API_TIMEOUT_MS,
-  }) as Promise<T>;
+  return guarded(
+    () =>
+      $fetch<T>(`${endpoint}${path}`, {
+        headers: { "sw-access-key": accessToken, ...options.headers },
+        query: options.query,
+        // ofetch retries a GET once by default; during an outage that
+        // doubles every request
+        retry: 0,
+        timeout: STORE_API_TIMEOUT_MS,
+      }) as Promise<T>,
+  );
 }
 
 /**
@@ -73,9 +114,8 @@ export async function storeApiForVisitor<T>(request: {
   const { endpoint, accessToken } = config.public.shopware;
   const serverEndpoint = (config.shopware as { endpoint?: string } | undefined)
     ?.endpoint;
-  const response = await $fetch.raw<T>(
-    `${serverEndpoint || endpoint}${request.path}`,
-    {
+  const response = await guarded(() =>
+    $fetch.raw<T>(`${serverEndpoint || endpoint}${request.path}`, {
       method: request.method,
       headers: {
         "sw-access-key": accessToken,
@@ -89,7 +129,7 @@ export async function storeApiForVisitor<T>(request: {
       body: request.body,
       retry: 0,
       timeout: STORE_API_TIMEOUT_MS,
-    },
+    }),
   );
   return {
     data: response._data as T,

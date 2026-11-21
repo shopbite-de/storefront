@@ -308,7 +308,13 @@ export async function forwardStoreApiRequest(
         typeof parsed === "object" &&
         !Array.isArray(parsed)
       ) {
-        delete (parsed as Record<string, unknown>).customer;
+        const context = parsed as Record<string, unknown>;
+        delete context.customer;
+        // the customer's own address, with the customer's id
+        const location = context.shippingLocation;
+        if (location && typeof location === "object") {
+          delete (location as Record<string, unknown>).address;
+        }
       }
       body = encoder.encode(
         JSON.stringify(redact(parsed, tokens, replacements)),

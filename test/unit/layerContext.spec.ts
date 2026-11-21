@@ -13,6 +13,10 @@ describe("readLayerContext", () => {
         token: "secret-token",
         customer: { email: "gina@example.de" },
         currency: { isoCode: "EUR" },
+        shippingLocation: {
+          country: { iso: "DE" },
+          address: { street: "Ginaweg 1", customerId: "gina" },
+        },
       },
     }));
     const context = await readLayerContext({ invoke });
@@ -20,6 +24,10 @@ describe("readLayerContext", () => {
     expect(invoke).toHaveBeenCalledWith("readContext get /context", {
       fetchOptions: { timeout: 10_000 },
     });
-    expect(context).toEqual({ currency: { isoCode: "EUR" } });
+    // the customer's own address is no layer matter in the payload
+    expect(context).toEqual({
+      currency: { isoCode: "EUR" },
+      shippingLocation: { country: { iso: "DE" } },
+    });
   });
 });

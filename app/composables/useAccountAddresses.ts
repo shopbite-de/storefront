@@ -17,9 +17,12 @@ export function useAccountAddresses() {
   const { customer, refresh: refreshCustomer } = useCustomer();
   const customerState = useState<Customer | null | undefined>("customer");
 
-  async function refresh(): Promise<readonly Address[]> {
-    const answer = await $fetch<readonly Address[]>("/api/account/addresses");
-    addresses.value = answer;
+  /** The account's addresses; null when the customer switched meanwhile. */
+  async function refresh(): Promise<readonly Address[] | null> {
+    const answer = await guardedAccountRead((signal) =>
+      $fetch<readonly Address[]>("/api/account/addresses", { signal }),
+    );
+    if (answer) addresses.value = answer;
     return answer;
   }
 

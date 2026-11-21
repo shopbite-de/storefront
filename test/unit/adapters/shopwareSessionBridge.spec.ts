@@ -177,13 +177,20 @@ describe("Store API bridge of the Shopware layer", () => {
         token: "token-1",
         customer: { email: "gina@example.de", firstName: "Gina" },
         currency: { isoCode: "EUR" },
+        shippingLocation: {
+          country: { iso: "DE" },
+          address: { street: "Ginaweg 1", customerId: "gina" },
+        },
       }),
     );
     const result = await forward(
       { path: "context", method: "GET" },
       { session: visitor.backend, send },
     );
-    expect(json(result.body)).toEqual({ currency: { isoCode: "EUR" } });
+    expect(json(result.body)).toEqual({
+      currency: { isoCode: "EUR" },
+      shippingLocation: { country: { iso: "DE" } },
+    });
   });
 
   it("does not write the token the session holds already", async () => {
