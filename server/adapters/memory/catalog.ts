@@ -61,6 +61,11 @@ export type MemorySorting = Readonly<{ key: string; label: string }>;
 
 /** The menu of the memory adapter, in domain terms. */
 export type MemoryCatalog = Readonly<{
+  /**
+   * The section the menu hangs from (its page lists every dish), or none;
+   * its sub-sections are `sections`.
+   */
+  menuRoot: Omit<MenuSection, "children"> | null;
   /** The menu tree, in menu order. */
   sections: readonly MenuSection[];
   /** Sections off the menu that still have their page. */
@@ -84,7 +89,7 @@ const collator = new Intl.Collator("de", { numeric: true });
 const notFound = (what: string, id: Id) =>
   new DomainError("not_found", `${what} ${id} is not on the menu.`, { id });
 
-function walk(sections: readonly MenuSection[]): MenuSection[] {
+export function walk(sections: readonly MenuSection[]): MenuSection[] {
   return sections.flatMap((section) => [section, ...walk(section.children)]);
 }
 
@@ -198,7 +203,13 @@ const COMPARATORS: Readonly<
  */
 export function createMemoryCatalog(seed: MemoryCatalog): CatalogPort {
   const menu = deepFreeze(structuredClone(seed));
-  const sections = [...walk(menu.sections), ...walk(menu.offMenuSections)];
+  const root: MenuSection | null = menu.menuRoot
+    ? deepFreeze({ ...menu.menuRoot, children: menu.sections })
+    : null;
+  const sections = [
+    ...walk(root ? [root] : menu.sections),
+    ...walk(menu.offMenuSections),
+  ];
   const findSection = (id: Id) => sections.find((section) => section.id === id);
   const dishOf = (id: Id) =>
     menu.dishes.find(

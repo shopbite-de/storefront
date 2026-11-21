@@ -22,6 +22,7 @@ export const memoryCatalog: AdapterFixture<CatalogScenario> = {
     createMemoryBackend({
       ...demoSeed(),
       catalog: {
+        menuRoot: null,
         sections: scenario.sections,
         offMenuSections: scenario.offMenuSections,
         dietFilters: scenario.dietFilters,

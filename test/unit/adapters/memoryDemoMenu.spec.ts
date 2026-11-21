@@ -96,3 +96,79 @@ describe("memory demo menu", () => {
     ).toEqual(["SB-12", "SB-200"]);
   });
 });
+
+/**
+ * The quickstart's menu root, header and footer (its setup.py), so the
+ * menu root page, sections, breadcrumbs and navigations render on the
+ * memory adapter like on the quickstart's Shopware.
+ */
+describe("memory demo navigation", () => {
+  const { catalog, navigation } = createMemoryBackend();
+  const ROOT = "211cf9b2d1725130a517bbadf753a43c";
+  const PIZZA = "12eb9087c8335ca9a74cc6485fa36b34";
+
+  it("has the quickstart's menu root, whose page lists every dish", async () => {
+    expect(await navigation.getMenuRootId()).toBe(ROOT);
+    const root = await catalog.getSection(ROOT);
+    expect(root).toMatchObject({ name: "Speisekarte", path: "/Speisekarte/" });
+    expect(root.children).toHaveLength(9);
+    const all = await catalog.listDishes(ROOT);
+    expect(all.total).toBe((await catalog.listMenuDishes()).length);
+    // the menu stays the sections below the root
+    expect(await catalog.getMenu()).toHaveLength(9);
+  });
+
+  it("resolves the quickstart's paths and their other spellings", async () => {
+    expect(await navigation.resolvePath("/Speisekarte/")).toEqual({
+      kind: "menu-section",
+      sectionId: ROOT,
+      canonicalPath: "/Speisekarte/",
+    });
+    expect(await navigation.resolvePath("/speisekarte/pizza")).toEqual({
+      kind: "redirect",
+      to: "/Speisekarte/Pizza/",
+      sectionId: PIZZA,
+    });
+    expect(await navigation.resolvePath("/Speisekarte/Unbekannt/")).toBeNull();
+  });
+
+  it("has the quickstart's header and footer", async () => {
+    const main = await navigation.getNavigation("main");
+    expect(main.map((entry) => [entry.label, entry.path])).toEqual([
+      ["Speisekarte", "/Speisekarte/"],
+      ["Kontakt", "/kontakt"],
+    ]);
+    expect(main[0]!.children).toHaveLength(9);
+    const footer = await navigation.getNavigation("footer");
+    expect(
+      footer.map((column) => [
+        column.label,
+        column.children.map((entry) => entry.path),
+      ]),
+    ).toEqual([
+      [
+        "Beliebt",
+        [
+          "/Speisekarte/Vorspeisen/",
+          "/Speisekarte/Salate/",
+          "/Speisekarte/Pizza/",
+          "/Speisekarte/Nudeln/",
+        ],
+      ],
+      ["Service", ["/kontakt", "/zahlung-und-versand", "/konto", "/merkliste"]],
+      ["Rechtliches", ["/impressum", "/datenschutz", "/agb"]],
+    ]);
+  });
+
+  it("answers breadcrumbs from the menu root and the sitemap of all sections", async () => {
+    expect(await navigation.getBreadcrumb(PIZZA)).toEqual([
+      { label: "Speisekarte", path: "/Speisekarte/" },
+      { label: "Pizza", path: "/Speisekarte/Pizza/" },
+    ]);
+    const sitemap = await navigation.listSitemapEntries();
+    expect(sitemap.map((entry) => entry.path)).toEqual([
+      "/Speisekarte/",
+      ...(await catalog.getMenu()).map((section) => section.path),
+    ]);
+  });
+});
