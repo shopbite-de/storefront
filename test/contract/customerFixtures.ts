@@ -267,7 +267,14 @@ export function fakeShopwareAccounts(scenario: CustomerScenario) {
             kind: "registration",
             confirmation: { em: sha1(email), hash: created.confirmHash },
           });
-          return { data: json(created) };
+          // Shopware's answer of a registration loads no associations
+          const {
+            salutation: _salutation,
+            defaultBillingAddress: _billing,
+            defaultShippingAddress: _shipping,
+            ...plain
+          } = json(created) as Record<string, unknown>;
+          return { data: plain };
         }
         return {
           data: json(created),

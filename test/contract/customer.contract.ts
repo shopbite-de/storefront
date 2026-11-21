@@ -297,11 +297,16 @@ function customerSuite(
       const session = testSession();
       const result = await backend.customer.register(
         session,
-        REGISTRATION,
+        { ...REGISTRATION, salutation: "mrs" },
         STOREFRONT_URL,
       );
       expect(result.confirmationRequired).toBe(true);
-      expect(result.customer.email).toBe(REGISTRATION.email);
+      // the customer as entered, also before the confirmation
+      expect(result.customer).toMatchObject({
+        email: REGISTRATION.email,
+        salutation: "mrs",
+        phone: REGISTRATION.billingAddress.phone,
+      });
       expect(await backend.customer.getCustomer(session)).toBeNull();
       expect(
         await code(() =>

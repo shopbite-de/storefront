@@ -233,7 +233,9 @@ describe("Shopware customer adapter, refusals", () => {
     ).toEqual({ loggedIn: false });
   });
 
-  it("names a locked account apart from a pending confirmation", async () => {
+  // Shopware 6.7 answers an inactive customer with bad credentials; the
+  // code is mapped for other Shopware versions and plugins that send it
+  it("names a locked account apart from a pending confirmation (other versions)", async () => {
     const backend = intercepted((path) =>
       path === "/account/login"
         ? Object.assign(new Error("401"), {

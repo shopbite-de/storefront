@@ -251,11 +251,15 @@ export function createShopwareCustomer(
         created.doubleOptInRegistration === true &&
         !created.doubleOptInConfirmDate;
       if (confirmationRequired) {
-        const billing = created.defaultBillingAddress
-          ? await tools.toAddress(created.defaultBillingAddress)
-          : null;
+        // no login to read the customer with, and Shopware's answer loads
+        // no associations: salutation and phone as entered
+        const customer = tools.toCustomer(created, null);
         return deepFreeze({
-          customer: tools.toCustomer(created, billing),
+          customer: {
+            ...customer,
+            salutation: registration.salutation,
+            phone: registration.billingAddress.phone,
+          },
           confirmationRequired,
         });
       }
