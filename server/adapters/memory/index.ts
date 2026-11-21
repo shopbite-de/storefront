@@ -5,12 +5,18 @@
  * "memory"` runs the storefront on it (ports not implemented yet answer
  * `not_implemented`).
  */
-import { deepFreeze, sortOpeningHours, timeZone } from "../../../shared/domain";
+import {
+  deepFreeze,
+  sortOpeningHours,
+  timeZone,
+  type CheckoutSelection,
+} from "../../../shared/domain";
 import type { Backend, CheckoutPort, ShopPort } from "../../ports";
-import { notImplemented, partlyImplemented } from "../notImplemented";
+import { notImplemented } from "../notImplemented";
 import { createMemoryCart } from "./cart";
 import { createMemoryCatalog } from "./catalog";
 import { createMemoryNavigation } from "./navigation";
+import { createMemoryOrdering } from "./ordering";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { demoSeed, type MemorySeed } from "./seed";
 
@@ -35,27 +41,37 @@ function createMemoryShop(seed: MemorySeed["shop"]): ShopPort {
   };
 }
 
-function createMemoryCheckout(
-  seed: MemorySeed["checkout"],
-  name: string,
-): CheckoutPort {
-  const shippingMethods = deepFreeze(structuredClone(seed.shippingMethods));
-  return partlyImplemented("checkout", name, {
-    listShippingMethods: async () => shippingMethods,
-  });
-}
-
 export function createMemoryBackend(seed: MemorySeed = demoSeed()): Backend {
   const name = "memory";
+  const shippingMethods = deepFreeze(
+    structuredClone(seed.checkout.shippingMethods),
+  );
+  const shop = createMemoryShop(seed.shop);
+  // the cart reports the checkout's methods, the checkout orders the cart
+  const selection: { of?: (token: string) => CheckoutSelection } = {};
+  const cart = createMemoryCart(seed.catalog, seed.cart?.vouchers ?? [], {
+    selectionOf: (token) => selection.of!(token),
+  });
+  const ordering = createMemoryOrdering({
+    shippingMethods,
+    paymentMethods: seed.checkout.paymentMethods ?? [],
+    cart,
+    acceptsOrders: () => seed.shop.config.acceptsOrders,
+  });
+  selection.of = ordering.selectionOf;
+  const checkout: CheckoutPort = {
+    listShippingMethods: async () => shippingMethods,
+    ...ordering.checkout,
+  };
   return {
     name,
     catalog: createMemoryCatalog(seed.catalog),
     navigation: createMemoryNavigation(seed.catalog, seed.navigation),
-    cart: createMemoryCart(seed.catalog, seed.cart?.vouchers ?? []),
-    checkout: createMemoryCheckout(seed.checkout, name),
+    cart,
+    checkout,
     customer: notImplemented("customer", name),
-    orders: notImplemented("orders", name),
-    shop: createMemoryShop(seed.shop),
+    orders: ordering.orders,
+    shop,
     wishlist: notImplemented("wishlist", name),
     contact: notImplemented("contact", name),
   };

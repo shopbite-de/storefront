@@ -11,6 +11,7 @@ import {
   type Cart,
   type CartLine,
   type CartMessage,
+  type CheckoutSelection,
   type DishConfiguration,
   type Id,
   type Money,
@@ -69,16 +70,33 @@ function checkQuantity(quantity: number, least: number): void {
  * the memory menu. The state is a random cart token; at most `maxCarts`
  * carts are kept (the oldest is dropped). Shipping is free, no taxes.
  */
+/**
+ * The memory cart with what the memory checkout needs of it: the cart of a
+ * session token as the port answers it, and emptying it after an order.
+ */
+export type MemoryCart = CartPort &
+  Readonly<{
+    cartOf(token: string): Cart;
+    clear(token: string): void;
+  }>;
+
 export function createMemoryCart(
   catalog: MemoryCatalog,
   vouchers: readonly MemoryVoucher[],
-  options: { maxCarts?: number } = {},
-): CartPort {
+  options: {
+    maxCarts?: number;
+    /** The checkout's methods of a session token (none without). */
+    selectionOf?: (token: string) => CheckoutSelection;
+  } = {},
+): MemoryCart {
   const maxCarts = options.maxCarts ?? 10_000;
   const carts = new Map<string, StoredCart>();
   const dishes = new Map(catalog.dishes.map((dish) => [dish.id, dish]));
   const currency =
     catalog.dishes[0]?.price.currency ?? vouchers[0]?.amount.currency ?? "EUR";
+
+  /** The session token of a stored cart, for its selected methods. */
+  const tokens = new WeakMap<StoredCart, string>();
 
   async function cartOf(
     session: BackendSession,
@@ -96,6 +114,7 @@ export function createMemoryCart(
     const fresh: StoredCart = { lines: [], vouchers: [] };
     const next = token ?? crypto.randomUUID();
     carts.set(next, fresh);
+    tokens.set(fresh, next);
     while (carts.size > maxCarts) {
       carts.delete(carts.keys().next().value!);
     }
@@ -211,6 +230,11 @@ export function createMemoryCart(
       ],
       currency,
     );
+    // like a backend that prices shipping per order: an empty cart has
+    // no methods yet
+    const token = stored ? tokens.get(stored) : undefined;
+    const selection =
+      token && lines.length ? options.selectionOf?.(token) : undefined;
     return deepFreeze({
       lines,
       discounts,
@@ -218,8 +242,8 @@ export function createMemoryCart(
       shippingCosts: money(0, currency),
       total: subtotal,
       taxes: [],
-      shippingMethodId: null,
-      paymentMethodId: null,
+      shippingMethodId: selection?.shippingMethodId ?? null,
+      paymentMethodId: selection?.paymentMethodId ?? null,
       messages: [...messages],
     });
   }
@@ -235,6 +259,15 @@ export function createMemoryCart(
   }
 
   return {
+    cartOf: (token) => answer(carts.get(token) ?? null),
+    clear: (token) => {
+      const stored = carts.get(token);
+      if (stored) {
+        stored.lines = [];
+        stored.vouchers = [];
+      }
+    },
+
     getCart: async (session) => answer(await cartOf(session, false)),
 
     addLine: async (session, given, quantity) => {

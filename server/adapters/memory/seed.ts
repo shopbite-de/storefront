@@ -4,6 +4,7 @@ import {
   type Branch,
   type Holiday,
   type OpeningHours,
+  type PaymentMethod,
   type ShippingMethod,
   type ShopConfig,
   type Weekday,
@@ -23,8 +24,10 @@ export type MemorySeed = Readonly<{
     branches: readonly Branch[];
   }>;
   checkout: Readonly<{
-    /** In the shop's order. */
+    /** In the shop's order; the first is selected for a new visitor. */
     shippingMethods: readonly ShippingMethod[];
+    /** In the shop's order; none without (no order can be placed). */
+    paymentMethods?: readonly PaymentMethod[];
   }>;
   catalog: MemoryCatalog;
   navigation: MemoryNavigation;
@@ -95,6 +98,24 @@ const buildDemoSeed = (): MemorySeed => ({
         fulfillment: "pickup",
         leadTime: leadTime(15),
         media: null,
+      },
+    ],
+    paymentMethods: [
+      {
+        id: "cash",
+        name: "Barzahlung",
+        description: "Bar bei Lieferung oder Abholung",
+        media: null,
+        redirects: false,
+        preferred: true,
+      },
+      {
+        id: "card",
+        name: "Kartenzahlung",
+        description: "Mit Karte bei Lieferung oder Abholung",
+        media: null,
+        redirects: false,
+        preferred: false,
       },
     ],
   },

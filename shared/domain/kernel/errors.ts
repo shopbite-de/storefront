@@ -17,6 +17,18 @@ export const DOMAIN_ERROR_CODES = [
   "ordering_closed",
   /** The wished time is outside the ordering window. */
   "outside_ordering_window",
+  /** The cart holds nothing to order. */
+  "cart_empty",
+  /**
+   * An order was sent but its answer did not come, and no order of it can
+   * be found yet: it may still arrive. Never placed again automatically.
+   */
+  "order_status_unknown",
+  /**
+   * The cart is empty because this session placed an order moments ago
+   * (another tab, a reload); `details.orderId` names it. Not a new order.
+   */
+  "order_already_placed",
   /** A dish (or extra) of the cart can no longer be ordered. */
   "dish_unavailable",
   /** The shipping method cannot be used for this cart or address. */

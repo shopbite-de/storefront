@@ -30,8 +30,9 @@ describe("createSealer", () => {
     const sealer = createSealer({ passwords: [PASSWORD], name: COOKIE });
     const sealed = sealer.seal({ token: "t" });
     const [version, kid, iv, data] = sealed.split(".");
+    // another character in place of the second-to-last one
     const flipped =
-      data!.slice(0, -2) + (data!.endsWith("A") ? "B" : "A") + data!.slice(-1);
+      data!.slice(0, -2) + (data!.at(-2) === "A" ? "B" : "A") + data!.slice(-1);
 
     expect(sealer.unseal(`${version}.${kid}.${iv}.${flipped}`)).toBeNull();
     expect(sealer.unseal(`v2.${kid}.${iv}.${data}`)).toBeNull();
