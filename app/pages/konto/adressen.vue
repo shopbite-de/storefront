@@ -22,7 +22,7 @@ const {
 
 onMounted(() => {
   refresh().catch((error) =>
-    console.error("[account] addresses", domainErrorCode(error) ?? error),
+    console.error("[account] addresses", domainErrorCode(error) ?? "no answer"),
   );
 });
 
@@ -55,7 +55,10 @@ async function setDefault(kind: "shipping" | "billing", addressId: string) {
         ? "Die Lieferadresse ist geändert."
         : "Die Rechnungsadresse ist geändert.";
   } catch (error) {
-    console.error("[account] default address", domainErrorCode(error) ?? error);
+    console.error(
+      "[account] default address",
+      domainErrorCode(error) ?? "no answer",
+    );
     notice.value = "Die Adresse konnte nicht geändert werden.";
   }
 }
@@ -85,7 +88,10 @@ async function onDelete() {
     deleteOpen.value = false;
     notice.value = "Die Adresse ist gelöscht.";
   } catch (error) {
-    console.error("[account] delete address", domainErrorCode(error) ?? error);
+    console.error(
+      "[account] delete address",
+      domainErrorCode(error) ?? "no answer",
+    );
     deleteFailed.value = true;
   } finally {
     deleteBusy.value = false;

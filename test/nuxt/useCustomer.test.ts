@@ -76,6 +76,24 @@ describe("useCustomer", () => {
     expect(customer.value).toBeNull();
   });
 
+  it("forgets the previous customer's addresses and orders on login and logout", async () => {
+    mocks.login.mockResolvedValue(gina);
+    mocks.logout.mockResolvedValue(null);
+    const addresses = useState<unknown>("account-addresses");
+    const orders = useState<unknown>("account-orders");
+    const { login, logout } = useCustomer();
+    addresses.value = [{ id: "previous" }];
+    orders.value = { orders: [{ id: "previous" }] };
+    await login("gina@example.de", "geheim-123");
+    expect(addresses.value).toBeNull();
+    expect(orders.value).toBeNull();
+    addresses.value = [{ id: "gina's" }];
+    orders.value = { orders: [{ id: "gina's" }] };
+    await logout();
+    expect(addresses.value).toBeNull();
+    expect(orders.value).toBeNull();
+  });
+
   it("sends a login again after an outdated session, once answered", async () => {
     mocks.login
       .mockRejectedValueOnce(

@@ -16,7 +16,7 @@ const {
 } = useAccountAddresses();
 onMounted(() => {
   loadAddresses().catch((error) =>
-    console.error("[account] addresses", domainErrorCode(error) ?? error),
+    console.error("[account] addresses", domainErrorCode(error) ?? "no answer"),
   );
 });
 const sameAddress = computed(

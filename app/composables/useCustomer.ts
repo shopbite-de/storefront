@@ -37,12 +37,23 @@ export function useCustomer() {
     "customer",
     () => undefined,
   );
+  // the account's addresses and orders of the customer before (another
+  // login, a logout, a deletion in the same tab) are never shown again
+  const addresses = useState<unknown>("account-addresses", () => null);
+  const orders = useState<unknown>("account-orders", () => null);
+  const switchTo = (next: Customer | null) => {
+    if (next?.id !== customer.value?.id) {
+      addresses.value = null;
+      orders.value = null;
+    }
+    customer.value = next;
+  };
   // during server-side rendering the request's cookie goes along
   const fetcher = import.meta.server ? useRequestFetch() : $fetch;
 
   async function refresh(): Promise<Customer | null> {
     const answer = await fetcher<{ customer: Customer | null }>("/api/account");
-    customer.value = answer.customer;
+    switchTo(answer.customer);
     return answer.customer;
   }
 
@@ -51,13 +62,16 @@ export function useCustomer() {
       email,
       password,
     });
-    customer.value = next;
+    switchTo(next);
     return next;
   }
 
   async function logout(): Promise<void> {
     await write("/api/account/logout", "POST");
-    customer.value = null;
+    switchTo(null);
+    // also when the customer was never loaded in this tab
+    addresses.value = null;
+    orders.value = null;
   }
 
   async function register(
@@ -68,7 +82,7 @@ export function useCustomer() {
       "POST",
       details,
     );
-    if (!answer.confirmationRequired) customer.value = answer.customer;
+    if (!answer.confirmationRequired) switchTo(answer.customer);
     return answer;
   }
 
@@ -80,7 +94,7 @@ export function useCustomer() {
       "POST",
       parameters,
     );
-    customer.value = next;
+    switchTo(next);
     return next;
   }
 
@@ -89,7 +103,7 @@ export function useCustomer() {
     lastName: string;
   }): Promise<Customer> {
     const next = await write<Customer>("/api/account/profile", "PATCH", change);
-    customer.value = next;
+    switchTo(next);
     return next;
   }
 
@@ -98,12 +112,13 @@ export function useCustomer() {
       email,
       password,
     });
-    customer.value = next;
+    switchTo(next);
     return next;
   }
 
+  /** `loggedIn: false`: changed, the customer logs in again with it. */
   const changePassword = (currentPassword: string, newPassword: string) =>
-    write<null>("/api/account/password", "POST", {
+    write<{ loggedIn: boolean }>("/api/account/password", "POST", {
       currentPassword,
       newPassword,
     });
@@ -119,7 +134,7 @@ export function useCustomer() {
 
   async function deleteAccount(): Promise<void> {
     await write("/api/account", "DELETE");
-    customer.value = null;
+    switchTo(null);
   }
 
   return {

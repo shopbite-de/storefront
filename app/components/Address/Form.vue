@@ -98,7 +98,10 @@ async function onSubmit() {
     });
     emit("submit-success");
   } catch (error) {
-    console.error("Address save failed:", domainErrorCode(error) ?? error);
+    console.error(
+      "Address save failed:",
+      domainErrorCode(error) ?? "no answer",
+    );
     saveError.value = true;
   } finally {
     saving.value = false;

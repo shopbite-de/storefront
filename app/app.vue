@@ -11,12 +11,12 @@ const { data: sessionContextData } = await useAsyncData(
   "sessionContext",
   async () => {
     try {
-      const { data } = await apiClient.invoke("readContext get /context");
-      // The context token stays on the server (ADR 0001, step 4) and the
-      // customer comes from the BFF (`useCustomer`, step 6): the context
-      // goes into the page payload without either.
-      const { token: _token, customer: _customer, ...context } = data;
-      return context as typeof data;
+      // with a deadline, without token and customer (`readLayerContext`)
+      return (await readLayerContext(
+        apiClient as unknown as Parameters<typeof readLayerContext>[0],
+      )) as Awaited<
+        ReturnType<typeof apiClient.invoke<"readContext get /context">>
+      >["data"];
     } catch (error) {
       console.error("Failed to load session context", error);
       return null;

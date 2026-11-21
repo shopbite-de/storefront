@@ -170,6 +170,22 @@ describe("Store API bridge of the Shopware layer", () => {
     expect(new TextDecoder().decode(result.body!)).not.toMatch(/token-[12]/);
   });
 
+  it("answers the context without the customer (the account is the BFF's)", async () => {
+    const visitor = session("token-1");
+    const send = vi.fn<StoreApiSend>(async () =>
+      answer({
+        token: "token-1",
+        customer: { email: "gina@example.de", firstName: "Gina" },
+        currency: { isoCode: "EUR" },
+      }),
+    );
+    const result = await forward(
+      { path: "context", method: "GET" },
+      { session: visitor.backend, send },
+    );
+    expect(json(result.body)).toEqual({ currency: { isoCode: "EUR" } });
+  });
+
   it("does not write the token the session holds already", async () => {
     const visitor = session("token-1");
     const send = vi.fn<StoreApiSend>(async () =>

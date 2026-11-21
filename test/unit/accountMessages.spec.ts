@@ -15,6 +15,10 @@ describe("account messages", () => {
     expect(loginMessage("account_not_confirmed")).toContain(
       "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse",
     );
+    // a locked account is no pending confirmation
+    expect(loginMessage("account_inactive")).toBe(
+      "Dieses Kundenkonto ist gesperrt. Bitte wenden Sie sich an uns.",
+    );
   });
 
   it("names the seconds to wait when the backend says them", () => {

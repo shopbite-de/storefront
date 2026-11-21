@@ -299,8 +299,19 @@ export async function forwardStoreApiRequest(
   if (body && isTextual(type, body)) {
     const text = decoder.decode(body);
     try {
+      const parsed = JSON.parse(text) as unknown;
+      // the account is the BFF's (step 6): the layer's context carries no
+      // customer to the browser
+      if (
+        request.path === "context" &&
+        parsed &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed)
+      ) {
+        delete (parsed as Record<string, unknown>).customer;
+      }
       body = encoder.encode(
-        JSON.stringify(redact(JSON.parse(text), tokens, replacements)),
+        JSON.stringify(redact(parsed, tokens, replacements)),
       );
     } catch {
       body = encoder.encode(redactText(text, replacements));

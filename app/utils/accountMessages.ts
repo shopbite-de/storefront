@@ -25,6 +25,8 @@ export function loginMessage(
       return "Bitte überprüfen Sie Ihre Zugangsdaten.";
     case "account_not_confirmed":
       return "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse mit dem Link aus unserer E-Mail.";
+    case "account_inactive":
+      return "Dieses Kundenkonto ist gesperrt. Bitte wenden Sie sich an uns.";
     case "rate_limited":
       return tooMany("Anmeldeversuche", details);
     default:

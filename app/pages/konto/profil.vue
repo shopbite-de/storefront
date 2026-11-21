@@ -39,7 +39,7 @@ onMounted(async () => {
   try {
     await refreshUser();
   } catch (error) {
-    console.error("[account] customer", domainErrorCode(error) ?? error);
+    console.error("[account] customer", domainErrorCode(error) ?? "no answer");
   }
   Object.assign(state, {
     email: user.value?.email ?? "",
@@ -88,15 +88,16 @@ async function onSubmit() {
   errors.value = {};
   saving.value = true;
   try {
-    if (emailChanged.value) {
+    const changingEmail = emailChanged.value;
+    if (changingEmail) {
       await changeEmail(parsed.data.email, state.emailPassword);
       state.emailPassword = "";
     }
-    if (
+    // the names only when they changed (or nothing did: saved as before)
+    const namesChanged =
       parsed.data.firstName !== user.value?.firstName ||
-      parsed.data.lastName !== user.value?.lastName ||
-      !emailChanged.value
-    ) {
+      parsed.data.lastName !== user.value?.lastName;
+    if (namesChanged || !changingEmail) {
       await updateProfile({
         firstName: parsed.data.firstName,
         lastName: parsed.data.lastName,
@@ -105,7 +106,8 @@ async function onSubmit() {
     saveResult.value = "saved";
   } catch (error) {
     const code = domainErrorCode(error);
-    console.error("Profile update error:", code ?? error);
+    // the code only: the error of a request carries its body
+    console.error("Profile update error:", code ?? "no answer");
     saveMessage.value = credentialChangeMessage(
       code,
       domainErrorDetails(error),
@@ -139,7 +141,9 @@ const passwords = reactive({
   newPasswordConfirm: "",
 });
 const passwordErrors = ref<Partial<Record<keyof PasswordSchema, string>>>({});
-const passwordResult = ref<"saved" | "failed" | null>(null);
+const passwordResult = ref<"saved" | "saved-logged-out" | "failed" | null>(
+  null,
+);
 const passwordMessage = ref("");
 const passwordSaving = ref(false);
 const passwordBox = ref<HTMLElement | null>(null);
@@ -159,16 +163,21 @@ async function onPasswordSubmit() {
   passwordErrors.value = {};
   passwordSaving.value = true;
   try {
-    await changePassword(parsed.data.currentPassword, parsed.data.newPassword);
+    const answer = await changePassword(
+      parsed.data.currentPassword,
+      parsed.data.newPassword,
+    );
     Object.assign(passwords, {
       currentPassword: "",
       newPassword: "",
       newPasswordConfirm: "",
     });
-    passwordResult.value = "saved";
+    // changed either way; without a login the customer logs in again
+    passwordResult.value =
+      answer?.loggedIn === false ? "saved-logged-out" : "saved";
   } catch (error) {
     const code = domainErrorCode(error);
-    console.error("Password change error:", code ?? error);
+    console.error("Password change error:", code ?? "no answer");
     passwordMessage.value = credentialChangeMessage(
       code,
       domainErrorDetails(error),
@@ -189,7 +198,10 @@ async function onDelete() {
     open.value = false;
     navigateTo("/");
   } catch (error) {
-    console.error("Customer delete error:", domainErrorCode(error) ?? error);
+    console.error(
+      "Customer delete error:",
+      domainErrorCode(error) ?? "no answer",
+    );
     deleteFailed.value = true;
   } finally {
     deleting.value = false;
@@ -308,17 +320,21 @@ async function onDelete() {
         <div
           v-if="passwordResult"
           ref="passwordBox"
-          :role="passwordResult === 'saved' ? 'status' : 'alert'"
+          :role="passwordResult === 'failed' ? 'alert' : 'status'"
           tabindex="-1"
           :class="[
             'rounded-sb-control p-4 text-sm',
-            passwordResult === 'saved'
-              ? 'bg-sb-primary-tint text-sb-primary-ink'
-              : 'border-[1.5px] border-sb-danger',
+            passwordResult === 'failed'
+              ? 'border-[1.5px] border-sb-danger'
+              : 'bg-sb-primary-tint text-sb-primary-ink',
           ]"
         >
           <template v-if="passwordResult === 'saved'"
             >Ihr Passwort ist geändert.</template
+          >
+          <template v-else-if="passwordResult === 'saved-logged-out'"
+            >Ihr Passwort ist geändert. Bitte melden Sie sich mit dem neuen
+            Passwort wieder an.</template
           >
           <template v-else>
             <strong class="block">Das Passwort ist nicht geändert.</strong>

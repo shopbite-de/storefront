@@ -17,7 +17,7 @@ onMounted(async () => {
   try {
     await load();
   } catch (error) {
-    console.error("[account] orders", domainErrorCode(error) ?? error);
+    console.error("[account] orders", domainErrorCode(error) ?? "no answer");
   } finally {
     loaded.value = true;
   }

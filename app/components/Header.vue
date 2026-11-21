@@ -75,7 +75,7 @@ function isCurrent(to: unknown) {
 
 function logoutHandler() {
   logout().catch((error) =>
-    console.error("[account] logout", domainErrorCode(error) ?? error),
+    console.error("[account] logout", domainErrorCode(error) ?? "no answer"),
   );
   menuOpen.value = false;
 }

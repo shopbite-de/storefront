@@ -158,7 +158,10 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
           needsConfirmation: false,
         };
       } catch (error) {
-        console.error("Guest details failed:", domainErrorCode(error) ?? error);
+        console.error(
+          "Guest details failed:",
+          domainErrorCode(error) ?? "no answer",
+        );
         const code = domainErrorCode(error);
         return {
           ok: false,

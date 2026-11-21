@@ -288,6 +288,26 @@ describe("account pages with a preset (#445, ADR 0001 step 6)", () => {
     });
   });
 
+  it("tells a changed password whose login afterwards failed", async () => {
+    mocks.password.mockResolvedValue({ loggedIn: false });
+    const wrapper = await mountSuspended(ProfilePage);
+    await flushPromises();
+    const form = wrapper.find('form[aria-labelledby="passwort-aendern"]');
+    await form.find('input[name="currentPassword"]').setValue("alt-geheim-1");
+    await form.find('input[name="newPassword"]').setValue("neu-geheim-2");
+    await form
+      .find('input[name="newPasswordConfirm"]')
+      .setValue("neu-geheim-2");
+    await form.trigger("submit");
+    await vi.waitFor(() =>
+      expect(form.text()).toContain(
+        "Bitte melden Sie sich mit dem neuen Passwort wieder an.",
+      ),
+    );
+    expect(form.text()).toContain("Ihr Passwort ist geändert.");
+    expect(form.find('[role="alert"]').exists()).toBe(false);
+  });
+
   it("changes the e-mail only with the password", async () => {
     mocks.profile.mockResolvedValue(gina);
     mocks.email.mockRejectedValueOnce(refusal(401, "invalid_credentials"));
@@ -324,10 +344,12 @@ describe("account pages with a preset (#445, ADR 0001 step 6)", () => {
         "Ihre Änderungen sind gespeichert.",
       ),
     );
+    // only the e-mail changed: no profile request
+    expect(mocks.profile).not.toHaveBeenCalled();
   });
 
   it("changes the password with the current one", async () => {
-    mocks.password.mockResolvedValue(null);
+    mocks.password.mockResolvedValue({ loggedIn: true });
     const wrapper = await mountSuspended(ProfilePage);
     await flushPromises();
     const form = wrapper.find('form[aria-labelledby="passwort-aendern"]');

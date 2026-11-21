@@ -31,7 +31,7 @@ watch(isLoggedIn, (newValue) => {
 
 const logoutHandler = () => {
   logout().catch((error) =>
-    console.error("[account] logout", domainErrorCode(error) ?? error),
+    console.error("[account] logout", domainErrorCode(error) ?? "no answer"),
   );
 };
 </script>
