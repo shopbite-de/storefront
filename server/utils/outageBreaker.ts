@@ -95,7 +95,10 @@ export async function guardedRequest<T>(request: () => Promise<T>): Promise<T> {
     return answer;
   } catch (error) {
     if (!bypassed) {
-      if (isMissingAnswer(error)) noteMissingAnswer();
+      // a probe without an answer: still down, open for another window
+      if (probe && isMissingAnswer(error)) {
+        openUntil = Date.now() + OUTAGE_OPEN_MS;
+      } else if (isMissingAnswer(error)) noteMissingAnswer();
       else if (statusOf(error as Failure) !== undefined) close();
     }
     throw error;

@@ -89,11 +89,17 @@ describe("outage breaker", () => {
     const { guardedRequest } = await breaker();
     await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
     await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
-    vi.setSystemTime(new Date("2026-11-22T12:00:10Z"));
+    vi.setSystemTime(new Date("2026-11-22T12:00:25Z"));
     const probe = vi.fn(fails(timeout()));
     await expect(guardedRequest(probe)).rejects.toThrow();
     expect(probe).toHaveBeenCalledTimes(1);
     const next = vi.fn(answers);
+    await expect(guardedRequest(next)).rejects.toMatchObject({
+      statusCode: 503,
+    });
+    expect(next).not.toHaveBeenCalled();
+    // a long outage: the failed probe keeps it open past the first 30 s
+    vi.setSystemTime(new Date("2026-11-22T12:00:31Z"));
     await expect(guardedRequest(next)).rejects.toMatchObject({
       statusCode: 503,
     });
