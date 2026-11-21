@@ -66,7 +66,7 @@ describe("outage breaker", () => {
     await expect(guardedRequest(answers)).resolves.toBe("answer");
   });
 
-  it("lets one request through every 5 s while open and closes at its answer", async () => {
+  it("lets one request through 10 s after the last probe and closes at its answer", async () => {
     const { guardedRequest } = await breaker();
     await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
     await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
@@ -75,6 +75,10 @@ describe("outage breaker", () => {
       statusCode: 503,
     });
     vi.setSystemTime(new Date("2026-11-22T12:00:05Z"));
+    await expect(guardedRequest(request)).rejects.toMatchObject({
+      statusCode: 503,
+    });
+    vi.setSystemTime(new Date("2026-11-22T12:00:10Z"));
     // Shopware is back: the probe answers and the breaker closes
     await expect(guardedRequest(request)).resolves.toBe("answer");
     await expect(guardedRequest(request)).resolves.toBe("answer");
@@ -85,7 +89,7 @@ describe("outage breaker", () => {
     const { guardedRequest } = await breaker();
     await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
     await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
-    vi.setSystemTime(new Date("2026-11-22T12:00:05Z"));
+    vi.setSystemTime(new Date("2026-11-22T12:00:10Z"));
     const probe = vi.fn(fails(timeout()));
     await expect(guardedRequest(probe)).rejects.toThrow();
     expect(probe).toHaveBeenCalledTimes(1);
@@ -94,6 +98,32 @@ describe("outage breaker", () => {
       statusCode: 503,
     });
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it("never lets a second probe through while one is in flight", async () => {
+    const { guardedRequest } = await breaker();
+    await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
+    await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
+    vi.setSystemTime(new Date("2026-11-22T12:00:10Z"));
+    let finish!: () => void;
+    const slow = guardedRequest(
+      () =>
+        new Promise<string>((_, reject) => {
+          finish = () => reject(timeout());
+        }),
+    );
+    vi.setSystemTime(new Date("2026-11-22T12:00:25Z"));
+    const other = vi.fn(answers);
+    await expect(guardedRequest(other)).rejects.toMatchObject({
+      statusCode: 503,
+    });
+    expect(other).not.toHaveBeenCalled();
+    finish();
+    await expect(slow).rejects.toThrow();
+    // the next probe waits 10 s after this one ended
+    await expect(guardedRequest(other)).rejects.toMatchObject({
+      statusCode: 503,
+    });
   });
 
   it("does not count failures further apart than 15 s", async () => {

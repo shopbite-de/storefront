@@ -6,20 +6,25 @@ import { AsyncLocalStorage } from "node:async_hooks";
  * one per read. It opens only after two requests without an answer
  * (deadline, no connection) within `WINDOW_MS`, with no answer between,
  * and then fails requests at once with 503 for `OUTAGE_OPEN_MS`, letting
- * one request through every `OUTAGE_PROBE_MS`; the first answer (also a
- * refusal or a 5xx) closes it. Other errors (an unreadable answer,
+ * one probe through `OUTAGE_PROBE_MS` after the last one ended; the first
+ * answer (also a refusal or a 5xx) closes it. Other errors (an unreadable answer,
  * a programming error) never count. The order placement and its follow-up
  * look-ups run in `bypassOutageBreaker`: a slow order never takes the shop
  * down, and a look-up for an order that may have landed always asks.
  */
 export const OUTAGE_WINDOW_MS = 15_000;
 export const OUTAGE_OPEN_MS = 30_000;
-/** While open, one request every this many ms asks Shopware (a probe). */
-export const OUTAGE_PROBE_MS = 5_000;
+/**
+ * While open, one request asks Shopware (a probe) this many ms after the
+ * last probe ended, never two at once: a page in an outage pays at most
+ * one deadline, and the shop is back soon after Shopware.
+ */
+export const OUTAGE_PROBE_MS = 10_000;
 
 let failures: number[] = [];
 let openUntil = 0;
 let lastProbe = 0;
+let probing = false;
 const bypass = new AsyncLocalStorage<boolean>();
 
 /** Runs `task` with requests that neither wait for nor open the breaker. */
@@ -75,8 +80,9 @@ export async function guardedRequest<T>(request: () => Promise<T>): Promise<T> {
   const open = now < openUntil;
   // while open, one request every few seconds is let through: its answer
   // closes the breaker as soon as Shopware is back
-  const probe = open && now - lastProbe >= OUTAGE_PROBE_MS;
-  if (probe) lastProbe = now;
+  const probe =
+    !bypassed && open && !probing && now - lastProbe >= OUTAGE_PROBE_MS;
+  if (probe) probing = true;
   if (!bypassed && open && !probe) {
     throw Object.assign(new Error("The Store API is down."), {
       name: "StoreApiDown",
@@ -93,6 +99,11 @@ export async function guardedRequest<T>(request: () => Promise<T>): Promise<T> {
       else if (statusOf(error as Failure) !== undefined) close();
     }
     throw error;
+  } finally {
+    if (probe) {
+      probing = false;
+      lastProbe = Date.now();
+    }
   }
 }
 
