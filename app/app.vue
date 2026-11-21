@@ -12,7 +12,10 @@ const { data: sessionContextData } = await useAsyncData(
   async () => {
     try {
       const { data } = await apiClient.invoke("readContext get /context");
-      return data;
+      // The context token stays on the server (ADR 0001, step 4): the
+      // context goes into the page payload without it.
+      const { token: _token, ...context } = data;
+      return context as typeof data;
     } catch (error) {
       console.error("Failed to load session context", error);
       return null;

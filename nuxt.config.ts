@@ -80,6 +80,16 @@ export default defineNuxtConfig({
         refillPerMinute: 20,
       },
     },
+    // The storefront session (ADR 0001, step 4; server/utils/visitorSession.ts):
+    // an HttpOnly cookie with a random id, the backend's token server-side
+    // in the Nitro storage "shopbite-session". Without a storage the shop
+    // mounts (nitro.storage, e.g. Redis for several instances), an LRU in
+    // memory with at most `maxEntries` sessions; NUXT_VISITOR_SESSION_*.
+    // A session lives `maxAgeDays` after the visitor's last visit.
+    visitorSession: {
+      maxAgeDays: 30,
+      maxEntries: 20000,
+    },
     // Bound of the Nitro cache (server/plugins/bounded-cache.ts): an LRU in
     // memory with at most `maxEntries` entries and `maxSizeMb` of data;
     // NUXT_CACHE_STORAGE_*, maxEntries 0 = unbounded. A cache storage the
