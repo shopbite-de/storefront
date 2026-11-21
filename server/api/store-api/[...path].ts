@@ -94,7 +94,7 @@ async function forward(
           headers: init.headers,
           body: init.body as BodyInit | undefined,
           redirect: "manual",
-          signal: AbortSignal.timeout(30_000),
+          signal: init.signal,
         });
         return {
           status: response.status,

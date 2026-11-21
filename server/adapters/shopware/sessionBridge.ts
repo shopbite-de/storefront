@@ -19,6 +19,8 @@ export type StoreApiSend = (
     method: string;
     headers: Record<string, string>;
     body: Uint8Array | undefined;
+    /** Aborted when the deadline passes. */
+    signal?: AbortSignal;
   },
 ) => Promise<{ status: number; headers: Headers; body: Uint8Array }>;
 
@@ -149,8 +151,27 @@ function redact(
  * Answers the browser may read as text, also without a content type;
  * known binary types (PDF, images, archives) pass unchanged.
  */
-const TEXTUAL = /json|text|xml|html|javascript/i;
-const isTextual = (type: string) => !type.trim() || TEXTUAL.test(type);
+const TEXTUAL = /json|text|xml|html|javascript|octet-stream/i;
+/** File signatures that are never text: PDF, PNG, JPEG, GIF, ZIP. */
+const BINARY_SIGNATURES = [
+  [0x25, 0x50, 0x44, 0x46],
+  [0x89, 0x50, 0x4e, 0x47],
+  [0xff, 0xd8, 0xff],
+  [0x47, 0x49, 0x46, 0x38],
+  [0x50, 0x4b, 0x03, 0x04],
+];
+const isTextual = (type: string, body: Uint8Array) =>
+  (!type.trim() || TEXTUAL.test(type)) &&
+  !BINARY_SIGNATURES.some((signature) =>
+    signature.every((byte, index) => body[index] === byte),
+  );
+
+/**
+ * How long a bridge request may wait for Shopware: it runs in the
+ * visitor's exclusive section when it writes, so a Shopware that does not
+ * answer must not hold the visitor's next request for long.
+ */
+export const BRIDGE_TIMEOUT_MS = 10_000;
 
 function isAllowedPath(path: string): boolean {
   return (
@@ -168,6 +189,8 @@ export async function forwardStoreApiRequest(
     accessKey: string;
     session: BackendSession;
     send: StoreApiSend;
+    /** Default `BRIDGE_TIMEOUT_MS`. */
+    timeoutMs?: number;
   }>,
 ): Promise<ForwardedAnswer> {
   const method = request.method.toUpperCase();
@@ -186,14 +209,30 @@ export async function forwardStoreApiRequest(
 
   let answer: Awaited<ReturnType<StoreApiSend>>;
   try {
-    answer = await options.send(
-      `${options.endpoint.replace(/\/+$/, "")}/${request.path}${request.search}`,
-      {
-        method,
-        headers,
-        body: method === "GET" ? undefined : request.body,
-      },
-    );
+    const abort = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        abort.abort();
+        reject(new Error("Shopware did not answer in time."));
+      }, options.timeoutMs ?? BRIDGE_TIMEOUT_MS);
+    });
+    try {
+      answer = await Promise.race([
+        options.send(
+          `${options.endpoint.replace(/\/+$/, "")}/${request.path}${request.search}`,
+          {
+            method,
+            headers,
+            body: method === "GET" ? undefined : request.body,
+            signal: abort.signal,
+          },
+        ),
+        deadline,
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
   } catch (cause) {
     console.error("[store-api] Shopware did not answer", cause);
     return errorAnswer(503, "backend_unavailable");
@@ -219,7 +258,7 @@ export async function forwardStoreApiRequest(
   }
   let body: Uint8Array | null = answer.body.length ? answer.body : null;
   const type = answered["content-type"] ?? "";
-  if (body && isTextual(type)) {
+  if (body && isTextual(type, body)) {
     const text = decoder.decode(body);
     try {
       body = encoder.encode(

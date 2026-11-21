@@ -324,6 +324,70 @@ describe("Store API bridge of the Shopware layer", () => {
     );
   });
 
+  it("gives up on a Shopware that does not answer: 503 within the deadline, request aborted", async () => {
+    const visitor = session("token-1");
+    let signal: AbortSignal | undefined;
+    const send = vi.fn<StoreApiSend>(
+      (_url, init) =>
+        new Promise((_, reject) => {
+          signal = init.signal;
+          init.signal?.addEventListener("abort", () =>
+            reject(new Error("aborted")),
+          );
+        }),
+    );
+    const started = Date.now();
+
+    const result = await forwardStoreApiRequest(
+      {
+        method: "POST",
+        path: "account/login",
+        search: "",
+        headers: {},
+        body: undefined,
+        forwardedFor: undefined,
+      },
+      {
+        endpoint: ENDPOINT,
+        accessKey: "SWSC-KEY",
+        session: visitor.backend,
+        send,
+        timeoutMs: 30,
+      },
+    );
+
+    expect(Date.now() - started).toBeLessThan(1000);
+    expect(result.status).toBe(503);
+    expect(json(result.body).errors[0].code).toBe("backend_unavailable");
+    expect(signal?.aborted).toBe(true);
+  });
+
+  it("redacts an octet-stream answer unless it is a known binary file", async () => {
+    const visitor = session("token-1");
+    const answers = [
+      answer(new TextEncoder().encode("token token-1 here"), {
+        contentType: "application/octet-stream",
+      }),
+      answer(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]), {
+        contentType: "application/octet-stream",
+      }),
+    ];
+    const send = vi.fn<StoreApiSend>(async () => answers.shift()!);
+
+    const text = await forward(
+      { method: "GET" },
+      { session: visitor.backend, send },
+    );
+    expect(new TextDecoder().decode(text.body!)).toBe("token *** here");
+    const pdf = await forward(
+      { method: "GET" },
+      { session: visitor.backend, send },
+    );
+    expect(pdf.body).toEqual(
+      new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]),
+    );
+  });
+
   it("passes other content (a document download) through unchanged", async () => {
     const visitor = session("token-1");
     const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
