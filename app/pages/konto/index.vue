@@ -7,8 +7,18 @@ useSeoMeta({
   title: "Mein Konto",
 });
 
-const { user, userDefaultShippingAddress, userDefaultBillingAddress } =
-  useUser();
+// the customer and the account's addresses through the BFF (ADR 0001, step 6)
+const { customer: user } = useCustomer();
+const {
+  defaultDeliveryAddress: userDefaultShippingAddress,
+  defaultBillingAddress: userDefaultBillingAddress,
+  refresh: loadAddresses,
+} = useAccountAddresses();
+onMounted(() => {
+  loadAddresses().catch((error) =>
+    console.error("[account] addresses", domainErrorCode(error) ?? error),
+  );
+});
 const sameAddress = computed(
   () =>
     userDefaultShippingAddress.value?.id ===

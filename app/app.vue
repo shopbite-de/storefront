@@ -12,9 +12,10 @@ const { data: sessionContextData } = await useAsyncData(
   async () => {
     try {
       const { data } = await apiClient.invoke("readContext get /context");
-      // The context token stays on the server (ADR 0001, step 4): the
-      // context goes into the page payload without it.
-      const { token: _token, ...context } = data;
+      // The context token stays on the server (ADR 0001, step 4) and the
+      // customer comes from the BFF (`useCustomer`, step 6): the context
+      // goes into the page payload without either.
+      const { token: _token, customer: _customer, ...context } = data;
       return context as typeof data;
     } catch (error) {
       console.error("Failed to load session context", error);
@@ -52,9 +53,17 @@ useLiveShopData();
 const { refresh: refreshCart } = useCartData();
 const loadCart = () =>
   refreshCart().catch((error) => console.error("[cart] refresh", error));
+// The session's customer (ADR 0001, step 6), rendered on the server so the
+// header knows the login on the first paint.
+const { isLoggedIn, refresh: refreshCustomer } = useCustomer();
+await useAsyncData("customer", () =>
+  refreshCustomer().catch((error) => {
+    console.error("[account] customer", error);
+    return null;
+  }),
+);
 // Wishlist entries (#467): loaded in the browser, not during SSR. A login
 // moves the guest entries into the account, a logout shows the guest's.
-const { isLoggedIn } = useUser();
 const { load: loadWishlist, mergeGuestEntries } = useWishlistEntries();
 onMounted(loadWishlist);
 // a login or logout replaces the visitor's backend context: the methods

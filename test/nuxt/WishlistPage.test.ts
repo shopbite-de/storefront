@@ -22,7 +22,7 @@ registerEndpoint("/api/menu/dishes/d21", () => dishes("d21"));
 mockNuxtImport("useShopwareContext", () => () => ({
   apiClient: { invoke },
 }));
-mockNuxtImport("useUser", () => () => ({ isLoggedIn: ref(false) }));
+mockNuxtImport("useCustomer", () => () => ({ isLoggedIn: ref(false) }));
 mockNuxtImport("useCartMutations", () => () => ({
   addLine,
   isMutating: ref(false),

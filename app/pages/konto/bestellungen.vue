@@ -9,18 +9,21 @@ useSeoMeta({
   title: "Meine Bestellungen",
 });
 
-const { orders, loadOrders } = useCustomerOrders();
+// the customer's orders through the BFF (ADR 0001, step 6)
+const { orders, load } = useAccountOrders();
 const loaded = ref(false);
 
 onMounted(async () => {
   try {
-    await loadOrders();
+    await load();
+  } catch (error) {
+    console.error("[account] orders", domainErrorCode(error) ?? error);
   } finally {
     loaded.value = true;
   }
 });
 
-const { getFormattedPrice } = useCommercePrice();
+const { getFormattedMoney } = useCommercePrice();
 </script>
 
 <template>
@@ -50,20 +53,14 @@ const { getFormattedPrice } = useCommercePrice();
           class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 p-4 hover:bg-sb-muted focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-sb-focus sm:p-5"
         >
           <span class="font-bold">
-            Bestellung <span class="tabular-nums">{{ order.orderNumber }}</span>
+            Bestellung <span class="tabular-nums">{{ order.number }}</span>
           </span>
           <span class="font-bold tabular-nums">{{
-            getFormattedPrice(order.amountTotal)
+            getFormattedMoney(order.total)
           }}</span>
           <span class="text-sm text-sb-ink-muted">
-            {{ formatDate(order.createdAt) }}
-            <template v-if="order.stateMachineState">
-              ·
-              {{
-                order.stateMachineState.translated?.name ??
-                order.stateMachineState.name
-              }}
-            </template>
+            {{ formatDate(order.placedAt) }}
+            · {{ ORDER_STATUS_LABEL[order.status] }}
           </span>
           <span
             class="flex items-center gap-1 text-sm font-semibold text-sb-primary-ink"

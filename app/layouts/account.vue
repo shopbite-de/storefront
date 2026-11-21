@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useUser } from "@shopware/composables";
 const route = useRoute();
 
 // Account navigation (#445).
@@ -16,7 +15,7 @@ const isCurrent = (to: string) =>
       route.path.startsWith(`${to}/`) ||
       (to === "/konto/bestellungen" &&
         route.path.startsWith("/konto/bestellung/"));
-const { isLoggedIn, logout } = useUser();
+const { isLoggedIn, logout } = useCustomer();
 
 onMounted(() => {
   if (!isLoggedIn.value) {
@@ -31,7 +30,9 @@ watch(isLoggedIn, (newValue) => {
 });
 
 const logoutHandler = () => {
-  logout();
+  logout().catch((error) =>
+    console.error("[account] logout", domainErrorCode(error) ?? error),
+  );
 };
 </script>
 <template>

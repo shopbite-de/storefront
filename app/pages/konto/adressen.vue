@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useAddress, useUser } from "@shopware/composables";
-import type { Schemas } from "#shopware";
+import type { Address } from "../../../shared/domain";
 
 definePageMeta({
   layout: "account",
@@ -10,58 +9,87 @@ useSeoMeta({
   title: "Adressen",
 });
 
-const { userDefaultShippingAddress, userDefaultBillingAddress, refreshUser } =
-  useUser();
+// The account's address book through the BFF (ADR 0001, step 6).
 const {
-  customerAddresses,
-  loadCustomerAddresses,
-  setDefaultCustomerBillingAddress,
-  setDefaultCustomerShippingAddress,
-} = useAddress();
+  addresses: customerAddresses,
+  defaultDeliveryAddress: userDefaultShippingAddress,
+  defaultBillingAddress: userDefaultBillingAddress,
+  refresh,
+  save,
+  remove,
+  setDefault: setDefaultAddress,
+} = useAccountAddresses();
 
 onMounted(() => {
-  reloadCustomerData();
+  refresh().catch((error) =>
+    console.error("[account] addresses", domainErrorCode(error) ?? error),
+  );
 });
-
-const reloadCustomerData = async () => {
-  await loadCustomerAddresses();
-  await refreshUser({
-    associations: {
-      defaultShippingAddress: {},
-      defaultBillingAddress: {},
-      activeShippingAddress: {},
-      activeBillingAddress: {},
-    },
-  });
-};
 
 // One sheet for editing and adding; results are announced in the page
 // (#445).
 const sheetOpen = ref(false);
-const editedAddress = ref<Schemas["CustomerAddress"] | undefined>();
+const editedAddress = ref<Address | undefined>();
 const notice = ref("");
 
-function openSheet(address?: Schemas["CustomerAddress"]) {
+function openSheet(address?: Address) {
   editedAddress.value = address;
   sheetOpen.value = true;
 }
 
-async function onSaved() {
+function onSaved() {
   sheetOpen.value = false;
   notice.value = editedAddress.value
     ? "Die Adresse ist gespeichert."
     : "Die Adresse ist angelegt.";
-  await reloadCustomerData();
 }
 
 async function setDefault(kind: "shipping" | "billing", addressId: string) {
-  if (kind === "shipping") await setDefaultCustomerShippingAddress(addressId);
-  else await setDefaultCustomerBillingAddress(addressId);
-  await reloadCustomerData();
-  notice.value =
-    kind === "shipping"
-      ? "Die Lieferadresse ist geändert."
-      : "Die Rechnungsadresse ist geändert.";
+  try {
+    await setDefaultAddress(
+      addressId,
+      kind === "shipping" ? "delivery" : "billing",
+    );
+    notice.value =
+      kind === "shipping"
+        ? "Die Lieferadresse ist geändert."
+        : "Die Rechnungsadresse ist geändert.";
+  } catch (error) {
+    console.error("[account] default address", domainErrorCode(error) ?? error);
+    notice.value = "Die Adresse konnte nicht geändert werden.";
+  }
+}
+
+const isDefault = (address: Address) =>
+  address.id === userDefaultShippingAddress.value?.id ||
+  address.id === userDefaultBillingAddress.value?.id;
+
+// Deleting asks first (#445: irreversible actions confirm).
+const deleting = ref<Address | null>(null);
+const deleteOpen = ref(false);
+const deleteBusy = ref(false);
+const deleteFailed = ref(false);
+
+function askDelete(address: Address) {
+  deleting.value = address;
+  deleteFailed.value = false;
+  deleteOpen.value = true;
+}
+
+async function onDelete() {
+  if (!deleting.value?.id) return;
+  deleteBusy.value = true;
+  deleteFailed.value = false;
+  try {
+    await remove(deleting.value.id);
+    deleteOpen.value = false;
+    notice.value = "Die Adresse ist gelöscht.";
+  } catch (error) {
+    console.error("[account] delete address", domainErrorCode(error) ?? error);
+    deleteFailed.value = true;
+  } finally {
+    deleteBusy.value = false;
+  }
 }
 </script>
 
@@ -85,14 +113,11 @@ async function setDefault(kind: "shipping" | "billing", addressId: string) {
     <ul class="grid gap-4 md:grid-cols-2">
       <li
         v-for="address in customerAddresses ?? []"
-        :key="address.id"
+        :key="address.id ?? address.street"
         class="flex flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-5"
       >
         <ul
-          v-if="
-            address.id === userDefaultShippingAddress?.id ||
-            address.id === userDefaultBillingAddress?.id
-          "
+          v-if="isDefault(address)"
           class="flex flex-wrap gap-2"
           aria-label="Verwendung"
         >
@@ -120,7 +145,7 @@ async function setDefault(kind: "shipping" | "billing", addressId: string) {
           <SbButton
             v-if="address.id !== userDefaultShippingAddress?.id"
             variant="ghost"
-            @click="setDefault('shipping', address.id)"
+            @click="setDefault('shipping', address.id!)"
             >Als Lieferadresse
             <span class="sr-only"
               >: {{ address.street }}, {{ address.city }}</span
@@ -129,8 +154,17 @@ async function setDefault(kind: "shipping" | "billing", addressId: string) {
           <SbButton
             v-if="address.id !== userDefaultBillingAddress?.id"
             variant="ghost"
-            @click="setDefault('billing', address.id)"
+            @click="setDefault('billing', address.id!)"
             >Als Rechnungsadresse
+            <span class="sr-only"
+              >: {{ address.street }}, {{ address.city }}</span
+            ></SbButton
+          >
+          <SbButton
+            v-if="!isDefault(address)"
+            variant="ghost"
+            @click="askDelete(address)"
+            >Löschen
             <span class="sr-only"
               >: {{ address.street }}, {{ address.city }}</span
             ></SbButton
@@ -146,8 +180,23 @@ async function setDefault(kind: "shipping" | "billing", addressId: string) {
       <AddressForm
         :key="editedAddress?.id ?? 'neu'"
         :address="editedAddress"
+        :save="save"
         @submit-success="onSaved"
       />
     </SbSheet>
+    <SbConfirmDialog
+      v-if="deleteOpen"
+      v-model:open="deleteOpen"
+      title="Adresse löschen?"
+      :description="`${deleting?.street}, ${deleting?.postalCode} ${deleting?.city}`"
+      confirm-label="Adresse löschen"
+      :loading="deleteBusy"
+      @confirm="onDelete"
+    >
+      <p v-if="deleteFailed" role="alert" class="text-sm font-semibold">
+        Die Adresse konnte nicht gelöscht werden. Bitte versuchen Sie es später
+        noch einmal.
+      </p>
+    </SbConfirmDialog>
   </div>
 </template>

@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
-
 useSeoMeta({
   title: "Registrieren",
 });
 
-const { isLoggedIn } = useUser();
+const { isLoggedIn } = useCustomer();
 
 if (import.meta.client && isLoggedIn.value) {
   navigateTo({ path: "/konto" });
@@ -17,13 +15,10 @@ watch(isLoggedIn, (isLoggedIn) => {
   }
 });
 
-function onRegistrationSuccess(
-  _data: unknown,
-  customer: Schemas["Customer"] | undefined,
-) {
+function onRegistrationSuccess(_data: unknown, needsConfirmation: boolean) {
   // With double opt-in the customer stays inactive until the e-mail link is
   // clicked, so there is no account session to show yet.
-  if (customer?.doubleOptInRegistration && !customer?.active) {
+  if (needsConfirmation) {
     navigateTo("/anmelden");
     return;
   }

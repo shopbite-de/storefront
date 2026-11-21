@@ -1,40 +1,42 @@
 <script setup lang="ts">
 import * as z from "zod";
-import type { Schemas } from "#shopware";
-import { useAddress } from "@shopware/composables";
+import type { Address } from "../../../shared/domain";
+import type { AccountAddressInput } from "~/composables/useAccountAddresses";
 import {
   baseAddressSchema,
   type AddressSchema,
 } from "~/validation/registrationSchema";
 
 /**
- * Create or edit a customer address in the presets (#445): the address
- * fields of the checkout (`AddressFields`), checked with the same
- * rules on submit. Errors show at the fields, the first one gets focus.
+ * The one address form (ADR 0001, step 6) of the account's address book
+ * and the checkout's "Adresse bearbeiten": the fields of the checkout
+ * (`AddressFields`) on the domain `Address`, checked with the same rules
+ * on submit. Errors show at the fields, the first one gets focus. The
+ * caller saves (`save`): the account through `/api/account/addresses`,
+ * the checkout through `/api/checkout/orderer/addresses/[addressId]`. A
+ * new address has no country (the shop's), a changed one keeps its own.
  */
 const props = defineProps<{
-  address?: Schemas["CustomerAddress"];
+  address?: Address | null;
+  save: (address: AccountAddressInput) => Promise<unknown>;
 }>();
 
-const emit = defineEmits<{
-  "submit-success": [data: Schemas["CustomerAddress"]];
-}>();
-
-const { site } = useRuntimeConfig().public;
-const { updateCustomerAddress, createCustomerAddress } = useAddress();
+const emit = defineEmits<{ "submit-success": [] }>();
 
 const isBusiness = ref(Boolean(props.address?.company));
+// the form's own field names; the country is not asked
 const model = ref<AddressSchema>({
   firstName: props.address?.firstName ?? "",
   lastName: props.address?.lastName ?? "",
   company: props.address?.company ?? "",
   department: props.address?.department ?? "",
   street: props.address?.street ?? "",
-  additionalAddressLine1: props.address?.additionalAddressLine1 ?? "",
-  zipcode: props.address?.zipcode ?? "",
+  additionalAddressLine1: props.address?.additionalLine ?? "",
+  zipcode: props.address?.postalCode ?? "",
   city: props.address?.city ?? "",
-  countryId: props.address?.countryId ?? site.countryId,
-  phoneNumber: props.address?.phoneNumber ?? "",
+  // checked as filled only
+  countryId: "shop",
+  phoneNumber: props.address?.phone ?? "",
 });
 
 const schema = computed(() =>
@@ -79,17 +81,24 @@ async function onSubmit() {
   errors.value = {};
   saving.value = true;
   try {
-    const data = {
-      ...result.data,
-      company: isBusiness.value ? result.data.company : "",
-      department: isBusiness.value ? result.data.department : "",
-    } as unknown as Parameters<typeof updateCustomerAddress>[0];
-    const saved = props.address?.id
-      ? await updateCustomerAddress({ ...data, id: props.address.id })
-      : await createCustomerAddress(data);
-    emit("submit-success", saved);
+    const data = result.data;
+    await props.save({
+      id: props.address?.id ?? null,
+      salutation: props.address?.salutation ?? null,
+      firstName: data.firstName ?? "",
+      lastName: data.lastName ?? "",
+      company: (isBusiness.value && data.company) || null,
+      department: (isBusiness.value && data.department) || null,
+      street: data.street,
+      additionalLine: data.additionalAddressLine1 || null,
+      postalCode: data.zipcode ?? "",
+      city: data.city,
+      country: props.address?.country || null,
+      phone: data.phoneNumber || null,
+    });
+    emit("submit-success");
   } catch (error) {
-    console.error("Address save failed:", error);
+    console.error("Address save failed:", domainErrorCode(error) ?? error);
     saveError.value = true;
   } finally {
     saving.value = false;

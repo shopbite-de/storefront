@@ -13,7 +13,7 @@ const isLoggedIn = ref(false);
 mockNuxtImport("useShopwareContext", () => () => ({
   apiClient: { invoke },
 }));
-mockNuxtImport("useUser", () => () => ({ isLoggedIn }));
+mockNuxtImport("useCustomer", () => () => ({ isLoggedIn }));
 
 function missingRoute() {
   const error = Object.create(ApiClientError.prototype) as ApiClientError<{

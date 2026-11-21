@@ -11,9 +11,8 @@ const mocks = vi.hoisted(() => ({
   login: vi.fn(),
 }));
 
-// accounts are still the Shopware layer's (step 6), a guest goes through
-// the BFF (ADR 0001, step 5)
-mockNuxtImport("useUser", () => () => ({
+// an account (step 6) and a guest (step 5) go through the BFF (ADR 0001)
+mockNuxtImport("useCustomer", () => () => ({
   register: mocks.register,
   login: mocks.login,
 }));
@@ -158,5 +157,43 @@ describe("login form with a preset (#443)", () => {
     expect(wrapper.get('[role="alert"]').text()).toContain(
       "Anmeldung fehlgeschlagen",
     );
+    expect(mocks.login).toHaveBeenCalledWith(
+      "giulia@example.com",
+      "geheim1234",
+    );
   });
+
+  it.each([
+    [
+      { statusCode: 401, data: { code: "invalid_credentials" } },
+      "Bitte überprüfen Sie Ihre Zugangsdaten.",
+    ],
+    [
+      { statusCode: 403, data: { code: "account_not_confirmed" } },
+      "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse",
+    ],
+    [
+      {
+        statusCode: 429,
+        data: { code: "rate_limited", details: { retryAfterSeconds: 10 } },
+      },
+      "Zu viele Anmeldeversuche. Bitte warten Sie 10 Sekunden",
+    ],
+    [
+      { statusCode: 503, data: { code: "backend_unavailable" } },
+      "Die Anmeldung hat gerade nicht geklappt.",
+    ],
+  ])(
+    "says why a login failed in the storefront's words (%#)",
+    async (data, text) => {
+      mocks.login.mockRejectedValue(createError(data));
+      const wrapper = await mountSuspended(LoginFormPreset);
+      await wrapper.get('input[name="email"]').setValue("giulia@example.com");
+      await wrapper.get('input[name="password"]').setValue("geheim1234");
+      await wrapper.find("form").trigger("submit");
+      await flushPromises();
+      expect(wrapper.get('[role="alert"]').text()).toContain(text);
+      expect(wrapper.get('[role="alert"]').text()).not.toContain("geheim1234");
+    },
+  );
 });

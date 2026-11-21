@@ -119,7 +119,7 @@ function isMissingRoute(error: unknown) {
 
 export function useWishlistEntries() {
   const { apiClient } = useShopwareContext();
-  const { isLoggedIn } = useUser();
+  const { isLoggedIn } = useCustomer();
 
   const entries = useState<WishlistEntry[]>(
     "shopbite-wishlist-entries",

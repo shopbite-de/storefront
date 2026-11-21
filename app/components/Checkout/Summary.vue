@@ -6,8 +6,8 @@ const { selectedShippingMethod, selection, refreshSelection } =
   useCheckoutMethods();
 const { refresh: refreshCart } = useCartData();
 const { orderer, refresh: refreshOrderer } = useCheckoutOrderer();
-// login and account registration are still the Shopware layer's (step 6)
-const { isLoggedIn } = useUser();
+// a login or an account registration in the checkout (ADR 0001, step 6)
+const { isLoggedIn } = useCustomer();
 const { acceptsOrders, refresh, checkAcceptsOrders } = useShopConfig();
 const { trackOrder } = useTrackEvent();
 const { placeOrder } = usePlaceOrder();
@@ -48,7 +48,7 @@ onMounted(() => {
   });
 });
 
-// a login or logout (Shopware layer) changes who orders and their methods
+// a login or logout changes who orders and their methods
 watch(isLoggedIn, () => {
   loadOrderer();
   refreshSelection().catch((error) => {

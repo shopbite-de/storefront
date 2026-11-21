@@ -3,37 +3,22 @@ import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
 import RegisterConfirmPage from "@/pages/registrierung/bestaetigen.vue";
 
-const { ApiClientErrorMock } = vi.hoisted(() => ({
-  ApiClientErrorMock: class extends Error {
-    details: unknown;
-    constructor(details: unknown) {
-      super("ApiClientError");
-      this.details = details;
-    }
-  },
-}));
-
-vi.mock("@shopware/api-client", () => ({
-  ApiClientError: ApiClientErrorMock,
-}));
-
+// The registration confirmation through the BFF (ADR 0001, step 6): the
+// link's parameters go to `/api/account/register/confirm` as they came;
+// refusals are domain codes.
 let query: Record<string, string> = {};
 mockNuxtImport("useRoute", () => () => ({ query }));
 
-const invokeMock = vi.fn();
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: { invoke: invokeMock },
+const { confirmMock, navigateToMock } = vi.hoisted(() => ({
+  confirmMock: vi.fn(),
+  navigateToMock: vi.fn(),
 }));
-
-const refreshSessionContextMock = vi.fn();
-mockNuxtImport("useSessionContext", () => () => ({
-  refreshSessionContext: refreshSessionContextMock,
+mockNuxtImport("useCustomer", () => () => ({
+  confirmRegistration: confirmMock,
 }));
 
 const refreshCartMock = vi.fn().mockResolvedValue(undefined);
 mockNuxtImport("useCartData", () => () => ({ refresh: refreshCartMock }));
-
-const { navigateToMock } = vi.hoisted(() => ({ navigateToMock: vi.fn() }));
 mockNuxtImport("navigateTo", () => navigateToMock);
 
 async function mountPage() {
@@ -45,56 +30,52 @@ async function mountPage() {
 describe("registrierung/bestaetigen", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
     query = { em: "em-hash", hash: "confirm-hash" };
   });
 
-  it("loads the new session and opens the account on success", async () => {
-    invokeMock.mockResolvedValueOnce({ data: {} });
+  it("confirms, loads the cart and opens the account on success", async () => {
+    confirmMock.mockResolvedValueOnce({ email: "gina@example.de" });
 
     await mountPage();
 
-    expect(invokeMock).toHaveBeenCalledWith(
-      "registerConfirm post /account/register-confirm",
-      { body: { em: "em-hash", hash: "confirm-hash" } },
-    );
-    expect(refreshSessionContextMock).toHaveBeenCalled();
+    expect(confirmMock).toHaveBeenCalledWith({
+      em: "em-hash",
+      hash: "confirm-hash",
+    });
     expect(refreshCartMock).toHaveBeenCalled();
     // the wishlist moves into the account in app.vue (login watch, #467)
     expect(navigateToMock).toHaveBeenCalledWith({ path: "/konto" });
   });
 
   it("removes the confirmation hashes from the address bar", async () => {
-    invokeMock.mockResolvedValueOnce({ data: {} });
+    confirmMock.mockResolvedValueOnce({});
     const replaceMock = vi.spyOn(useRouter(), "replace");
 
     await mountPage();
 
     expect(replaceMock).toHaveBeenCalledWith({ query: {} });
     expect(replaceMock.mock.invocationCallOrder[0]).toBeLessThan(
-      invokeMock.mock.invocationCallOrder[0]!,
+      confirmMock.mock.invocationCallOrder[0]!,
     );
   });
 
   it("shows an error and stays on the page when the link is invalid", async () => {
-    invokeMock.mockRejectedValueOnce(
-      new ApiClientErrorMock({
-        errors: [{ code: "CHECKOUT__CUSTOMER_NOT_FOUND_BY_HASH" }],
-      }),
+    confirmMock.mockRejectedValueOnce(
+      createError({ statusCode: 404, data: { code: "not_found" } }),
     );
 
     const wrapper = await mountPage();
 
     expect(wrapper.text()).toContain("Bestätigung fehlgeschlagen");
     expect(wrapper.text()).toContain("Kontakt");
-    expect(refreshSessionContextMock).not.toHaveBeenCalled();
+    expect(refreshCartMock).not.toHaveBeenCalled();
     expect(navigateToMock).not.toHaveBeenCalled();
   });
 
   it("tells the visitor to log in when the account is already confirmed", async () => {
-    invokeMock.mockRejectedValueOnce(
-      new ApiClientErrorMock({
-        errors: [{ code: "CHECKOUT__CUSTOMER_IS_ALREADY_CONFIRMED" }],
-      }),
+    confirmMock.mockRejectedValueOnce(
+      createError({ statusCode: 409, data: { code: "already_confirmed" } }),
     );
 
     const wrapper = await mountPage();
@@ -104,12 +85,12 @@ describe("registrierung/bestaetigen", () => {
     expect(navigateToMock).not.toHaveBeenCalled();
   });
 
-  it("does not call the API when the link parameters are missing", async () => {
+  it("does not call the BFF when the link parameters are missing", async () => {
     query = { em: "em-hash" };
 
     const wrapper = await mountPage();
 
-    expect(invokeMock).not.toHaveBeenCalled();
+    expect(confirmMock).not.toHaveBeenCalled();
     expect(wrapper.text()).toContain("Bestätigung fehlgeschlagen");
     expect(navigateToMock).not.toHaveBeenCalled();
   });

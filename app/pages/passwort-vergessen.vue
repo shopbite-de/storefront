@@ -9,20 +9,15 @@ useHead({
   ],
 });
 
-const { apiClient } = useShopwareContext();
+// through the BFF (ADR 0001, step 6): the same answer whether the e-mail
+// has an account or not
+const { requestPasswordReset } = useCustomer();
 
 const schema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse"),
 });
 
-async function sendRecoveryMail(email: string) {
-  await apiClient.invoke("sendRecoveryMail post /account/recovery-password", {
-    body: {
-      email,
-      storefrontUrl: useRuntimeConfig().public.storeUrl,
-    },
-  });
-}
+const sendRecoveryMail = (email: string) => requestPasswordReset(email);
 
 // Errors and the result show in the form (#445).
 const email = ref("");
@@ -44,7 +39,7 @@ async function onSubmit() {
     await sendRecoveryMail(parsed.data.email);
     result.value = "sent";
   } catch (error) {
-    console.error("Password recovery error:", error);
+    console.error("Password recovery error:", domainErrorCode(error));
     result.value = "failed";
   } finally {
     sending.value = false;

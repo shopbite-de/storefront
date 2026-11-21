@@ -3,17 +3,6 @@ import { nextTick } from "vue";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { flushPromises, type VueWrapper } from "@vue/test-utils";
 import RegistrationForm from "~/components/User/RegistrationForm.vue";
-import { ApiClientError } from "@shopware/api-client";
-
-vi.mock("@shopware/api-client", () => ({
-  ApiClientError: class extends Error {
-    details: unknown;
-    constructor(details: unknown) {
-      super("ApiClientError");
-      this.details = details;
-    }
-  },
-}));
 
 const { mockRegister, mockRegisterGuest, mockGetSuggestions } = vi.hoisted(
   () => ({
@@ -23,9 +12,8 @@ const { mockRegister, mockRegisterGuest, mockGetSuggestions } = vi.hoisted(
   }),
 );
 
-// an account is still created by the Shopware layer (step 6), a guest
-// goes through the BFF (ADR 0001, step 5)
-mockNuxtImport("useUser", () => () => ({
+// an account (step 6) and a guest (step 5) go through the BFF (ADR 0001)
+mockNuxtImport("useCustomer", () => () => ({
   register: mockRegister,
 }));
 mockNuxtImport("useCheckoutOrderer", () => () => ({
@@ -132,15 +120,10 @@ describe("RegistrationForm", () => {
     expect(wrapper.emitted("registration-success")).toHaveLength(1);
   });
 
-  it("shows the API error details of an account registration", async () => {
-    const apiClientError = new ApiClientError({
-      errors: [
-        {
-          detail: 'The email address "lirim@veliu.net" is already in use',
-        },
-      ],
-    } as unknown as ConstructorParameters<typeof ApiClientError>[0]);
-    mockRegister.mockRejectedValueOnce(apiClientError);
+  it("says in the storefront's words that the e-mail has an account", async () => {
+    mockRegister.mockRejectedValueOnce(
+      createError({ statusCode: 409, data: { code: "email_taken" } }),
+    );
     const wrapper = await mountSuspended(RegistrationForm);
 
     await fillRequiredFields(wrapper, "lirim@veliu.net");
@@ -153,8 +136,9 @@ describe("RegistrationForm", () => {
     const alert = wrapper.get('[role="alert"]');
     expect(alert.text()).toContain("Das hat nicht geklappt");
     expect(alert.text()).toContain(
-      'The email address "lirim@veliu.net" is already in use',
+      "Unter dieser E-Mail-Adresse gibt es schon ein Kundenkonto.",
     );
+    expect(alert.text()).not.toContain("geheim1234");
     expect(wrapper.emitted("registration-success")).toBeUndefined();
   });
 
@@ -243,9 +227,8 @@ describe("RegistrationForm", () => {
 
   it("registers a real customer account when allowGuest is false", async () => {
     mockRegister.mockResolvedValueOnce({
-      id: "customer-id",
-      active: true,
-      doubleOptInRegistration: false,
+      customer: { id: "customer-id", guest: false },
+      confirmationRequired: false,
     });
     const wrapper = await mountSuspended(RegistrationForm, {
       props: { allowGuest: false },
@@ -257,21 +240,26 @@ describe("RegistrationForm", () => {
     await submit(wrapper);
 
     expect(mockRegister).toHaveBeenCalled();
+    // the domain registration: the guest's details plus the password
     const calledData = mockRegister.mock.calls[0]![0];
-    expect(calledData.guest).toBe(false);
-    expect(calledData.password).toBe("supersecret");
+    expect(calledData).toMatchObject({
+      firstName: expect.any(String),
+      business: false,
+      password: "supersecret",
+      billingAddress: expect.objectContaining({ country: null }),
+    });
+    expect(calledData).not.toHaveProperty("guest");
+    expect(calledData).not.toHaveProperty("passwordConfirm");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.find('[role="status"]').exists()).toBe(false);
     expect(wrapper.emitted("registration-success")).toHaveLength(1);
   });
 
   it("asks for the e-mail confirmation on double opt-in registrations", async () => {
-    const customer = {
-      id: "customer-id",
-      active: false,
-      doubleOptInRegistration: true,
-    };
-    mockRegister.mockResolvedValueOnce(customer);
+    mockRegister.mockResolvedValueOnce({
+      customer: { id: "customer-id", guest: false },
+      confirmationRequired: true,
+    });
     const wrapper = await mountSuspended(RegistrationForm, {
       props: { allowGuest: false },
     });
@@ -284,6 +272,6 @@ describe("RegistrationForm", () => {
     expect(wrapper.get('[role="status"]').text()).toContain("Fast geschafft");
     const emitted = wrapper.emitted("registration-success");
     expect(emitted).toBeTruthy();
-    expect(emitted![0]![1]).toEqual(customer);
+    expect(emitted![0]![1]).toBe(true);
   });
 });

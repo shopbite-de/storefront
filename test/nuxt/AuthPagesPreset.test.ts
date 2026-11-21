@@ -4,21 +4,27 @@ import { flushPromises } from "@vue/test-utils";
 import PasswordForgotten from "~/pages/passwort-vergessen.vue";
 import PasswordReset from "~/pages/account/recover/password/index.vue";
 
-// Password pages of the presets (#445): results in the form, no toasts.
-const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
+// Password pages of the presets (#445): results in the form, no toasts;
+// through the BFF (ADR 0001, step 6).
+const mocks = vi.hoisted(() => ({
+  requestPasswordReset: vi.fn(),
+  resetPassword: vi.fn(),
+}));
 
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
   menuView: "bon",
 }));
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: { invoke: mocks.invoke },
+mockNuxtImport("useCustomer", () => () => ({
+  requestPasswordReset: mocks.requestPasswordReset,
+  resetPassword: mocks.resetPassword,
 }));
 
 describe("password pages with a preset (#445)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.invoke.mockReset();
+    mocks.requestPasswordReset.mockReset().mockResolvedValue(undefined);
+    mocks.resetPassword.mockReset().mockResolvedValue(undefined);
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -26,24 +32,19 @@ describe("password pages with a preset (#445)", () => {
     const wrapper = await mountSuspended(PasswordForgotten);
     await wrapper.find("form").trigger("submit");
     expect(wrapper.text()).toContain("Bitte geben Sie eine gültige E-Mail");
-    expect(mocks.invoke).not.toHaveBeenCalled();
+    expect(mocks.requestPasswordReset).not.toHaveBeenCalled();
 
     await wrapper.find('input[name="email"]').setValue("gast@example.de");
     await wrapper.find("form").trigger("submit");
     await flushPromises();
-    expect(mocks.invoke).toHaveBeenCalledWith(
-      "sendRecoveryMail post /account/recovery-password",
-      expect.objectContaining({
-        body: expect.objectContaining({ email: "gast@example.de" }),
-      }),
-    );
+    expect(mocks.requestPasswordReset).toHaveBeenCalledWith("gast@example.de");
     expect(wrapper.find('[role="status"]').text()).toContain(
       "E-Mail ist unterwegs",
     );
   });
 
   it("reports a failed recovery mail in the form", async () => {
-    mocks.invoke.mockRejectedValue(new Error("500"));
+    mocks.requestPasswordReset.mockRejectedValue(new Error("500"));
     const wrapper = await mountSuspended(PasswordForgotten);
     await wrapper.find('input[name="email"]').setValue("gast@example.de");
     await wrapper.find("form").trigger("submit");
@@ -66,23 +67,15 @@ describe("password pages with a preset (#445)", () => {
       .setValue("anders123");
     await wrapper.find("form").trigger("submit");
     expect(wrapper.text()).toContain("Passwörter stimmen nicht überein");
-    expect(mocks.invoke).not.toHaveBeenCalled();
+    expect(mocks.resetPassword).not.toHaveBeenCalled();
 
     await wrapper
       .find('input[name="newPasswordConfirm"]')
       .setValue("geheim123");
     await wrapper.find("form").trigger("submit");
     await flushPromises();
-    expect(mocks.invoke).toHaveBeenCalledWith(
-      "recoveryPassword post /account/recovery-password-confirm",
-      {
-        body: {
-          newPassword: "geheim123",
-          newPasswordConfirm: "geheim123",
-          hash: "abc",
-        },
-      },
-    );
+    // the link's hash is the token, the new password goes once
+    expect(mocks.resetPassword).toHaveBeenCalledWith("abc", "geheim123");
     expect(wrapper.find('[role="status"]').text()).toContain(
       "Ihr Passwort ist geändert",
     );

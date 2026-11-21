@@ -30,7 +30,7 @@ async function readLimitedBody(
 
 /**
  * Transitional (ADR 0001, steps 4 to 7): the Store API for the Shopware
- * layer in the browser (checkout, account, wishlist, contact), with the
+ * layer in the browser (wishlist, contact), with the
  * visitor's context token from the session instead of a cookie the browser
  * can read. See `server/adapters/shopware/sessionBridge.ts`.
  */
@@ -43,10 +43,9 @@ export default defineEventHandler(async (event) => {
   if (event.method === "GET" || event.method === "HEAD") {
     return forward(event, body, session);
   }
-  // Writes (registration, login, logout replace the token) run one after
-  // the other with the visitor's cart writes; one that waited behind a
-  // token change carries an outdated session: acting on it would use the
-  // replaced token (a throwaway cart). The browser has the new cookie and
+  // Writes run one after the other with the visitor's other writes; one
+  // that waited behind a token change (login, logout) carries an outdated
+  // session: acting on it would use the replaced token. The browser has the new cookie and
   // may send it again.
   const visitor = useVisitorSession(event);
   return visitor.exclusive(async () => {

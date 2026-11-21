@@ -1,5 +1,3 @@
-import { ApiClientError } from "@shopware/api-client";
-import type { Schemas } from "#shopware";
 import type { AddressInput, GuestDetails } from "../../shared/domain";
 import { createRegistrationSchema } from "~/validation/registrationSchema";
 import type {
@@ -44,7 +42,7 @@ export type RegistrationResult =
   | {
       ok: true;
       data: RegistrationSchema;
-      customer: Schemas["Customer"] | undefined;
+      /** Double opt-in: the e-mail is to be confirmed before the login. */
       needsConfirmation: boolean;
     }
   | { ok: false; message: string };
@@ -53,15 +51,15 @@ export type RegistrationResult =
  * State, schema and submit of the customer registration (#443) and of the
  * checkout's guest details (User/RegistrationForm.vue). `submit()` reports
  * the outcome; the form decides how to show it. A guest goes through the
- * BFF (`/api/checkout/guest`, ADR 0001 step 5); creating an account still
- * uses the Shopware layer until step 6.
+ * BFF (`/api/checkout/guest`, ADR 0001 step 5), an account too
+ * (`/api/account/register`, step 6).
  */
 export function useRegistrationForm(options: { allowGuest: boolean }) {
   const config = useRuntimeConfig();
   // Where to go after a successful registration is the caller's decision: the
   // registration page sends the visitor to the account, the checkout continues
   // with the order.
-  const { register } = useUser();
+  const { register } = useCustomer();
   const { registerGuest } = useCheckoutOrderer();
 
   const state = reactive({
@@ -115,14 +113,6 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
     },
   });
 
-  /**
-   * With double opt-in enabled in Shopware the customer stays inactive until the
-   * confirmation link is clicked, so there is no session to continue with.
-   */
-  function needsEmailConfirmation(customer: Schemas["Customer"] | undefined) {
-    return !!customer?.doubleOptInRegistration && !customer?.active;
-  }
-
   const billingAddressFields = ref();
   const shippingAddressFields = ref();
 
@@ -165,11 +155,10 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
         return {
           ok: true,
           data: registrationData as unknown as RegistrationSchema,
-          customer: undefined,
           needsConfirmation: false,
         };
       } catch (error) {
-        console.error("Guest details failed:", error);
+        console.error("Guest details failed:", domainErrorCode(error) ?? error);
         const code = domainErrorCode(error);
         return {
           ok: false,
@@ -182,28 +171,24 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
     }
 
     try {
-      const customer: Schemas["Customer"] | undefined =
-        // @ts-expect-error - password is required in the API type but not for guests
-        await register(registrationData);
+      // with double opt-in there is no login until the e-mail is confirmed
+      const answer = await register({
+        ...toGuestDetails(registrationData as unknown as RegistrationSchema),
+        password: data.password ?? "",
+      });
       return {
         ok: true,
         data: registrationData as unknown as RegistrationSchema,
-        customer,
-        needsConfirmation: needsEmailConfirmation(customer),
+        needsConfirmation: answer.confirmationRequired,
       };
     } catch (error) {
-      console.error("Registration failed:", error);
-      let message = "Bitte versuchen Sie es erneut.";
-      if (error instanceof ApiClientError) {
-        const errors = error.details?.errors;
-        if (Array.isArray(errors) && errors.length > 0) {
-          message = errors
-            .map((e) => e.detail || e.title)
-            .filter(Boolean)
-            .join("\n");
-        }
-      }
-      return { ok: false, message };
+      const code = domainErrorCode(error);
+      // the code only: the error of a request carries its body
+      console.error("Registration failed:", code ?? "no answer");
+      return {
+        ok: false,
+        message: registrationMessage(code, domainErrorDetails(error)),
+      };
     }
   }
 

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ApiClientError } from "@shopware/api-client";
-
 useSeoMeta({
   title: "Registrierung bestätigen",
 });
@@ -8,8 +6,7 @@ useSeoMeta({
 const route = useRoute();
 const router = useRouter();
 
-const { apiClient } = useShopwareContext();
-const { refreshSessionContext } = useSessionContext();
+const { confirmRegistration: confirm } = useCustomer();
 const { refresh: refreshCart } = useCartData();
 
 type ConfirmError = "invalid" | "already-confirmed";
@@ -28,16 +25,8 @@ const messages: Record<ConfirmError, { title: string; description: string }> = {
   },
 };
 
-function toConfirmError(e: unknown): ConfirmError {
-  const errors = e instanceof ApiClientError ? e.details?.errors : undefined;
-  if (
-    Array.isArray(errors) &&
-    errors.some((err) => err.code === "CHECKOUT__CUSTOMER_IS_ALREADY_CONFIRMED")
-  ) {
-    return "already-confirmed";
-  }
-  return "invalid";
-}
+const toConfirmError = (e: unknown): ConfirmError =>
+  domainErrorCode(e) === "already_confirmed" ? "already-confirmed" : "invalid";
 
 async function confirmRegistration() {
   const em = route.query.em;
@@ -51,18 +40,15 @@ async function confirmRegistration() {
   }
 
   try {
-    await apiClient.invoke("registerConfirm post /account/register-confirm", {
-      body: { em, hash },
-    });
+    // the link's parameters, passed on as they came (ADR 0001, step 6);
+    // the backend logs the customer in and the session is resealed
+    await confirm({ em, hash });
   } catch (e) {
-    console.error("Registration confirmation failed:", e);
+    console.error("Registration confirmation failed:", domainErrorCode(e));
     error.value = toConfirmError(e);
     return;
   }
 
-  // Shopware logs the customer in with the confirmation and switches the
-  // context token, so load the new session before opening the account.
-  await refreshSessionContext();
   refreshCart().catch((error) => console.error("[cart] refresh", error));
   await navigateTo({ path: "/konto" });
 }
