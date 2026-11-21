@@ -190,6 +190,22 @@ _Avoid_: shipping address
 Creating an account; with double opt-in the customer confirms the email first.
 _Avoid_: sign-up
 
+**Registration confirmation** ("Registrierung bestätigen"):
+The link in the e-mail of a registration with double opt-in; the account opens with it.
+_Avoid_: opt-in, activation
+
+**Login** ("Anmelden") and **Logout** ("Abmelden"):
+The customer opens and closes the account in the session; the visitor's cart joins the customer's on login.
+_Avoid_: sign-in, authentication
+
+**Password reset** ("Passwort vergessen", "Neues Passwort"):
+A link by e-mail that sets a new password; the storefront answers the same whether the e-mail has an account.
+_Avoid_: password recovery (outside the Shopware adapter)
+
+**Default address** ("Lieferadresse", "Rechnungsadresse" of the account):
+The address of the account an order uses for billing or delivery unless the customer changes it.
+_Avoid_: default shipping address, active address
+
 **Wishlist** ("Merkliste"):
 The configured dishes a guest or customer keeps for later; the same dish can be kept twice with different configurations.
 _Avoid_: favourites, wish list (two words)
@@ -301,3 +317,7 @@ These Shopware words stay inside the Shopware adapter. Code outside it, the UI a
 | `accountType: business`                             | business                                          |
 | sales channel context (selected methods)            | checkout selection                                |
 | `deepLinkCode`, `/account/order/…`                  | the order's e-mail link (not served yet)          |
+| customer address, `defaultShippingAddress`          | address, default delivery address                 |
+| `doubleOptInRegistration`, `register-confirm`       | registration confirmation                         |
+| recovery hash, `recovery-password`                  | password reset (token)                            |
+| `CUSTOMER_AUTH_THROTTLED`, rate limiter             | `rate_limited`                                    |
