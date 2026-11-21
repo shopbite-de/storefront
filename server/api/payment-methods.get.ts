@@ -1,5 +1,6 @@
 import type { components } from "~~/api-types/storeApiTypes";
 import { createResilientLoader } from "../utils/backoff";
+import { answerDomain } from "../utils/domainHttp";
 
 const load = createResilientLoader<string[]>();
 
@@ -10,17 +11,19 @@ const load = createResilientLoader<string[]>();
  */
 export default defineCachedEventHandler(
   (): Promise<string[]> =>
-    load("payment-methods", async () => {
-      const result = await storeApiPost<{
-        elements?: components["schemas"]["PaymentMethod"][];
-      }>("/payment-method", {
-        onlyAvailable: true,
-        includes: { payment_method: ["name", "translated"] },
-      });
-      return (result.elements ?? []).map(
-        (method) => method.translated?.name ?? method.name,
-      );
-    }),
+    answerDomain(() =>
+      load("payment-methods", async () => {
+        const result = await storeApiPost<{
+          elements?: components["schemas"]["PaymentMethod"][];
+        }>("/payment-method", {
+          onlyAvailable: true,
+          includes: { payment_method: ["name", "translated"] },
+        });
+        return (result.elements ?? []).map(
+          (method) => method.translated?.name ?? method.name,
+        );
+      }),
+    ),
   {
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.paymentMethods,
     name: "payment-methods",

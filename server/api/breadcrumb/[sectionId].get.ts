@@ -1,5 +1,6 @@
 import type { BreadcrumbItem } from "../../../shared/domain";
 import { createResilientLoader } from "../../utils/backoff";
+import { versionedKey } from "../../utils/cacheKeys";
 import { answerDomain } from "../../utils/domainHttp";
 
 // only real breadcrumbs are remembered, not the answers to random ids
@@ -25,6 +26,8 @@ export default defineCachedEventHandler(
     maxAge: useRuntimeConfig().public.shopBite.cacheTtl.category,
     name: "breadcrumb",
     getKey: (event) =>
-      `breadcrumb-${idParam(getRouterParam(event, "sectionId"), "sectionId")}`,
+      versionedKey(
+        `breadcrumb-${idParam(getRouterParam(event, "sectionId"), "sectionId")}`,
+      ),
   },
 );

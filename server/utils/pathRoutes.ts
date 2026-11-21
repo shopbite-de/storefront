@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import {
   isHostilePath,
+  isSafeRedirectTarget,
   mayBeKnownPath,
   pathKey,
   routeTo,
@@ -115,6 +116,14 @@ const cachedTarget = defineCachedFunction(
     if (!route) return { target: null, storable: false };
     const canonicalPath =
       route.kind === "redirect" ? route.to : route.canonicalPath;
+    // never a redirect to another host (`//host/`), whatever the backend says
+    if (!isSafeRedirectTarget(canonicalPath)) {
+      console.warn("Left out a route that is no storefront path", {
+        path,
+        canonicalPath,
+      });
+      return { target: null, storable: false };
+    }
     return {
       target: { sectionId: route.sectionId, canonicalPath },
       storable: storable(path, canonicalPath, unlisted),

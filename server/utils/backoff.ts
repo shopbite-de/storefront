@@ -1,4 +1,4 @@
-import { isDomainError } from "../../shared/domain";
+import { DomainError, isDomainError } from "../../shared/domain";
 
 /** How long a failed Shopware request pauses the next ones. */
 export const FAILURE_BACKOFF_MS = 30_000;
@@ -52,13 +52,19 @@ export function createResilientLoader<T>(
   backoff = createBackoff(),
 ) {
   const lastGood = new Map<string, T>();
-  const unavailable = () =>
-    Object.assign(new Error("Shopware unavailable"), { statusCode: 503 });
+  // a DomainError, so every route answers it as 503 with its code
+  const unavailable = (key: string, cause?: unknown) =>
+    new DomainError(
+      "backend_unavailable",
+      `The backend is paused after a failure (${key}).`,
+      {},
+      cause === undefined ? undefined : { cause },
+    );
 
   return async (key: string, load: () => Promise<T>): Promise<T> => {
     if (backoff.active()) {
       if (lastGood.has(key)) return lastGood.get(key)!;
-      throw unavailable();
+      throw unavailable(key);
     }
     try {
       const value = await load();
@@ -68,7 +74,7 @@ export function createResilientLoader<T>(
       if (!isOutage(error)) throw error;
       backoff.trip();
       if (lastGood.has(key)) return lastGood.get(key)!;
-      throw Object.assign(unavailable(), { cause: error });
+      throw unavailable(key, error);
     }
   };
 }

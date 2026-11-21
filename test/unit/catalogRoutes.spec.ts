@@ -114,7 +114,7 @@ describe("/api/menu/dishes/[dishId]/variant", () => {
     expect(opts).toMatchObject({ name: "variant", maxAge: CACHE_TTL.variant });
     expect(
       await opts!.getKey({ ...event, query: { options: `b|${GROSS}|b` } }),
-    ).toBe(`variant-${MARGHERITA}-${GROSS}|b`);
+    ).toBe(`v2-variant-${MARGHERITA}-${GROSS}|b`);
   });
 
   it("needs at least one option", async () => {

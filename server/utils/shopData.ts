@@ -1,5 +1,5 @@
 import type { H3Event } from "h3";
-import { DomainError, isDomainError } from "../../shared/domain";
+import { DomainError } from "../../shared/domain";
 import type { Backend } from "../ports";
 import { createBackoff, createResilientLoader, isOutage } from "./backoff";
 import { answerDomain } from "./domainHttp";
@@ -45,23 +45,16 @@ export function defineBackendData<T>(
   // one pause per value for its cached and its fresh reads
   const backoff = createBackoff();
   const load = createResilientLoader<T>(undefined, backoff);
-  const unavailable = (cause?: unknown) =>
+  const unavailable = () =>
     new DomainError(
       "backend_unavailable",
       `The backend is paused after a failure (${name}).`,
-      {},
-      cause === undefined ? undefined : { cause },
     );
   return {
     name,
-    cached: () =>
-      load(name, () => cached()).catch((error: unknown) => {
-        // the loader's own 503 (paused, no last good answer)
-        const status = (error as { statusCode?: number } | null)?.statusCode;
-        throw !isDomainError(error) && status === 503
-          ? unavailable(error)
-          : error;
-      }),
+    // the loader answers a pause without a last good answer as
+    // `backend_unavailable` itself
+    cached: () => load(name, () => cached()),
     fresh: async () => {
       if (backoff.active()) throw unavailable();
       try {
