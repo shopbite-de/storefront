@@ -2,8 +2,8 @@ import type { BackendSession } from "../../ports";
 
 /**
  * Transitional (ADR 0001, steps 4 to 7): the Shopware layer
- * (`@shopware/composables`) still runs checkout, account, wishlist and
- * contact in the browser. Its requests reach the Store API through the
+ * (`@shopware/composables`) still runs account, wishlist and contact in
+ * the browser (`BRIDGE_ROUTES`; cart and checkout moved behind the BFF). Its requests reach the Store API through the
  * storefront (`/api/store-api/**`), which adds the access key and the
  * visitor's context token from the session. The browser never receives the
  * token: not as a header, not in a JSON answer (`/context`, `/checkout/cart`
@@ -182,6 +182,58 @@ function isAllowedPath(path: string): boolean {
   );
 }
 
+/** An id segment of a Store API path (Shopware ids are 32 hex characters). */
+const ID = "[0-9a-fA-F]{32}";
+
+/**
+ * What the Shopware layer in the browser still needs (ADR 0001): the
+ * context it renders the account state from, the account (step 6:
+ * login, logout, registration, profile, password, addresses, the order
+ * list, deletion; the layer reads the cart after a login), the wishlist
+ * and the contact form (step 7). Cart, checkout, orders and payment moved
+ * behind the BFF (steps 4 and 5) and are refused here, like every other
+ * path: 404 without a request to Shopware.
+ */
+export const BRIDGE_ROUTES: readonly Readonly<{
+  method: string;
+  path: RegExp;
+}>[] = [
+  { method: "GET", path: /^context$/ },
+  // the layer's `useUser` refreshes its cart after a login (unused)
+  { method: "GET", path: /^checkout\/cart$/ },
+  {
+    method: "POST",
+    path: /^account\/(login|logout|register|register-confirm|customer|change-profile|change-email|change-password|recovery-password|recovery-password-confirm|list-address|address)$/,
+  },
+  {
+    method: "PATCH",
+    path: new RegExp(
+      `^account/address/(default-shipping/|default-billing/)?${ID}$`,
+    ),
+  },
+  { method: "DELETE", path: new RegExp(`^account/address/${ID}$`) },
+  { method: "DELETE", path: /^account\/customer$/ },
+  // the account's order list (`/konto/bestellungen`)
+  { method: "POST", path: /^order$/ },
+  { method: "POST", path: /^(salutation|country|contact-form)$/ },
+  { method: "POST", path: /^shopbite\/wishlist(\/add|\/merge)?$/ },
+  { method: "DELETE", path: new RegExp(`^shopbite/wishlist/${ID}$`) },
+  {
+    method: "POST",
+    path: new RegExp(`^customer/wishlist(/merge|/add/${ID})?$`),
+  },
+  {
+    method: "DELETE",
+    path: new RegExp(`^customer/wishlist/delete/${ID}$`),
+  },
+];
+
+export function isBridgedRoute(method: string, path: string): boolean {
+  return BRIDGE_ROUTES.some(
+    (route) => route.method === method && route.path.test(path),
+  );
+}
+
 export async function forwardStoreApiRequest(
   request: ForwardedRequest,
   options: Readonly<{
@@ -195,7 +247,9 @@ export async function forwardStoreApiRequest(
 ): Promise<ForwardedAnswer> {
   const method = request.method.toUpperCase();
   if (!METHODS.has(method)) return errorAnswer(405, "method_not_allowed");
-  if (!isAllowedPath(request.path)) return errorAnswer(404, "not_found");
+  if (!isAllowedPath(request.path) || !isBridgedRoute(method, request.path)) {
+    return errorAnswer(404, "not_found");
+  }
 
   const token = await options.session.read();
   const headers: Record<string, string> = {};

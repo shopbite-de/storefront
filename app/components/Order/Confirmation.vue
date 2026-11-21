@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useOrderDetails } from "@shopware/composables";
 import { formatDate } from "~/utils/formatDate";
 
 /**
  * Order confirmation and order page of the presets (#445): what the guest
  * sees right after ordering (`success`) and when opening the order later
- * (`detail`). Loads the order in the browser, like the Nuxt UI pages.
+ * (`detail`). Loads the order of the session in the browser
+ * (`useOrder`, ADR 0001 step 5).
  */
 const props = withDefaults(
   defineProps<{
@@ -15,14 +15,14 @@ const props = withDefaults(
   { kind: "detail" },
 );
 
-const { order, loadOrderDetails, status } = useOrderDetails(props.orderId);
+const { order, load } = useOrder(props.orderId);
 const { site } = useRuntimeConfig().public;
 
 const state = ref<"loading" | "ready" | "failed">("loading");
 
 onMounted(async () => {
   try {
-    await loadOrderDetails();
+    await load();
     state.value = order.value ? "ready" : "failed";
   } catch (error) {
     console.error("[order][load]", error);
@@ -46,9 +46,9 @@ onMounted(async () => {
       </h1>
       <p class="text-lg">
         Wir haben sie erhalten und bereiten sie jetzt vor.
-        <template v-if="order?.orderNumber">
+        <template v-if="order?.number">
           Ihre Bestellnummer ist
-          <strong class="tabular-nums">{{ order.orderNumber }}</strong>.
+          <strong class="tabular-nums">{{ order.number }}</strong>.
         </template>
       </p>
     </header>
@@ -57,10 +57,10 @@ onMounted(async () => {
         Bestellung
       </p>
       <h1 class="font-display text-4xl leading-tight tabular-nums sm:text-5xl">
-        {{ order?.orderNumber ?? "Ihre Bestellung" }}
+        {{ order?.number || "Ihre Bestellung" }}
       </h1>
-      <p v-if="order?.createdAt" class="text-sb-ink-muted">
-        {{ formatDate(order.createdAt) }}
+      <p v-if="order?.placedAt" class="text-sb-ink-muted">
+        {{ formatDate(order.placedAt) }}
       </p>
     </header>
 
@@ -90,7 +90,7 @@ onMounted(async () => {
       <h2 id="bestellung-details" class="mb-4 font-display text-2xl">
         Ihre Bestellung
       </h2>
-      <OrderDetail :order="order" :status="status" />
+      <OrderDetail :order="order" />
     </section>
 
     <section

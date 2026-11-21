@@ -1,11 +1,4 @@
 <script setup lang="ts">
-import { useOrderPayment, useOrderDetails } from "@shopware/composables";
-import type { Schemas } from "#shopware";
-
-const {
-  public: { storeUrl },
-} = useRuntimeConfig();
-
 useSeoMeta({
   title: "Zahlung fehlgeschlagen",
   robots: "noindex, nofollow",
@@ -14,19 +7,18 @@ useSeoMeta({
 const route = useRoute();
 const orderId = route.params.id as string;
 
-const { order, loadOrderDetails, status } = useOrderDetails(orderId);
-const { paymentMethods, getPaymentMethods } = useCheckout();
+// The order and its payment through the BFF (ADR 0001, step 5).
+const { order, load, retryPayment: startPayment } = useOrder(orderId);
+const { paymentMethods, loadPaymentMethods } = useCheckoutMethods();
 
 onMounted(async () => {
-  await Promise.all([loadOrderDetails(), getPaymentMethods()]);
+  await Promise.all([load(), loadPaymentMethods()]).catch((error) => {
+    console.error("[order][load]", error);
+  });
 });
 
-const orderRef = computed(() => order.value);
-const { handlePayment, paymentUrl, changePaymentMethod } =
-  useOrderPayment(orderRef);
-
 const currentPaymentMethodId = computed(
-  () => order.value?.transactions?.at(-1)?.paymentMethodId ?? "",
+  () => order.value?.paymentMethod.id ?? "",
 );
 const selectedPaymentMethodId = ref("");
 
@@ -41,9 +33,9 @@ watch(
 );
 
 const selectablePaymentMethods = computed(() =>
-  paymentMethods.value?.map((m: Schemas["PaymentMethod"]) => ({
-    label: m.distinguishableName ?? m.name,
-    value: m.id,
+  paymentMethods.value.map((method) => ({
+    label: method.name,
+    value: method.id,
   })),
 );
 
@@ -55,17 +47,14 @@ async function retryPayment() {
   isRetrying.value = true;
   retryError.value = false;
   try {
-    if (selectedPaymentMethodId.value !== currentPaymentMethodId.value) {
-      await changePaymentMethod(selectedPaymentMethodId.value);
-    }
-
-    await handlePayment(
-      `${storeUrl}/bestellung/${orderId}/erfolg`,
-      `${storeUrl}/bestellung/${orderId}/fehler`,
+    const redirectUrl = await startPayment(
+      selectedPaymentMethodId.value !== currentPaymentMethodId.value
+        ? selectedPaymentMethodId.value
+        : null,
     );
 
-    if (paymentUrl.value) {
-      await navigateTo(paymentUrl.value, { external: true });
+    if (redirectUrl) {
+      await navigateTo(redirectUrl, { external: true });
     } else {
       await navigateTo(`/bestellung/${orderId}/erfolg`);
     }
@@ -131,9 +120,9 @@ async function retryPayment() {
         class="rounded-sb-card border border-sb-line bg-sb-surface p-6"
       >
         <h2 id="bestellung-details" class="mb-4 font-display text-2xl">
-          Bestellung <span class="tabular-nums">{{ order.orderNumber }}</span>
+          Bestellung <span class="tabular-nums">{{ order.number }}</span>
         </h2>
-        <OrderDetail :order="order" :status="status ?? undefined" />
+        <OrderDetail :order="order" />
       </section>
     </template>
   </div>

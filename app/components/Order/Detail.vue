@@ -1,55 +1,42 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Order } from "../../../shared/domain";
 
 /**
  * Order details of the presets (#445): order facts as a description list,
- * the dishes as receipt lines and the totals. Every state is spelled out,
- * nothing depends on colour.
+ * the dishes as receipt lines and the totals, from the domain `Order`
+ * (ADR 0001, step 5). Every state is spelled out, nothing depends on
+ * colour.
  */
-const props = defineProps<{
-  order: Schemas["Order"];
-  status?: string;
-}>();
+const props = defineProps<{ order: Order }>();
 
-const { getFormattedPrice } = useCommercePrice();
+const { getFormattedMoney } = useCommercePrice();
 
-const lineItems = computed(
-  () =>
-    props.order.lineItems?.filter(
-      (item: Schemas["OrderLineItem"]) => item.parentId === null,
-    ) ?? [],
-);
-
-const transaction = computed(() => props.order.transactions?.at(-1));
-const paymentState = computed(() => {
-  const state = transaction.value?.stateMachineState;
-  return state?.translated?.name ?? state?.name;
+// The checkout's wished time ("Wunschlieferzeit"/"Wunschabholzeit" in the
+// order); another note of the guest where there is none.
+const wishedTime = computed(() => {
+  const wished = props.order.wishedTime;
+  return wished ? formatClock(wished.time.minutes) : (props.order.note ?? "");
 });
-const paymentMethod = computed(() => {
-  const method = transaction.value?.paymentMethod;
-  return method?.translated?.distinguishableName ?? method?.distinguishableName;
-});
-const shippingMethod = computed(() => {
-  const method = props.order.deliveries?.[0]?.shippingMethod;
-  return method?.translated?.name ?? method?.name;
-});
-// The checkout stores the chosen time as "Wunschlieferzeit: …" or
-// "Wunschabholzeit: …" (Summary.vue, wishedTimeComment).
-const wishedTime = computed(() => parseWishedTime(props.order.customerComment));
 
 // Restaurants sell gross prices; net orders (B2B) list the tax on top.
 const taxLabel = computed(() =>
-  props.order.taxStatus === "net" ? "zzgl. MwSt." : "enthaltene MwSt.",
+  props.order.taxIncluded ? "enthaltene MwSt." : "zzgl. MwSt.",
 );
 
 const facts = computed(() =>
   [
-    { label: "Status", value: props.status },
-    { label: "Lieferung oder Abholung", value: shippingMethod.value },
+    { label: "Status", value: ORDER_STATUS_LABEL[props.order.status] },
+    {
+      label: "Lieferung oder Abholung",
+      value: props.order.shippingMethod.name,
+    },
     { label: "Wunschzeit", value: wishedTime.value },
     {
       label: "Bezahlung",
-      value: [paymentMethod.value, paymentState.value]
+      value: [
+        props.order.paymentMethod.name,
+        PAYMENT_STATUS_LABEL[props.order.paymentStatus],
+      ]
         .filter(Boolean)
         .join(", "),
     },
@@ -68,22 +55,33 @@ const facts = computed(() =>
 
     <ul class="flex flex-col border-t border-sb-line">
       <li
-        v-for="item in lineItems"
-        :key="item.id"
+        v-for="line in order.lines"
+        :key="line.id"
         class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b border-sb-line py-3"
       >
         <span class="font-semibold [overflow-wrap:anywhere] hyphens-auto">
-          <span class="tabular-nums">{{ item.quantity }}×</span>
-          {{ item.label }}
+          <span class="tabular-nums">{{ line.quantity }}×</span>
+          {{ cartLineLabel(line) }}
         </span>
         <span class="font-semibold tabular-nums">{{
-          getFormattedPrice(item.totalPrice)
+          getFormattedMoney(line.totalPrice)
         }}</span>
-        <span
-          v-if="item.payload?.productNumber"
-          class="text-sm text-sb-ink-muted"
-          >Nr. {{ item.payload.productNumber }}</span
+        <span v-if="line.dishNumber" class="text-sm text-sb-ink-muted"
+          >Nr. {{ line.dishNumber }}</span
         >
+      </li>
+      <li
+        v-for="discount in order.discounts"
+        :key="`${discount.code ?? ''}-${discount.name}`"
+        class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b border-sb-line py-3"
+      >
+        <span class="font-semibold [overflow-wrap:anywhere] hyphens-auto">
+          <span class="tabular-nums">1×</span>
+          {{ discount.name }}
+        </span>
+        <span class="font-semibold tabular-nums">{{
+          getFormattedMoney(discount.amount)
+        }}</span>
       </li>
     </ul>
 
@@ -91,22 +89,22 @@ const facts = computed(() =>
       <div class="flex justify-between gap-4 text-sb-ink-muted">
         <dt>Lieferkosten</dt>
         <dd class="tabular-nums">
-          {{ getFormattedPrice(order.shippingTotal) }}
+          {{ getFormattedMoney(order.shippingCosts) }}
         </dd>
       </div>
       <div
-        v-for="tax in order.price?.calculatedTaxes"
-        :key="tax.taxRate"
+        v-for="tax in order.taxes"
+        :key="tax.rate"
         class="flex justify-between gap-4 text-sb-ink-muted"
       >
-        <dt>{{ taxLabel }} {{ tax.taxRate }} %</dt>
-        <dd class="tabular-nums">{{ getFormattedPrice(tax.tax) }}</dd>
+        <dt>{{ taxLabel }} {{ tax.rate }} %</dt>
+        <dd class="tabular-nums">{{ getFormattedMoney(tax.amount) }}</dd>
       </div>
       <div
         class="mt-1 flex justify-between gap-4 border-t-[1.5px] border-sb-ink pt-2 text-lg font-bold"
       >
         <dt>Gesamt</dt>
-        <dd class="tabular-nums">{{ getFormattedPrice(order.amountTotal) }}</dd>
+        <dd class="tabular-nums">{{ getFormattedMoney(order.total) }}</dd>
       </div>
     </dl>
   </div>

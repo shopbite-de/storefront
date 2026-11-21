@@ -4,75 +4,104 @@ import { flushPromises } from "@vue/test-utils";
 import { ref } from "vue";
 import ConfirmationPreset from "~/components/Order/Confirmation.vue";
 import DetailPreset from "~/components/Order/Detail.vue";
-import type { Schemas } from "#shopware";
+import type { Order } from "../../shared/domain";
+import { eur } from "../support/dishes";
 
-// Order confirmation and order page of the presets (#445).
+// Order confirmation and order page of the presets (#445), on the domain
+// order of the BFF (ADR 0001, step 5).
 const mocks = vi.hoisted(() => ({
-  loadOrderDetails: vi.fn(),
+  fetch: vi.fn(),
 }));
-const order = ref<Schemas["Order"] | undefined>(undefined);
 
-vi.mock("@shopware/composables", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@shopware/composables")>()),
-  useOrderDetails: () => ({
-    order,
-    status: ref("Offen"),
-    loadOrderDetails: mocks.loadOrderDetails,
-  }),
+const loaded = ref<Order | null>(null);
+mockNuxtImport("useOrder", () => (orderId: string) => ({
+  order: loaded,
+  load: async () => {
+    loaded.value = await mocks.fetch(`/api/orders/${orderId}`);
+    return loaded.value;
+  },
 }));
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
   menuView: "bon",
 }));
 mockNuxtImport("useCommercePrice", () => () => ({
-  getFormattedPrice: (value: number) => `${value} €`,
+  getFormattedMoney: (value: { amountMinor: number }) =>
+    `${value.amountMinor / 100} €`,
 }));
 
-const sampleOrder = {
+const address = {
+  id: "a-1",
+  salutation: null,
+  firstName: "Max",
+  lastName: "Muster",
+  company: null,
+  department: null,
+  street: "Musterstraße 1",
+  additionalLine: null,
+  postalCode: "12345",
+  city: "Musterstadt",
+  country: "DE",
+  phone: "0123456789",
+};
+
+const sampleOrder: Order = {
   id: "order-1",
-  orderNumber: "10042",
-  createdAt: "2026-10-08T17:30:00.000Z",
-  taxStatus: "gross",
-  customerComment: "Wunschlieferzeit: 19:15",
-  shippingTotal: 1,
-  amountTotal: 21.5,
-  price: { calculatedTaxes: [{ taxRate: 7, tax: 1.41 }] },
-  deliveries: [{ shippingMethod: { name: "Lieferung" } }],
-  transactions: [
-    {
-      paymentMethod: { distinguishableName: "Bar" },
-      stateMachineState: { name: "Offen" },
-    },
-  ],
-  lineItems: [
+  number: "10042",
+  placedAt: "2026-10-08T17:30:00.000Z",
+  status: "open",
+  paymentStatus: "open",
+  fulfillment: "delivery",
+  wishedTime: { date: "2026-10-08", time: { minutes: 19 * 60 + 15 } },
+  shippingMethod: { id: "sm-1", name: "Lieferung" },
+  paymentMethod: { id: "pm-1", name: "Bar" },
+  lines: [
     {
       id: "li-1",
-      parentId: null,
+      configuration: {
+        dishId: "d-1",
+        variantId: null,
+        extraIds: ["x-1"],
+        removedIngredientIds: [],
+      },
+      dishNumber: "LF-4",
+      name: "Pizza Margherita",
+      extras: [{ name: "Extra Käse", unitPrice: eur(150) }],
+      removedIngredients: ["Zwiebeln"],
       quantity: 2,
-      label: "Pizza Margherita",
-      totalPrice: 17,
-      payload: { productNumber: "LF-4" },
+      unitPrice: eur(1000),
+      totalPrice: eur(2000),
     },
-    { id: "li-2", parentId: "li-1", quantity: 1, label: "Extra Käse" },
   ],
-} as unknown as Schemas["Order"];
+  discounts: [
+    { code: "WILLKOMMEN", name: "Willkommensrabatt", amount: eur(-200) },
+  ],
+  subtotal: eur(1800),
+  shippingCosts: eur(100),
+  total: eur(1900),
+  taxes: [{ rate: 7, amount: eur(124) }],
+  taxIncluded: true,
+  billingAddress: address,
+  deliveryAddress: address,
+  email: "max@example.com",
+  note: null,
+};
 
 describe("order pages with a preset (#445)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    order.value = undefined;
+    loaded.value = null;
     Object.assign(useRuntimeConfig().public.site, {
       telephone: "0123 456789",
     });
   });
 
-  // shopbite#6: pickup orders store "Wunschabholzeit"
+  // shopbite#6: pickup orders have a wished pickup time
   it("shows the wished pickup time", async () => {
-    mocks.loadOrderDetails.mockImplementation(async () => {
-      order.value = {
-        ...sampleOrder,
-        customerComment: "Wunschabholzeit: 18:40",
-      } as Schemas["Order"];
+    mocks.fetch.mockResolvedValue({
+      ...sampleOrder,
+      fulfillment: "pickup",
+      wishedTime: { date: "2026-10-08", time: { minutes: 18 * 60 + 40 } },
     });
     const wrapper = await mountSuspended(ConfirmationPreset, {
       props: { orderId: "order-1", kind: "success" },
@@ -87,15 +116,14 @@ describe("order pages with a preset (#445)", () => {
   });
 
   it("thanks the guest and shows the order after loading", async () => {
-    mocks.loadOrderDetails.mockImplementation(async () => {
-      order.value = sampleOrder;
-    });
+    mocks.fetch.mockResolvedValue(sampleOrder);
     const wrapper = await mountSuspended(ConfirmationPreset, {
       props: { orderId: "order-1", kind: "success" },
     });
     expect(wrapper.find("h1").text()).toBe("Vielen Dank für Ihre Bestellung");
     await flushPromises();
 
+    expect(mocks.fetch).toHaveBeenCalledWith("/api/orders/order-1");
     expect(wrapper.text()).toContain("Ihre Bestellnummer ist 10042");
     const facts = wrapper
       .findAll("dl")[0]!
@@ -107,10 +135,13 @@ describe("order pages with a preset (#445)", () => {
       "Wunschzeit19:15",
       "BezahlungBar, Offen",
     ]);
-    // only top-level lines, the extra belongs to its container
+    // one receipt line per dish configuration, then the discount
     const lines = wrapper.findAll("li").map((li) => li.text());
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toContain("2× Pizza Margherita");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain("2× Pizza Margherita +Extra Käse -Zwiebeln");
+    expect(lines[0]).toContain("Nr. LF-4");
+    expect(lines[1]).toContain("Willkommensrabatt");
+    expect(lines[1]).toContain("-2 €");
     expect(wrapper.text()).toContain("enthaltene MwSt. 7 %");
 
     const call = wrapper.find('a[href^="tel:"]');
@@ -119,9 +150,7 @@ describe("order pages with a preset (#445)", () => {
   });
 
   it("titles the order page with the order number", async () => {
-    mocks.loadOrderDetails.mockImplementation(async () => {
-      order.value = sampleOrder;
-    });
+    mocks.fetch.mockResolvedValue(sampleOrder);
     const wrapper = await mountSuspended(ConfirmationPreset, {
       props: { orderId: "order-1" },
     });
@@ -130,7 +159,9 @@ describe("order pages with a preset (#445)", () => {
   });
 
   it("says when the order cannot be loaded", async () => {
-    mocks.loadOrderDetails.mockRejectedValue(new Error("403"));
+    mocks.fetch.mockRejectedValue(
+      Object.assign(new Error("404"), { statusCode: 404 }),
+    );
     vi.spyOn(console, "error").mockImplementation(() => {});
     const wrapper = await mountSuspended(ConfirmationPreset, {
       props: { orderId: "order-1", kind: "success" },
@@ -145,7 +176,7 @@ describe("order pages with a preset (#445)", () => {
 
   it("lists the tax on top for net orders", async () => {
     const wrapper = await mountSuspended(DetailPreset, {
-      props: { order: { ...sampleOrder, taxStatus: "net" } },
+      props: { order: { ...sampleOrder, taxIncluded: false } },
     });
     expect(wrapper.text()).toContain("zzgl. MwSt. 7 %");
   });

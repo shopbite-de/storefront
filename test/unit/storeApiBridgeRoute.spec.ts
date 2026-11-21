@@ -135,7 +135,7 @@ describe("/api/store-api/**", () => {
     fetchMock.mockImplementationOnce(answer("token-1"));
     await send(client, {
       method: "POST",
-      path: "/api/store-api/context",
+      path: "/api/store-api/account/customer",
       body: "{}",
     });
     const cookie = client.cookies.get("__Host-shopbite-session")!;
@@ -153,7 +153,7 @@ describe("/api/store-api/**", () => {
       }),
       send(tab2, {
         method: "POST",
-        path: "/api/store-api/checkout/cart/line-item",
+        path: "/api/store-api/account/login",
         body: "{}",
       }),
     ]);
@@ -175,7 +175,7 @@ describe("/api/store-api/**", () => {
     fetchMock.mockImplementationOnce(answer("token-1"));
     await send(client, {
       method: "POST",
-      path: "/api/store-api/context",
+      path: "/api/store-api/account/customer",
       body: "{}",
     });
     let running = 0;
@@ -210,7 +210,7 @@ describe("/api/store-api/**", () => {
     ]) {
       const { error } = await send(browser(), {
         method: "POST",
-        path: "/api/store-api/context",
+        path: "/api/store-api/account/customer",
         body: "{}",
         headers: { origin },
       });
@@ -218,7 +218,7 @@ describe("/api/store-api/**", () => {
     }
     const { error } = await send(browser(), {
       method: "POST",
-      path: "/api/store-api/context",
+      path: "/api/store-api/account/customer",
       body: "{}",
       headers: { origin: "https://evil.example" },
     });

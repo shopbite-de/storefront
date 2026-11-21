@@ -49,7 +49,7 @@ function forward(
   return forwardStoreApiRequest(
     {
       method: "POST",
-      path: "context",
+      path: "account/customer",
       search: "",
       headers: {},
       body: undefined,
@@ -98,7 +98,7 @@ describe("Store API bridge of the Shopware layer", () => {
     await forward(
       {
         method: "PATCH",
-        path: "context",
+        path: "account/address/0123456789abcdef0123456789abcdef",
         search: "?a=1",
         headers: {
           "content-type": "application/json",
@@ -108,13 +108,15 @@ describe("Store API bridge of the Shopware layer", () => {
           "sw-language-id": "lang",
           authorization: "Bearer x",
         },
-        body: new TextEncoder().encode('{"shippingMethodId":"x"}'),
+        body: new TextEncoder().encode('{"street":"x"}'),
       },
       { session: visitor.backend, send },
     );
 
     const [url, init] = send.mock.calls[0]!;
-    expect(url).toBe(`${ENDPOINT}/context?a=1`);
+    expect(url).toBe(
+      `${ENDPOINT}/account/address/0123456789abcdef0123456789abcdef?a=1`,
+    );
     expect(init.method).toBe("PATCH");
     expect(init.headers).toEqual({
       "content-type": "application/json",
@@ -124,7 +126,7 @@ describe("Store API bridge of the Shopware layer", () => {
       "x-forwarded-for": "203.0.113.7",
     });
     expect(new TextDecoder().decode(init.body as Uint8Array)).toBe(
-      '{"shippingMethodId":"x"}',
+      '{"street":"x"}',
     );
   });
 
@@ -252,7 +254,7 @@ describe("Store API bridge of the Shopware layer", () => {
 
     for (let i = 0; i < 3; i++) {
       const result = await forward(
-        { path: "checkout/cart/line-item" },
+        { path: "account/register" },
         { session: visitor.backend, send },
       );
       const text = new TextDecoder().decode(result.body!);
@@ -266,14 +268,14 @@ describe("Store API bridge of the Shopware layer", () => {
     const send = vi.fn<StoreApiSend>(async () =>
       answer(
         new TextEncoder().encode(
-          'No route found for "POST http://shopware:8000/store-api/nope" (token-1)',
+          'No route found for "POST http://shopware:8000/store-api/contact-form" (token-1)',
         ),
         { status: 404, contentType: "text/html; charset=UTF-8" },
       ),
     );
 
     const result = await forward(
-      { path: "nope" },
+      { path: "contact-form" },
       { session: visitor.backend, send },
     );
 
@@ -291,7 +293,7 @@ describe("Store API bridge of the Shopware layer", () => {
             {
               status: "405",
               detail:
-                'No route found for "PUT http://shopware:8000/store-api/context": Method Not Allowed',
+                'No route found for "POST http://shopware:8000/store-api/account/customer": Method Not Allowed',
             },
           ],
         },
@@ -299,13 +301,10 @@ describe("Store API bridge of the Shopware layer", () => {
       ),
     );
 
-    const result = await forward(
-      { method: "PUT" },
-      { session: visitor.backend, send },
-    );
+    const result = await forward({}, { session: visitor.backend, send });
 
     expect(json(result.body).errors[0].detail).toBe(
-      'No route found for "PUT /store-api/context": Method Not Allowed',
+      'No route found for "POST /store-api/account/customer": Method Not Allowed',
     );
   });
 
@@ -375,12 +374,12 @@ describe("Store API bridge of the Shopware layer", () => {
     const send = vi.fn<StoreApiSend>(async () => answers.shift()!);
 
     const text = await forward(
-      { method: "GET" },
+      { method: "GET", path: "context" },
       { session: visitor.backend, send },
     );
     expect(new TextDecoder().decode(text.body!)).toBe("token *** here");
     const pdf = await forward(
-      { method: "GET" },
+      { method: "GET", path: "context" },
       { session: visitor.backend, send },
     );
     expect(pdf.body).toEqual(
@@ -388,7 +387,7 @@ describe("Store API bridge of the Shopware layer", () => {
     );
   });
 
-  it("passes other content (a document download) through unchanged", async () => {
+  it("passes other content (a binary answer) through unchanged", async () => {
     const visitor = session("token-1");
     const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
     const send = vi.fn<StoreApiSend>(async () => {
@@ -401,7 +400,7 @@ describe("Store API bridge of the Shopware layer", () => {
     });
 
     const result = await forward(
-      { method: "GET", path: "document/download/abc/def" },
+      { method: "GET", path: "context" },
       { session: visitor.backend, send },
     );
 
@@ -424,6 +423,68 @@ describe("Store API bridge of the Shopware layer", () => {
     expect(json(result.body)).toEqual({
       errors: [{ status: "503", code: "backend_unavailable" }],
     });
+  });
+
+  it("forwards only what the layer still needs: account, wishlist, contact", async () => {
+    const visitor = session("token-1");
+    const send = vi.fn<StoreApiSend>(async () => answer({}));
+    const id = "0123456789abcdef0123456789abcdef";
+    const allowed: [string, string][] = [
+      ["GET", "context"],
+      ["GET", "checkout/cart"],
+      ["POST", "account/login"],
+      ["POST", "account/logout"],
+      ["POST", "account/register"],
+      ["POST", "account/customer"],
+      ["POST", "account/address"],
+      ["PATCH", `account/address/${id}`],
+      ["PATCH", `account/address/default-billing/${id}`],
+      ["DELETE", `account/address/${id}`],
+      ["DELETE", "account/customer"],
+      ["POST", "order"],
+      ["POST", "salutation"],
+      ["POST", "contact-form"],
+      ["POST", "shopbite/wishlist/merge"],
+      ["DELETE", `shopbite/wishlist/${id}`],
+      ["POST", "customer/wishlist"],
+    ];
+    for (const [method, path] of allowed) {
+      expect([
+        method,
+        path,
+        (await forward({ method, path }, { session: visitor.backend, send }))
+          .status,
+      ]).toEqual([method, path, 200]);
+    }
+    expect(send).toHaveBeenCalledTimes(allowed.length);
+    send.mockClear();
+
+    // moved behind the BFF (steps 4 and 5): checkout, orders, payment, cart writes
+    const moved: [string, string][] = [
+      ["POST", "checkout/order"],
+      ["POST", "handle-payment"],
+      ["POST", "order/payment"],
+      ["POST", "payment-method"],
+      ["POST", "shipping-method"],
+      ["PATCH", "context"],
+      ["POST", "checkout/cart/line-item"],
+      ["PATCH", "checkout/cart/line-item"],
+      ["POST", "checkout/cart/line-item/delete"],
+      ["DELETE", "checkout/cart"],
+      ["GET", "document/download/abc/def"],
+      ["POST", "account/address/../../checkout/order"],
+      ["PATCH", "account/address/not-an-id"],
+      ["POST", "product"],
+    ];
+    for (const [method, path] of moved) {
+      expect([
+        method,
+        path,
+        (await forward({ method, path }, { session: visitor.backend, send }))
+          .status,
+      ]).toEqual([method, path, 404]);
+    }
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("refuses paths outside the Store API and unknown methods", async () => {
