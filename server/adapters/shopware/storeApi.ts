@@ -28,6 +28,8 @@ export interface VisitorStoreApi {
     contextToken?: string;
     /** The visitor's address chain, sent as `X-Forwarded-For`. */
     forwardedFor?: string;
+    /** ms the transport waits (the order waits longer); its default else. */
+    timeoutMs?: number;
   }): Promise<{ data: T; contextToken: string | null }>;
 }
 
