@@ -2,18 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref } from "vue";
 import { useCheckoutMethodGuard } from "~/composables/useCheckoutMethodGuard";
-import type { Schemas } from "#shopware";
-import type { CartMessage, CartMessageCode } from "../../shared/domain";
+import type {
+  CartMessage,
+  CartMessageCode,
+  PaymentMethod,
+} from "../../shared/domain";
 
 const {
   mockRefreshCart,
-  mockGetShippingMethods,
   mockSetShippingMethod,
   mockGetPaymentMethods,
   mockSetPaymentMethod,
 } = vi.hoisted(() => ({
   mockRefreshCart: vi.fn(),
-  mockGetShippingMethods: vi.fn(),
   mockSetShippingMethod: vi.fn(),
   mockGetPaymentMethods: vi.fn(),
   mockSetPaymentMethod: vi.fn(),
@@ -23,9 +24,7 @@ const {
 // inside the composable factories, i.e. after module initialisation.
 // the cart's messages (domain codes)
 const cart = ref<CartMessage[]>([]);
-const sessionContext = ref<unknown>();
-const selectedShippingMethod = ref<Schemas["ShippingMethod"] | null>(null);
-const selectedPaymentMethod = ref<Schemas["PaymentMethod"] | null>(null);
+const selectedPaymentMethod = ref<PaymentMethod | null>(null);
 
 mockNuxtImport("useCartData", () => () => ({
   hasMessage: (code: CartMessageCode) =>
@@ -33,40 +32,27 @@ mockNuxtImport("useCartData", () => () => ({
   refresh: mockRefreshCart,
 }));
 
-mockNuxtImport("useCheckout", () => () => ({
-  getShippingMethods: mockGetShippingMethods,
-  setShippingMethod: mockSetShippingMethod,
-  selectedShippingMethod,
-  getPaymentMethods: mockGetPaymentMethods,
-  setPaymentMethod: mockSetPaymentMethod,
+// the checkout's methods from the BFF (ADR 0001, step 5); the shipping
+// method is never switched, so it is not part of the mock
+mockNuxtImport("useCheckoutMethods", () => () => ({
+  loadPaymentMethods: mockGetPaymentMethods,
+  selectPaymentMethod: mockSetPaymentMethod,
+  selectShippingMethod: mockSetShippingMethod,
   selectedPaymentMethod,
 }));
 
-mockNuxtImport("useSessionContext", () => () => ({
-  sessionContext,
-}));
-
-const delivery = {
-  id: "sm-delivery",
-  name: "Lieferung",
-  position: 1,
-} as Schemas["ShippingMethod"];
-const pickup = {
-  id: "sm-pickup",
-  name: "Abholung",
-  position: 2,
-} as Schemas["ShippingMethod"];
-
-const cash = {
-  id: "pm-cash",
-  name: "Cash",
-  distinguishableName: "Barzahlung",
-} as Schemas["PaymentMethod"];
-const paypal = {
-  id: "pm-paypal",
-  name: "PayPal",
-  distinguishableName: "PayPal",
-} as Schemas["PaymentMethod"];
+const method = (id: string, name: string, preferred: boolean) =>
+  ({
+    id,
+    name,
+    description: null,
+    media: null,
+    redirects: false,
+    preferred,
+  }) satisfies PaymentMethod;
+const cash = method("pm-cash", "Barzahlung", false);
+// the shop's default
+const paypal = method("pm-paypal", "PayPal", true);
 
 type KeyedMessage = CartMessage & { key: string };
 
@@ -101,16 +87,11 @@ describe("useCheckoutMethodGuard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     cart.value = cartWith({});
-    sessionContext.value = {
-      salesChannel: { shippingMethodId: pickup.id, paymentMethodId: paypal.id },
-    };
-    selectedShippingMethod.value = delivery;
     selectedPaymentMethod.value = cash;
     mockRefreshCart.mockResolvedValue(undefined);
     mockSetShippingMethod.mockResolvedValue(undefined);
     mockSetPaymentMethod.mockResolvedValue(undefined);
-    mockGetShippingMethods.mockResolvedValue(ref([delivery, pickup]));
-    mockGetPaymentMethods.mockResolvedValue(ref([cash, paypal]));
+    mockGetPaymentMethods.mockResolvedValue([cash, paypal]);
   });
 
   describe("ensureAvailableShippingMethod", () => {
@@ -121,7 +102,6 @@ describe("useCheckoutMethodGuard", () => {
       await expect(ensureAvailableShippingMethod()).resolves.toBe(true);
 
       expect(mockRefreshCart).toHaveBeenCalledTimes(1);
-      expect(mockGetShippingMethods).not.toHaveBeenCalled();
       expect(mockSetShippingMethod).not.toHaveBeenCalled();
       expect(isShippingMethodBlocked.value).toBe(false);
     });
@@ -137,14 +117,13 @@ describe("useCheckoutMethodGuard", () => {
       await expect(ensureAvailableShippingMethod()).resolves.toBe(false);
 
       expect(mockRefreshCart).toHaveBeenCalledTimes(1);
-      expect(mockGetShippingMethods).not.toHaveBeenCalled();
       expect(mockSetShippingMethod).not.toHaveBeenCalled();
       expect(isShippingMethodBlocked.value).toBe(true);
     });
   });
 
   describe("ensureAvailablePaymentMethod", () => {
-    it("switches to the sales-channel default payment method when blocked", async () => {
+    it("switches to the shop's default payment method when blocked", async () => {
       cart.value = cartWith({ [paymentBlocked.key]: paymentBlocked });
       mockRefreshCart.mockImplementationOnce(async () => {});
       nextRefreshSets({});
@@ -154,17 +133,15 @@ describe("useCheckoutMethodGuard", () => {
 
       await expect(ensureAvailablePaymentMethod()).resolves.toBe(true);
 
-      expect(mockGetPaymentMethods).toHaveBeenCalledWith({
-        forceReload: true,
-      });
-      expect(mockSetPaymentMethod).toHaveBeenCalledWith({ id: paypal.id });
+      expect(mockGetPaymentMethods).toHaveBeenCalledTimes(1);
+      expect(mockSetPaymentMethod).toHaveBeenCalledWith(paypal.id);
       expect(mockSetShippingMethod).not.toHaveBeenCalled();
       expect(isPaymentMethodBlocked.value).toBe(false);
     });
 
     it("returns false when no alternative payment method exists", async () => {
       cart.value = cartWith({ [paymentBlocked.key]: paymentBlocked });
-      mockGetPaymentMethods.mockResolvedValue(ref([cash]));
+      mockGetPaymentMethods.mockResolvedValue([cash]);
 
       const { ensureAvailablePaymentMethod, isPaymentMethodBlocked } =
         useCheckoutMethodGuard();
@@ -204,7 +181,7 @@ describe("useCheckoutMethodGuard", () => {
 
     it("returns false when the payment method cannot be resolved", async () => {
       cart.value = cartWith({ [paymentBlocked.key]: paymentBlocked });
-      mockGetPaymentMethods.mockResolvedValue(ref([cash]));
+      mockGetPaymentMethods.mockResolvedValue([cash]);
 
       const { ensureAvailableCheckoutMethods, isPaymentMethodBlocked } =
         useCheckoutMethodGuard();

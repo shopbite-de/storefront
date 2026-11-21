@@ -65,42 +65,41 @@ describe("cold caches during a Shopware outage", () => {
     vi.useRealTimers();
   });
 
-  const HANDLERS: { path: string; params: Record<string, string> }[] = [
-    { path: "../../server/api/payment-methods.get", params: {} },
-    // the top sellers: test/unit/catalogRoutes.spec.ts; navigations and
-    // breadcrumbs: test/unit/navigationRoutes.spec.ts
-  ];
-
-  for (const { path, params } of HANDLERS) {
-    it(`asks Shopware once per pause: ${path.split("/api/")[1]} ${JSON.stringify(params)}`, async () => {
-      const stubs = stubNitro();
-      stubs.storeApiGet!.mockRejectedValue(DOWN);
-      stubs.storeApiPost!.mockRejectedValue(DOWN);
-      const { handler } = await load<CachedHandler>(path);
-      const calls = () =>
-        stubs.storeApiGet!.mock.calls.length +
-        stubs.storeApiPost!.mock.calls.length;
-
-      for (let i = 0; i < 3; i++) {
-        await expect(handler({ params, context: {} })).rejects.toMatchObject({
-          statusCode: 503,
-        });
-      }
-      expect(calls()).toBe(1);
-
-      vi.setSystemTime(31_000);
-      await expect(handler({ params, context: {} })).rejects.toThrow();
-      expect(calls()).toBe(2);
-    });
+  /** The payment methods of the Restaurant schema come from the port. */
+  function paymentMethods() {
+    const listPaymentMethods = vi.fn();
+    stubNitro({ useBackend: () => ({ checkout: { listPaymentMethods } }) });
+    return listPaymentMethods;
   }
+  it("asks the backend once per pause: payment-methods", async () => {
+    const { DomainError } = await import("../../shared/domain");
+    const listPaymentMethods = paymentMethods();
+    listPaymentMethods.mockRejectedValue(
+      new DomainError("backend_unavailable", "down", {}, { cause: DOWN }),
+    );
+    const { handler } = await load<CachedHandler>(
+      "../../server/api/payment-methods.get",
+    );
+    for (let i = 0; i < 3; i++) {
+      await expect(handler({ params: {}, context: {} })).rejects.toMatchObject({
+        statusCode: 503,
+      });
+    }
+    expect(listPaymentMethods).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(31_000);
+    await expect(handler({ params: {}, context: {} })).rejects.toThrow();
+    expect(listPaymentMethods).toHaveBeenCalledTimes(2);
+  });
 
   it("serves the last good answer per key during an outage", async () => {
-    const stubs = stubNitro();
-    stubs
-      .storeApiPost!.mockResolvedValueOnce({
-        elements: [{ name: "Barzahlung" }],
-      })
-      .mockRejectedValue(DOWN);
+    const { DomainError } = await import("../../shared/domain");
+    const listPaymentMethods = paymentMethods();
+    listPaymentMethods
+      .mockResolvedValueOnce([{ id: "cash", name: "Barzahlung" }])
+      .mockRejectedValue(
+        new DomainError("backend_unavailable", "down", {}, { cause: DOWN }),
+      );
     const { handler } = await load<CachedHandler>(
       "../../server/api/payment-methods.get",
     );
@@ -108,13 +107,14 @@ describe("cold caches during a Shopware outage", () => {
     expect(await handler({})).toEqual(["Barzahlung"]);
     expect(await handler({})).toEqual(["Barzahlung"]);
     expect(await handler({})).toEqual(["Barzahlung"]);
-    expect(stubs.storeApiPost).toHaveBeenCalledTimes(2);
+    expect(listPaymentMethods).toHaveBeenCalledTimes(2);
   });
 
   it("does not take a client error for an outage", async () => {
-    const stubs = stubNitro();
-    stubs.storeApiPost!.mockRejectedValue(
-      Object.assign(new Error("400"), { statusCode: 400 }),
+    const { DomainError } = await import("../../shared/domain");
+    const listPaymentMethods = paymentMethods();
+    listPaymentMethods.mockRejectedValue(
+      new DomainError("invalid_value", "refused"),
     );
     const { handler } = await load<CachedHandler>(
       "../../server/api/payment-methods.get",
@@ -122,7 +122,7 @@ describe("cold caches during a Shopware outage", () => {
 
     await handler({}).catch(() => {});
     await handler({}).catch(() => {});
-    expect(stubs.storeApiPost).toHaveBeenCalledTimes(2);
+    expect(listPaymentMethods).toHaveBeenCalledTimes(2);
   });
 });
 

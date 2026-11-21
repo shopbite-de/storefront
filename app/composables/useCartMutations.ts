@@ -21,10 +21,9 @@ function isStaleSession(error: unknown): boolean {
   );
 }
 
-// Module-level so every component instance in the browser shares one
-// queue. On the server this state would be shared across requests, so
+// Module-level so every component instance in the browser shares them.
+// On the server this state would be shared across requests, so
 // server-side calls bypass it (see `enqueue`/`setQuantity`).
-let queue: Promise<unknown> = Promise.resolve();
 const pendingQuantities = new Map<string, number>();
 const queuedQuantityTasks = new Map<string, Promise<void>>();
 
@@ -32,7 +31,7 @@ const queuedQuantityTasks = new Map<string, Promise<void>>();
  * Cart writes through the BFF (`/api/cart/lines`, ADR 0001 step 4),
  * serialised and coalesced in the browser.
  *
- * One queue for all writes, a quantity change made while another is in
+ * One queue for all writes (shared with the checkout's, `queuedWrite`), a quantity change made while another is in
  * flight only sends the latest value, and a final failure leaves the cart
  * as it was: it is re-synced (#241). The server runs a visitor's writes one
  * after the other and retries Shopware's cart lock.
@@ -79,12 +78,8 @@ export function useCartMutations() {
         pendingCount.value--;
       }
     };
-    // No shared queue on the server: it would span unrelated requests.
-    if (import.meta.server) return run();
-
-    const result = queue.then(run, run);
-    queue = result;
-    return result;
+    // one queue with every other write of the storefront (`queuedWrite`)
+    return queuedWrite(run);
   }
 
   const changeQuantity = (lineId: Id, quantity: number) =>
@@ -140,9 +135,17 @@ export function useCartMutations() {
 
   function addLine(line: CartLineRequest) {
     return enqueue(() =>
-      write(() =>
-        $fetch<Cart>("/api/cart/lines", { method: "POST", body: line }),
-      ),
+      write(() => {
+        // keepalive: the write (and the session cookie of its answer)
+        // also completes when the guest leaves the page right away; the
+        // checkout looks again when it loads while the write still lands
+        noteCartWrite();
+        return $fetch<Cart>("/api/cart/lines", {
+          method: "POST",
+          body: line,
+          keepalive: true,
+        });
+      }),
     );
   }
 

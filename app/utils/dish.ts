@@ -105,8 +105,14 @@ export function cartLineHoldsDish(line: CartLine, dishId: string): boolean {
   );
 }
 
-/** A cart line as the receipt names it: `Name +Extra -Zutat`. */
-export function cartLineLabel(line: CartLine): string {
+/**
+ * A cart or order line as the receipt names it: `Name +Extra -Zutat`.
+ */
+export function cartLineLabel(
+  line: Pick<CartLine, "name" | "removedIngredients"> & {
+    extras: readonly Readonly<{ name: string }>[];
+  },
+): string {
   return [
     line.name,
     ...line.extras.map((extra) => `+${extra.name}`),

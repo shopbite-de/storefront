@@ -17,11 +17,10 @@ const mocks = vi.hoisted(() => ({
   ensureAvailableCheckoutMethods: vi.fn(),
 }));
 
-const selectedShippingMethod = ref<{ id: string; name: string } | null>({
-  id: "delivery",
-  name: "Lieferung",
+const selection = ref({
+  shippingMethodId: "delivery",
+  paymentMethodId: "cash",
 });
-const selectedPaymentMethod = ref({ id: "cash", distinguishableName: "Bar" });
 
 mockNuxtImport("useThemePreset", () => () => ({
   preset: "trattoria",
@@ -37,16 +36,17 @@ mockNuxtImport("useCommercePrice", () => () => ({
   getFormattedMoney: (value: { amountMinor: number }) =>
     `${value.amountMinor / 100} €`,
 }));
-mockNuxtImport("useCheckout", () => () => ({
+// the checkout's methods from the BFF (ADR 0001, step 5)
+mockNuxtImport("useCheckoutMethods", () => () => ({
+  selection,
   paymentMethods: ref([
-    { id: "cash", distinguishableName: "Bar" },
-    { id: "ec", distinguishableName: "EC-Karte" },
+    { id: "cash", name: "Bar", description: null },
+    { id: "ec", name: "EC-Karte", description: null },
   ]),
-  selectedPaymentMethod,
-  selectedShippingMethod,
-  setPaymentMethod: mocks.setPaymentMethod,
-  setShippingMethod: mocks.setShippingMethod,
-  getPaymentMethods: vi.fn(),
+  selectPaymentMethod: mocks.setPaymentMethod,
+  selectShippingMethod: mocks.setShippingMethod,
+  loadPaymentMethods: vi.fn(),
+  refreshSelection: vi.fn(),
 }));
 // all active methods, also those whose rule needs an address
 mockNuxtImport("useShippingMethodChoice", () => () => ({
@@ -81,7 +81,7 @@ const lineItem = cartLine({
 describe("cart and checkout with a preset (#443)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    selectedShippingMethod.value = { id: "delivery", name: "Lieferung" };
+    selection.value = { shippingMethodId: "delivery", paymentMethodId: "cash" };
   });
 
   it("shows a cart line with options and a stepper that removes at 1", async () => {
@@ -125,7 +125,7 @@ describe("cart and checkout with a preset (#443)", () => {
 
     await groups[0]!.findAll('[role="radio"]')[1]!.trigger("click");
     await flushPromises();
-    expect(mocks.setShippingMethod).toHaveBeenCalledWith({ id: "pickup" });
+    expect(mocks.setShippingMethod).toHaveBeenCalledWith("pickup");
     expect(mocks.refreshCart).toHaveBeenCalled();
   });
 });
@@ -133,7 +133,7 @@ describe("cart and checkout with a preset (#443)", () => {
 describe("useOrderMode (#443)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    selectedShippingMethod.value = { id: "delivery", name: "Lieferung" };
+    selection.value = { shippingMethodId: "delivery", paymentMethodId: "cash" };
   });
 
   it("switches the shipping method, then checks payment and the cart", async () => {
@@ -146,7 +146,7 @@ describe("useOrderMode (#443)", () => {
 
     selectedId.value = "pickup";
     await flushPromises();
-    expect(mocks.setShippingMethod).toHaveBeenCalledWith({ id: "pickup" });
+    expect(mocks.setShippingMethod).toHaveBeenCalledWith("pickup");
     expect(mocks.ensureAvailableCheckoutMethods).toHaveBeenCalled();
     expect(mocks.refreshCart).toHaveBeenCalled();
   });

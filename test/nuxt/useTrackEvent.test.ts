@@ -172,4 +172,50 @@ describe("useTrackEvent", () => {
       ["trackEvent", "Product", "AddToWishlist", "21"],
     ]);
   });
+
+  it("tracks an order with one item per dish configuration", () => {
+    setMatomoConfig("https://analytics.example.com/", 3);
+    matomoWindow._paq = [];
+    const eur = (amountMinor: number) => ({ amountMinor, currency: "EUR" });
+
+    useTrackEvent().trackOrder({
+      number: "10042",
+      total: eur(2350),
+      lines: [
+        {
+          id: "l1",
+          dishNumber: "21",
+          name: "Pizza Margherita",
+          extras: [{ name: "Extra Käse", unitPrice: eur(150) }],
+          removedIngredients: ["Zwiebeln"],
+          quantity: 2,
+          unitPrice: eur(1100),
+        },
+        {
+          id: "l2",
+          dishNumber: "80",
+          name: "Cola",
+          extras: [],
+          removedIngredients: [],
+          quantity: 1,
+          unitPrice: eur(150),
+        },
+      ],
+    } as unknown as Parameters<
+      ReturnType<typeof useTrackEvent>["trackOrder"]
+    >[0]);
+
+    expect(matomoWindow._paq).toEqual([
+      [
+        "addEcommerceItem",
+        "21",
+        "Pizza Margherita +Extra Käse -Zwiebeln",
+        false,
+        11,
+        2,
+      ],
+      ["addEcommerceItem", "80", "Cola", false, 1.5, 1],
+      ["trackEcommerceOrder", "10042", 23.5],
+    ]);
+  });
 });

@@ -91,6 +91,21 @@ async function cookieWith(
 }
 
 describe("visitor session", () => {
+  it("knows a session only by a cookie it can unseal", async () => {
+    const { visit } = setup();
+    const cookie = await cookieWith(visit, "token-1");
+    expect(await visit(jar({ [COOKIE]: cookie })).id()).toMatch(/\S/);
+    // malformed, or sealed with a password the shop dropped
+    const other = createSealer({ passwords: ["o".repeat(40)], name: COOKIE });
+    for (const value of [
+      "v1.garbage",
+      other.seal({ v: 1, sid: "x", ver: 1, t: Date.now(), s: { a: "b" } }),
+    ]) {
+      expect(await visit(jar({ [COOKIE]: value })).id()).toBeNull();
+    }
+    expect(await visit(jar()).id()).toBeNull();
+  });
+
   it("has no state and sets no cookie for a first visit", async () => {
     const { visit } = setup();
     const cookies = jar();

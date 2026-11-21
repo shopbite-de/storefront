@@ -20,10 +20,14 @@ export function useVoucherCode() {
     voucherLoading.value = true;
     voucherError.value = null;
     try {
-      const cart = await $fetch<Cart>("/api/cart/vouchers", {
-        method: "POST",
-        body: { code },
-      });
+      const cart = await queuedWrite(() =>
+        withStaleRetry(() =>
+          $fetch<Cart>("/api/cart/vouchers", {
+            method: "POST",
+            body: { code },
+          }),
+        ),
+      );
       setCart(cart);
       const refused = cart.messages.find(
         (message) =>
@@ -49,9 +53,13 @@ export function useVoucherCode() {
   async function removeVoucher(code: string) {
     try {
       setCart(
-        await $fetch<Cart>(`/api/cart/vouchers/${encodeURIComponent(code)}`, {
-          method: "DELETE",
-        }),
+        await queuedWrite(() =>
+          withStaleRetry(() =>
+            $fetch<Cart>(`/api/cart/vouchers/${encodeURIComponent(code)}`, {
+              method: "DELETE",
+            }),
+          ),
+        ),
       );
     } catch (error) {
       console.error("[voucher][remove]", error);

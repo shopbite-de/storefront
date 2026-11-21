@@ -126,6 +126,21 @@ export function useDeliveryTime(now: Ref<Date>) {
     return null;
   }
 
+  /**
+   * A chosen time as the order's wished time: its service date (tomorrow
+   * for a time past midnight in a window running into the night) and
+   * `HH:MM`; `null` outside `HH:MM` or without an open window.
+   */
+  function wishedTimeFor(time: string): { date: string; time: string } | null {
+    const minutes = minutesOf(time);
+    if (minutes === null || !schedule.value) return null;
+    const today = restaurantNow(now.value, schedule.value.timeZone).date;
+    return {
+      date: minutes >= MINUTES_PER_DAY ? shiftDate(today, 1) : today,
+      time: formatClock(minutes % MINUTES_PER_DAY),
+    };
+  }
+
   return {
     minTime,
     maxTime,
@@ -136,5 +151,6 @@ export function useDeliveryTime(now: Ref<Date>) {
     isWithinWindow,
     slotFor,
     validate,
+    wishedTimeFor,
   };
 }

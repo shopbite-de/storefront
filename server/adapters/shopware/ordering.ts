@@ -282,11 +282,20 @@ const REFUSALS: readonly [string, DomainErrorCode][] = [
 const fail = (code: DomainErrorCode, message: string, cause?: unknown) =>
   new DomainError(code, message, {}, cause ? { cause } : undefined);
 
-/** A cause for the log that carries no token or URL (status and codes only). */
-const causeOf = (error: unknown) =>
-  new Error(
-    `Shopware ${statusOf(error) ?? "gave no answer"}${errorCodes(error).length ? ` ${errorCodes(error).join(", ")}` : ""} (${(error as Error | null)?.name ?? "Error"})`,
+/**
+ * A cause for the log that carries no token or URL (status and codes
+ * only); a failure without an answer counts as an outage (503) for the
+ * BFF's backoff.
+ */
+const causeOf = (error: unknown) => {
+  const status = statusOf(error);
+  return Object.assign(
+    new Error(
+      `Shopware ${status ?? "gave no answer"}${errorCodes(error).length ? ` ${errorCodes(error).join(", ")}` : ""} (${(error as Error | null)?.name ?? "Error"})`,
+    ),
+    { statusCode: status ?? 503 },
   );
+};
 
 /** The fields Shopware's validation refused (`/email`, `/billingAddress/zipcode`). */
 const refusedFields = (error: unknown): string[] =>

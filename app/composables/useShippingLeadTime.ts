@@ -5,10 +5,12 @@
  * delivery without a lead time.
  */
 export function useShippingLeadTime() {
-  const { selectedShippingMethod } = useCheckout();
+  const { selection } = useCheckoutMethods();
   const { leadTimeFor } = useShippingMethods();
 
-  const current = computed(() => leadTimeFor(selectedShippingMethod.value?.id));
+  const current = computed(() =>
+    leadTimeFor(selection.value?.shippingMethodId),
+  );
 
   return {
     fulfillment: computed(() => current.value.fulfillment),

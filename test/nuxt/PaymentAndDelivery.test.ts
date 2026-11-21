@@ -17,22 +17,28 @@ const {
 
 // Shared so tests can simulate the session's methods changing.
 // Only read lazily inside the composable factory, after module init.
-const selectedPaymentMethod = ref({
-  id: "pm1",
-  distinguishableName: "Payment 1",
-});
-const selectedShippingMethod = ref({ id: "sm1", name: "Shipping 1" });
+const selection = ref({ shippingMethodId: "sm1", paymentMethodId: "pm1" });
 
-mockNuxtImport("useCheckout", () => () => ({
+const payment = (id: string, name: string) => ({
+  id,
+  name,
+  description: null,
+  media: null,
+  redirects: false,
+  preferred: false,
+});
+
+// the checkout's methods from the BFF (ADR 0001, step 5)
+mockNuxtImport("useCheckoutMethods", () => () => ({
+  selection,
   paymentMethods: ref([
-    { id: "pm1", distinguishableName: "Payment 1" },
-    { id: "pm2", distinguishableName: "Payment 2" },
+    payment("pm1", "Payment 1"),
+    payment("pm2", "Payment 2"),
   ]),
-  selectedPaymentMethod,
-  selectedShippingMethod,
-  setPaymentMethod: mockSetPaymentMethod,
-  setShippingMethod: mockSetShippingMethod,
-  getPaymentMethods: vi.fn(),
+  selectPaymentMethod: mockSetPaymentMethod,
+  selectShippingMethod: mockSetShippingMethod,
+  loadPaymentMethods: vi.fn(),
+  refreshSelection: vi.fn(),
 }));
 
 mockNuxtImport("useShippingMethodChoice", () => () => ({
@@ -59,11 +65,7 @@ mockNuxtImport("useCheckoutMethodGuard", () => () => ({
 describe("PaymentAndDelivery", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    selectedPaymentMethod.value = {
-      id: "pm1",
-      distinguishableName: "Payment 1",
-    };
-    selectedShippingMethod.value = { id: "sm1", name: "Shipping 1" };
+    selection.value = { shippingMethodId: "sm1", paymentMethodId: "pm1" };
   });
 
   it("resolves blocked checkout methods after loading the methods", async () => {
@@ -76,10 +78,7 @@ describe("PaymentAndDelivery", () => {
   it("syncs the radio when the session payment method changes without re-setting it", async () => {
     const wrapper = await mountSuspended(PaymentAndDelivery);
 
-    selectedPaymentMethod.value = {
-      id: "pm2",
-      distinguishableName: "Payment 2",
-    };
+    selection.value = { ...selection.value, paymentMethodId: "pm2" };
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     // @ts-expect-error - access internal state
@@ -90,7 +89,7 @@ describe("PaymentAndDelivery", () => {
   it("syncs the radio when the session shipping method changes without re-setting it", async () => {
     const wrapper = await mountSuspended(PaymentAndDelivery);
 
-    selectedShippingMethod.value = { id: "sm2", name: "Shipping 2" };
+    selection.value = { ...selection.value, shippingMethodId: "sm2" };
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     // @ts-expect-error - access internal state
@@ -112,7 +111,7 @@ describe("PaymentAndDelivery", () => {
     wrapper.vm.selectedPaymentMethodId = "pm2";
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(mockSetPaymentMethod).toHaveBeenCalledWith({ id: "pm2" });
+    expect(mockSetPaymentMethod).toHaveBeenCalledWith("pm2");
   });
 
   it("updates shipping method and refreshes cart when changed", async () => {
@@ -122,7 +121,7 @@ describe("PaymentAndDelivery", () => {
     wrapper.vm.selectedShippingMethodId = "sm2";
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(mockSetShippingMethod).toHaveBeenCalledWith({ id: "sm2" });
+    expect(mockSetShippingMethod).toHaveBeenCalledWith("sm2");
     expect(mockRefreshCart).toHaveBeenCalled();
   });
 

@@ -7,12 +7,18 @@ import LoginFormPreset from "~/components/User/LoginForm.vue";
 // Forms of the one-page checkout with a style preset (#443).
 const mocks = vi.hoisted(() => ({
   register: vi.fn(),
+  registerGuest: vi.fn(),
   login: vi.fn(),
 }));
 
+// accounts are still the Shopware layer's (step 6), a guest goes through
+// the BFF (ADR 0001, step 5)
 mockNuxtImport("useUser", () => () => ({
   register: mocks.register,
   login: mocks.login,
+}));
+mockNuxtImport("useCheckoutOrderer", () => () => ({
+  registerGuest: mocks.registerGuest,
 }));
 mockNuxtImport("useAddressAutocomplete", () => () => ({
   getSuggestions: vi.fn().mockResolvedValue([]),
@@ -63,9 +69,9 @@ describe("registration form with a preset (#443)", () => {
     expect(wrapper.get("#email").attributes("autocomplete")).toBe("email");
   });
 
-  it("registers a guest once the form is complete", async () => {
-    mocks.register.mockResolvedValue({ active: true });
-    const wrapper = await mountSuspended(RegistrationFormPreset);
+  async function fillGuest(
+    wrapper: Awaited<ReturnType<typeof mountSuspended>>,
+  ) {
     await wrapper.get("#firstName").setValue("Giulia");
     await wrapper.get("#lastName").setValue("Rossi");
     await wrapper.get("#email").setValue("giulia@example.com");
@@ -74,21 +80,57 @@ describe("registration form with a preset (#443)", () => {
     await wrapper.get("#billingAddress-city").setValue("Musterstadt");
     await wrapper.get("#billingAddress-phoneNumber").setValue("0123 4567890");
     await wrapper.get("#acceptedDataProtection").trigger("click");
+  }
+
+  it("registers a guest once the form is complete", async () => {
+    mocks.registerGuest.mockResolvedValue({});
+    const wrapper = await mountSuspended(RegistrationFormPreset);
+    await fillGuest(wrapper);
     await wrapper.find("form").trigger("submit");
     await flushPromises();
 
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
-    expect(mocks.register).toHaveBeenCalledWith(
-      expect.objectContaining({
-        guest: true,
-        email: "giulia@example.com",
-        billingAddress: expect.objectContaining({
-          firstName: "Giulia",
-          street: "Musterstraße 12",
-        }),
+    expect(mocks.registerGuest).toHaveBeenCalledWith({
+      email: "giulia@example.com",
+      salutation: null,
+      firstName: "Giulia",
+      lastName: "Rossi",
+      business: false,
+      billingAddress: {
+        salutation: null,
+        firstName: "Giulia",
+        lastName: "Rossi",
+        company: null,
+        department: null,
+        street: "Musterstraße 12",
+        additionalLine: null,
+        postalCode: "12345",
+        city: "Musterstadt",
+        country: null,
+        phone: "0123 4567890",
+      },
+      deliveryAddress: null,
+    });
+    expect(mocks.register).not.toHaveBeenCalled();
+    expect(wrapper.emitted("registration-success")).toHaveLength(1);
+  });
+
+  it("says what went wrong when the guest's details are refused", async () => {
+    mocks.registerGuest.mockRejectedValue(
+      Object.assign(new Error("400"), {
+        statusCode: 400,
+        data: { data: { code: "invalid_value" } },
       }),
     );
-    expect(wrapper.emitted("registration-success")).toHaveLength(1);
+    const wrapper = await mountSuspended(RegistrationFormPreset);
+    await fillGuest(wrapper);
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toContain(
+      "Bitte prüfen Sie Ihre Angaben.",
+    );
+    expect(wrapper.emitted("registration-success")).toBeUndefined();
   });
 });
 
