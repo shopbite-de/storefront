@@ -16,6 +16,20 @@ export interface StoreApi {
 }
 
 /**
+ * The Store API for one visitor: the request carries the visitor's context
+ * token (none for a new visitor), the answer the token Shopware holds the
+ * visitor's context under (a new one on the first request, after login …).
+ */
+export interface VisitorStoreApi {
+  send<T>(request: {
+    method: "GET" | "POST" | "PATCH";
+    path: string;
+    body?: Record<string, unknown>;
+    contextToken?: string;
+  }): Promise<{ data: T; contextToken: string | null }>;
+}
+
+/**
  * Lets concurrent GETs of the same path share one request while it is in
  * flight (the browser asks for the configuration and the shipping methods
  * at once, both read the plugin's `/shopbite/config`; every catalog answer

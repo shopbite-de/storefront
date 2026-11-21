@@ -45,3 +45,32 @@ export function storeApiGet<T>(
     retry: 0,
   }) as Promise<T>;
 }
+
+/**
+ * A Store API request for one visitor (the Shopware adapter's cart): with
+ * the visitor's context token, answering the token Shopware holds the
+ * context under.
+ */
+export async function storeApiForVisitor<T>(request: {
+  method: "GET" | "POST" | "PATCH";
+  path: string;
+  body?: Record<string, unknown>;
+  contextToken?: string;
+}): Promise<{ data: T; contextToken: string | null }> {
+  const { endpoint, accessToken } = useRuntimeConfig().public.shopware;
+  const response = await $fetch.raw<T>(`${endpoint}${request.path}`, {
+    method: request.method,
+    headers: {
+      "sw-access-key": accessToken,
+      ...(request.contextToken
+        ? { "sw-context-token": request.contextToken }
+        : {}),
+    },
+    body: request.body,
+    retry: 0,
+  });
+  return {
+    data: response._data as T,
+    contextToken: response.headers.get("sw-context-token"),
+  };
+}

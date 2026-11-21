@@ -1,6 +1,6 @@
 import { DomainError } from "../../../shared/domain";
 
-const statusOf = (error: unknown): number | undefined => {
+export const statusOf = (error: unknown): number | undefined => {
   const value = error as {
     statusCode?: number;
     status?: number;
