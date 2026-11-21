@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
-
 // The one-page checkout of the presets shows shipping and payment as
 // separate numbered sections (#443).
 const props = withDefaults(
@@ -9,13 +7,13 @@ const props = withDefaults(
 );
 
 const {
+  selection,
   paymentMethods,
-  getPaymentMethods,
-  selectedPaymentMethod,
-  setPaymentMethod,
-  selectedShippingMethod,
-  setShippingMethod,
-} = useCheckout();
+  loadPaymentMethods,
+  refreshSelection,
+  selectPaymentMethod,
+  selectShippingMethod,
+} = useCheckoutMethods();
 
 const { methods: shippingMethods, load: loadShippingMethods } =
   useShippingMethodChoice();
@@ -24,30 +22,27 @@ const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
 
 // Presets: shipping first (payment rules can depend on it), as cards (#443).
 const shippingOptions = computed(() =>
-  (shippingMethods.value ?? []).map((method: Schemas["ShippingMethod"]) => ({
+  shippingMethods.value.map((method) => ({
     value: method.id,
-    label: method.translated?.name ?? method.name,
-    description:
-      method.translated?.description ?? method.description ?? undefined,
+    label: method.name,
+    description: method.description ?? undefined,
   })),
 );
 const paymentOptions = computed(() =>
-  (paymentMethods.value ?? []).map((method: Schemas["PaymentMethod"]) => ({
+  paymentMethods.value.map((method) => ({
     value: method.id,
-    label: method.distinguishableName ?? method.name,
-    description:
-      method.translated?.description ?? method.description ?? undefined,
+    label: method.name,
+    description: method.description ?? undefined,
   })),
 );
 const shippingModel = computed({
-  get: () =>
-    (selectedShippingMethodId.value as string | undefined) ?? undefined,
+  get: () => selectedShippingMethodId.value ?? undefined,
   set: (value: string | undefined) => {
     selectedShippingMethodId.value = value;
   },
 });
 const paymentModel = computed({
-  get: () => (selectedPaymentMethodId.value as string | undefined) ?? undefined,
+  get: () => selectedPaymentMethodId.value ?? undefined,
   set: (value: string | undefined) => {
     selectedPaymentMethodId.value = value;
   },
@@ -55,7 +50,11 @@ const paymentModel = computed({
 
 onMounted(async () => {
   try {
-    await Promise.all([getPaymentMethods(), loadShippingMethods()]);
+    await Promise.all([
+      loadPaymentMethods(),
+      loadShippingMethods(),
+      selection.value ? undefined : refreshSelection(),
+    ]);
     await ensureAvailableCheckoutMethods();
   } catch (error) {
     console.error("[checkout][PaymentAndDelivery][onMounted]", error);
@@ -63,33 +62,39 @@ onMounted(async () => {
 });
 
 const selectedPaymentMethodId = ref<string | undefined>(
-  selectedPaymentMethod.value?.id,
+  selection.value?.paymentMethodId ?? undefined,
 );
 const selectedShippingMethodId = ref<string | undefined>(
-  selectedShippingMethod.value?.id,
+  selection.value?.shippingMethodId ?? undefined,
 );
 
 // Keep the radios in sync when the session's methods change elsewhere
 // (e.g. the guard switched away from a blocked method).
-watch(selectedPaymentMethod, (method) => {
-  selectedPaymentMethodId.value = method?.id;
-});
-watch(selectedShippingMethod, (method) => {
-  selectedShippingMethodId.value = method?.id;
-});
+watch(
+  () => selection.value?.paymentMethodId,
+  (id) => {
+    selectedPaymentMethodId.value = id ?? undefined;
+  },
+);
+watch(
+  () => selection.value?.shippingMethodId,
+  (id) => {
+    selectedShippingMethodId.value = id ?? undefined;
+  },
+);
 
 watch(selectedPaymentMethodId, async (newValue: string | undefined) => {
   if (newValue === undefined) return;
-  if (selectedPaymentMethod.value === null) return;
-  if (newValue === selectedPaymentMethod.value.id) return;
-  await setPaymentMethod({ id: newValue as string });
+  if (!selection.value) return;
+  if (newValue === selection.value.paymentMethodId) return;
+  await selectPaymentMethod(newValue);
 });
 
 watch(selectedShippingMethodId, async (newValue: string | undefined) => {
   if (newValue === undefined) return;
-  if (selectedShippingMethod.value === null) return;
-  if (newValue === selectedShippingMethod.value.id) return;
-  await setShippingMethod({ id: newValue as string });
+  if (!selection.value) return;
+  if (newValue === selection.value.shippingMethodId) return;
+  await selectShippingMethod(newValue);
   await refreshCart();
 });
 </script>

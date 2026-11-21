@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import QuickView from "~/components/Cart/QuickView.vue";
 import { useIntervalFn } from "@vueuse/core";
-import { useOrderPayment } from "@shopware/composables";
 
-const { createOrder, selectedPaymentMethod, selectedShippingMethod } =
-  useCheckout();
+const { selectedShippingMethod, selection, refreshSelection } =
+  useCheckoutMethods();
 const { refresh: refreshCart } = useCartData();
-const { isLoggedIn, isGuestSession, refreshUser } = useUser();
+const { orderer, refresh: refreshOrderer } = useCheckoutOrderer();
+// login and account registration are still the Shopware layer's (step 6)
+const { isLoggedIn } = useUser();
 const { acceptsOrders, refresh, checkAcceptsOrders } = useShopConfig();
-const { fulfillment } = useShippingLeadTime();
 const { trackOrder } = useTrackEvent();
+const { placeOrder } = usePlaceOrder();
 const { isLoading: isLoadingOpeningHours, hasFailed: hasOpeningHoursFailed } =
   useOpeningHoursData();
 const {
@@ -18,48 +19,52 @@ const {
   ensureAvailableCheckoutMethods,
 } = useCheckoutMethodGuard();
 
-const {
-  public: { storeUrl },
-} = useRuntimeConfig();
-
 // The one-page checkout (#443): errors show in the form, next to the order
 // button.
-const orderError = ref<{ title: string; description: string } | null>(null);
+const { message: orderError } = useCheckoutOrderMessage();
 
-function reportError(message: { title: string; description: string }) {
+function reportError(message: CheckoutOrderMessage) {
   orderError.value = message;
+}
+
+function loadOrderer() {
+  refreshOrderer().catch((error) => {
+    console.error("[checkout][orderer]", error);
+  });
 }
 
 // The switch that accepts orders stays live (?fresh=1); the lead times are
 // loaded live once after hydration (useLiveShopData).
 onMounted(() => {
   refresh();
-  refreshUser({
-    associations: {
-      defaultShippingAddress: {},
-      defaultBillingAddress: {},
-      activeShippingAddress: {},
-      activeBillingAddress: {},
-    },
-  });
+  loadOrderer();
+  if (!selection.value) {
+    refreshSelection().catch((error) => {
+      console.error("[checkout][selection]", error);
+    });
+  }
   ensureAvailableCheckoutMethods().catch((error) => {
     console.error("[checkout][ensureAvailableCheckoutMethods]", error);
+  });
+});
+
+// a login or logout (Shopware layer) changes who orders and their methods
+watch(isLoggedIn, () => {
+  loadOrderer();
+  refreshSelection().catch((error) => {
+    console.error("[checkout][selection]", error);
   });
 });
 
 useIntervalFn(refresh, 10000);
 
 const shippingMethodName = computed(
-  () =>
-    selectedShippingMethod.value?.translated?.name ??
-    selectedShippingMethod.value?.name ??
-    "Die Versandart",
+  () => selectedShippingMethod.value?.name || "Die Versandart",
 );
 
-const createdOrder = ref<Awaited<ReturnType<typeof createOrder>> | null>(null);
-const { handlePayment, paymentUrl } = useOrderPayment(
-  computed(() => createdOrder.value),
-);
+// the wished time with its service date, as the order carries it
+const clock = ref(new Date());
+const { wishedTimeFor } = useDeliveryTime(clock);
 
 /**
  * The shipping or payment method may have become unavailable since the
@@ -124,44 +129,60 @@ async function handleCreateOrder() {
     if (!(await isCheckoutStillEnabled())) return;
     if (!(await hasAvailableCheckoutMethods())) return;
 
-    const order = await createOrder({
-      customerComment: wishedTimeComment(
-        fulfillment.value,
-        selectedDeliveryTime.value,
-      ),
-    });
+    clock.value = new Date();
+    const wishedTime = wishedTimeFor(selectedDeliveryTime.value);
+    if (!wishedTime) throw new Error("no wished time");
 
-    trackOrder(order);
-    createdOrder.value = order;
+    const placed = await placeOrder({ wishedTime });
+    trackOrder(placed.order);
 
-    await handlePayment(
-      `${storeUrl}/bestellung/${order.id}/erfolg`,
-      `${storeUrl}/bestellung/${order.id}/fehler`,
-    );
-
-    if (paymentUrl.value) {
-      await navigateTo(paymentUrl.value, { external: true });
+    // the order emptied the cart, also before a payment elsewhere
+    await refreshCart().catch(() => {});
+    if (placed.redirectUrl) {
+      await navigateTo(placed.redirectUrl, { external: true });
+      return;
+    }
+    if (placed.paymentFailed) {
+      await navigateTo(`/bestellung/${placed.order.id}/fehler`);
       return;
     }
 
-    await refreshCart();
-    navigateTo(`/bestellung/${order.id}/erfolg`);
+    navigateTo(`/bestellung/${placed.order.id}/erfolg`);
   } catch (error) {
     console.error("[checkout][createOrder]", error);
-    reportError({
-      title: "Bestellung fehlgeschlagen",
-      description:
-        "Deine Bestellung konnte nicht aufgegeben werden. Bitte prüfe deine Angaben und versuche es erneut.",
-    });
-    await refreshCart().catch(() => {});
+    const code = domainErrorCode(error);
+    const placedId = domainErrorDetails(error).orderId;
+    reportError(
+      code === "order_already_placed" && typeof placedId === "string"
+        ? {
+            title: "Deine Bestellung ist bereits eingegangen.",
+            description: "Du musst nicht erneut bestellen.",
+            link: {
+              to: `/bestellung/${placedId}`,
+              label: "Zur Bestellung",
+            },
+          }
+        : code === "order_status_unknown"
+          ? {
+              title: "Bestellung nicht bestätigt",
+              description:
+                "Wir konnten nicht feststellen, ob deine Bestellung eingegangen ist. Bitte prüfe dein E-Mail-Postfach oder ruf uns an, bevor du erneut bestellst.",
+            }
+          : {
+              title: "Bestellung fehlgeschlagen",
+              description:
+                "Deine Bestellung konnte nicht aufgegeben werden. Bitte prüfe deine Angaben und versuche es erneut.",
+            },
+    );
+    // an empty cart would replace this page (and the message) with the
+    // empty state: keep it for the order already placed
+    if (code !== "order_already_placed") await refreshCart().catch(() => {});
   } finally {
     isPlacingOrder.value = false;
   }
 }
 
-const customerDataAvailable = computed<boolean>(
-  () => isLoggedIn.value || isGuestSession.value,
-);
+const customerDataAvailable = computed<boolean>(() => !!orderer.value);
 
 // Delivery rules need the shipping address: once the guest has saved it,
 // the cart tells whether the chosen method works there.
@@ -176,7 +197,8 @@ watch(
 );
 
 const shippingAndPaymentSet = computed(
-  () => selectedPaymentMethod.value && selectedShippingMethod.value,
+  () =>
+    !!selection.value?.paymentMethodId && !!selection.value?.shippingMethodId,
 );
 
 const isValidToProceed = computed(
@@ -307,17 +329,7 @@ const checkoutButtonLabel = computed<string>(() => {
       </h2>
       <QuickView :with-upsell="true" />
       <CheckoutVoucherInput />
-      <div
-        v-if="orderError"
-        role="alert"
-        class="flex gap-3 rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
-      >
-        <span class="font-bold text-sb-danger">!</span>
-        <span>
-          <strong class="block">{{ orderError.title }}</strong>
-          {{ orderError.description }}
-        </span>
-      </div>
+      <CheckoutOrderMessage />
       <SbButton
         block
         size="lg"

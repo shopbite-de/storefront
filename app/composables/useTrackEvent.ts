@@ -1,5 +1,5 @@
-import type { Schemas } from "#shopware";
-import type { Dish } from "../../shared/domain";
+import type { Dish, Order } from "../../shared/domain";
+import { cartLineLabel } from "../utils/dish";
 import { moneyAmount } from "../utils/money";
 
 /** What tracking names of a dish: its menu number, name and price. */
@@ -41,20 +41,21 @@ export function useTrackEvent() {
     push(["trackPageView", dish.number]);
   }
 
-  function trackOrder(order: Schemas["Order"]) {
-    order.lineItems?.forEach((item) => {
-      if (item.type === "container") return;
+  // One item per ordered dish configuration (menu number, the receipt's
+  // name, its price with the extras), the order's number and total.
+  function trackOrder(order: Order) {
+    order.lines.forEach((line) => {
       push([
         "addEcommerceItem",
-        item.product?.productNumber ?? item.id,
-        item.label,
-        item.product?.seoCategory?.name ?? false,
-        item.unitPrice,
-        item.quantity,
+        line.dishNumber || line.id,
+        cartLineLabel(line),
+        false,
+        moneyAmount(line.unitPrice),
+        line.quantity,
       ]);
     });
 
-    push(["trackEcommerceOrder", order.orderNumber, order.price.totalPrice]);
+    push(["trackEcommerceOrder", order.number, moneyAmount(order.total)]);
   }
 
   function trackAddToWishlist(entry: { productNumber: string }) {

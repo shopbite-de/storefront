@@ -1,36 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { ref } from "vue";
 
-const { mockInvoke } = vi.hoisted(() => ({ mockInvoke: vi.fn() }));
+// The shop's shipping methods from the BFF (`ShippingMethod[]`, ADR 0001).
+const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
+// read lazily by the mock, after module initialisation
+const methods = ref<unknown>(null);
 
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: { invoke: mockInvoke },
+mockNuxtImport("useShippingMethods", () => () => ({
+  shippingMethods: methods,
+  refresh,
 }));
 
 describe("useShippingMethodChoice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockInvoke.mockResolvedValue({
-      data: {
-        elements: [
-          { id: "pickup", name: "Abholung", position: 2 },
-          { id: "delivery", name: "Lieferung", position: 1 },
-        ],
-      },
+    methods.value = null;
+    refresh.mockImplementation(async () => {
+      methods.value = [
+        { id: "delivery", name: "Lieferung", fulfillment: "delivery" },
+        { id: "pickup", name: "Abholung", fulfillment: "pickup" },
+      ];
     });
   });
 
-  it("loads all active methods, also those whose rule needs an address", async () => {
-    // "Lieferung" in a shop with a delivery-area rule only matches with a shipping city in the
-    // delivery area; onlyAvailable hid it from guests without an address
-    const { methods, load } = useShippingMethodChoice();
-    await load({ forceReload: true });
+  it("offers every active method of the shop, in the shop's order", async () => {
+    // "Lieferung" in a shop with a delivery-area rule only matches with a
+    // shipping city in the delivery area: it is offered anyway
+    const choice = useShippingMethodChoice();
+    await choice.load({ forceReload: true });
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "readShippingMethod post /shipping-method",
-      expect.objectContaining({ query: { onlyAvailable: false } }),
-    );
-    expect(methods.value.map((method) => method.name)).toEqual([
+    expect(choice.methods.value.map((method) => method.name)).toEqual([
       "Lieferung",
       "Abholung",
     ]);
@@ -38,9 +38,9 @@ describe("useShippingMethodChoice", () => {
 
   it("does not reload once loaded", async () => {
     const { load } = useShippingMethodChoice();
-    await load({ forceReload: true });
+    await load();
     await load();
 
-    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    expect(refresh).toHaveBeenCalledTimes(1);
   });
 });

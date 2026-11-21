@@ -122,6 +122,11 @@ export interface VisitorSession {
   /** The request's cookie is older than a state this process sealed. */
   isStale(): Promise<boolean>;
   /**
+   * The session's id (the same over all its versions), null for a visitor
+   * without a session. Never sent to the browser or a backend.
+   */
+  id(): Promise<string | null>;
+  /**
    * Takes over a backend token that an older storefront kept in a cookie
    * the browser could read (the Shopware layer's `sw-context-token`), once:
    * without a session it becomes the adapter's state; the cookie is
@@ -254,6 +259,10 @@ export function createVisitorSession(options: {
       await load();
       if (current && outdated(current)) stale = true;
       return stale;
+    },
+    id: async () => {
+      await load();
+      return current?.sid ?? null;
     },
     exclusive: async (task) => {
       const payload = await load();

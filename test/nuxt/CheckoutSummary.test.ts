@@ -5,8 +5,9 @@ import Summary from "~/components/Checkout/Summary.vue";
 
 const { state, mocks } = vi.hoisted(() => ({
   mocks: {
-    createOrder: vi.fn(),
+    placeOrder: vi.fn(),
     checkAcceptsOrders: vi.fn(),
+    navigateTo: vi.fn(),
   },
   state: {
     isLoading: true,
@@ -28,10 +29,24 @@ mockNuxtImport("useOpeningHoursData", () => () => ({
   hasFailed: ref(state.hasFailed),
 }));
 
-mockNuxtImport("useCheckout", () => () => ({
-  createOrder: mocks.createOrder,
-  selectedPaymentMethod: ref({ id: "pm1" }),
+// the checkout behind the BFF (ADR 0001, step 5)
+mockNuxtImport("useCheckoutMethods", () => () => ({
+  selection: ref({ shippingMethodId: "sm1", paymentMethodId: "pm1" }),
   selectedShippingMethod: ref({ id: "sm1", name: "Lieferung" }),
+  refreshSelection: vi.fn().mockResolvedValue(undefined),
+}));
+
+mockNuxtImport("useCheckoutOrderer", () => () => ({
+  orderer: ref(state.customer ? { customer: { guest: true } } : null),
+  refresh: vi.fn().mockResolvedValue(undefined),
+}));
+
+mockNuxtImport("usePlaceOrder", () => () => ({
+  placeOrder: mocks.placeOrder,
+}));
+
+mockNuxtImport("useDeliveryTime", () => () => ({
+  wishedTimeFor: (time: string) => ({ date: "2026-11-21", time }),
 }));
 
 mockNuxtImport("useCartData", () => () => ({
@@ -40,8 +55,6 @@ mockNuxtImport("useCartData", () => () => ({
 
 mockNuxtImport("useUser", () => () => ({
   isLoggedIn: ref(false),
-  isGuestSession: ref(state.customer),
-  refreshUser: vi.fn(),
 }));
 
 mockNuxtImport("useShopConfig", () => () => ({
@@ -52,7 +65,7 @@ mockNuxtImport("useShopConfig", () => () => ({
 
 // A successful order navigates to the confirmation page; loading that
 // route after the test environment is torn down is an unhandled error.
-mockNuxtImport("navigateTo", () => vi.fn());
+mockNuxtImport("navigateTo", () => mocks.navigateTo);
 
 mockNuxtImport("useTrackEvent", () => () => ({
   trackOrder: vi.fn(),
@@ -62,11 +75,6 @@ mockNuxtImport("useCheckoutMethodGuard", () => () => ({
   isShippingMethodBlocked: ref(state.shippingBlocked),
   isPaymentMethodBlocked: ref(false),
   ensureAvailableCheckoutMethods: vi.fn().mockResolvedValue(true),
-}));
-
-vi.mock("@shopware/composables", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@shopware/composables")>()),
-  useOrderPayment: () => ({ handlePayment: vi.fn(), paymentUrl: ref(null) }),
 }));
 
 // Reports the time as DeliveryTimeSelect does once a time is selected.
@@ -107,8 +115,9 @@ describe("Checkout Summary order button", () => {
     state.shippingBlocked = false;
     state.customer = true;
     state.fulfillment = "delivery";
-    mocks.createOrder.mockReset();
+    mocks.placeOrder.mockReset();
     mocks.checkAcceptsOrders.mockReset();
+    mocks.navigateTo.mockReset();
   });
 
   it("shows a loading state while the opening hours are not loaded", async () => {
@@ -192,7 +201,7 @@ describe("Checkout Summary order button", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(mocks.checkAcceptsOrders).toHaveBeenCalled();
-    expect(mocks.createOrder).not.toHaveBeenCalled();
+    expect(mocks.placeOrder).not.toHaveBeenCalled();
     expect(button.element.closest(".grid")!.textContent).toContain(
       "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen",
     );
@@ -207,32 +216,138 @@ describe("Checkout Summary order button", () => {
     await button.trigger("click");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(mocks.createOrder).not.toHaveBeenCalled();
+    expect(mocks.placeOrder).not.toHaveBeenCalled();
     expect(button.element.closest(".grid")!.textContent).toContain(
       "konnte nicht geprüft werden",
     );
   });
 
-  // shopbite#6: the comment names the kind of time
-  it.each([
-    ["delivery", "Wunschlieferzeit: 19:15"],
-    ["pickup", "Wunschabholzeit: 19:15"],
-  ] as const)(
-    "stores the wished time of a %s order",
-    async (fulfillment, comment) => {
-      state.isLoading = false;
-      state.validTime = true;
-      state.fulfillment = fulfillment;
-      mocks.checkAcceptsOrders.mockResolvedValue(true);
-      mocks.createOrder.mockResolvedValue({ id: "order-1" });
+  const order = { id: "order-1", number: "10001", lines: [], total: {} };
 
-      const button = await mountSummary();
-      await button.trigger("click");
-      await new Promise((resolve) => setTimeout(resolve, 0));
+  it("places the order with the wished time and its service date", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    mocks.checkAcceptsOrders.mockResolvedValue(true);
+    mocks.placeOrder.mockResolvedValue({
+      order,
+      redirectUrl: null,
+      paymentFailed: false,
+    });
 
-      expect(mocks.createOrder).toHaveBeenCalledWith({
-        customerComment: comment,
-      });
-    },
-  );
+    const button = await mountSummary();
+    await button.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mocks.placeOrder).toHaveBeenCalledWith({
+      wishedTime: { date: "2026-11-21", time: "19:15" },
+    });
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/bestellung/order-1/erfolg");
+  });
+
+  it("sends the guest to the payment on another site", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    mocks.checkAcceptsOrders.mockResolvedValue(true);
+    mocks.placeOrder.mockResolvedValue({
+      order,
+      redirectUrl: "https://pay.example/1",
+      paymentFailed: false,
+    });
+
+    const button = await mountSummary();
+    await button.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith("https://pay.example/1", {
+      external: true,
+    });
+  });
+
+  it("sends the guest to the payment retry when the payment did not start", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    mocks.checkAcceptsOrders.mockResolvedValue(true);
+    mocks.placeOrder.mockResolvedValue({
+      order,
+      redirectUrl: null,
+      paymentFailed: true,
+    });
+
+    const button = await mountSummary();
+    await button.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/bestellung/order-1/fehler");
+  });
+
+  it("tells the guest to check before ordering again when the outcome is unknown", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    mocks.checkAcceptsOrders.mockResolvedValue(true);
+    mocks.placeOrder.mockRejectedValue(
+      Object.assign(new Error("409"), {
+        statusCode: 409,
+        data: { data: { code: "order_status_unknown" } },
+      }),
+    );
+
+    const button = await mountSummary();
+    await button.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mocks.placeOrder).toHaveBeenCalledTimes(1);
+    expect(mocks.navigateTo).not.toHaveBeenCalled();
+    expect(button.element.closest(".grid")!.textContent).toContain(
+      "Wir konnten nicht feststellen, ob deine Bestellung eingegangen ist. Bitte prüfe dein E-Mail-Postfach oder ruf uns an, bevor du erneut bestellst.",
+    );
+  });
+
+  it("points to the order an earlier press already placed", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    mocks.checkAcceptsOrders.mockResolvedValue(true);
+    mocks.placeOrder.mockRejectedValue(
+      Object.assign(new Error("409"), {
+        statusCode: 409,
+        data: {
+          data: { code: "order_already_placed", details: { orderId: "o-7" } },
+        },
+      }),
+    );
+
+    const button = await mountSummary();
+    await button.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const page = button.element.closest(".grid")!;
+    expect(page.textContent).toContain(
+      "Deine Bestellung ist bereits eingegangen.",
+    );
+    expect(page.textContent).not.toContain("Bestellung fehlgeschlagen");
+    expect(page.querySelector('[role="alert"] a')?.getAttribute("href")).toBe(
+      "/bestellung/o-7",
+    );
+    expect(mocks.navigateTo).not.toHaveBeenCalled();
+  });
+
+  it("says the order failed when the backend refused it", async () => {
+    state.isLoading = false;
+    state.validTime = true;
+    mocks.checkAcceptsOrders.mockResolvedValue(true);
+    mocks.placeOrder.mockRejectedValue(
+      Object.assign(new Error("409"), {
+        statusCode: 409,
+        data: { data: { code: "ordering_closed" } },
+      }),
+    );
+
+    const button = await mountSummary();
+    await button.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mocks.navigateTo).not.toHaveBeenCalled();
+    expect(button.element.closest(".grid")!.textContent).toContain(
+      "Deine Bestellung konnte nicht aufgegeben werden",
+    );
+  });
 });

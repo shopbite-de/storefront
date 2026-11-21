@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useShippingLeadTime } from "~/composables/useShippingLeadTime";
 
 // The checkout's time choice follows the selected shipping method
@@ -14,8 +14,16 @@ const { selected } = vi.hoisted(() => ({
   },
 }));
 
-mockNuxtImport("useCheckout", () => () => ({
-  selectedShippingMethod: selected.current,
+// the selected methods come from the BFF (ADR 0001, step 5)
+mockNuxtImport("useCheckoutMethods", () => () => ({
+  selection: computed(() =>
+    selected.current?.value
+      ? {
+          shippingMethodId: (selected.current.value as { id: string }).id,
+          paymentMethodId: null,
+        }
+      : null,
+  ),
 }));
 
 const configData = ref<unknown>(null);

@@ -1,22 +1,22 @@
-import type { Schemas } from "#shopware";
+import type { PaymentMethod } from "../../shared/domain";
 
 type CheckoutMethod = { id: string; name?: string };
 
 type MethodGuardConfig<M extends CheckoutMethod> = {
   isBlocked: () => boolean;
   selected: () => M | null;
-  loadAvailable: () => Promise<M[]>;
+  loadAvailable: () => Promise<readonly M[]>;
   defaultId: () => string | undefined;
   select: (id: string) => Promise<void>;
 };
 
 /**
  * Detects a blocked payment method in the cart and switches to an
- * available one (sales-channel default first, otherwise the first
+ * available one (the shop's default first, otherwise the first
  * available), mirroring what Shopware's own storefront does.
  *
- * The Store API does not perform this switch itself. Without it, order
- * creation fails with `CHECKOUT__CART_INVALID` (`payment-method-blocked`).
+ * The backend does not perform this switch itself. Without it, the order
+ * is refused (`payment_method_blocked`).
  *
  * A blocked shipping method is only reported, never switched: its rule
  * usually needs the shipping address (delivery area), which a guest enters
@@ -26,12 +26,11 @@ type MethodGuardConfig<M extends CheckoutMethod> = {
  * picks another one.
  */
 export function useCheckoutMethodGuard() {
-  // the cart's messages (ADR 0001, step 4); the methods are still the
-  // Shopware layer's until step 5
+  // the cart's messages and the checkout's methods (ADR 0001, steps 4
+  // and 5)
   const { hasMessage, refresh: refreshCart } = useCartData();
-  const { getPaymentMethods, setPaymentMethod, selectedPaymentMethod } =
-    useCheckout();
-  const { sessionContext } = useSessionContext();
+  const { loadPaymentMethods, selectPaymentMethod, selectedPaymentMethod } =
+    useCheckoutMethods();
 
   const isShippingMethodBlocked = computed(() =>
     hasMessage("shipping_method_blocked"),
@@ -42,13 +41,18 @@ export function useCheckoutMethodGuard() {
 
   const isResolving = ref(false);
 
-  const paymentConfig: MethodGuardConfig<Schemas["PaymentMethod"]> = {
+  let available: readonly PaymentMethod[] = [];
+  const paymentConfig: MethodGuardConfig<PaymentMethod> = {
     isBlocked: () => isPaymentMethodBlocked.value,
     selected: () => selectedPaymentMethod.value,
-    loadAvailable: async () =>
-      (await getPaymentMethods({ forceReload: true })).value,
-    defaultId: () => sessionContext.value?.salesChannel?.paymentMethodId,
-    select: (id) => setPaymentMethod({ id }),
+    loadAvailable: async () => {
+      available = await loadPaymentMethods();
+      return available;
+    },
+    defaultId: () => available.find((method) => method.preferred)?.id,
+    select: async (id) => {
+      await selectPaymentMethod(id);
+    },
   };
 
   /**

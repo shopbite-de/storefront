@@ -1,15 +1,14 @@
-import type { Schemas } from "#shopware";
-
 /**
- * Delivery or pickup on the menu page (#443): the shipping methods of the
- * sales channel as a choice before the customer starts ordering. Which
- * methods exist and which payment methods they allow is decided by the
- * Shopware rules; after a switch the guard moves a payment method the new
- * shipping method blocks. All active methods are offered, also those whose
- * rule needs an address the guest has not entered yet.
+ * Delivery or pickup on the menu page (#443): the shop's shipping methods
+ * as a choice before the guest starts ordering. Which methods exist and
+ * which payment methods they allow is the shop backend's rule; after a
+ * switch the guard moves a payment method the new shipping method blocks.
+ * All active methods are offered, also those whose rule needs an address
+ * the guest has not entered yet.
  */
 export function useOrderMode() {
-  const { selectedShippingMethod, setShippingMethod } = useCheckout();
+  const { selection, refreshSelection, selectShippingMethod } =
+    useCheckoutMethods();
   const { methods: shippingMethods, load: loadShippingMethods } =
     useShippingMethodChoice();
   const { refresh: refreshCart } = useCartData();
@@ -18,9 +17,9 @@ export function useOrderMode() {
   const switching = ref(false);
 
   const options = computed(() =>
-    (shippingMethods.value ?? []).map((method: Schemas["ShippingMethod"]) => ({
+    shippingMethods.value.map((method) => ({
       value: method.id,
-      label: method.translated?.name ?? method.name,
+      label: method.name,
     })),
   );
 
@@ -31,19 +30,19 @@ export function useOrderMode() {
   );
 
   const selectedId = computed({
-    get: () => selectedShippingMethod.value?.id ?? "",
+    get: () => selection.value?.shippingMethodId ?? "",
     set: (id: string) => {
       void select(id);
     },
   });
 
   async function select(id: string) {
-    if (!id || id === selectedShippingMethod.value?.id || switching.value) {
+    if (!id || id === selection.value?.shippingMethodId || switching.value) {
       return;
     }
     switching.value = true;
     try {
-      await setShippingMethod({ id });
+      await selectShippingMethod(id);
       await ensureAvailableCheckoutMethods();
       await refreshCart();
     } finally {
@@ -53,7 +52,10 @@ export function useOrderMode() {
 
   async function load() {
     try {
-      await loadShippingMethods();
+      await Promise.all([
+        loadShippingMethods(),
+        selection.value ? undefined : refreshSelection(),
+      ]);
     } catch (error) {
       console.error("[menu][useOrderMode] shipping methods", error);
     }

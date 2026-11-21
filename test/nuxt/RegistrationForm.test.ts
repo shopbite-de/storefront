@@ -15,13 +15,21 @@ vi.mock("@shopware/api-client", () => ({
   },
 }));
 
-const { mockRegister, mockGetSuggestions } = vi.hoisted(() => ({
-  mockRegister: vi.fn(),
-  mockGetSuggestions: vi.fn().mockResolvedValue([]),
-}));
+const { mockRegister, mockRegisterGuest, mockGetSuggestions } = vi.hoisted(
+  () => ({
+    mockRegister: vi.fn(),
+    mockRegisterGuest: vi.fn(),
+    mockGetSuggestions: vi.fn().mockResolvedValue([]),
+  }),
+);
 
+// an account is still created by the Shopware layer (step 6), a guest
+// goes through the BFF (ADR 0001, step 5)
 mockNuxtImport("useUser", () => () => ({
   register: mockRegister,
+}));
+mockNuxtImport("useCheckoutOrderer", () => () => ({
+  registerGuest: mockRegisterGuest,
 }));
 
 mockNuxtImport("useAddressAutocomplete", () => () => ({
@@ -104,25 +112,27 @@ describe("RegistrationForm", () => {
   });
 
   it("submits the form with correct data", async () => {
-    mockRegister.mockResolvedValueOnce({ id: "customer-id", active: true });
+    mockRegisterGuest.mockResolvedValueOnce({});
     const wrapper = await mountSuspended(RegistrationForm);
 
     await fillRequiredFields(wrapper);
     await submit(wrapper);
 
-    expect(mockRegister).toHaveBeenCalled();
-    const calledData = mockRegister.mock.calls[0]![0];
-    expect(calledData.guest).toBe(true);
-    expect(calledData.email).toBe("john@example.com");
-    expect(calledData.billingAddress.street).toBe("Musterstr 1");
+    expect(mockRegister).not.toHaveBeenCalled();
+    expect(mockRegisterGuest).toHaveBeenCalled();
+    const details = mockRegisterGuest.mock.calls[0]![0];
+    expect(details.email).toBe("john@example.com");
+    expect(details.business).toBe(false);
+    expect(details.billingAddress.street).toBe("Musterstr 1");
     // The names are copied to the billing address
-    expect(calledData.billingAddress.firstName).toBe("John");
-    expect(calledData.billingAddress.lastName).toBe("Doe");
-    expect(calledData.password).toBeUndefined();
+    expect(details.billingAddress.firstName).toBe("John");
+    expect(details.billingAddress.lastName).toBe("Doe");
+    expect(details.deliveryAddress).toBeNull();
+    expect(details).not.toHaveProperty("password");
     expect(wrapper.emitted("registration-success")).toHaveLength(1);
   });
 
-  it("shows the API error details in the form on ApiClientError", async () => {
+  it("shows the API error details of an account registration", async () => {
     const apiClientError = new ApiClientError({
       errors: [
         {
@@ -134,8 +144,12 @@ describe("RegistrationForm", () => {
     const wrapper = await mountSuspended(RegistrationForm);
 
     await fillRequiredFields(wrapper, "lirim@veliu.net");
+    await toggleCheckbox(wrapper, "Kundenkonto anlegen");
+    await wrapper.get('input[name="password"]').setValue("geheim1234");
+    await wrapper.get('input[name="passwordConfirm"]').setValue("geheim1234");
     await submit(wrapper);
 
+    expect(mockRegisterGuest).not.toHaveBeenCalled();
     const alert = wrapper.get('[role="alert"]');
     expect(alert.text()).toContain("Das hat nicht geklappt");
     expect(alert.text()).toContain(
@@ -144,11 +158,13 @@ describe("RegistrationForm", () => {
     expect(wrapper.emitted("registration-success")).toBeUndefined();
   });
 
-  it("handles ApiClientError with missing errors gracefully", async () => {
-    const apiClientError = new ApiClientError(
-      {} as unknown as ConstructorParameters<typeof ApiClientError>[0],
+  it("asks to try again when the guest's details cannot be saved", async () => {
+    mockRegisterGuest.mockRejectedValueOnce(
+      Object.assign(new Error("503"), {
+        statusCode: 503,
+        data: { data: { code: "backend_unavailable" } },
+      }),
     );
-    mockRegister.mockRejectedValueOnce(apiClientError);
     const wrapper = await mountSuspended(RegistrationForm);
 
     await fillRequiredFields(wrapper, "lirim@veliu.net");
@@ -168,7 +184,7 @@ describe("RegistrationForm", () => {
         label: "Corrected Street 123, 54321 Corrected City",
       },
     ]);
-    mockRegister.mockResolvedValueOnce({ id: "customer-id", active: true });
+    mockRegisterGuest.mockResolvedValueOnce({});
 
     const wrapper = await mountSuspended(RegistrationForm);
 
@@ -177,7 +193,7 @@ describe("RegistrationForm", () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Registration must not be blocked by the correction suggestion
-    expect(mockRegister).toHaveBeenCalled();
+    expect(mockRegisterGuest).toHaveBeenCalled();
 
     // Correction UI surfaces non-blocking (flushPendingCheck triggers the async check)
     expect(wrapper.text()).toContain(

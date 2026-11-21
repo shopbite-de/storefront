@@ -57,14 +57,36 @@ const loadCart = () =>
 const { isLoggedIn } = useUser();
 const { load: loadWishlist, mergeGuestEntries } = useWishlistEntries();
 onMounted(loadWishlist);
+// a login or logout replaces the visitor's backend context: the methods
+// of the next order may change with it
+const { selection, refreshSelection } = useCheckoutMethods();
 watch(isLoggedIn, (loggedIn, before) => {
   if (loggedIn === before) return;
   if (loggedIn) mergeGuestEntries();
   else loadWishlist();
   loadCart();
+  if (selection.value) {
+    refreshSelection().catch((error) =>
+      console.error("[checkout] selection", error),
+    );
+  }
 });
 
 onMounted(loadCart);
+
+// A new visitor gets the storefront session before the first write (ADR
+// 0001, step 5): a write cut off by a navigation still lands in it. The
+// server render tells whether the request brought a session (the
+// browser cannot read it, it is HttpOnly; `plugins/visitor-has-session`
+// asks whether it unseals).
+const hasSession = useState("visitor-has-session", () => !import.meta.server);
+onMounted(() => {
+  if (hasSession.value) return;
+  hasSession.value = true;
+  queuedWrite(() => $fetch("/api/session", { method: "POST" })).catch((error) =>
+    console.error("[session] start", error),
+  );
+});
 
 const route = useRoute();
 const siteConfig = useSiteConfig();

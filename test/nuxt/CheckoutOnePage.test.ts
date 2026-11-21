@@ -8,7 +8,7 @@ import Summary from "~/components/Checkout/Summary.vue";
 const { state, mocks } = vi.hoisted(() => ({
   state: { guest: true },
   mocks: {
-    createOrder: vi.fn(),
+    placeOrder: vi.fn(),
   },
 }));
 
@@ -21,18 +21,27 @@ mockNuxtImport("useOpeningHoursData", () => () => ({
   isLoading: ref(false),
   hasFailed: ref(false),
 }));
-mockNuxtImport("useCheckout", () => () => ({
-  createOrder: mocks.createOrder,
-  selectedPaymentMethod: ref({ id: "pm1" }),
-  selectedShippingMethod: ref({ id: "sm1" }),
+// the checkout behind the BFF (ADR 0001, step 5)
+mockNuxtImport("useCheckoutMethods", () => () => ({
+  selection: ref({ shippingMethodId: "sm1", paymentMethodId: "pm1" }),
+  selectedShippingMethod: ref({ id: "sm1", name: "Lieferung" }),
+  refreshSelection: vi.fn().mockResolvedValue(undefined),
+}));
+mockNuxtImport("useCheckoutOrderer", () => () => ({
+  orderer: ref(state.guest ? { customer: { guest: true } } : null),
+  refresh: vi.fn().mockResolvedValue(undefined),
+}));
+mockNuxtImport("usePlaceOrder", () => () => ({
+  placeOrder: mocks.placeOrder,
+}));
+mockNuxtImport("useDeliveryTime", () => () => ({
+  wishedTimeFor: (time: string) => ({ date: "2026-11-21", time }),
 }));
 mockNuxtImport("useCartData", () => () => ({
   refresh: vi.fn().mockResolvedValue(undefined),
 }));
 mockNuxtImport("useUser", () => () => ({
   isLoggedIn: ref(false),
-  isGuestSession: ref(state.guest),
-  refreshUser: vi.fn(),
 }));
 mockNuxtImport("useShopConfig", () => () => ({
   acceptsOrders: ref(true),
@@ -50,15 +59,13 @@ mockNuxtImport("useCheckoutMethodGuard", () => () => ({
   ensureAvailableCheckoutMethods: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock("@shopware/composables", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@shopware/composables")>()),
-  useOrderPayment: () => ({ handlePayment: vi.fn(), paymentUrl: ref(null) }),
-}));
-
 const ValidTime = defineComponent({
-  emits: ["update:valid"],
+  emits: ["update:valid", "update:modelValue"],
   setup(_, { emit }) {
-    onMounted(() => emit("update:valid", true));
+    onMounted(() => {
+      emit("update:modelValue", "19:15");
+      emit("update:valid", true);
+    });
     return () => h("div");
   },
 });
@@ -109,7 +116,7 @@ describe("one-page checkout (#443)", () => {
   });
 
   it("shows a failed order in the form", async () => {
-    mocks.createOrder.mockRejectedValue(new Error("invalid cart"));
+    mocks.placeOrder.mockRejectedValue(new Error("invalid cart"));
     const wrapper = await mountOnePage();
     await wrapper.get("button").trigger("click");
     await flushPromises();

@@ -1,7 +1,44 @@
 import { ApiClientError } from "@shopware/api-client";
 import type { Schemas } from "#shopware";
+import type { AddressInput, GuestDetails } from "../../shared/domain";
 import { createRegistrationSchema } from "~/validation/registrationSchema";
-import type { RegistrationSchema } from "~/validation/registrationSchema";
+import type {
+  AddressSchema,
+  RegistrationSchema,
+} from "~/validation/registrationSchema";
+
+/** The form's address as a domain address of the shop's country. */
+function toAddress(address: Partial<AddressSchema>): AddressInput {
+  return {
+    salutation: null,
+    firstName: address.firstName ?? "",
+    lastName: address.lastName ?? "",
+    company: address.company || null,
+    department: address.department || null,
+    street: address.street ?? "",
+    additionalLine: address.additionalAddressLine1 || null,
+    postalCode: address.zipcode ?? "",
+    city: address.city ?? "",
+    // the shop's own country (`site.countryId`), as the form always sent it
+    country: null,
+    phone: address.phoneNumber || null,
+  };
+}
+
+/** The checkout form as the guest's details (ADR 0001, step 5). */
+export function toGuestDetails(data: RegistrationSchema): GuestDetails {
+  return {
+    email: data.email,
+    salutation: null,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    business: data.accountType === "business",
+    billingAddress: toAddress(data.billingAddress),
+    deliveryAddress: data.shippingAddress
+      ? toAddress(data.shippingAddress)
+      : null,
+  };
+}
 
 export type RegistrationResult =
   | {
@@ -13,10 +50,11 @@ export type RegistrationResult =
   | { ok: false; message: string };
 
 /**
- * State, schema and submit of the customer registration (#443), shared by
- * the Nuxt UI form (User/RegistrationForm.vue) and the form of the presets
- * (User/RegistrationForm.vue). `submit()` reports the outcome; the
- * form decides how to show it (toast or inline).
+ * State, schema and submit of the customer registration (#443) and of the
+ * checkout's guest details (User/RegistrationForm.vue). `submit()` reports
+ * the outcome; the form decides how to show it. A guest goes through the
+ * BFF (`/api/checkout/guest`, ADR 0001 step 5); creating an account still
+ * uses the Shopware layer until step 6.
  */
 export function useRegistrationForm(options: { allowGuest: boolean }) {
   const config = useRuntimeConfig();
@@ -24,6 +62,7 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
   // registration page sends the visitor to the account, the checkout continues
   // with the order.
   const { register } = useUser();
+  const { registerGuest } = useCheckoutOrderer();
 
   const state = reactive({
     accountType: "private" as "private" | "business",
@@ -116,6 +155,30 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
     if (registrationData.guest) {
       delete registrationData.password;
       delete registrationData.passwordConfirm;
+    }
+
+    if (registrationData.guest) {
+      try {
+        await registerGuest(
+          toGuestDetails(registrationData as unknown as RegistrationSchema),
+        );
+        return {
+          ok: true,
+          data: registrationData as unknown as RegistrationSchema,
+          customer: undefined,
+          needsConfirmation: false,
+        };
+      } catch (error) {
+        console.error("Guest details failed:", error);
+        const code = domainErrorCode(error);
+        return {
+          ok: false,
+          message:
+            code === "invalid_value" || code === "validation_failed"
+              ? "Bitte prüfen Sie Ihre Angaben."
+              : "Bitte versuchen Sie es erneut.",
+        };
+      }
     }
 
     try {

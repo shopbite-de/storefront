@@ -1,58 +1,35 @@
 <script setup lang="ts">
+/**
+ * "Ihre Angaben" in the checkout (#443): the session's guest or customer
+ * with the addresses the order uses (ADR 0001, step 5: the domain
+ * `Orderer` of the BFF), as plain text; each address can be edited.
+ */
 defineProps<{
   withEditButton?: boolean;
 }>();
 
-const {
-  user,
-  userDefaultBillingAddress,
-  userDefaultShippingAddress,
-  refreshUser,
-} = useUser();
+const { orderer } = useCheckoutOrderer();
 
 const fullName = computed(
-  () => user.value?.firstName + " " + user.value?.lastName,
+  () =>
+    `${orderer.value?.customer.firstName} ${orderer.value?.customer.lastName}`,
 );
 
 const areAddressesDifferent = computed(() => {
-  if (!userDefaultBillingAddress.value || !userDefaultShippingAddress.value) {
-    return false;
-  }
-
+  const value = orderer.value;
+  if (!value) return false;
   return (
-    JSON.stringify(userDefaultBillingAddress.value) !==
-    JSON.stringify(userDefaultShippingAddress.value)
+    JSON.stringify(value.billingAddress) !==
+    JSON.stringify(value.deliveryAddress)
   );
 });
-
-async function refreshUserAddresses() {
-  await refreshUser({
-    associations: {
-      defaultShippingAddress: {},
-      defaultBillingAddress: {},
-      activeShippingAddress: {},
-      activeBillingAddress: {},
-    },
-  });
-}
-
-async function handleAddressUpdate() {
-  // Refresh user data from the API to get the latest addresses
-  await refreshUserAddresses();
-}
-
-onMounted(() => {
-  refreshUserAddresses();
-});
-
-// Presets: plain text in the checkout section instead of a card (#443).
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 font-body text-sb-ink">
+  <div v-if="orderer" class="flex flex-col gap-4 font-body text-sb-ink">
     <p>
       <strong class="block">{{ fullName }}</strong>
-      <span class="text-sb-ink-muted">{{ user?.email }}</span>
+      <span class="text-sb-ink-muted">{{ orderer.customer.email }}</span>
     </p>
     <div class="flex flex-col gap-2 border-t border-sb-line pt-4">
       <h3 class="text-sm font-bold">
@@ -62,10 +39,10 @@ onMounted(() => {
             : "Liefer- und Rechnungsadresse"
         }}
       </h3>
-      <AddressDetail
-        :address="userDefaultShippingAddress"
+      <CheckoutOrdererAddress
+        :key="orderer.deliveryAddress.id ?? 'delivery'"
+        :address="orderer.deliveryAddress"
         :with-edit-button="withEditButton"
-        @update:address="handleAddressUpdate"
       />
     </div>
     <div
@@ -73,10 +50,10 @@ onMounted(() => {
       class="flex flex-col gap-2 border-t border-sb-line pt-4"
     >
       <h3 class="text-sm font-bold">Rechnungsadresse</h3>
-      <AddressDetail
-        :address="userDefaultBillingAddress"
+      <CheckoutOrdererAddress
+        :key="orderer.billingAddress.id ?? 'billing'"
+        :address="orderer.billingAddress"
         :with-edit-button="withEditButton"
-        @update:address="handleAddressUpdate"
       />
     </div>
   </div>
