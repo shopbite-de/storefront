@@ -33,6 +33,11 @@ export const DOMAIN_ERROR_CODES = [
   "email_taken",
   /** The input was rejected by the backend's validation (see `details`). */
   "validation_failed",
+  /**
+   * The request carried an outdated session (a parallel request replaced
+   * it); the browser has the new one, so the request may be sent again.
+   */
+  "stale_session",
 ] as const;
 
 export type DomainErrorCode = (typeof DOMAIN_ERROR_CODES)[number];

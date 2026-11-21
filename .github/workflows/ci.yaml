@@ -12,6 +12,8 @@ env:
   PORT: '3005'
   NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
   NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
+  # seals the session cookie of the built storefront (a11y job); a test value
+  NUXT_VISITOR_SESSION_PASSWORD: 'ci-only-session-password-0123456789abcdef'
   NUXT_PUBLIC_SITE_COUNTRY_ID: ${{ secrets.NUXT_PUBLIC_SITE_COUNTRY_ID }}
   GEOPIFY: ${{ secrets.GEOPIFY }}
 
