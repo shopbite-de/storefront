@@ -108,48 +108,66 @@ test("cart and checkout", async ({ page }) => {
   await expectNoSeriousViolations(page, "checkout");
 });
 
-/** An order as the Store API returns it, so no real order is placed. */
+/** An order as the BFF answers it (domain `Order`), so no real order is placed. */
 const ORDER_ID = "0123456789abcdef0123456789abcdef";
+const eur = (amountMinor: number) => ({ amountMinor, currency: "EUR" });
+const address = {
+  id: "a-1",
+  salutation: null,
+  firstName: "Max",
+  lastName: "Muster",
+  company: null,
+  department: null,
+  street: "Musterstraße 1",
+  additionalLine: null,
+  postalCode: "12345",
+  city: "Musterstadt",
+  country: "DE",
+  phone: "0123456789",
+};
 const sampleOrder = {
   id: ORDER_ID,
-  orderNumber: "10042",
-  createdAt: "2026-10-08T17:30:00.000Z",
-  taxStatus: "gross",
-  customerComment: "Wunschlieferzeit: 19:15",
-  shippingTotal: 1,
-  amountTotal: 21.5,
-  price: { calculatedTaxes: [{ taxRate: 7, tax: 1.41 }] },
-  stateMachineState: { name: "Offen", translated: { name: "Offen" } },
-  deliveries: [{ shippingMethod: { name: "Lieferung" } }],
-  transactions: [
-    {
-      paymentMethodId: "cash",
-      paymentMethod: { distinguishableName: "Bar" },
-      stateMachineState: { name: "Fehlgeschlagen" },
-    },
-  ],
-  lineItems: [
+  number: "10042",
+  placedAt: "2026-10-08T17:30:00.000Z",
+  status: "open",
+  paymentStatus: "failed",
+  fulfillment: "delivery",
+  wishedTime: { date: "2026-10-08", time: { minutes: 19 * 60 + 15 } },
+  shippingMethod: { id: "delivery", name: "Lieferung" },
+  paymentMethod: { id: "cash", name: "Bar" },
+  lines: [
     {
       id: "li-1",
-      parentId: null,
+      configuration: {
+        dishId: "d-1",
+        variantId: null,
+        extraIds: [],
+        removedIngredientIds: [],
+      },
+      dishNumber: "LF-4",
+      name: "Pizza Margherita",
+      extras: [],
+      removedIngredients: [],
       quantity: 2,
-      label: "Pizza Margherita",
-      totalPrice: 17,
-      payload: { productNumber: "LF-4" },
+      unitPrice: eur(850),
+      totalPrice: eur(1700),
     },
   ],
+  discounts: [],
+  subtotal: eur(1700),
+  shippingCosts: eur(100),
+  total: eur(2150),
+  taxes: [{ rate: 7, amount: eur(141) }],
+  taxIncluded: true,
+  billingAddress: address,
+  deliveryAddress: address,
+  email: "max@example.com",
+  note: null,
 };
 
 async function mockOrder(page: Page) {
-  // @shopware/composables 1.15 sends checkPromotion as a query parameter
-  // (/store-api/order?checkPromotion=true), which a glob would not match.
-  await page.route(/\/store-api\/order(\?|$)/, (route) =>
-    route.fulfill({
-      json: {
-        orders: { elements: [sampleOrder], total: 1 },
-        paymentChangeable: {},
-      },
-    }),
+  await page.route(`**/api/orders/${ORDER_ID}`, (route) =>
+    route.fulfill({ json: sampleOrder }),
   );
 }
 

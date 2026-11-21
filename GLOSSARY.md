@@ -142,6 +142,10 @@ A way to pay; some send the guest to another site after the order.
 A placed cart with the guest's details, fulfillment and wished time.
 _Avoid_: purchase, transaction
 
+**Order attempt**:
+One press of the order button; sent again unchanged when the answer does not come, so it never places two orders.
+_Avoid_: idempotency key (outside the code), retry
+
 **Order number** ("Bestellnummer"):
 The number of an order shown to the guest and the restaurant.
 
@@ -169,6 +173,14 @@ _Avoid_: anonymous customer
 **Customer** ("Kundenkonto"):
 A person with an account: login, saved addresses, order history, wishlist.
 _Avoid_: user, account holder, member
+
+**Orderer** ("Ihre Angaben"):
+The guest or customer who orders in this session, with the billing and delivery address the order uses.
+_Avoid_: buyer, checkout customer
+
+**Business** ("Geschäftskunde"):
+A guest or customer who orders for a company; the billing address names it.
+_Avoid_: B2B customer, commercial account
 
 **Address**:
 A postal address of a guest or customer, used as billing address ("Rechnungsadresse") or delivery address ("Lieferadresse").
@@ -286,3 +298,6 @@ These Shopware words stay inside the Shopware adapter. Code outside it, the UI a
 | custom fields `shopbite_*`, criteria, includes      | named fields of the domain types                  |
 | `countryId`, salutation entity                      | country code, salutation (`mr`, `mrs`, not given) |
 | guest customer (`guest: true`)                      | guest                                             |
+| `accountType: business`                             | business                                          |
+| sales channel context (selected methods)            | checkout selection                                |
+| `deepLinkCode`, `/account/order/…`                  | the order's e-mail link (not served yet)          |
