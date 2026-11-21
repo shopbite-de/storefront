@@ -295,6 +295,41 @@ const LOOKUP_CRITERIA = {
   },
   associations: { properties: { associations: { group: {} } } },
 };
+/** Only the ids of the extras a dish offers. */
+const EXTRA_IDS_CRITERIA = {
+  includes: { cross_selling_element: ["products"], product: ["id"] },
+};
+
+const LOOKUP_TTL_MS = 60_000;
+const MAX_KEPT = 1000;
+
+/**
+ * Product facts the cart needs on every answer (names, ingredients, the
+ * extras a dish offers) are kept for a short while instead of a lookup per
+ * answer; a menu change shows within the TTL. Bounded, oldest first out.
+ */
+function keptFor<T>(ttlMs: number = LOOKUP_TTL_MS) {
+  const entries = new Map<string, { at: number; value: T }>();
+  return {
+    get: (key: string): T | undefined => {
+      const entry = entries.get(key);
+      if (!entry) return undefined;
+      if (Date.now() - entry.at > ttlMs) {
+        entries.delete(key);
+        return undefined;
+      }
+      return entry.value;
+    },
+    set: (key: string, value: T) => {
+      entries.delete(key);
+      entries.set(key, { at: Date.now(), value });
+      while (entries.size > MAX_KEPT) {
+        entries.delete(entries.keys().next().value!);
+      }
+    },
+  };
+}
+
 /** Variants inherit name and main ingredients from their dish. */
 const LOOKUP_HEADERS = { "sw-inheritance": "true" };
 
@@ -322,6 +357,8 @@ function checkQuantity(quantity: number, least: number): void {
 export type ShopwareCartOptions = Readonly<{
   currency: () => Promise<CurrencyCode>;
   log: AdapterLog;
+  /** ms products and the extras of a dish are kept (default 60 s). */
+  lookupTtlMs?: number;
   /** ms before a cart write refused as locked is sent again. */
   lockRetryDelayMs?: number;
 }>;
@@ -337,28 +374,71 @@ export function createShopwareCart(
   options: ShopwareCartOptions,
 ): CartPort {
   const lockDelay = options.lockRetryDelayMs ?? LOCK_RETRY_DELAY_MS;
+  const products = keptFor<LookedUp>(options.lookupTtlMs);
+  const offeredExtras = keptFor<ReadonlySet<Id>>(options.lookupTtlMs);
 
+  /** Name, number, parent and main ingredients of products, kept a while. */
   async function lookUp(ids: readonly Id[]): Promise<Map<Id, LookedUp>> {
-    const answer = await requestOrUnavailable("the products", () =>
-      storeApi.post<{ elements?: SwProduct[] }>(
-        "/product",
-        { ids: [...new Set(ids)], ...LOOKUP_CRITERIA },
-        { headers: LOOKUP_HEADERS },
-      ),
-    );
-    return new Map(
-      (answer.elements ?? []).map((product) => [
-        product.id,
-        {
+    const wanted = [...new Set(ids)];
+    const result = new Map<Id, LookedUp>();
+    for (const id of wanted) {
+      const kept = products.get(id);
+      if (kept) result.set(id, kept);
+    }
+    const missing = wanted.filter((id) => !result.has(id));
+    if (missing.length) {
+      const answer = await requestOrUnavailable("the products", () =>
+        storeApi.post<{ elements?: SwProduct[] }>(
+          "/product",
+          { ids: missing, ...LOOKUP_CRITERIA },
+          { headers: LOOKUP_HEADERS },
+        ),
+      );
+      for (const product of answer.elements ?? []) {
+        const looked: LookedUp = {
           id: product.id,
           parentId: product.parentId ?? null,
           number: product.productNumber,
           name: translated(product, "name") ?? "",
           childCount: product.childCount ?? 0,
           ingredients: toIngredients(product),
-        },
-      ]),
+        };
+        products.set(product.id, looked);
+        result.set(product.id, looked);
+      }
+    }
+    return result;
+  }
+
+  /** The extras a dish offers (its `productList` cross-sellings), kept a while. */
+  async function extrasOf(dishId: Id): Promise<ReadonlySet<Id>> {
+    const known = offeredExtras.get(dishId);
+    if (known) return known;
+    const groups = await requestOrUnavailable("the extras", () =>
+      storeApi.post<{ products?: { id: string }[] }[]>(
+        `/product/${dishId}/cross-selling`,
+        EXTRA_IDS_CRITERIA,
+      ),
     );
+    const ids: ReadonlySet<Id> = new Set(
+      (groups ?? []).flatMap((group) =>
+        (group.products ?? []).map((product) => product.id),
+      ),
+    );
+    offeredExtras.set(dishId, ids);
+    return ids;
+  }
+
+  /** A variant must be one of the configuration's dish. */
+  async function checkVariant(configuration: DishConfiguration) {
+    if (!configuration.variantId) return;
+    const variant = (await lookUp([configuration.variantId])).get(
+      configuration.variantId,
+    );
+    if (!variant) throw unavailable(configuration.variantId);
+    if (variant.parentId !== configuration.dishId) {
+      throw invalid("The variant belongs to another dish.", configuration);
+    }
   }
 
   /** The ids of removed ingredients, from the products of the lines. */
@@ -397,7 +477,13 @@ export function createShopwareCart(
   ): Promise<SwCart> {
     const token = await session.read();
     const run = () =>
-      visitorApi.send<SwCart>({ method, path, body, contextToken: token });
+      visitorApi.send<SwCart>({
+        method,
+        path,
+        body,
+        contextToken: token,
+        ...(session.forwardedFor ? { forwardedFor: session.forwardedFor } : {}),
+      });
     let answer;
     try {
       answer = await run();
@@ -438,16 +524,20 @@ export function createShopwareCart(
     quantity: number,
   ): Promise<Record<string, unknown>> {
     const productId = orderedDishId(configuration);
-    const products = await lookUp([productId, ...configuration.extraIds]);
-    const product = products.get(productId);
+    const found = await lookUp([productId, ...configuration.extraIds]);
+    const product = found.get(productId);
     if (!product || product.childCount > 0) throw unavailable(productId);
     if (configuration.variantId && product.parentId !== configuration.dishId) {
       throw invalid("The variant belongs to another dish.", configuration);
     }
+    // extras hang at the dish; a variant named as the dish has its parent's
+    const offered = configuration.extraIds.length
+      ? await extrasOf(product.parentId ?? product.id)
+      : new Set<Id>();
     const extras = configuration.extraIds.map((id) => {
-      const extra = products.get(id);
-      if (!extra || id === productId) {
-        throw invalid("The menu does not offer this extra.", id);
+      const extra = found.get(id);
+      if (!extra || !offered.has(id)) {
+        throw invalid("The dish does not offer this extra.", id);
       }
       return extra;
     });
@@ -486,16 +576,20 @@ export function createShopwareCart(
   }
 
   return {
-    getCart: async (session) =>
-      answer(
+    getCart: async (session) => {
+      // a visitor without a token has an empty cart: no request for it
+      if (!(await session.read())) return answer({});
+      return answer(
         await requestOrUnavailable("the cart", () =>
           send(session, "GET", "/checkout/cart"),
         ),
-      ),
+      );
+    },
 
     addLine: async (session, configuration, quantity) => {
       checkQuantity(quantity, 1);
       const productId = orderedDishId(configuration);
+      if (isPlainDish(configuration)) await checkVariant(configuration);
       const item = isPlainDish(configuration)
         ? { id: productId, quantity, type: PRODUCT }
         : await containerItem(configuration, quantity);

@@ -1,5 +1,6 @@
 import type { H3Event } from "h3";
 import type { BackendSession } from "../ports";
+import { forwardedFor } from "../adapters/shopware/sessionBridge";
 import { isCrossSiteWrite } from "../session/sameOrigin";
 import { createSealer, sessionPasswords, type Sealer } from "../session/seal";
 import {
@@ -144,7 +145,15 @@ export async function backendSession(
 ): Promise<BackendSession> {
   const visitor = useVisitorSession(event);
   await visitor.migrateLegacyCookie(LEGACY_CONTEXT_COOKIE, "shopware");
-  return visitor.scope(adapter, options);
+  const scope = visitor.scope(adapter, options);
+  return {
+    read: () => scope.read(),
+    write: (state) => scope.write(state),
+    forwardedFor: forwardedFor(
+      getRequestHeader(event, "x-forwarded-for"),
+      event.node?.req?.socket?.remoteAddress,
+    ),
+  };
 }
 
 /**

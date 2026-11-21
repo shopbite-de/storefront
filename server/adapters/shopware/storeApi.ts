@@ -26,6 +26,8 @@ export interface VisitorStoreApi {
     path: string;
     body?: Record<string, unknown>;
     contextToken?: string;
+    /** The visitor's address chain, sent as `X-Forwarded-For`. */
+    forwardedFor?: string;
   }): Promise<{ data: T; contextToken: string | null }>;
 }
 

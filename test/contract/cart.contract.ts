@@ -415,7 +415,7 @@ export const cartContract = defineContract<"cart", CartScenario>(
       ]);
     });
 
-    it("refuses extras the menu does not offer, removals the dish does not have, and odd quantities", async () => {
+    it("refuses extras the dish does not offer, variants of other dishes, removals the dish does not have, and odd quantities", async () => {
       const cart = await given(PIZZERIA);
       const session = testSession();
 
@@ -438,6 +438,40 @@ export const cartContract = defineContract<"cart", CartScenario>(
             }),
             1,
           ),
+        // an extra of another dish
+        () =>
+          cart.addLine(
+            session,
+            dishConfiguration({ dishId: COLA, extraIds: [CHEESE] }),
+            1,
+          ),
+        () =>
+          cart.addLine(
+            session,
+            dishConfiguration({
+              dishId: SALAMI,
+              variantId: LARGE,
+              extraIds: [OLIVES],
+            }),
+            1,
+          ),
+        // a variant of another dish
+        () =>
+          cart.addLine(
+            session,
+            dishConfiguration({ dishId: MARGHERITA, variantId: LARGE }),
+            1,
+          ),
+        () =>
+          cart.addLine(
+            session,
+            dishConfiguration({
+              dishId: MARGHERITA,
+              variantId: LARGE,
+              extraIds: [CHEESE],
+            }),
+            1,
+          ),
         () => cart.addLine(session, dishConfiguration({ dishId: COLA }), 0),
         () => cart.addLine(session, dishConfiguration({ dishId: COLA }), 1.5),
         () => cart.addLine(session, dishConfiguration({ dishId: COLA }), 101),
@@ -447,6 +481,7 @@ export const cartContract = defineContract<"cart", CartScenario>(
           true,
         );
       }
+      expect((await cart.getCart(session)).lines).toEqual([]);
       const added = await cart.addLine(
         session,
         dishConfiguration({ dishId: COLA }),

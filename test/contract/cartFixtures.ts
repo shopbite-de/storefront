@@ -462,6 +462,22 @@ export function fakeShopwareCart(scenario: CartScenario) {
     },
     post: async <T>(path: string, body: Json) => {
       requests.push({ method: "POST", path, body: structuredClone(body) });
+      const crossSelling = path.match(/^\/product\/([^/]+)\/cross-selling$/);
+      if (crossSelling) {
+        const dish = scenario.dishes.find(
+          (entry) => entry.id === crossSelling[1],
+        );
+        return (
+          dish?.extras.length
+            ? [
+                {
+                  crossSelling: { id: `extras-${dish.id}`, name: "Extras" },
+                  products: dish.extras.map((extra) => ({ id: extra.id })),
+                },
+              ]
+            : []
+        ) as T;
+      }
       if (path !== "/product") throw new Error(`unexpected POST ${path}`);
       const ids = body.ids as string[];
       return {

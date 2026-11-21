@@ -105,11 +105,14 @@ describe("Shopware cart: requests", () => {
       2,
     );
 
-    const lookup = fake.requests[0]!;
-    expect(lookup.path).toBe("/product");
+    const lookup = fake.requests.find(
+      (request) => request.path === "/product",
+    )!;
     expect(lookup.body?.ids).toEqual([MARGHERITA, OLIVES, CHEESE]);
 
-    const add = fake.requests[1]!;
+    const add = fake.requests.find(
+      (request) => request.path === "/checkout/cart/line-item",
+    )!;
     expect(add.path).toBe("/checkout/cart/line-item");
     const [item] = add.body!.items as Record<string, unknown>[];
     expect(item).toEqual({
@@ -166,6 +169,54 @@ describe("Shopware cart: requests", () => {
       path: "/checkout/cart/line-item/delete",
       body: { ids: ["promotion-WILLKOMMEN"] },
     });
+  });
+});
+
+describe("Shopware cart: visitor and backend load", () => {
+  it("forwards the visitor's address chain for Shopware's rate limits", async () => {
+    const { cart, fake } = cartOf();
+    const session = { ...testSession(), forwardedFor: "203.0.113.7, 10.0.0.5" };
+    await cart.addLine(session, dishConfiguration({ dishId: COLA }), 1);
+
+    expect(fake.requests[0]).toMatchObject({
+      path: "/checkout/cart/line-item",
+      forwardedFor: "203.0.113.7, 10.0.0.5",
+    });
+  });
+
+  it("answers an empty cart to a visitor without state without asking Shopware", async () => {
+    const { cart, fake } = cartOf();
+    const session = testSession();
+
+    const empty = await cart.getCart(session);
+
+    expect(empty.lines).toEqual([]);
+    expect(empty.total).toEqual({ amountMinor: 0, currency: "EUR" });
+    expect(fake.requests).toEqual([]);
+    expect(session.state()).toBeUndefined();
+  });
+
+  it("looks a dish up once for a while, not for every answer", async () => {
+    const { cart, fake } = cartOf();
+    const session = testSession();
+    const configuration = dishConfiguration({
+      dishId: MARGHERITA,
+      extraIds: [CHEESE],
+      removedIngredientIds: [BASIL],
+    });
+    await cart.addLine(session, configuration, 1);
+    await cart.addLine(session, configuration, 1);
+    await cart.getCart(session);
+    await cart.getCart(session);
+
+    const lookups = fake.requests.filter((request) =>
+      request.path.startsWith("/product"),
+    );
+    // the dish with its extra, and the dish's extras: once each
+    expect(lookups.map((request) => request.path)).toEqual([
+      "/product",
+      `/product/${MARGHERITA}/cross-selling`,
+    ]);
   });
 });
 
@@ -243,11 +294,11 @@ describe("Shopware cart: failures", () => {
     });
 
     send.mockRejectedValueOnce(new Error("ECONNREFUSED"));
-    await expect(cart.getCart(testSession())).rejects.toSatisfy((error) =>
+    await expect(cart.getCart(testSession("t"))).rejects.toSatisfy((error) =>
       isDomainError(error, "backend_unavailable"),
     );
     send.mockRejectedValueOnce(httpError(500, "FRAMEWORK__INTERNAL"));
-    await expect(cart.getCart(testSession())).rejects.toSatisfy((error) =>
+    await expect(cart.getCart(testSession("t"))).rejects.toSatisfy((error) =>
       isDomainError(error, "backend_unavailable"),
     );
     send.mockRejectedValueOnce(
@@ -261,7 +312,8 @@ describe("Shopware cart: failures", () => {
   it("keeps the removed ingredients' names when their ids cannot be looked up", async () => {
     const fake = fakeShopwareCart(PIZZERIA);
     const log = vi.fn();
-    const { cart } = cartOf(fake, { log });
+    // nothing kept, so the answer looks the dish up again
+    const { cart } = cartOf(fake, { log, lookupTtlMs: -1 });
     const session = testSession();
     await cart.addLine(
       session,

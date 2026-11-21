@@ -46,29 +46,45 @@ export function storeApiGet<T>(
   }) as Promise<T>;
 }
 
+/** A visitor waits no longer for a cart answer (and its cart writes). */
+const VISITOR_TIMEOUT_MS = 10_000;
+
 /**
  * A Store API request for one visitor (the Shopware adapter's cart): with
- * the visitor's context token, answering the token Shopware holds the
- * context under.
+ * the visitor's context token and address chain, answering the token
+ * Shopware holds the context under. The server's endpoint (as the Store
+ * API bridge and server-side rendering), with a timeout: a paused Shopware
+ * answers `backend_unavailable` instead of holding the visitor's writes.
  */
 export async function storeApiForVisitor<T>(request: {
   method: "GET" | "POST" | "PATCH";
   path: string;
   body?: Record<string, unknown>;
   contextToken?: string;
+  forwardedFor?: string;
 }): Promise<{ data: T; contextToken: string | null }> {
-  const { endpoint, accessToken } = useRuntimeConfig().public.shopware;
-  const response = await $fetch.raw<T>(`${endpoint}${request.path}`, {
-    method: request.method,
-    headers: {
-      "sw-access-key": accessToken,
-      ...(request.contextToken
-        ? { "sw-context-token": request.contextToken }
-        : {}),
+  const config = useRuntimeConfig();
+  const { endpoint, accessToken } = config.public.shopware;
+  const serverEndpoint = (config.shopware as { endpoint?: string } | undefined)
+    ?.endpoint;
+  const response = await $fetch.raw<T>(
+    `${serverEndpoint || endpoint}${request.path}`,
+    {
+      method: request.method,
+      headers: {
+        "sw-access-key": accessToken,
+        ...(request.contextToken
+          ? { "sw-context-token": request.contextToken }
+          : {}),
+        ...(request.forwardedFor
+          ? { "x-forwarded-for": request.forwardedFor }
+          : {}),
+      },
+      body: request.body,
+      retry: 0,
+      timeout: VISITOR_TIMEOUT_MS,
     },
-    body: request.body,
-    retry: 0,
-  });
+  );
   return {
     data: response._data as T,
     contextToken: response.headers.get("sw-context-token"),
