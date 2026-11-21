@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport, registerEndpoint } from "@nuxt/test-utils/runtime";
-import { readBody, type H3Event } from "h3";
+import { createError, readBody, type H3Event } from "h3";
 import { ref } from "vue";
 import { useCartMutations } from "~/composables/useCartMutations";
 import type { Cart } from "../../shared/domain";
@@ -187,6 +187,32 @@ describe("useCartMutations", () => {
     expect(result).toBeUndefined();
     expect(mockRefresh).toHaveBeenCalledWith();
     expect(isMutating.value).toBe(false);
+  });
+
+  it("sends a write again once when it carried an outdated session (409 stale_session)", async () => {
+    mockFetch.mockRejectedValueOnce(
+      createError({ statusCode: 409, data: { code: "stale_session" } }),
+    );
+    const answer = cartWith([{ id: "p1", quantity: 1 }]);
+    mockFetch.mockResolvedValueOnce(answer);
+
+    const { addLine } = useCartMutations();
+
+    expect(await addLine(PLAIN)).toEqual(answer);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockRefresh).not.toHaveBeenCalled();
+  });
+
+  it("does not send other conflicts again", async () => {
+    mockFetch.mockRejectedValue(
+      createError({ statusCode: 409, data: { code: "dish_unavailable" } }),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { addLine } = useCartMutations();
+
+    expect(await addLine(PLAIN)).toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it("keeps processing the queue after a failure", async () => {

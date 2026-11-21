@@ -1,4 +1,3 @@
-import { createStorage } from "unstorage";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Backend } from "../../server/ports";
 import { CHEESE, COLA, MARGHERITA, PIZZERIA } from "../contract/cart.contract";
@@ -60,7 +59,6 @@ let backend: Backend;
 async function setup(given?: Backend) {
   const memory = await import("../contract/cartFixtures");
   backend = given ?? (await memory.memoryCart.create(PIZZERIA));
-  const storage = createStorage();
   const { answerDomain } = await import("../../server/utils/domainHttp");
   const session = await import("../../server/utils/visitorSession");
   const cartRoutes = await import("../../server/utils/cartRoutes");
@@ -69,13 +67,16 @@ async function setup(given?: Backend) {
     ...session,
     ...cartRoutes,
     useBackend: () => backend,
-    useStorage: () => storage,
     useRuntimeConfig: () => ({
       public: {
         storeUrl: "http://localhost:3000",
         shopware: { endpoint: "http://shopware/store-api", accessToken: "k" },
       },
-      visitorSession: { maxAgeDays: 30 },
+      visitorSession: {
+        maxAgeDays: 30,
+        password: "route-test-session-password-0123456789",
+        previousPasswords: "",
+      },
     }),
     getCookie: (event: TestEvent, name: string) =>
       event.client.cookies.get(name),
@@ -175,7 +176,8 @@ describe("POST /api/cart/lines", () => {
     expect(event.setCookies).toEqual([
       {
         name: "shopbite-session",
-        value: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+        // sealed: the backend's state is not readable
+        value: expect.stringMatching(/^v1\./),
         options: {
           httpOnly: true,
           secure: false,
@@ -342,11 +344,15 @@ describe("voucher routes", () => {
 });
 
 describe("the session behind the cart (Shopware)", () => {
-  async function shopware() {
+  async function shopware(
+    fake?: ReturnType<
+      (typeof import("../contract/cartFixtures"))["fakeShopwareCart"]
+    >,
+  ) {
     const { fakeShopwareCart } = await import("../contract/cartFixtures");
     const { createShopwareBackend } =
       await import("../../server/adapters/shopware");
-    const fake = fakeShopwareCart(PIZZERIA);
+    fake ??= fakeShopwareCart(PIZZERIA);
     await setup(
       createShopwareBackend({
         storeApi: fake.storeApi,
@@ -358,6 +364,58 @@ describe("the session behind the cart (Shopware)", () => {
     );
     return fake;
   }
+
+  it("keeps the cart over a restart of the storefront", async () => {
+    const fake = await shopware();
+    const client = browser();
+    await addCola(client, 2);
+
+    // a new process: modules, registry and adapter instance are new
+    vi.resetModules();
+    await shopware(fake);
+    const after = await send(client, { method: "GET", path: "/api/cart" });
+
+    expect(
+      (after.body as CartAnswer).lines.map((line) => [
+        line.configuration.dishId,
+        line.quantity,
+      ]),
+    ).toEqual([[COLA, 2]]);
+  });
+
+  it("refuses a write that carries a session a parallel request replaced (409, retryable)", async () => {
+    const fake = await shopware();
+    const client = browser();
+    await addCola(client);
+    const old = new Map(client.cookies);
+
+    // Shopware replaces the token (as on a login) while answering this write
+    const send0 = fake.visitorApi.send;
+    fake.visitorApi.send = async (request) => ({
+      ...(await send0(request)),
+      contextToken: "rotated-token-0123456789abcdefABCD",
+    });
+    const rotating = await addCola(client);
+    expect(rotating.event.setCookies.map((cookie) => cookie.name)).toEqual([
+      "shopbite-session",
+    ]);
+    fake.visitorApi.send = send0;
+
+    // a request sent with the cookie before the rotation
+    const stale = browser(Object.fromEntries(old));
+    const write = await addCola(stale);
+    expect(write.error).toMatchObject({
+      statusCode: 409,
+      data: { code: "stale_session" },
+    });
+    expect(write.event.setCookies).toEqual([]);
+    // a read with it still answers, and sets no cookie
+    const read = await send(stale, { method: "GET", path: "/api/cart" });
+    expect(read.error).toBeUndefined();
+    expect(read.event.setCookies).toEqual([]);
+    // the browser's current cookie works
+    expect((await addCola(client)).error).toBeUndefined();
+  });
 
   it("keeps the cart of a visitor of the old layer (sw-context-token cookie) once", async () => {
     const fake = await shopware();

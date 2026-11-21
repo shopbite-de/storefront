@@ -11,8 +11,10 @@ import type { BackendSession, CartPort } from "../ports";
  * The cart behind the BFF (ADR 0001, step 4): `/api/cart` and its write
  * routes answer the domain `Cart`, privately (never stored by a browser or
  * proxy). Reads never create a session; writes come from the storefront's
- * own pages only (CSRF) and run one after the other per visitor, so a
- * backend token replaced by one write is the token of the next.
+ * own pages only (CSRF) and run one after the other per visitor; a write
+ * that still carries the cookie from before a parallel request replaced
+ * the session answers 409 `stale_session` (the browser retries with the
+ * new cookie).
  */
 export async function answerCart(
   event: H3Event,
@@ -27,7 +29,18 @@ export async function answerCart(
       create: access === "write",
     });
     if (access === "read") return run(backend.cart, session);
-    return useVisitorSession(event).exclusive(() => run(backend.cart, session));
+    const visitor = useVisitorSession(event);
+    return visitor.exclusive(async () => {
+      // the cookie is older than a state a parallel request sealed: acting
+      // on it would write to a replaced token (a throwaway cart)
+      if (await visitor.isStale()) {
+        throw new DomainError(
+          "stale_session",
+          "The request carried an outdated session.",
+        );
+      }
+      return run(backend.cart, session);
+    });
   });
 }
 

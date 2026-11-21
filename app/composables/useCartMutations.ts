@@ -9,6 +9,14 @@ export type CartLineRequest = {
   quantity: number;
 };
 
+/** The BFF's 409 for a request with an outdated session cookie. */
+function isStaleSession(error: unknown): boolean {
+  return (
+    (error as { data?: { data?: { code?: string } } } | null)?.data?.data
+      ?.code === "stale_session"
+  );
+}
+
 // Module-level so every component instance in the browser shares one
 // queue. On the server this state would be shared across requests, so
 // server-side calls bypass it (see `enqueue`/`setQuantity`).
@@ -31,8 +39,19 @@ export function useCartMutations() {
   const pendingCount = useState("cart-mutations-pending", () => 0);
   const isMutating = computed(() => pendingCount.value > 0);
 
+  /**
+   * Sends a write; once more when the server says it carried an outdated
+   * session (a parallel request replaced it, e.g. a login): the browser has
+   * the new cookie by then.
+   */
   async function write(request: () => Promise<Cart>): Promise<Cart> {
-    const next = await request();
+    let next: Cart;
+    try {
+      next = await request();
+    } catch (error) {
+      if (!isStaleSession(error)) throw error;
+      next = await request();
+    }
     setCart(next);
     return next;
   }

@@ -187,7 +187,7 @@ One dish configuration on the wishlist.
 _Avoid_: wishlist item
 
 **Session**:
-The storefront's own record of a visitor (cart, login) behind its HttpOnly cookie; what the shop backend needs to recognise the visitor is kept inside it, on the server, and never reaches the browser.
+The storefront's own record of a visitor (cart, login) in its HttpOnly cookie; what the shop backend needs to recognise the visitor travels inside it sealed, so the browser can neither read nor change it.
 _Avoid_: context, context token
 
 ## Restaurant operations
