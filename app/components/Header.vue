@@ -24,7 +24,7 @@ const {
   mounted: cartMounted,
   show: openCart,
 } = useCartQuickView();
-const { count: cartCount } = useCart();
+const { count: cartCount } = useCartData();
 const { count: wishlistCount } = useWishlistEntries();
 const { acceptsOrders } = useShopConfig();
 const { isLoggedIn, isGuestSession, logout } = useUser();

@@ -1,10 +1,16 @@
+import type { Cart } from "../../shared/domain";
+
+/**
+ * The checkout's voucher field (#445): vouchers through the BFF
+ * (`/api/cart/vouchers`, ADR 0001 step 4). A code that does not apply
+ * comes back as a `voucher_invalid` message about it; the error shows at
+ * the field, no toast.
+ */
 export function useVoucherCode() {
-  const { cart, addPromotionCode, appliedPromotionCodes, removeItem } =
-    useCart();
+  const { discounts, setCart } = useCartData();
 
   const voucherCode = ref("");
   const voucherLoading = ref(false);
-  // shown at the field (#445), no toast
   const voucherError = ref<string | null>(null);
   const INVALID = "Der Gutscheincode ist ungültig oder abgelaufen.";
 
@@ -14,13 +20,17 @@ export function useVoucherCode() {
     voucherLoading.value = true;
     voucherError.value = null;
     try {
-      await addPromotionCode(code);
-      const errors = cart.value?.errors ?? {};
-      const promotionError = Object.values(errors).find(
-        (e) => (e as { promotionCode?: string }).promotionCode === code,
-      ) as { translatedMessage?: string } | undefined;
-      if (promotionError) {
-        voucherError.value = promotionError.translatedMessage ?? INVALID;
+      const cart = await $fetch<Cart>("/api/cart/vouchers", {
+        method: "POST",
+        body: { code },
+      });
+      setCart(cart);
+      const refused = cart.messages.find(
+        (message) =>
+          message.code === "voucher_invalid" && message.subjectId === code,
+      );
+      if (refused) {
+        voucherError.value = refused.text || INVALID;
       } else {
         voucherCode.value = "";
       }
@@ -31,12 +41,29 @@ export function useVoucherCode() {
     }
   }
 
+  /** Discounts from a voucher; automatic ones cannot be removed. */
+  const appliedVouchers = computed(() =>
+    discounts.value.filter((discount) => discount.code !== null),
+  );
+
+  async function removeVoucher(code: string) {
+    try {
+      setCart(
+        await $fetch<Cart>(`/api/cart/vouchers/${encodeURIComponent(code)}`, {
+          method: "DELETE",
+        }),
+      );
+    } catch (error) {
+      console.error("[voucher][remove]", error);
+    }
+  }
+
   return {
     voucherCode,
     voucherLoading,
     voucherError,
     applyVoucher,
-    appliedPromotionCodes,
-    removeItem,
+    appliedVouchers,
+    removeVoucher,
   };
 }

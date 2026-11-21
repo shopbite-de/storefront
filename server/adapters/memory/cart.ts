@@ -2,6 +2,7 @@ import { v5 as uuidv5 } from "uuid";
 import {
   addMoney,
   deepFreeze,
+  dishConfiguration,
   DomainError,
   isSameDishConfiguration,
   money,
@@ -100,6 +101,26 @@ export function createMemoryCart(
     }
     if (next !== token) await session.write(next);
     return fresh;
+  }
+
+  /**
+   * A variant may be named as the dish (the upsell lists variants as
+   * dishes): it is that variant of its dish.
+   */
+  function canonical(configuration: DishConfiguration): DishConfiguration {
+    if (configuration.variantId || dishes.has(configuration.dishId)) {
+      return configuration;
+    }
+    const owner = catalog.dishes.find((dish) =>
+      dish.variants.some((variant) => variant.id === configuration.dishId),
+    );
+    return owner
+      ? dishConfiguration({
+          ...configuration,
+          dishId: owner.id,
+          variantId: configuration.dishId,
+        })
+      : configuration;
   }
 
   function resolve(configuration: DishConfiguration) {
@@ -216,8 +237,9 @@ export function createMemoryCart(
   return {
     getCart: async (session) => answer(await cartOf(session, false)),
 
-    addLine: async (session, configuration, quantity) => {
+    addLine: async (session, given, quantity) => {
       checkQuantity(quantity, 1);
+      const configuration = canonical(given);
       resolve(configuration);
       const stored = (await cartOf(session, true))!;
       const existing = stored.lines.find((line) =>

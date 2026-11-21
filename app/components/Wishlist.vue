@@ -65,6 +65,8 @@ type Row = {
   entry: WishlistEntry;
   /** What the row and the dish sheet show: the dish or the saved variant. */
   dish: Dish;
+  /** The dish the saved variant belongs to. */
+  dishId: string;
   orderable: OrderableDish;
   extras: Extra[];
   configuration: string;
@@ -93,6 +95,7 @@ const rows = computed<Row[]>(() =>
       {
         entry,
         dish,
+        dishId: detail.id,
         orderable: variant ?? detail,
         extras: chosenExtras,
         configuration,
@@ -127,7 +130,7 @@ function rowLabel(row: Row) {
 
 /** Adds one row with the same cart line the dish sheet creates. */
 async function addRow(row: Row) {
-  setSelectedDish(row.orderable);
+  setSelectedDish(row.orderable, row.dishId);
   setSelectedExtras(row.extras);
   setRemovedIngredients(row.entry.without);
   selectedQuantity.value = 1;

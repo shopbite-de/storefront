@@ -6,7 +6,7 @@ useSeoMeta({
   robots: "noindex, nofollow",
 });
 
-const { isEmpty } = useCart();
+const { isEmpty } = useCartData();
 </script>
 
 <template>

@@ -1,36 +1,6 @@
 import type { Schemas } from "#shopware";
 
-const SHIPPING_METHOD_BLOCKED_KEY = "shipping-method-blocked";
-const PAYMENT_METHOD_BLOCKED_KEY = "payment-method-blocked";
-
-type CartError = {
-  key?: string;
-  messageKey?: string;
-  message?: string;
-  level?: number;
-};
-
 type CheckoutMethod = { id: string; name?: string };
-
-/**
- * Normalizes `cart.errors`, which the Store API delivers either as an
- * array or as an object keyed by error id.
- */
-export function getCartErrors(cart?: Schemas["Cart"]): CartError[] {
-  return Object.values(cart?.errors ?? {}) as CartError[];
-}
-
-function hasCartError(cart: Schemas["Cart"] | undefined, key: string) {
-  return getCartErrors(cart).some((error) => error.messageKey === key);
-}
-
-export function hasBlockedShippingMethod(cart?: Schemas["Cart"]): boolean {
-  return hasCartError(cart, SHIPPING_METHOD_BLOCKED_KEY);
-}
-
-export function hasBlockedPaymentMethod(cart?: Schemas["Cart"]): boolean {
-  return hasCartError(cart, PAYMENT_METHOD_BLOCKED_KEY);
-}
 
 type MethodGuardConfig<M extends CheckoutMethod> = {
   isBlocked: () => boolean;
@@ -56,16 +26,18 @@ type MethodGuardConfig<M extends CheckoutMethod> = {
  * picks another one.
  */
 export function useCheckoutMethodGuard() {
-  const { cart, refreshCart } = useCart();
+  // the cart's messages (ADR 0001, step 4); the methods are still the
+  // Shopware layer's until step 5
+  const { hasMessage, refresh: refreshCart } = useCartData();
   const { getPaymentMethods, setPaymentMethod, selectedPaymentMethod } =
     useCheckout();
   const { sessionContext } = useSessionContext();
 
   const isShippingMethodBlocked = computed(() =>
-    hasBlockedShippingMethod(cart.value),
+    hasMessage("shipping_method_blocked"),
   );
   const isPaymentMethodBlocked = computed(() =>
-    hasBlockedPaymentMethod(cart.value),
+    hasMessage("payment_method_blocked"),
   );
 
   const isResolving = ref(false);

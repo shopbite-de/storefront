@@ -5,19 +5,19 @@ import { dish } from "../support/dishes";
 
 const {
   mockUpsell,
-  mockAddLineItems,
+  mockAddLine,
   mockTriggerCartItemAdded,
   mockTrackUpsellAdd,
 } = vi.hoisted(() => ({
   mockUpsell: vi.fn(),
-  mockAddLineItems: vi.fn(),
+  mockAddLine: vi.fn(),
   mockTriggerCartItemAdded: vi.fn(),
   mockTrackUpsellAdd: vi.fn(),
 }));
 
 registerEndpoint("/api/menu/upsell", () => mockUpsell());
 mockNuxtImport("useCartMutations", () => () => ({
-  addLineItems: mockAddLineItems,
+  addLine: mockAddLine,
 }));
 mockNuxtImport("useProductEvents", () => () => ({
   triggerCartItemAdded: mockTriggerCartItemAdded,
@@ -51,20 +51,24 @@ describe("useCartUpsell", () => {
   });
 
   it("adds the dish with quantity 1 and reports the add", async () => {
-    mockAddLineItems.mockResolvedValue({ id: "cart" });
+    mockAddLine.mockResolvedValue({ id: "cart" });
 
     await useCartUpsell().addUpsellDish(tiramisu);
 
-    expect(mockAddLineItems).toHaveBeenCalledWith([
-      { id: "tiramisu", quantity: 1, type: "product" },
-    ]);
+    expect(mockAddLine).toHaveBeenCalledWith({
+      dishId: "tiramisu",
+      variantId: null,
+      extraIds: [],
+      removedIngredientIds: [],
+      quantity: 1,
+    });
     expect(mockTriggerCartItemAdded).toHaveBeenCalledWith(tiramisu, 1);
     expect(mockTrackUpsellAdd).toHaveBeenCalledWith(tiramisu, 1);
   });
 
   it("reports nothing when the add failed", async () => {
     // useCartMutations re-syncs the cart itself and resolves undefined.
-    mockAddLineItems.mockResolvedValue(undefined);
+    mockAddLine.mockResolvedValue(undefined);
 
     await useCartUpsell().addUpsellDish(tiramisu);
 
@@ -74,7 +78,7 @@ describe("useCartUpsell", () => {
 
   it("marks the dish as pending while the add is queued", async () => {
     let resolveAdd: (cart: unknown) => void = () => {};
-    mockAddLineItems.mockReturnValue(
+    mockAddLine.mockReturnValue(
       new Promise((resolve) => {
         resolveAdd = resolve;
       }),
@@ -86,7 +90,7 @@ describe("useCartUpsell", () => {
 
     // A second click while queued does not add the dish twice.
     await addUpsellDish(tiramisu);
-    expect(mockAddLineItems).toHaveBeenCalledTimes(1);
+    expect(mockAddLine).toHaveBeenCalledTimes(1);
 
     resolveAdd({ id: "cart" });
     await adding;

@@ -5,7 +5,7 @@ import { useOrderPayment } from "@shopware/composables";
 
 const { createOrder, selectedPaymentMethod, selectedShippingMethod } =
   useCheckout();
-const { refreshCart } = useCart();
+const { refresh: refreshCart } = useCartData();
 const { isLoggedIn, isGuestSession, refreshUser } = useUser();
 const { acceptsOrders, refresh, checkAcceptsOrders } = useShopConfig();
 const { fulfillment } = useShippingLeadTime();

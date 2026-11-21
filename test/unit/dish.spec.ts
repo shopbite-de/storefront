@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   cartLineHoldsDish,
+  cartLineLabel,
   dietLabels,
   dishForNumber,
   foodLabelText,
@@ -8,6 +9,7 @@ import {
   variantAsDish,
 } from "../../app/utils/dish";
 import { dish, eur, pizzaWithSizes, variant } from "../support/dishes";
+import { cartLine } from "../support/cart";
 
 describe("dietLabels", () => {
   it("names the diets as the menu card shows them", () => {
@@ -83,22 +85,39 @@ describe("orderableOf", () => {
 });
 
 describe("cartLineHoldsDish", () => {
-  it("matches a plain cart line of the dish", () => {
-    expect(cartLineHoldsDish({ referencedId: "d21" }, "d21")).toBe(true);
-    expect(cartLineHoldsDish({ referencedId: "d22" }, "d21")).toBe(false);
+  const line = (
+    dishId: string,
+    variantId: string | null,
+    extraIds: string[] = [],
+  ) =>
+    cartLine({
+      configuration: { dishId, variantId, extraIds, removedIngredientIds: [] },
+    });
+
+  it("matches a line of the dish, or of the variant it orders", () => {
+    expect(cartLineHoldsDish(line("d21", null), "d21")).toBe(true);
+    expect(cartLineHoldsDish(line("d22", null), "d21")).toBe(false);
+    expect(cartLineHoldsDish(line("d21", "v21-gross"), "v21-gross")).toBe(true);
+    // the dish of a variant line is not what the line orders
+    expect(cartLineHoldsDish(line("d21", "v21-gross"), "d21")).toBe(false);
   });
 
-  it("matches a line carrying the dish with extras (its first child)", () => {
+  it("matches a line carrying the dish as an extra", () => {
+    expect(cartLineHoldsDish(line("d21", null, ["x900"]), "x900")).toBe(true);
+  });
+});
+
+describe("cartLineLabel", () => {
+  it("names the line as the receipt does", () => {
+    expect(cartLineLabel(cartLine())).toBe("Pizza Margherita");
     expect(
-      cartLineHoldsDish(
-        {
-          referencedId: null,
-          children: [{ referencedId: "d21" }, { referencedId: "x900" }],
-        },
-        "d21",
+      cartLineLabel(
+        cartLine({
+          extras: [{ id: "x1", name: "Extra Käse", unitPrice: eur(150) }],
+          removedIngredients: ["Zwiebeln", "Oliven"],
+        }),
       ),
-    ).toBe(true);
-    expect(cartLineHoldsDish({ children: null }, "d21")).toBe(false);
+    ).toBe("Pizza Margherita +Extra Käse -Zwiebeln -Oliven");
   });
 });
 

@@ -7,10 +7,10 @@ useSeoMeta({
 const route = useRoute();
 const orderId = route.params.id as string;
 
-const { refreshCart } = useCart();
+const { refresh: refreshCart } = useCartData();
 
-onMounted(async () => {
-  await refreshCart();
+onMounted(() => {
+  refreshCart().catch((error) => console.error("[cart] refresh", error));
 });
 </script>
 

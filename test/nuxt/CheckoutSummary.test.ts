@@ -34,8 +34,8 @@ mockNuxtImport("useCheckout", () => () => ({
   selectedShippingMethod: ref({ id: "sm1", name: "Lieferung" }),
 }));
 
-mockNuxtImport("useCart", () => () => ({
-  refreshCart: vi.fn(),
+mockNuxtImport("useCartData", () => () => ({
+  refresh: vi.fn().mockResolvedValue(undefined),
 }));
 
 mockNuxtImport("useUser", () => () => ({

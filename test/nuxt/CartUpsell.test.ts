@@ -4,8 +4,9 @@ import { flushPromises } from "@vue/test-utils";
 import { computed, reactive } from "vue";
 import { clearNuxtData } from "#imports";
 import CartUpsell from "~/components/Cart/Upsell.vue";
-import type { Dish } from "../../shared/domain";
+import type { CartLine, Dish } from "../../shared/domain";
 import { dish, eur } from "../support/dishes";
+import { cartLine } from "../support/cart";
 
 const { mockLoadUpsellDishes, mockAddUpsellDish } = vi.hoisted(() => ({
   mockLoadUpsellDishes: vi.fn(),
@@ -13,16 +14,27 @@ const { mockLoadUpsellDishes, mockAddUpsellDish } = vi.hoisted(() => ({
 }));
 
 // Read lazily inside the factories, i.e. after module initialisation.
-const cart = reactive({ items: [] as unknown[] });
+const cart = reactive({ lines: [] as CartLine[] });
 
 mockNuxtImport("useCartUpsell", () => () => ({
   loadUpsellDishes: mockLoadUpsellDishes,
   addUpsellDish: mockAddUpsellDish,
   isAdding: () => false,
 }));
-mockNuxtImport("useCart", () => () => ({
-  cartItems: computed(() => cart.items),
+mockNuxtImport("useCartData", () => () => ({
+  lines: computed(() => cart.lines),
 }));
+
+const lineOf = (dishId: string, extraIds: string[] = []) =>
+  cartLine({
+    id: `line-${dishId}`,
+    configuration: {
+      dishId,
+      variantId: null,
+      extraIds,
+      removedIngredientIds: [],
+    },
+  });
 mockNuxtImport("useCommercePrice", () => () => ({
   getFormattedMoney: (value: { amountMinor: number }) =>
     `${value.amountMinor / 100} €`,
@@ -44,7 +56,7 @@ describe("CartUpsell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearNuxtData("cart-upsell");
-    cart.items = [];
+    cart.lines = [];
     mockLoadUpsellDishes.mockResolvedValue([tiramisu, cola]);
   });
 
@@ -59,30 +71,21 @@ describe("CartUpsell", () => {
   });
 
   it("hides dishes that are already in the cart", async () => {
-    cart.items = [{ id: "li-1", type: "product", referencedId: "tiramisu" }];
+    cart.lines = [lineOf("tiramisu")];
     const wrapper = await mountUpsell();
 
     expect(wrapper.text()).not.toContain("Tiramisu");
     expect(wrapper.text()).toContain("Cola");
 
-    // Also as the dish of a container line with extras.
-    cart.items = [
-      {
-        id: "li-2",
-        type: "container",
-        children: [{ id: "c-1", type: "product", referencedId: "cola" }],
-      },
-    ];
+    // Also as an extra of a configured dish.
+    cart.lines = [lineOf("pizza", ["cola"])];
     await flushPromises();
     expect(wrapper.text()).toContain("Tiramisu");
     expect(wrapper.text()).not.toContain("Cola");
   });
 
   it("renders no row when every suggestion is in the cart", async () => {
-    cart.items = [
-      { id: "li-1", type: "product", referencedId: "tiramisu" },
-      { id: "li-2", type: "product", referencedId: "cola" },
-    ];
+    cart.lines = [lineOf("tiramisu"), lineOf("cola")];
     const wrapper = await mountUpsell();
 
     expect(wrapper.find("section").exists()).toBe(false);

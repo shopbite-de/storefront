@@ -4,8 +4,8 @@ const {
   voucherLoading,
   voucherError,
   applyVoucher,
-  appliedPromotionCodes,
-  removeItem,
+  appliedVouchers,
+  removeVoucher,
 } = useVoucherCode();
 const voucherId = useId();
 </script>
@@ -41,17 +41,17 @@ const voucherId = useId();
     >
       {{ voucherError }}
     </p>
-    <ul v-if="appliedPromotionCodes.length" class="flex flex-col gap-1">
+    <ul v-if="appliedVouchers.length" class="flex flex-col gap-1">
       <li
-        v-for="promo in appliedPromotionCodes"
-        :key="promo.id"
+        v-for="voucher in appliedVouchers"
+        :key="voucher.code!"
         class="flex items-center justify-between gap-2 rounded-sb-control bg-sb-primary-tint ps-3 text-sm font-semibold text-sb-primary-ink"
       >
-        <span>Gutschein: {{ promo.label }}</span>
+        <span>Gutschein: {{ voucher.name }}</span>
         <SbIconButton
-          :label="`Gutschein ${promo.label} entfernen`"
+          :label="`Gutschein ${voucher.name} entfernen`"
           variant="ghost"
-          @click="removeItem(promo)"
+          @click="removeVoucher(voucher.code!)"
         >
           <SbIcon name="close" :size="16" />
         </SbIconButton>

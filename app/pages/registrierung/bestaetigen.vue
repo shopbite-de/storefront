@@ -10,7 +10,7 @@ const router = useRouter();
 
 const { apiClient } = useShopwareContext();
 const { refreshSessionContext } = useSessionContext();
-const { refreshCart } = useCart();
+const { refresh: refreshCart } = useCartData();
 
 type ConfirmError = "invalid" | "already-confirmed";
 
@@ -63,7 +63,7 @@ async function confirmRegistration() {
   // Shopware logs the customer in with the confirmation and switches the
   // context token, so load the new session before opening the account.
   await refreshSessionContext();
-  refreshCart();
+  refreshCart().catch((error) => console.error("[cart] refresh", error));
   await navigateTo({ path: "/konto" });
 }
 

@@ -26,8 +26,8 @@ mockNuxtImport("useCheckout", () => () => ({
   selectedPaymentMethod: ref({ id: "pm1" }),
   selectedShippingMethod: ref({ id: "sm1" }),
 }));
-mockNuxtImport("useCart", () => () => ({
-  refreshCart: vi.fn().mockResolvedValue(undefined),
+mockNuxtImport("useCartData", () => () => ({
+  refresh: vi.fn().mockResolvedValue(undefined),
 }));
 mockNuxtImport("useUser", () => () => ({
   isLoggedIn: ref(false),

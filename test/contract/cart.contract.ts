@@ -336,6 +336,22 @@ export const cartContract = defineContract<"cart", CartScenario>(
       expect(euros(line!.unitPrice)).toBe(14);
     });
 
+    it("orders a variant named as the dish (upsell lists variants as dishes) as that variant", async () => {
+      const cart = await given(PIZZERIA);
+      const session = testSession();
+      await cart.addLine(session, dishConfiguration({ dishId: LARGE }), 1);
+      const answer = await cart.addLine(
+        session,
+        dishConfiguration({ dishId: SALAMI, variantId: LARGE }),
+        1,
+      );
+
+      expect(answer.lines.map(summary)).toEqual([
+        { dish: SALAMI, variant: LARGE, extras: [], removed: [], quantity: 2 },
+      ]);
+      expect(answer.lines[0]!.dishNumber).toBe("22G");
+    });
+
     it("changes the quantity of a line; 0 removes it", async () => {
       const cart = await given(PIZZERIA);
       const session = testSession();

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { cart, shippingTotal, isEmpty } = useCart();
+const { lines, discounts, shippingCosts, total, isEmpty } = useCartData();
 
 withDefaults(
   defineProps<{
@@ -16,7 +16,8 @@ withDefaults(
   },
 );
 
-const { getFormattedPrice } = useCommercePrice();
+const { getFormattedMoney } = useCommercePrice();
+const freeShipping = computed(() => !shippingCosts.value?.amountMinor);
 const emit = defineEmits(["go-to-cart"]);
 </script>
 
@@ -30,9 +31,9 @@ const emit = defineEmits(["go-to-cart"]);
     </div>
     <div v-else class="flex flex-col">
       <CartItem
-        v-for="lineItem in cart?.lineItems ?? []"
-        :key="lineItem.id"
-        :cart-item="lineItem"
+        v-for="line in lines"
+        :key="line.id"
+        :line="line"
         :with-quantity-input="withQuantityInput"
         :with-delete-button="withDeleteButton"
       />
@@ -40,25 +41,25 @@ const emit = defineEmits(["go-to-cart"]);
     <div v-if="!isEmpty" class="flex flex-col gap-3">
       <LazyCartUpsell v-if="withUpsell" />
       <dl class="flex flex-col gap-2 text-[15px] tabular-nums">
+        <div
+          v-for="discount in discounts"
+          :key="discount.code ?? discount.name"
+          class="flex justify-between text-sb-ink-muted"
+        >
+          <dt>{{ discount.name }}</dt>
+          <dd>{{ getFormattedMoney(discount.amount) }}</dd>
+        </div>
         <div class="flex justify-between text-sb-ink-muted">
           <dt>Lieferung</dt>
-          <dd
-            :class="
-              shippingTotal === 0 ? 'font-semibold text-sb-primary-ink' : ''
-            "
-          >
-            {{
-              shippingTotal === 0
-                ? "kostenlos"
-                : getFormattedPrice(shippingTotal)
-            }}
+          <dd :class="freeShipping ? 'font-semibold text-sb-primary-ink' : ''">
+            {{ freeShipping ? "kostenlos" : getFormattedMoney(shippingCosts) }}
           </dd>
         </div>
         <div
           class="flex justify-between border-t border-sb-line pt-2.5 text-lg font-bold"
         >
           <dt>Gesamt</dt>
-          <dd>{{ getFormattedPrice(cart?.price.totalPrice) }}</dd>
+          <dd>{{ getFormattedMoney(total) }}</dd>
         </div>
       </dl>
       <SbButton

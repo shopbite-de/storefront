@@ -3,7 +3,7 @@
 // dishes that are not in the cart yet. Renders nothing once every
 // suggestion is in the cart.
 const { loadUpsellDishes, addUpsellDish, isAdding } = useCartUpsell();
-const { cartItems } = useCart();
+const { lines } = useCartData();
 const { getFormattedMoney } = useCommercePrice();
 
 // Browser only: the server renders without the cart, so filtering there would
@@ -14,7 +14,7 @@ const { data: upsellDishes } = useAsyncData("cart-upsell", loadUpsellDishes, {
 
 const dishes = computed(() =>
   (upsellDishes.value ?? []).filter(
-    (dish) => !cartItems.value.some((line) => cartLineHoldsDish(line, dish.id)),
+    (dish) => !lines.value.some((line) => cartLineHoldsDish(line, dish.id)),
   ),
 );
 

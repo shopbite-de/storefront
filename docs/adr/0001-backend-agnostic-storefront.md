@@ -19,7 +19,7 @@ The storefront has its own rules that have nothing to do with Shopware: a dish w
 
 The browser talks only to the storefront's own Nitro routes (`/api/...`). No Store API call, access key or backend shape reaches the browser. The routes answer in the storefront's domain types (`shared/domain`).
 
-The storefront keeps its own session behind an HttpOnly cookie. Whatever a backend needs to recognise a visitor (Shopware's `sw-context-token`, a Sylius cart token and JWT) is stored server-side in that session and is read and written only by the adapter, through `BackendSession` (`server/ports/session.ts`). Decided now, built in step 4.
+The storefront keeps its own session behind an HttpOnly cookie. Whatever a backend needs to recognise a visitor (Shopware's `sw-context-token`, a Sylius cart token and JWT) is stored server-side in that session and is read and written only by the adapter, through `BackendSession` (`server/ports/session.ts`). Built in step 4 (see Progress).
 
 ### Ports and adapters
 
@@ -157,7 +157,7 @@ For shops that extend the layer (release notes; breaking only for overrides and 
 Open points for later steps:
 
 - Step 3 (done): navigation trees, breadcrumbs, path resolution and the sitemap moved behind `NavigationPort`. The memory adapter's media URLs are relative (`/api/menu/media/…`).
-- Step 4: `useAddToCart` builds Shopware line items from the domain types; the cart lines are still Shopware's (`cartLineHoldsDish` reads them structurally). Removals by ingredient id belong in `DishConfiguration` then.
+- Step 4 (done): the cart moved behind `CartPort`; `DishConfiguration` names removals by ingredient id.
 - A partial variant choice (one of two groups) silently takes the first matching variant while the other group stays unselected in the sheet, as before; the sheet could select the found variant's options or resolve locally from `DishDetail.variants`.
 - An unavailable extra is still offered in the sheet.
 - The wishlist loads one dish sheet per entry (cached per dish); a batch route would need a port method for several dishes.
@@ -190,6 +190,49 @@ Open points of step 3:
 - Footer links to sections are `link` nodes, also in the memory adapter, to match Shopware; a backend that knows it links a section could answer `menu-section`.
 - `/api/payment-methods` (Restaurant schema) still asks the Store API outside a port (step 5).
 
+**Step 4 (session and cart), done.** The storefront keeps its own session and the cart moved behind `CartPort`, in both adapters with a contract suite (empty cart without state, plain dish, merging, extras and removals as one line priced together, the same configuration merged whatever the order of its parts, configurations that differ only in their removals apart, a variant with its options, a variant named as the dish, quantity changes and 0 as removal, removal, unknown lines, dishes the menu does not offer, invalid extras, removals and quantities, vouchers applied, refused and removed, two visitors apart, frozen answers). The BFF answers the domain `Cart`: `GET /api/cart`, `POST /api/cart/lines`, `PATCH`/`DELETE /api/cart/lines/[lineId]`, `POST /api/cart/vouchers`, `DELETE /api/cart/vouchers/[code]`. The browser asks the Store API for no cart any more and holds no backend token. Lint guard: 35 warnings.
+
+Session decisions of step 4:
+
+- **Cookie**: `shopbite-session`, HttpOnly, SameSite=Lax, Path=/, 30 days after the last visit (extended at most once a day); on https Secure and `__Host-`-prefixed, so no subdomain can plant it. The value is 32 random bytes (base64url), nothing else.
+- **Storage**: the Nitro storage `shopbite-session`, one record per session with one opaque state per adapter name (Shopware: the context token; memory: its cart token), so the memory backend and the Shopware bridge never read each other's state. Default: an LRU in memory (`visitorSession.maxEntries`, `maxAgeDays`), bounded and zero-config; a shop with several instances, or one that keeps sessions over a restart, mounts its own storage there (Redis). Records carry their age, so storages without a TTL expire them on read.
+- **Creation**: by the first state an adapter writes (a cart write, a Store API answer through the bridge), never by a read: bots and first page views cost no storage. An unknown, expired or moved id is a new visitor and is never reused.
+- **Rotation**: when an adapter replaces its state (Shopware: a new context token on login, logout or registration, also a guest's), the session moves to a new id and the old id is marked moved for five minutes (session fixation: a planted or leaked id never carries the new state; a request still in flight with the old id writes nothing).
+- **Concurrency**: a write applies only to the state its request read; if a parallel request of the visitor replaced it meanwhile, the newer state wins and the stale write is dropped (the note of step 0). The cart routes run a visitor's writes one after the other in the process, so the token one write receives is the token of the next.
+- **Migration**: the old layer's `sw-context-token` cookie becomes the Shopware state of a new session once (its value checked for shape) and is deleted; an existing session wins over a cookie left behind. Visitors keep their cart over the upgrade.
+- **CSRF**: SameSite=Lax plus an origin check on every state-changing route (cart and bridge): `Origin` must name one of the storefront's hosts (request host, forwarded host, host of `public.storeUrl`), else `Sec-Fetch-Site` must be `same-origin`; 403 with `cross_site_request`. No token: every write is a `fetch` of the storefront's own pages, and both headers are sent by every browser that sends the cookie cross-site at all.
+- **Checkout until step 5**: the Shopware layer still runs checkout, account, wishlist and contact in the browser. Its API client talks to the storefront's `/api/store-api/**`, which adds access key and context token from the session (the same backend context as the cart), forwards an allowlist of headers and the visitor's IP (`X-Forwarded-For`), stores a token Shopware issues and removes the token from headers and JSON answers (`/context`, `/checkout/cart`, `/account/login` carry it in their body). Server-side rendering reads the token from the session (read only) and keeps it out of the page payload. Transitional; it goes with the layer.
+
+Cart decisions of step 4:
+
+- `DishConfiguration` names the dish and the chosen variant (`dishId`, `variantId`) and the removed ingredients by id; extras and removals keep the order the guest chose them in (the receipt lists them so) and compare as sets. `CartLine` carries number, name, the variant's options (`variant`, a structured label instead of one name string), extras with their prices, the removed ingredients' names, unit and total price (dish plus extras, gross as the backend calculated it); the cart its discounts, subtotal (lines and discounts), shipping costs, total, taxes per rate, the selected methods and messages. `ordering_closed` is a new message code.
+- A voucher that does not apply answers the cart with a `voucher_invalid` message about the code (Shopware reports it so, with a text), not with an exception.
+- Shopware: a plain dish stays a `product` line item with the product id; a configured dish stays the plugin's `container` with exactly the request of 2.6.1 (uuid5 of product id + sorted extra ids, plus `|without:` and the sorted, lower-cased removals; label and payload hints; the product as first child), so lines already in carts keep merging. The adapter looks up names, number and main ingredients with one `/product` request (none for a plain dish), and the ids of the cart's removed ingredients the same way (names are shown if that lookup fails). Shopware's cart lock is retried once in the adapter, the browser's queue stays.
+- An unknown dish, a dish that needs a variant, an unknown extra or a removal the dish does not have are refused (`dish_unavailable`, `invalid_value`) instead of being dropped by Shopware without a word.
+
+Behaviour, compared against the quickstart's Shopware before and after (same Playwright actions on main and on the branch: a variant with an extra and a removal from the dish sheet, the same dish with another removal, the same configuration again, a plain dish from its card, a variant by its menu number, a saved wishlist configuration, a quantity change and a removal in the cart sheet, an upsell dish in the checkout; then a guest order for delivery and one for pickup, each with its wished time): the cart sheet, the cart bar on a phone, the checkout's head and text, the normalised Store API cart (line ids, types, labels, payloads, children, quantities, prices, taxes) and both orders in Shopware (line items with payload, prices, comment `Wunschlieferzeit`/`Wunschabholzeit: HH:MM`, shipping method) are identical. A visitor with a filled cart of the old layer keeps it after the upgrade. Smoke and hardening tests of the quickstart pass. Changes allowed by the step:
+
+- A dish the menu does not offer is refused with 409 `dish_unavailable` (before: Shopware dropped it, the cart bar still said "hinzugefügt").
+- Voucher discounts show as discount rows in the cart sheet, no longer as cart lines with a quantity stepper; automatic discounts are listed in the voucher field without a remove button.
+- Line items of other types (a backend's own surcharges) are not listed as cart lines; the totals contain them as before.
+- With the default storage, sessions (and so the carts of visitors in the middle of an order) are lost when the storefront restarts; Shopware keeps the carts, the browser no longer holds their token. Shops that deploy during opening hours mount persistent storage.
+- The Shopware layer's requests reach Shopware from the storefront's server: Shopware sees the visitor's IP only if it trusts the storefront as a proxy (`TRUSTED_PROXIES`), otherwise its per-IP rate limits (contact form, login) count the storefront as one client.
+- The app maps removed ingredient names to their ids from the dish; a name the dish does not have is not sent (before it changed the line id while the plugin dropped it).
+
+For shops that extend the layer (release notes; breaking only for overrides and own uses):
+
+- The browser has no `sw-context-token` cookie any more; own code that read it or called the Store API with it from the browser gets no visitor context. The layer's `apiClient` keeps working through `/api/store-api/**`. Reverse proxies and firewalls must pass `/api/cart/**` and `/api/store-api/**` with their bodies; the cookie `shopbite-session` must reach the storefront.
+- New: runtime config `visitorSession` (`maxAgeDays`, `maxEntries`), the Nitro storage `shopbite-session`, the cart routes. The layer's `useCart()` no longer holds the storefront's cart: use `useCartData()` (`lines`, `count`, `subtotal`, `shippingCosts`, `total`, `discounts`, `messages`, `refresh`).
+- Changed: `useCartMutations` has `addLine(request)`, `setQuantity(lineId, quantity)`, `removeLine(lineId)` (`addLineItems`, `removeLineItem` and `isCartLockedError` are gone); `useAddToCart().setSelectedDish(dish, dishId)` takes the dish a variant belongs to; `useVoucherCode` returns `appliedVouchers` and `removeVoucher(code)` (no `appliedPromotionCodes`, `removeItem`); `CartItem` takes `line` (a `CartLine`) instead of `cartItem`; `cartLineHoldsDish` takes a `CartLine`, `cartLineLabel` is new; `useCheckoutMethodGuard` reads the cart's messages (`getCartErrors`, `hasBlockedShippingMethod`, `hasBlockedPaymentMethod` are gone); `DishConfiguration` has `variantId` and `removedIngredientIds`.
+
+Open points for step 5 and later:
+
+- Checkout (shipping and payment methods, guest details, placing the order, payment) moves behind `CheckoutPort` and `OrderPort`; the bridge then serves account, wishlist and contact only, and goes with the layer. It forwards every Store API path for now; narrow it as areas move. The layer's `useUser` still reads the Shopware cart through it after a login (unused).
+- The access key is still in the public runtime config (the layer needs it).
+- Writes of one visitor are serialised per process; with a shared storage and several instances only the compare-and-set protects a rotated token. Two first writes of a visitor without a session (in parallel) make two sessions; the browser's cart queue serialises cart writes, bridge calls on a page without a session may still race (the later cookie wins, nothing of value is in either).
+- Cart messages (`dish_unavailable`, `quantity_adjusted`) are not shown in the cart yet, as before.
+- `trackOrder` still reads the Shopware order (step 5).
+
 ### Lint guard
 
 `@typescript-eslint/no-restricted-imports` forbids `#shopware`, `@shopware/*` and the `api-types` (`~~/api-types/*`, relative paths) outside `server/adapters/shopware/**`, the generated types and `shopware.d.ts`. It warns during steps 1 to 7 (111 warnings in 103 files at step 0, the number to bring down) and becomes an error in step 8. `#shopware/*` subpaths are covered too. It sees static `import` and `export … from` only: not type queries (`typeof import("#shopware")`, `import("…").Type` in a type position), not dynamic `import()`, and not composables auto-imported from the Shopware layer (`useShopwareContext`, `useCart`, …). Those disappear with the layer in step 8, and the typecheck finds what is left.
@@ -211,10 +254,8 @@ Recommendations from the review of step 0, to settle when the area moves:
   - *Overnight interval after a holiday:* the plugin ignores the after-midnight part of an interval that started on a holiday; splitting rows into weekday intervals loses that origin, so the domain treats it as open. Keep the origin day of a split interval (or apply the holiday to the continuation) when this matters.
   - *DST:* a wished time can land in the spring-forward gap or the ambiguous fall-back hour, and the 24 h search limit is wall-clock time. Decide whether to skip such slots.
 
-- **Cart (step 4)**: a structured variant label instead of one name string; removed ingredients are part of a line's identity, so two configurations that differ only in removals stay two lines (Shopware's container key today hashes dish and extras only); taxes as gross or net; subtotals before and after discounts.
 - **Checkout (step 1 and 5)**: `listShippingMethods` takes an optional session (Sylius prices shipping per cart; in the port since step 1, unused by both adapters). It is implemented in step 1 already, because ShopPort's consumers (home page, `llms.txt`, the time choice) need the lead times. Guest details stay editable after `registerGuest`.
 - **Orders (step 5)**: a guest opens an order by an e-mail deep link or token, without an account; `OrderLine` carries its `DishConfiguration` so an order can be repeated.
-- **Session (step 4)**: the backend token can rotate (login, logout) while parallel requests of the same visitor are in flight; writes to the session must not lose a newer token.
 
 ## Sylius as a sanity check
 

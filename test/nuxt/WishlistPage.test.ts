@@ -8,10 +8,11 @@ import { flushPromises } from "@vue/test-utils";
 import { ref } from "vue";
 import Wishlist from "~/components/Wishlist.vue";
 import { dishDetail, eur, pizzaWithSizes } from "../support/dishes";
+import { cart } from "../support/cart";
 
-const { invoke, addLineItems, dishes } = vi.hoisted(() => ({
+const { invoke, addLine, dishes } = vi.hoisted(() => ({
   invoke: vi.fn(),
-  addLineItems: vi.fn(),
+  addLine: vi.fn(),
   dishes: vi.fn(),
 }));
 // the dish sheets the BFF answers per wishlist entry
@@ -23,7 +24,7 @@ mockNuxtImport("useShopwareContext", () => () => ({
 }));
 mockNuxtImport("useUser", () => () => ({ isLoggedIn: ref(false) }));
 mockNuxtImport("useCartMutations", () => () => ({
-  addLineItems,
+  addLine,
   isMutating: ref(false),
 }));
 
@@ -32,6 +33,10 @@ const pizza = dishDetail({
   number: "21",
   name: "Pizza Mix",
   price: eur(850),
+  ingredients: [
+    { id: "i-tomato", name: "Tomatensoße" },
+    { id: "i-pilze", name: "Pilze" },
+  ],
   extraGroups: [
     {
       id: "extras",
@@ -60,7 +65,7 @@ describe("wishlist page (#467)", () => {
             selectedVariantId: id === "v21-gross" ? "v21-gross" : "v21-normal",
           }),
     );
-    addLineItems.mockResolvedValue({ id: "cart" });
+    addLine.mockResolvedValue(cart());
     const wishlist = useWishlistEntries();
     wishlist.entries.value = [];
     await wishlist.add({
@@ -84,7 +89,7 @@ describe("wishlist page (#467)", () => {
     expect(row.text()).toMatch(/10,00\s?€/);
   });
 
-  it("adds the same container line item as the dish sheet", async () => {
+  it("adds the same configuration as the dish sheet", async () => {
     const wrapper = await mountSuspended(Wishlist);
     await flushPromises();
 
@@ -94,20 +99,14 @@ describe("wishlist page (#467)", () => {
     await add.trigger("click");
     await flushPromises();
 
-    const [items] = addLineItems.mock.calls[0]!;
-    expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({
-      type: "container",
+    expect(addLine).toHaveBeenCalledTimes(1);
+    expect(addLine).toHaveBeenCalledWith({
+      dishId: "p1",
+      variantId: null,
+      extraIds: ["x1"],
+      removedIngredientIds: ["i-pilze"],
       quantity: 1,
-      label: "Pizza Mix +Extra Salami -Pilze",
-      payload: { productNumber: "21" },
     });
-    expect(items[0].children).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ referencedId: "p1", type: "product" }),
-        expect.objectContaining({ id: "x1", type: "product" }),
-      ]),
-    );
   });
 
   it("shows a saved variant by its number and price, a saved parent as a choice", async () => {
@@ -137,6 +136,32 @@ describe("wishlist page (#467)", () => {
     expect(variantRow!.text()).toContain("In den Warenkorb");
     expect(parentRow!.text()).toContain("Auswählen");
     expect(parentRow!.text()).not.toContain("In den Warenkorb");
+  });
+
+  it("adds a saved variant as the variant of its dish", async () => {
+    const wishlist = useWishlistEntries();
+    wishlist.entries.value = [];
+    await wishlist.add({
+      productId: "v21-gross",
+      productNumber: "21-groß",
+      without: [],
+      extras: ["900"],
+    });
+    const wrapper = await mountSuspended(Wishlist);
+    await flushPromises();
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().startsWith("In den Warenkorb"))!
+      .trigger("click");
+    await flushPromises();
+
+    expect(addLine).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dishId: pizzaWithSizes().id,
+        variantId: "v21-gross",
+      }),
+    );
   });
 
   it("opens the dish sheet with the saved configuration", async () => {

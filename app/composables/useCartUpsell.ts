@@ -7,7 +7,7 @@ import type { Dish } from "../../shared/domain";
  * offered in its sheet.
  */
 export function useCartUpsell() {
-  const { addLineItems } = useCartMutations();
+  const { addLine } = useCartMutations();
   const { triggerCartItemAdded } = useProductEvents();
   const { trackUpsellAdd } = useTrackEvent();
 
@@ -32,9 +32,13 @@ export function useCartUpsell() {
 
     try {
       // Failures are reported by useCartMutations; it resolves undefined.
-      const newCart = await addLineItems([
-        { id: dish.id, quantity: 1, type: "product" },
-      ]);
+      const newCart = await addLine({
+        dishId: dish.id,
+        variantId: null,
+        extraIds: [],
+        removedIngredientIds: [],
+        quantity: 1,
+      });
       if (!newCart) return;
 
       triggerCartItemAdded(dish, 1);

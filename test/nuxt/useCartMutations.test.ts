@@ -1,37 +1,40 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { mockNuxtImport, registerEndpoint } from "@nuxt/test-utils/runtime";
+import { readBody, type H3Event } from "h3";
 import { ref } from "vue";
-import {
-  useCartMutations,
-  isCartLockedError,
-} from "~/composables/useCartMutations";
-import type { Schemas } from "#shopware";
+import { useCartMutations } from "~/composables/useCartMutations";
+import type { Cart } from "../../shared/domain";
+import { cart as cartOf, cartLine } from "../support/cart";
 
-const {
-  mockRefreshCart,
-  mockAddProducts,
-  mockChangeProductQuantity,
-  mockRemoveItem,
-} = vi.hoisted(() => ({
-  mockRefreshCart: vi.fn(),
-  mockAddProducts: vi.fn(),
-  mockChangeProductQuantity: vi.fn(),
-  mockRemoveItem: vi.fn(),
+const { mockRefresh, mockSetCart, mockFetch } = vi.hoisted(() => ({
+  mockRefresh: vi.fn(),
+  mockSetCart: vi.fn(),
+  mockFetch: vi.fn(),
 }));
 
 // Read lazily inside the factory, i.e. after module initialisation.
-const cart = ref<Schemas["Cart"] | undefined>();
+const cart = ref<Cart | null>(null);
 
-mockNuxtImport("useCart", () => () => ({
+// The BFF routes record what the browser sent: (url, { method, body }).
+for (const url of ["/api/cart/lines", "/api/cart/lines/li-1"]) {
+  registerEndpoint(url, async (event: H3Event) =>
+    mockFetch(
+      url,
+      event.method === "DELETE"
+        ? { method: "DELETE" }
+        : { method: event.method, body: await readBody(event) },
+    ),
+  );
+}
+
+mockNuxtImport("useCartData", () => () => ({
   cart,
-  refreshCart: mockRefreshCart,
-  addProducts: mockAddProducts,
-  changeProductQuantity: mockChangeProductQuantity,
-  removeItem: mockRemoveItem,
+  refresh: mockRefresh,
+  setCart: mockSetCart,
 }));
 
-function cartWith(items: { id: string; quantity: number }[]) {
-  return { lineItems: items } as unknown as Schemas["Cart"];
+function cartWith(lines: { id: string; quantity: number }[]): Cart {
+  return cartOf({ lines: lines.map((line) => cartLine(line)) });
 }
 
 /** A promise the test resolves by hand. */
@@ -45,78 +48,84 @@ function deferred<T = void>() {
   return { promise, resolve, reject };
 }
 
-const lockedError = Object.assign(new Error("locked"), {
-  status: 409,
-  details: { errors: [{ code: "CHECKOUT__CART_LOCKED" }] },
-});
+const PLAIN = {
+  dishId: "p1",
+  variantId: null,
+  extraIds: [],
+  removedIngredientIds: [],
+  quantity: 1,
+};
 
-describe("isCartLockedError", () => {
-  it("detects the lock conflict by status or error code", () => {
-    expect(isCartLockedError(lockedError)).toBe(true);
-    expect(isCartLockedError({ status: 409 })).toBe(true);
-    expect(
-      isCartLockedError({
-        details: { errors: [{ code: "CHECKOUT__CART_LOCKED" }] },
-      }),
-    ).toBe(true);
-    expect(isCartLockedError({ status: 500 })).toBe(false);
-    expect(isCartLockedError(new Error("x"))).toBe(false);
-    expect(isCartLockedError(undefined)).toBe(false);
-  });
-});
+/** The quantity PATCH calls of the cart line routes. */
+const quantityCalls = () =>
+  mockFetch.mock.calls.filter(([, options]) => options?.method === "PATCH");
 
 describe("useCartMutations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     cart.value = cartWith([{ id: "li-1", quantity: 1 }]);
-    mockRefreshCart.mockResolvedValue(undefined);
-    mockAddProducts.mockResolvedValue({ id: "cart" });
-    mockRemoveItem.mockResolvedValue({ id: "cart" });
-    mockChangeProductQuantity.mockImplementation(
-      async ({ id, quantity }: { id: string; quantity: number }) => {
-        cart.value = cartWith([{ id, quantity }]);
-        return cart.value;
+    mockRefresh.mockResolvedValue(cart.value);
+    mockFetch.mockImplementation(
+      async (url: string, options?: { method?: string; body?: unknown }) => {
+        if (options?.method === "PATCH") {
+          const id = decodeURIComponent(url.split("/").at(-1)!);
+          const { quantity } = options.body as { quantity: number };
+          cart.value = cartWith([{ id, quantity }]);
+          return cart.value;
+        }
+        return cartOf();
       },
     );
   });
 
+  it("sends each write to its BFF route", async () => {
+    const { addLine, setQuantity, removeLine } = useCartMutations();
+
+    await addLine(PLAIN);
+    await setQuantity("li-1", 3);
+    await removeLine("li-1");
+
+    expect(mockFetch.mock.calls).toEqual([
+      ["/api/cart/lines", { method: "POST", body: PLAIN }],
+      ["/api/cart/lines/li-1", { method: "PATCH", body: { quantity: 3 } }],
+      ["/api/cart/lines/li-1", { method: "DELETE" }],
+    ]);
+  });
+
   it("runs writes one after another in call order", async () => {
-    const first = deferred<Schemas["Cart"]>();
-    mockAddProducts.mockReturnValueOnce(first.promise);
+    const first = deferred<Cart>();
+    mockFetch.mockReturnValueOnce(first.promise);
 
-    const { addLineItems, removeLineItem, isMutating } = useCartMutations();
+    const { addLine, removeLine, isMutating } = useCartMutations();
 
-    const add = addLineItems([{ id: "p1", quantity: 1, type: "product" }]);
-    const remove = removeLineItem({ id: "li-1" } as Schemas["LineItem"]);
-    await Promise.resolve();
+    const add = addLine(PLAIN);
+    const remove = removeLine("li-1");
+    await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
 
     expect(isMutating.value).toBe(true);
-    expect(mockAddProducts).toHaveBeenCalledTimes(1);
-    expect(mockRemoveItem).not.toHaveBeenCalled();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(mockFetch).toHaveBeenCalledTimes(1);
 
-    first.resolve({ id: "cart" } as unknown as Schemas["Cart"]);
+    first.resolve(cartOf());
     await add;
     await remove;
 
-    expect(mockRemoveItem).toHaveBeenCalledTimes(1);
-    expect(mockAddProducts.mock.invocationCallOrder[0]).toBeLessThan(
-      mockRemoveItem.mock.invocationCallOrder[0] as number,
-    );
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[1]![1]).toEqual({ method: "DELETE" });
     expect(isMutating.value).toBe(false);
   });
 
   it("coalesces rapid quantity changes into one request with the latest value", async () => {
-    const inFlight = deferred<Schemas["Cart"]>();
-    mockChangeProductQuantity.mockReturnValueOnce(inFlight.promise);
+    const inFlight = deferred<Cart>();
+    mockFetch.mockReturnValueOnce(inFlight.promise);
 
     const { setQuantity } = useCartMutations();
 
     const p1 = setQuantity("li-1", 2);
-    await Promise.resolve();
-    expect(mockChangeProductQuantity).toHaveBeenCalledWith({
-      id: "li-1",
-      quantity: 2,
-    });
+    await vi.waitFor(() => expect(quantityCalls()).toHaveLength(1));
+    expect(quantityCalls()).toEqual([
+      ["/api/cart/lines/li-1", { method: "PATCH", body: { quantity: 2 } }],
+    ]);
 
     // while the first request is in flight: three more clicks
     const p2 = setQuantity("li-1", 3);
@@ -129,11 +138,11 @@ describe("useCartMutations", () => {
     inFlight.resolve(cart.value);
     await Promise.all([p1, p2, p3, p4]);
 
-    expect(mockChangeProductQuantity).toHaveBeenCalledTimes(2);
-    expect(mockChangeProductQuantity).toHaveBeenLastCalledWith({
-      id: "li-1",
-      quantity: 5,
-    });
+    expect(quantityCalls()).toHaveLength(2);
+    expect(quantityCalls().at(-1)).toEqual([
+      "/api/cart/lines/li-1",
+      { method: "PATCH", body: { quantity: 5 } },
+    ]);
   });
 
   it("skips the request when the latest value equals the cart quantity", async () => {
@@ -141,26 +150,7 @@ describe("useCartMutations", () => {
 
     await setQuantity("li-1", 1);
 
-    expect(mockChangeProductQuantity).not.toHaveBeenCalled();
-  });
-
-  it("retries once when the cart is locked", async () => {
-    vi.useFakeTimers();
-    try {
-      mockChangeProductQuantity
-        .mockRejectedValueOnce(lockedError)
-        .mockResolvedValueOnce(cartWith([{ id: "li-1", quantity: 3 }]));
-
-      const { setQuantity } = useCartMutations();
-      const pending = setQuantity("li-1", 3);
-      await vi.advanceTimersByTimeAsync(400);
-      await pending;
-
-      expect(mockChangeProductQuantity).toHaveBeenCalledTimes(2);
-      expect(mockRefreshCart).not.toHaveBeenCalledWith();
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("syncs the shared cart from the write response", async () => {
@@ -168,44 +158,49 @@ describe("useCartMutations", () => {
       { id: "li-1", quantity: 1 },
       { id: "li-2", quantity: 1 },
     ]);
-    mockAddProducts.mockResolvedValueOnce(returned);
+    mockFetch.mockResolvedValueOnce(returned);
 
-    const { addLineItems } = useCartMutations();
-    await addLineItems([{ id: "p2", quantity: 1, type: "product" }]);
+    const { addLine } = useCartMutations();
+    await addLine(PLAIN);
 
-    expect(mockRefreshCart).toHaveBeenCalledWith(returned);
+    expect(mockSetCart).toHaveBeenCalledWith(returned);
   });
 
-  it("does not retry other errors", async () => {
-    mockChangeProductQuantity.mockRejectedValueOnce(new Error("network"));
+  it("re-syncs the cart after a failed write", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("network"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
 
     const { setQuantity } = useCartMutations();
     await setQuantity("li-1", 3);
 
-    expect(mockChangeProductQuantity).toHaveBeenCalledTimes(1);
-    expect(mockRefreshCart).toHaveBeenCalledWith();
+    expect(quantityCalls()).toHaveLength(1);
+    expect(mockRefresh).toHaveBeenCalledWith();
   });
 
   it("re-syncs the cart and resolves undefined after a final failure", async () => {
-    mockRemoveItem.mockRejectedValue(new Error("network"));
+    mockFetch.mockRejectedValue(new Error("network"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const { removeLineItem, isMutating } = useCartMutations();
-    const result = await removeLineItem({ id: "li-1" } as Schemas["LineItem"]);
+    const { removeLine, isMutating } = useCartMutations();
+    const result = await removeLine("li-1");
 
     expect(result).toBeUndefined();
-    expect(mockRefreshCart).toHaveBeenCalledWith();
+    expect(mockRefresh).toHaveBeenCalledWith();
     expect(isMutating.value).toBe(false);
   });
 
   it("keeps processing the queue after a failure", async () => {
-    mockAddProducts.mockRejectedValueOnce(new Error("boom"));
+    mockFetch.mockRejectedValueOnce(new Error("boom"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const answer = cartWith([{ id: "p2", quantity: 1 }]);
+    mockFetch.mockResolvedValueOnce(answer);
 
-    const { addLineItems } = useCartMutations();
-    const failed = addLineItems([{ id: "p1", quantity: 1, type: "product" }]);
-    const next = addLineItems([{ id: "p2", quantity: 1, type: "product" }]);
+    const { addLine } = useCartMutations();
+    const failed = addLine(PLAIN);
+    const next = addLine({ ...PLAIN, dishId: "p2" });
 
     expect(await failed).toBeUndefined();
-    expect(await next).toEqual({ id: "cart" });
-    expect(mockAddProducts).toHaveBeenCalledTimes(2);
+    expect(await next).toEqual(answer);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 });

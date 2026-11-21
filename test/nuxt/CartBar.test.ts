@@ -11,15 +11,19 @@ type Addition = {
 };
 const listeners: Array<(addition: Addition) => void> = [];
 
-mockNuxtImport("useCart", () => () => ({
+mockNuxtImport("useCartData", () => () => ({
   count: computed(() => state.count),
-  subtotal: computed(() => state.subtotal),
+  subtotal: computed(() => ({
+    amountMinor: Math.round(state.subtotal * 100),
+    currency: "EUR",
+  })),
 }));
 mockNuxtImport("useShopConfig", () => () => ({
   acceptsOrders: ref(true),
 }));
 mockNuxtImport("useCommercePrice", () => () => ({
-  getFormattedPrice: (price: number) => `${price.toFixed(2)} €`,
+  getFormattedMoney: (price: { amountMinor: number }) =>
+    `${(price.amountMinor / 100).toFixed(2)} €`,
 }));
 mockNuxtImport("useRoute", () => () => ({
   get path() {

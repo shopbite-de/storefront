@@ -1,4 +1,5 @@
 import type {
+  CartLine,
   Diet,
   Dish,
   DishDetail,
@@ -92,19 +93,23 @@ export function dishForNumber(detail: DishDetail, number: string): Dish {
   return variant ? variantAsDish(detail, variant) : detail;
 }
 
-/** A cart line as far as the menu needs to know (Shopware cart, step 4). */
-type CartLineLike = {
-  referencedId?: string | null;
-  children?: readonly { referencedId?: string | null }[] | null;
-};
-
 /**
- * Whether a cart line holds the dish, as a plain line or as a line
- * carrying extras (the dish is its first child, #325).
+ * Whether a cart line holds the dish (or variant): as what it orders, or
+ * as one of its extras (#325).
  */
-export function cartLineHoldsDish(line: CartLineLike, dishId: string): boolean {
+export function cartLineHoldsDish(line: CartLine, dishId: string): boolean {
+  const { configuration } = line;
   return (
-    line.referencedId === dishId ||
-    (line.children ?? []).some((child) => child.referencedId === dishId)
+    (configuration.variantId ?? configuration.dishId) === dishId ||
+    configuration.extraIds.includes(dishId)
   );
+}
+
+/** A cart line as the receipt names it: `Name +Extra -Zutat`. */
+export function cartLineLabel(line: CartLine): string {
+  return [
+    line.name,
+    ...line.extras.map((extra) => `+${extra.name}`),
+    ...line.removedIngredients.map((name) => `-${name}`),
+  ].join(" ");
 }

@@ -31,7 +31,7 @@ export function useProductDetail(getDishId: () => string) {
       if (!value) return;
       // the variant the sheet starts with, or the dish itself
       const orderable = orderableOf(value);
-      setSelectedDish(orderable);
+      setSelectedDish(orderable, value.id);
       trackProductView(orderable);
     },
     { immediate: true },
