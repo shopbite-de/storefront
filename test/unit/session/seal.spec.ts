@@ -58,6 +58,16 @@ describe("createSealer", () => {
     expect(before.unseal(after.seal({ token: "t" }))).toBeNull();
   });
 
+  it("tells whether a value is sealed with the current password", () => {
+    const before = createSealer({ passwords: [PREVIOUS], name: COOKIE });
+    const after = createSealer({
+      passwords: [PASSWORD, PREVIOUS],
+      name: COOKIE,
+    });
+    expect(after.isCurrent(after.seal({ a: 1 }))).toBe(true);
+    expect(after.isCurrent(before.seal({ a: 1 }))).toBe(false);
+  });
+
   it("needs passwords of at least 32 characters", () => {
     expect(() => createSealer({ passwords: ["short"], name: COOKIE })).toThrow(
       /32/,

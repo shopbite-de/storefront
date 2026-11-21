@@ -284,6 +284,53 @@ describe("visitor session", () => {
     }
   });
 
+  it("re-seals a cookie of a previous password with the current one (rotation)", async () => {
+    const old = createSealer({ passwords: ["o".repeat(40)], name: COOKIE });
+    const registry = createSessionRegistry({ maxEntries: 100 });
+    const sealer = createSealer({
+      passwords: [PASSWORD, "o".repeat(40)],
+      name: COOKIE,
+    });
+    const cookies = jar({
+      [COOKIE]: old.seal({
+        v: 1,
+        sid: "sid-1",
+        ver: 3,
+        t: Date.now(),
+        s: { shopware: "token-1" },
+      }),
+    });
+    const session = createVisitorSession({
+      sealer,
+      registry,
+      cookies,
+      cookieName: COOKIE,
+      maxAgeSeconds: 30 * DAY,
+    }).scope("shopware", { create: false });
+
+    expect(await session.read()).toBe("token-1");
+    expect(cookies.set).toHaveLength(1);
+    expect(sealer.isCurrent(cookies.set[0]!.value)).toBe(true);
+    expect(old.unseal(cookies.set[0]!.value)).toBeNull();
+  });
+
+  it("refuses a seal from the future or with an absurd version", async () => {
+    const { sealer, visit } = setup();
+    const now = Date.now();
+    for (const payload of [
+      { v: 1, sid: "s", ver: 1, t: now + 3_600_000, s: { shopware: "a" } },
+      { v: 1, sid: "s", ver: 0, t: now, s: { shopware: "a" } },
+      { v: 1, sid: "s", ver: 1e12, t: now, s: { shopware: "a" } },
+      { v: 1, sid: "", ver: 1, t: now, s: { shopware: "a" } },
+    ]) {
+      expect(
+        await visit(jar({ [COOKIE]: sealer.seal(payload) }))
+          .scope("shopware", { create: false })
+          .read(),
+      ).toBeUndefined();
+    }
+  });
+
   it("extends the session of a returning visitor, at most once a day", async () => {
     let now = Date.parse("2026-11-21T12:00:00Z");
     const { visit } = setup({ now: () => now });

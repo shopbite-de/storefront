@@ -26,15 +26,25 @@ type Payload = Readonly<{
   s: Readonly<Record<string, string>>;
 }>;
 
-function isPayload(value: unknown): value is Payload {
+/** Versions a session can reach; anything above is not ours. */
+const MAX_VERSION = 1_000_000;
+/** Clocks of several instances may differ this much. */
+const CLOCK_SKEW_MS = 300_000;
+
+function isPayload(value: unknown, now: number): value is Payload {
   const payload = value as Payload | null;
   return (
     !!payload &&
     typeof payload === "object" &&
     payload.v === 1 &&
     typeof payload.sid === "string" &&
+    payload.sid.length > 0 &&
+    payload.sid.length <= 64 &&
     Number.isInteger(payload.ver) &&
+    payload.ver >= 1 &&
+    payload.ver <= MAX_VERSION &&
     typeof payload.t === "number" &&
+    payload.t <= now + CLOCK_SKEW_MS &&
     !!payload.s &&
     typeof payload.s === "object" &&
     Object.values(payload.s).every((state) => typeof state === "string")
@@ -160,13 +170,15 @@ export function createVisitorSession(options: {
       const value = cookies.get(cookieName);
       if (!value || value.length > MAX_COOKIE) return null;
       const payload = sealer.unseal(value);
-      if (!isPayload(payload)) return null;
+      if (!isPayload(payload, now())) return null;
       if (now() - payload.t > maxAgeSeconds * 1000) return null;
       if (outdated(payload)) {
         stale = true;
       } else {
         registry.note(payload.sid, payload.ver);
-        if (now() - payload.t > TOUCH_AFTER_MS) {
+        // extended once a day; a cookie of a previous password is sealed
+        // with the current one at once, so a rotation completes
+        if (now() - payload.t > TOUCH_AFTER_MS || !sealer.isCurrent(value)) {
           current = { ...payload, t: now() };
           seal(current);
           return current;

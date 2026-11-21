@@ -309,6 +309,21 @@ describe("Store API bridge of the Shopware layer", () => {
     );
   });
 
+  it("redacts an answer without a content type as text", async () => {
+    const visitor = session("token-1");
+    const send = vi.fn<StoreApiSend>(async () => ({
+      status: 500,
+      headers: new Headers(),
+      body: new TextEncoder().encode("Cart with token token-1 failed"),
+    }));
+
+    const result = await forward({}, { session: visitor.backend, send });
+
+    expect(new TextDecoder().decode(result.body!)).toBe(
+      "Cart with token *** failed",
+    );
+  });
+
   it("passes other content (a document download) through unchanged", async () => {
     const visitor = session("token-1");
     const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46]);

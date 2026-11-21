@@ -34,6 +34,8 @@ export interface Sealer {
   seal(value: unknown): string;
   /** The value, or null for anything not sealed by one of the passwords. */
   unseal(sealed: string): unknown;
+  /** Sealed with the current (first) password, not a previous one. */
+  isCurrent(sealed: string): boolean;
 }
 
 export function createSealer(options: {
@@ -54,6 +56,7 @@ export function createSealer(options: {
   const aad = (id: string) => Buffer.from(`${VERSION}.${id}.${options.name}`);
 
   return {
+    isCurrent: (sealed) => sealed.split(".")[1] === keys[0]!.id,
     seal: (value) => {
       const { id, key } = keys[0]!;
       const nonce = randomBytes(NONCE_BYTES);

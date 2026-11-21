@@ -27,6 +27,7 @@ const REGISTRY_ENTRIES = 50_000;
 
 type SessionConfig = {
   maxAgeDays?: number | string;
+  allowedOrigins?: string;
   password?: string;
   previousPasswords?: string;
 };
@@ -160,10 +161,12 @@ export function assertSameOriginWrite(event: H3Event): void {
     : "http";
   const crossSite = isCrossSiteWrite({
     method: event.method,
-    // forwarded headers are the client's to choose: not trusted here
+    // forwarded headers are the client's to choose: not trusted here; a
+    // shop with several https hosts behind a proxy lists them
     origins: [
       useRuntimeConfig().public.storeUrl,
       host ? `${scheme}://${host}` : undefined,
+      ...allowedOrigins(),
     ],
     origin: getRequestHeader(event, "origin"),
     secFetchSite: getRequestHeader(event, "sec-fetch-site"),
@@ -175,6 +178,20 @@ export function assertSameOriginWrite(event: H3Event): void {
       data: { code: "cross_site_request" },
     });
   }
+}
+
+/**
+ * `visitorSession.allowedOrigins` (NUXT_VISITOR_SESSION_ALLOWED_ORIGINS,
+ * comma-separated, e.g. `https://www.shop.example`): further origins the
+ * storefront is reached under, next to `public.storeUrl`.
+ */
+function allowedOrigins(): string[] {
+  const config = (useRuntimeConfig() as { visitorSession?: SessionConfig })
+    .visitorSession;
+  return String(config?.allowedOrigins ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
 
 /** Visitor-specific answers are never stored by a browser or proxy. */

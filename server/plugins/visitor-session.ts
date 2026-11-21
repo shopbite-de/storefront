@@ -21,8 +21,9 @@ export default defineNitroPlugin((nitroApp) => {
     try {
       sessionSettings();
     } catch (error) {
+      // the reason in one line, not the bundle's stack
       console.error(`[session] ${(error as Error).message}`);
-      throw error;
+      process.exit(1);
     }
   }
 

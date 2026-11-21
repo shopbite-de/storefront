@@ -86,11 +86,17 @@ export default defineNuxtConfig({
     // characters; required in production, the server does not start
     // without it). A rotation moves the old password to
     // `previousPasswords` (comma-separated), which still opens cookies.
+    // Drop a previous password only `maxAgeDays` after the rotation: a
+    // cookie it sealed is sealed again with the current one on its visit.
     // A session lives `maxAgeDays` after the visitor's last visit.
+    // `allowedOrigins`: further origins of the shop (comma-separated, e.g.
+    // "https://www.shop.example") whose pages may write (CSRF check), next
+    // to `public.storeUrl`; NUXT_VISITOR_SESSION_ALLOWED_ORIGINS.
     visitorSession: {
       maxAgeDays: 30,
       password: "",
       previousPasswords: "",
+      allowedOrigins: "",
     },
     // Bound of the Nitro cache (server/plugins/bounded-cache.ts): an LRU in
     // memory with at most `maxEntries` entries and `maxSizeMb` of data;

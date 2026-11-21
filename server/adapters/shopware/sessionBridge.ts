@@ -145,8 +145,12 @@ function redact(
   return value;
 }
 
-/** Answers the browser may read as text; others (PDF) pass unchanged. */
+/**
+ * Answers the browser may read as text, also without a content type;
+ * known binary types (PDF, images, archives) pass unchanged.
+ */
 const TEXTUAL = /json|text|xml|html|javascript/i;
+const isTextual = (type: string) => !type.trim() || TEXTUAL.test(type);
 
 function isAllowedPath(path: string): boolean {
   return (
@@ -215,7 +219,7 @@ export async function forwardStoreApiRequest(
   }
   let body: Uint8Array | null = answer.body.length ? answer.body : null;
   const type = answered["content-type"] ?? "";
-  if (body && TEXTUAL.test(type)) {
+  if (body && isTextual(type)) {
     const text = decoder.decode(body);
     try {
       body = encoder.encode(

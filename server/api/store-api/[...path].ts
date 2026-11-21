@@ -1,4 +1,5 @@
 import type { H3Event } from "h3";
+import type { BackendSession } from "../../ports";
 import {
   forwardedFor,
   forwardStoreApiRequest,
@@ -39,12 +40,29 @@ export default defineEventHandler(async (event) => {
 
   const body = await readLimitedBody(event);
   const session = await backendSession(event, "shopware", { create: true });
-  // a write with an outdated session would act on a replaced token (or a
-  // throwaway cart): the browser has the new cookie, so it may retry
-  if (event.method !== "GET" && (await useVisitorSession(event).isStale())) {
-    setResponseStatus(event, 409);
-    return { errors: [{ status: "409", code: "stale_session" }] };
+  if (event.method === "GET" || event.method === "HEAD") {
+    return forward(event, body, session);
   }
+  // Writes (registration, login, logout replace the token) run one after
+  // the other with the visitor's cart writes; one that waited behind a
+  // token change carries an outdated session: acting on it would use the
+  // replaced token (a throwaway cart). The browser has the new cookie and
+  // may send it again.
+  const visitor = useVisitorSession(event);
+  return visitor.exclusive(async () => {
+    if (await visitor.isStale()) {
+      setResponseStatus(event, 409);
+      return { errors: [{ status: "409", code: "stale_session" }] };
+    }
+    return forward(event, body, session);
+  });
+});
+
+async function forward(
+  event: H3Event,
+  body: Uint8Array | undefined,
+  session: BackendSession,
+) {
   const config = useRuntimeConfig();
   const shopware = config.public.shopware as {
     endpoint: string;
@@ -92,4 +110,4 @@ export default defineEventHandler(async (event) => {
     setResponseHeader(event, name, value);
   }
   return answer.body ? Buffer.from(answer.body) : null;
-});
+}
