@@ -66,6 +66,36 @@ describe("outage breaker", () => {
     await expect(guardedRequest(answers)).resolves.toBe("answer");
   });
 
+  it("lets one request through every 5 s while open and closes at its answer", async () => {
+    const { guardedRequest } = await breaker();
+    await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
+    await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
+    const request = vi.fn(answers);
+    await expect(guardedRequest(request)).rejects.toMatchObject({
+      statusCode: 503,
+    });
+    vi.setSystemTime(new Date("2026-11-22T12:00:05Z"));
+    // Shopware is back: the probe answers and the breaker closes
+    await expect(guardedRequest(request)).resolves.toBe("answer");
+    await expect(guardedRequest(request)).resolves.toBe("answer");
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps failing fast when the probe finds no answer either", async () => {
+    const { guardedRequest } = await breaker();
+    await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
+    await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
+    vi.setSystemTime(new Date("2026-11-22T12:00:05Z"));
+    const probe = vi.fn(fails(timeout()));
+    await expect(guardedRequest(probe)).rejects.toThrow();
+    expect(probe).toHaveBeenCalledTimes(1);
+    const next = vi.fn(answers);
+    await expect(guardedRequest(next)).rejects.toMatchObject({
+      statusCode: 503,
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("does not count failures further apart than 15 s", async () => {
     const { guardedRequest } = await breaker();
     await expect(guardedRequest(fails(timeout()))).rejects.toThrow();
