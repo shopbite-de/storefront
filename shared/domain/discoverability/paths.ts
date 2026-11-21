@@ -4,12 +4,18 @@
  * path with the known ones (the scanner filter of the path resolution).
  */
 
+/** `//host` and `/\host` are read as another host by browsers. */
+const PROTOCOL_RELATIVE = /^\/[/\\]/;
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARACTERS = /[\x00-\x1f\x7f]/;
+
 /**
  * Paths no section can have, answered with a 404 without any lookup:
  * undecodable or invalid UTF-8 (`/%ff`, `/%c0%ae`), double encoding
- * (`%25`), `..` (path traversal probes) and paths longer than a backend
- * stores (750 characters). Adapters add their own (Shopware: technical
- * prefixes without an entity id).
+ * (`%25`), `..` (path traversal probes), control characters (`%00`,
+ * `%0A`), a leading `//` or `/\` (protocol-relative, also encoded) and
+ * paths longer than a backend stores (750 characters). Adapters add their
+ * own (Shopware: technical prefixes without an entity id).
  */
 export function isHostilePath(path: string): boolean {
   if (path.length > 750) return true;
@@ -20,7 +26,21 @@ export function isHostilePath(path: string): boolean {
   } catch {
     return true;
   }
-  return decoded.includes("..");
+  return (
+    decoded.includes("..") ||
+    CONTROL_CHARACTERS.test(decoded) ||
+    PROTOCOL_RELATIVE.test(path) ||
+    PROTOCOL_RELATIVE.test(decoded)
+  );
+}
+
+/**
+ * Whether a backend's canonical path may be a redirect target: a
+ * storefront path (one leading `/`), never another host (`//host/`,
+ * `/\host`) or anything else `isHostilePath` rejects.
+ */
+export function isSafeRedirectTarget(target: string): boolean {
+  return target.startsWith("/") && !isHostilePath(target);
 }
 
 function decode(path: string): string {

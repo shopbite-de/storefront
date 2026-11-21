@@ -1,7 +1,7 @@
-import type { MenuSection, NavigationNode } from "../../../shared/domain";
+import type { NavigationNode } from "../../../shared/domain";
 import type { MemoryCatalog } from "./catalog";
 import { id } from "./demoMenu";
-import type { MemoryNavigation } from "./navigation";
+import { toNode, type MemoryNavigation } from "./navigation";
 
 const link = (key: string, label: string, path: string): NavigationNode => ({
   id: id(key),
@@ -28,16 +28,6 @@ const group = (
   children,
 });
 
-const sectionNode = (section: Omit<MenuSection, "children">) => ({
-  id: section.id,
-  label: section.name,
-  kind: "menu-section" as const,
-  path: section.path,
-  external: false,
-  icon: section.icon,
-  media: null,
-});
-
 /**
  * The quickstart's header and footer (its `setup.py`): the menu root with
  * its sections and a contact link in the header; the footer columns
@@ -50,15 +40,7 @@ export function demoNavigation(catalog: MemoryCatalog): MemoryNavigation {
   return {
     main: [
       ...(catalog.menuRoot
-        ? [
-            {
-              ...sectionNode(catalog.menuRoot),
-              children: sections.map((section) => ({
-                ...sectionNode(section),
-                children: [],
-              })),
-            },
-          ]
+        ? [toNode({ ...catalog.menuRoot, children: sections })]
         : []),
       link("category:kontakt", "Kontakt", "/kontakt"),
     ],

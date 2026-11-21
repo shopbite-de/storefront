@@ -59,6 +59,7 @@ export function createShopwareBackend(
     }),
     navigation: createShopwareNavigation(storeApi, {
       menuCategoryId: options.menuCategoryId,
+      log,
     }),
     cart: notImplemented("cart", name),
     checkout: createShopwareCheckout(storeApi, { name, log }),

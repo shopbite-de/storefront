@@ -2,7 +2,7 @@ import type { Id } from "../kernel";
 import type { ResolvedRoute } from "./types";
 
 /** Paths are compared decoded; the router hands them over encoded. */
-function decodePath(path: string): string {
+export function decodePath(path: string): string {
   try {
     return decodeURI(path);
   } catch {

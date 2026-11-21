@@ -464,3 +464,51 @@ describe("Shopware NavigationPort adapter (anti-corruption)", () => {
     });
   });
 });
+
+describe("Shopware NavigationPort review fixes", () => {
+  const ID = "0a000000000000000000000000000002";
+
+  it("takes the menu root the storefront resolved, without asking the plugin", async () => {
+    const { navigation, get, post } = navigationOf();
+    const root = NAVIGATION_SCENARIO.menuRoot.id;
+    await navigation.getNavigation("menu", root);
+    await navigation.getNavigation("home", root);
+    expect(get).not.toHaveBeenCalled();
+    expect(post.mock.calls.map(([path]) => path)).toEqual([
+      `/navigation/main-navigation/${root}`,
+      `/navigation/main-navigation/${root}`,
+    ]);
+  });
+
+  it("asks a technical URL once: no slash variant, no former SEO URLs", async () => {
+    const { navigation, post } = navigationOf();
+    expect(
+      await navigation.resolvePath(`/navigation/${"0".repeat(32)}`),
+    ).toBeNull();
+    expect(
+      await navigation.resolvePath(`/navigation/${"0".repeat(32)}/`),
+    ).toBeNull();
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+
+  it("answers no route for a SEO URL that would lead to another host", async () => {
+    const log = vi.fn();
+    const post = vi.fn(async () => ({
+      elements: [
+        {
+          foreignKey: ID,
+          routeName: CATEGORY_ROUTE,
+          seoPathInfo: "//evil.example/salate/",
+        },
+      ],
+    }));
+    const { navigation } = createShopwareBackend({
+      storeApi: { get: async () => ({}) as never, post: post as never },
+      storeUrl: "",
+      timeZone: "Europe/Berlin",
+      log,
+    });
+    expect(await navigation.resolvePath("/salate/")).toBeNull();
+    expect(log).toHaveBeenCalled();
+  });
+});

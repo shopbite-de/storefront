@@ -31,7 +31,7 @@ import type { StoreApi } from "./storeApi";
  * What the adapter reads of the Store API answers: the fields the criteria
  * below ask for, all optional (Shopware leaves out what is empty).
  */
-type Translated<T> = T & { translated?: Partial<T> | null };
+export type Translated<T> = T & { translated?: Partial<T> | null };
 type CustomFields = Record<string, unknown>;
 
 type SwMedia = {
@@ -199,7 +199,7 @@ const CATEGORY_INCLUDES = { category: CATEGORY_FIELDS, ...MEDIA };
 /** Shopware's answer to a listing page after the last one. */
 const PAGE_OUT_OF_RANGE = "PRODUCT__LISTING_PAGE_OUT_OF_RANGE";
 
-function translated<T extends object, K extends keyof T>(
+export function translated<T extends object, K extends keyof T>(
   entity: Translated<T> | null | undefined,
   key: K,
 ): T[K] | undefined {
