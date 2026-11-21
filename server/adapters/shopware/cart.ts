@@ -81,6 +81,8 @@ type SwCartError = {
   parameters?: Record<string, unknown> | null;
 };
 export type SwCart = {
+  /** The context token: never answered. */
+  token?: string;
   lineItems?: SwLineItem[] | null;
   price?: {
     totalPrice?: number;
@@ -143,7 +145,10 @@ function messageCode(error: SwCartError): CartMessageCode {
 const SEVERITY = (level: number | undefined): CartMessage["severity"] =>
   (level ?? 0) >= 20 ? "error" : (level ?? 0) >= 10 ? "warning" : "info";
 
-function toMessages(errors: SwCart["errors"]): CartMessage[] {
+function toMessages(
+  errors: SwCart["errors"],
+  clean: (text: string) => string,
+): CartMessage[] {
   return Object.values(errors ?? {}).map((error) => {
     const parameters = error.parameters ?? {};
     const subject =
@@ -156,8 +161,8 @@ function toMessages(errors: SwCart["errors"]): CartMessage[] {
     return {
       code: messageCode(error),
       severity: SEVERITY(error.level),
-      text: error.translatedMessage ?? error.message ?? "",
-      subjectId: subject,
+      text: clean(error.translatedMessage ?? error.message ?? ""),
+      subjectId: subject === null ? null : clean(subject),
     };
   });
 }
@@ -238,7 +243,14 @@ export function toCart(
   cart: SwCart,
   currency: CurrencyCode,
   ingredientIds: IngredientIds = new Map(),
+  /** The visitor's tokens, kept out of the backend's texts. */
+  tokens: readonly (string | undefined)[] = [],
 ): Cart {
+  const secrets = [...tokens, cart.token].filter(
+    (token): token is string => !!token,
+  );
+  const clean = (text: string) =>
+    secrets.reduce((result, token) => result.replaceAll(token, "***"), text);
   const money = (amount: number | undefined) =>
     moneyFromDecimal(amount ?? 0, currency);
   const items = cart.lineItems ?? [];
@@ -265,7 +277,7 @@ export function toCart(
     })),
     shippingMethodId: delivery?.shippingMethod?.id ?? null,
     paymentMethodId: cart.transactions?.[0]?.paymentMethodId ?? null,
-    messages: toMessages(cart.errors),
+    messages: toMessages(cart.errors, clean),
   });
 }
 
@@ -501,12 +513,13 @@ export function createShopwareCart(
     return answer.data;
   }
 
-  async function answer(cart: SwCart): Promise<Cart> {
-    const [currency, ingredientIds] = await Promise.all([
+  async function answer(cart: SwCart, session: BackendSession): Promise<Cart> {
+    const [currency, ingredientIds, token] = await Promise.all([
       options.currency(),
       ingredientIdsOf(cart),
+      session.read(),
     ]);
-    return toCart(cart, currency, ingredientIds);
+    return toCart(cart, currency, ingredientIds, [token]);
   }
 
   async function write(
@@ -578,11 +591,12 @@ export function createShopwareCart(
   return {
     getCart: async (session) => {
       // a visitor without a token has an empty cart: no request for it
-      if (!(await session.read())) return answer({});
+      if (!(await session.read())) return answer({}, session);
       return answer(
         await requestOrUnavailable("the cart", () =>
           send(session, "GET", "/checkout/cart"),
         ),
+        session,
       );
     },
 
@@ -607,7 +621,7 @@ export function createShopwareCart(
       if (!(cart.lineItems ?? []).some((line) => line.id === item.id)) {
         throw unavailable(productId);
       }
-      return answer(cart);
+      return answer(cart, session);
     },
 
     changeQuantity: async (session, lineId, quantity) => {
@@ -623,6 +637,7 @@ export function createShopwareCart(
               ids: [lineId],
             },
           ),
+          session,
         );
       }
       return answer(
@@ -635,6 +650,7 @@ export function createShopwareCart(
             items: [{ id: lineId, quantity }],
           },
         ),
+        session,
       );
     },
 
@@ -649,6 +665,7 @@ export function createShopwareCart(
             ids: [lineId],
           },
         ),
+        session,
       ),
 
     applyVoucher: async (session, code) => {
@@ -660,6 +677,7 @@ export function createShopwareCart(
         await write("a voucher", session, "POST", "/checkout/cart/line-item", {
           items: [{ referencedId: voucher, type: PROMOTION }],
         }),
+        session,
       );
     },
 
@@ -674,7 +692,7 @@ export function createShopwareCart(
             (item.payload?.code === code || item.referencedId === code),
         )
         .map((item) => item.id);
-      if (!ids.length) return answer(current);
+      if (!ids.length) return answer(current, session);
       return answer(
         await write(
           "a voucher",
@@ -683,6 +701,7 @@ export function createShopwareCart(
           "/checkout/cart/line-item/delete",
           { ids },
         ),
+        session,
       );
     },
   };
@@ -699,9 +718,14 @@ async function requestOrUnavailable<T>(
 ): Promise<T> {
   try {
     return await run();
-  } catch (cause) {
-    if (cause instanceof DomainError) throw cause;
-    const status = statusOf(cause);
+  } catch (error) {
+    if (error instanceof DomainError) throw error;
+    const status = statusOf(error);
+    // Shopware's texts carry the context token ("Cart with token … is
+    // locked") and the URL: the logged cause names status and codes only
+    const cause = new Error(
+      `Shopware ${status ?? "gave no answer"}${errorCodes(error).length ? ` ${errorCodes(error).join(", ")}` : ""} (${(error as Error | null)?.name ?? "Error"})`,
+    );
     if (status === 404) {
       throw new DomainError(
         "not_found",

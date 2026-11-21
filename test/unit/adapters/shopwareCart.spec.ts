@@ -1,3 +1,4 @@
+import { inspect } from "node:util";
 import { v5 as uuidv5 } from "uuid";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -217,6 +218,61 @@ describe("Shopware cart: visitor and backend load", () => {
       "/product",
       `/product/${MARGHERITA}/cross-selling`,
     ]);
+  });
+});
+
+describe("Shopware cart: no token in texts", () => {
+  const token = "PhqKLd6O3YbAz2CVYjRcTi0Ru2uQMwuw";
+
+  it("removes the token from the backend's message texts", () => {
+    const cart = toCart(
+      {
+        token,
+        errors: [
+          {
+            messageKey: "promotion-not-found",
+            level: 20,
+            translatedMessage: `Gutschein für ${token} existiert nicht.`,
+            promotionCode: token,
+          },
+        ],
+      },
+      "EUR",
+    );
+    expect(JSON.stringify(cart)).not.toContain(token);
+    expect(cart.messages[0]!.text).toBe("Gutschein für *** existiert nicht.");
+  });
+
+  it("keeps Shopware's error texts (with the token) out of the error it throws", async () => {
+    const fake = fakeShopwareCart(PIZZERIA);
+    const send = vi.fn<VisitorStoreApi["send"]>();
+    send.mockRejectedValue(
+      Object.assign(httpError(409, "CHECKOUT__CART_LOCKED"), {
+        message: `[POST] "http://shopware:8000/store-api/checkout/cart/line-item": 409 Cart with token ${token} is locked`,
+        data: {
+          errors: [
+            {
+              code: "CHECKOUT__CART_LOCKED",
+              detail: `Cart with token ${token} is locked due to concurrent write operation`,
+            },
+          ],
+        },
+      }),
+    );
+    const { cart } = cartOf({
+      ...fake,
+      visitorApi: { send: send as VisitorStoreApi["send"] },
+    });
+
+    const error = await cart
+      .addLine(testSession(token), dishConfiguration({ dishId: COLA }), 1)
+      .catch((caught: unknown) => caught);
+
+    expect(isDomainError(error, "backend_unavailable")).toBe(true);
+    const logged = inspect(error, { depth: 10 });
+    expect(logged).not.toContain(token);
+    expect(logged).not.toContain("shopware:8000");
+    expect(logged).toContain("CHECKOUT__CART_LOCKED");
   });
 });
 
