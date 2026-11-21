@@ -30,8 +30,8 @@ mockNuxtImport("useSessionContext", () => () => ({
   refreshSessionContext: refreshSessionContextMock,
 }));
 
-const refreshCartMock = vi.fn();
-mockNuxtImport("useCart", () => () => ({ refreshCart: refreshCartMock }));
+const refreshCartMock = vi.fn().mockResolvedValue(undefined);
+mockNuxtImport("useCartData", () => () => ({ refresh: refreshCartMock }));
 
 const { navigateToMock } = vi.hoisted(() => ({ navigateToMock: vi.fn() }));
 mockNuxtImport("navigateTo", () => navigateToMock);

@@ -2,61 +2,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 
 import { useAddToCart } from "~/composables/useAddToCart";
+import type { CartLineRequest } from "~/composables/useCartMutations";
 import type { Extra } from "../../shared/domain";
 import { nextTick } from "vue";
-import { v5 as uuidv5 } from "uuid";
-import { dish, eur } from "../support/dishes";
+import { dish, eur, variant } from "../support/dishes";
+import { cart } from "../support/cart";
 
-// Use vi.hoisted for variables used in mocks
-const {
-  mockAddProducts,
-  mockRefreshCart,
-  mockTriggerCartItemAdded,
-  mockTrackEvent,
-} = vi.hoisted(() => ({
-  mockAddProducts: vi.fn(),
-  mockRefreshCart: vi.fn(),
-  mockTriggerCartItemAdded: vi.fn(),
-  mockTrackEvent: vi.fn(),
-}));
+const { mockAddLine, mockTriggerCartItemAdded, mockTrackEvent } = vi.hoisted(
+  () => ({
+    mockAddLine: vi.fn(),
+    mockTriggerCartItemAdded: vi.fn(),
+    mockTrackEvent: vi.fn(),
+  }),
+);
 
-mockNuxtImport("useCartMutations", () => {
-  return () => ({
-    addLineItems: mockAddProducts,
-  });
-});
-
-mockNuxtImport("useCart", () => {
-  return () => ({
-    addProducts: mockAddProducts,
-    refreshCart: mockRefreshCart,
-  });
-});
-
-mockNuxtImport("useProductEvents", () => {
-  return () => ({
-    triggerCartItemAdded: mockTriggerCartItemAdded,
-  });
-});
-
-mockNuxtImport("useTrackEvent", () => {
-  return () => ({
-    trackAddToCart: mockTrackEvent,
-  });
-});
-
-// Provide the mocks globally or in a way that they are picked up
-vi.stubGlobal("useCartMutations", () => ({
-  addLineItems: mockAddProducts,
-}));
-vi.stubGlobal("useCart", () => ({
-  addProducts: mockAddProducts,
-  refreshCart: mockRefreshCart,
-}));
-vi.stubGlobal("useProductEvents", () => ({
+mockNuxtImport("useCartMutations", () => () => ({ addLine: mockAddLine }));
+mockNuxtImport("useProductEvents", () => () => ({
   triggerCartItemAdded: mockTriggerCartItemAdded,
 }));
-vi.stubGlobal("useTrackEvent", () => ({
+mockNuxtImport("useTrackEvent", () => () => ({
   trackAddToCart: mockTrackEvent,
 }));
 
@@ -65,6 +29,10 @@ describe("useAddToCart", () => {
     id: "product-123",
     number: "SW10123",
     name: "Test Pizza",
+    ingredients: [
+      { id: "onions", name: "Zwiebeln" },
+      { id: "olives", name: "Oliven" },
+    ],
   });
   const cheese: Extra = {
     id: "cheese",
@@ -76,6 +44,7 @@ describe("useAddToCart", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAddLine.mockResolvedValue(cart());
   });
 
   it("should initialize with default values", () => {
@@ -116,30 +85,43 @@ describe("useAddToCart", () => {
     } = useAddToCart();
     setSelectedDish(mockProduct);
     setSelectedExtras([cheese]);
-    setRemovedIngredients(["Onions"]);
+    setRemovedIngredients(["Zwiebeln"]);
     await nextTick();
-    expect(cartItemLabel.value).toBe("Test Pizza +Extra Cheese -Onions");
+    expect(cartItemLabel.value).toBe("Test Pizza +Extra Cheese -Zwiebeln");
   });
 
-  it("should add simple product to cart", async () => {
+  it("adds a plain dish without extras and removals", async () => {
     const { setSelectedDish, addToCart, isLoading } = useAddToCart();
     setSelectedDish(mockProduct);
-
-    mockAddProducts.mockResolvedValue({ id: "cart-123" });
-    mockRefreshCart.mockResolvedValue({});
 
     await addToCart();
 
     expect(isLoading.value).toBe(false);
-    expect(mockAddProducts).toHaveBeenCalledWith([
-      {
-        id: "product-123",
-        quantity: 1,
-        type: "product",
-      },
-    ]);
+    expect(mockAddLine).toHaveBeenCalledWith({
+      dishId: "product-123",
+      variantId: null,
+      extraIds: [],
+      removedIngredientIds: [],
+      quantity: 1,
+    });
     expect(mockTriggerCartItemAdded).toHaveBeenCalledWith(mockProduct, 1);
     expect(mockTrackEvent).toHaveBeenCalledWith(mockProduct, 1);
+  });
+
+  it("orders a variant of its dish", async () => {
+    const { setSelectedDish, addToCart, selectedQuantity } = useAddToCart();
+    setSelectedDish(variant({ id: "v21-gross" }), "d21");
+    selectedQuantity.value = 2;
+
+    await addToCart();
+
+    expect(mockAddLine).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dishId: "d21",
+        variantId: "v21-gross",
+        quantity: 2,
+      }),
+    );
   });
 
   it("should not report success when adding to cart failed", async () => {
@@ -147,7 +129,7 @@ describe("useAddToCart", () => {
     setSelectedDish(mockProduct);
 
     // useCartMutations reports the failure itself and resolves undefined
-    mockAddProducts.mockResolvedValue(undefined);
+    mockAddLine.mockResolvedValue(undefined);
 
     await addToCart();
 
@@ -160,44 +142,17 @@ describe("useAddToCart", () => {
     const { setSelectedDish, addToCart, isLoading } = useAddToCart();
     setSelectedDish(mockProduct);
 
-    mockAddProducts.mockRejectedValue(new Error("boom"));
+    mockAddLine.mockRejectedValue(new Error("boom"));
 
     await expect(addToCart()).rejects.toThrow("boom");
     expect(isLoading.value).toBe(false);
   });
 
-  it("should add product with extras to cart as container", async () => {
-    const { setSelectedDish, setSelectedExtras, addToCart } = useAddToCart();
-    setSelectedDish(mockProduct);
-    setSelectedExtras([cheese]);
-
-    mockAddProducts.mockResolvedValue({ id: "cart-123" });
-
-    await addToCart();
-
-    expect(mockAddProducts).toHaveBeenCalledWith([
-      expect.objectContaining({
-        type: "container",
-        children: expect.arrayContaining([
-          expect.objectContaining({
-            type: "product",
-            referencedId: "product-123",
-          }),
-          expect.objectContaining({
-            type: "product",
-            id: "cheese",
-          }),
-        ]),
-      }),
-    ]);
-  });
   describe("line identity of configured dishes", () => {
-    const extra = cheese;
-
     async function addConfigured(
       without: string[],
-      extras: (typeof extra)[] = [],
-    ) {
+      extras: Extra[] = [],
+    ): Promise<CartLineRequest> {
       const {
         setSelectedDish,
         setSelectedExtras,
@@ -207,72 +162,53 @@ describe("useAddToCart", () => {
       setSelectedDish(mockProduct);
       setSelectedExtras(extras);
       setRemovedIngredients(without);
-      mockAddProducts.mockResolvedValue({ id: "cart-123" });
       await addToCart();
-      const items = mockAddProducts.mock.calls.at(-1)![0];
-      return items[0] as {
-        id: string;
-        type: string;
-        label: string;
-        payload: { productNumber: string; without: string[] };
-      };
+      return mockAddLine.mock.calls.at(-1)![0];
     }
+
+    const asSet = (request: CartLineRequest) => ({
+      ...request,
+      extraIds: [...request.extraIds].sort(),
+      removedIngredientIds: [...request.removedIngredientIds].sort(),
+    });
+
+    it("sends the removed ingredients by id, in the guest's order", async () => {
+      const request = await addConfigured(["Zwiebeln", "Oliven"], [cheese]);
+
+      expect(request).toEqual({
+        dishId: "product-123",
+        variantId: null,
+        extraIds: ["cheese"],
+        removedIngredientIds: ["onions", "olives"],
+        quantity: 1,
+      });
+    });
 
     it("keeps dishes that differ only in removed ingredients apart", async () => {
       const withoutOnions = await addConfigured(["Zwiebeln"]);
       const withoutOlives = await addConfigured(["Oliven"]);
+      const extrasOnly = await addConfigured([], [cheese]);
+      const withExtras = await addConfigured(["Zwiebeln"], [cheese]);
 
-      expect(withoutOnions.type).toBe("container");
-      expect(withoutOlives.type).toBe("container");
-      expect(withoutOnions.id).not.toBe(withoutOlives.id);
-      expect(withoutOnions.label).toBe("Test Pizza -Zwiebeln");
-      expect(withoutOlives.label).toBe("Test Pizza -Oliven");
+      expect(withoutOnions.removedIngredientIds).toEqual(["onions"]);
+      expect(withoutOlives.removedIngredientIds).toEqual(["olives"]);
+      expect(extrasOnly.removedIngredientIds).toEqual([]);
+      expect(asSet(withExtras)).not.toEqual(asSet(extrasOnly));
     });
 
-    it("keeps dishes with the same extras but other removals apart", async () => {
-      const a = await addConfigured(["Zwiebeln"], [extra]);
-      const b = await addConfigured(["Oliven"], [extra]);
-      const c = await addConfigured([], [extra]);
-
-      expect(new Set([a.id, b.id, c.id]).size).toBe(3);
-    });
-
-    it("gives the same configuration the same id, so the cart adds up the quantity", async () => {
-      const first = await addConfigured(["Zwiebeln", "Oliven"], [extra]);
-      const second = await addConfigured(["Zwiebeln", "Oliven"], [extra]);
-
-      expect(first.id).toBe(second.id);
-    });
-
-    it("does not depend on the order or case of the removed ingredients", async () => {
+    it("sends the same configuration whatever the order, blanks and repeats", async () => {
       const a = await addConfigured(["Zwiebeln", "Oliven"]);
       const b = await addConfigured(["Oliven", "Zwiebeln"]);
-      const c = await addConfigured([" oliven", "ZWIEBELN "]);
+      const c = await addConfigured([" Oliven", "Zwiebeln ", "Oliven", ""]);
 
-      expect(b.id).toBe(a.id);
-      expect(c.id).toBe(a.id);
+      expect(asSet(b)).toEqual(asSet(a));
+      expect(asSet(c)).toEqual(asSet(a));
     });
 
-    it("keeps the id of dishes without removed ingredients", async () => {
-      const item = await addConfigured([], [extra]);
+    it("leaves out names the dish has no ingredient for", async () => {
+      const request = await addConfigured(["Blattgold"]);
 
-      expect(item.id).toBe(
-        uuidv5("product-123cheese", "b098ef7e-0fa2-4073-b002-7ceec4360fbf"),
-      );
-    });
-
-    it("sends the removed ingredients as payload.without", async () => {
-      const removed = await addConfigured(["Zwiebeln", "Oliven"]);
-      const extrasOnly = await addConfigured([], [extra]);
-
-      expect(removed.payload).toEqual({
-        productNumber: "SW10123",
-        without: ["Zwiebeln", "Oliven"],
-      });
-      expect(extrasOnly.payload).toEqual({
-        productNumber: "SW10123",
-        without: [],
-      });
+      expect(request.removedIngredientIds).toEqual([]);
     });
   });
 });

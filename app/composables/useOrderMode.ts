@@ -12,7 +12,7 @@ export function useOrderMode() {
   const { selectedShippingMethod, setShippingMethod } = useCheckout();
   const { methods: shippingMethods, load: loadShippingMethods } =
     useShippingMethodChoice();
-  const { refreshCart } = useCart();
+  const { refresh: refreshCart } = useCartData();
   const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
 
   const switching = ref(false);

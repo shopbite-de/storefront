@@ -19,7 +19,7 @@ const {
 
 const { methods: shippingMethods, load: loadShippingMethods } =
   useShippingMethodChoice();
-const { refreshCart } = useCart();
+const { refresh: refreshCart } = useCartData();
 const { ensureAvailableCheckoutMethods } = useCheckoutMethodGuard();
 
 // Presets: shipping first (payment rules can depend on it), as cards (#443).

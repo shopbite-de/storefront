@@ -89,7 +89,7 @@ The dishes a visitor is about to order, priced by the shop backend.
 _Avoid_: basket, bag
 
 **Cart line**:
-One dish configuration in the cart with its quantity; a dish with extras and removed ingredients is one line, priced as a whole.
+One dish configuration in the cart with its quantity; a dish with extras and removed ingredients is one line, priced as a whole. Adding the same configuration again raises the quantity; configurations that differ in anything, also only in their removed ingredients, are two lines.
 _Avoid_: line item, container, position
 
 **Cart message**:
@@ -187,7 +187,7 @@ One dish configuration on the wishlist.
 _Avoid_: wishlist item
 
 **Session**:
-The storefront's own record of a visitor (cart, login) behind its cookie; what the shop backend needs to recognise the visitor is kept inside it.
+The storefront's own record of a visitor (cart, login) in its HttpOnly cookie; what the shop backend needs to recognise the visitor travels inside it sealed, so the browser can neither read nor change it.
 _Avoid_: context, context token
 
 ## Restaurant operations

@@ -37,7 +37,7 @@ mockNuxtImport("useCartQuickView", () => () => ({
   mounted: ref(false),
   show: mocks.show,
 }));
-mockNuxtImport("useCart", () => () => ({
+mockNuxtImport("useCartData", () => () => ({
   count: computed(() => state.cartCount),
 }));
 mockNuxtImport("useWishlist", () => () => ({

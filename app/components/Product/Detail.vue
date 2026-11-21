@@ -94,7 +94,7 @@ const total = computed(() => {
 const isAvailable = computed(() => selectedDish.value?.available ?? true);
 
 const onVariantSwitched = (variant: Variant) => {
-  setSelectedDish(variant);
+  setSelectedDish(variant, detail.value?.id);
   emit("variant-selected", variant);
   emitConfiguration();
 };

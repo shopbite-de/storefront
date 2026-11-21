@@ -46,7 +46,12 @@ useShopConfig();
 useShippingMethods();
 useLiveShopData();
 
-const { refreshCart } = useCart();
+// The cart (ADR 0001, step 4) is loaded in the browser; a login or logout
+// changes the visitor's session (Shopware merges the guest's cart into the
+// customer's), so the cart is loaded again.
+const { refresh: refreshCart } = useCartData();
+const loadCart = () =>
+  refreshCart().catch((error) => console.error("[cart] refresh", error));
 // Wishlist entries (#467): loaded in the browser, not during SSR. A login
 // moves the guest entries into the account, a logout shows the guest's.
 const { isLoggedIn } = useUser();
@@ -56,11 +61,10 @@ watch(isLoggedIn, (loggedIn, before) => {
   if (loggedIn === before) return;
   if (loggedIn) mergeGuestEntries();
   else loadWishlist();
+  loadCart();
 });
 
-onMounted(() => {
-  refreshCart();
-});
+onMounted(loadCart);
 
 const route = useRoute();
 const siteConfig = useSiteConfig();

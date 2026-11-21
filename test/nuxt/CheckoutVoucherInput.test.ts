@@ -1,29 +1,44 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ref, nextTick } from "vue";
-import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { computed, ref, nextTick } from "vue";
+import {
+  mountSuspended,
+  mockNuxtImport,
+  registerEndpoint,
+} from "@nuxt/test-utils/runtime";
+import { readBody, type H3Event } from "h3";
 import CheckoutVoucherInput from "~/components/Checkout/VoucherInput.vue";
+import type { Cart, CartDiscount } from "../../shared/domain";
+import { eur } from "../support/dishes";
+import { cart } from "../support/cart";
 
-const { mockAddPromotionCode, mockRemoveItem } = vi.hoisted(() => ({
-  mockAddPromotionCode: vi.fn().mockResolvedValue(undefined),
-  mockRemoveItem: vi.fn(),
+const { mockApply, mockRemove, mockSetCart } = vi.hoisted(() => ({
+  mockApply: vi.fn(),
+  mockRemove: vi.fn(),
+  mockSetCart: vi.fn(),
 }));
 
-const mockCart = ref<{ errors?: Record<string, unknown> } | null>(null);
-const mockAppliedPromotionCodes = ref<{ id: string; label: string }[]>([]);
+registerEndpoint("/api/cart/vouchers", async (event: H3Event) =>
+  mockApply(await readBody(event)),
+);
+registerEndpoint("/api/cart/vouchers/RABATT10", (event: H3Event) =>
+  mockRemove(event.method),
+);
 
-mockNuxtImport("useCart", () => () => ({
-  cart: mockCart,
-  addPromotionCode: mockAddPromotionCode,
-  appliedPromotionCodes: mockAppliedPromotionCodes,
-  removeItem: mockRemoveItem,
+const discounts = ref<CartDiscount[]>([]);
+
+mockNuxtImport("useCartData", () => () => ({
+  discounts: computed(() => discounts.value),
+  setCart: mockSetCart,
 }));
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
 
 describe("CheckoutVoucherInput", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAddPromotionCode.mockResolvedValue(undefined);
-    mockAppliedPromotionCodes.value = [];
-    mockCart.value = null;
+    mockApply.mockResolvedValue(cart());
+    mockRemove.mockResolvedValue(cart());
+    discounts.value = [];
   });
 
   it("renders the input and button", async () => {
@@ -46,11 +61,11 @@ describe("CheckoutVoucherInput", () => {
     expect(button.attributes("disabled")).toBeUndefined();
   });
 
-  it("does not call addPromotionCode a second time if already loading", async () => {
-    let resolvePromotion!: () => void;
-    mockAddPromotionCode.mockReturnValueOnce(
-      new Promise<void>((resolve) => {
-        resolvePromotion = resolve;
+  it("sends the code once while a request is in flight, field disabled", async () => {
+    let resolveApply!: (value: Cart) => void;
+    mockApply.mockReturnValueOnce(
+      new Promise<Cart>((resolve) => {
+        resolveApply = resolve;
       }),
     );
 
@@ -58,75 +73,55 @@ describe("CheckoutVoucherInput", () => {
     await wrapper.find("input").setValue("SAVE10");
     await nextTick();
 
-    // First invocation, in flight
     wrapper.find("form").trigger("submit");
     await nextTick();
-
-    // Second invocation while still loading
     await wrapper.find("form").trigger("submit");
     await nextTick();
 
-    resolvePromotion();
-    mockCart.value = { errors: {} };
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    expect(mockAddPromotionCode).toHaveBeenCalledTimes(1);
-  });
-
-  it("disables the button and input while loading to prevent concurrent submits", async () => {
-    let resolvePromotion!: () => void;
-    mockAddPromotionCode.mockReturnValueOnce(
-      new Promise<void>((resolve) => {
-        resolvePromotion = resolve;
-      }),
-    );
-
-    const wrapper = await mountSuspended(CheckoutVoucherInput);
-    await wrapper.find("input").setValue("SAVE10");
-    await nextTick();
-
-    wrapper.find("form").trigger("submit");
-    await nextTick();
-
-    // While the request is in-flight both button and input must be disabled
     expect(wrapper.find("button").attributes("disabled")).toBeDefined();
     expect(wrapper.find("input").attributes("disabled")).toBeDefined();
 
-    // Resolve and confirm the loading guard is lifted
-    resolvePromotion();
-    mockCart.value = { errors: {} };
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await vi.waitFor(() => expect(mockApply).toHaveBeenCalledTimes(1));
+    resolveApply(cart());
+    await settle();
 
-    // Input is no longer disabled by loading (code was cleared on success, button
-    // disabled due to empty input is expected and correct)
+    expect(mockApply).toHaveBeenCalledTimes(1);
     expect(wrapper.find("input").attributes("disabled")).toBeUndefined();
   });
 
   it("clears the input and shows no error on successful voucher apply", async () => {
-    mockCart.value = { errors: {} };
+    const applied = cart({
+      discounts: [{ code: "SAVE10", name: "10% Rabatt", amount: eur(-100) }],
+    });
+    mockApply.mockResolvedValue(applied);
     const wrapper = await mountSuspended(CheckoutVoucherInput);
     await wrapper.find("input").setValue("SAVE10");
     await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
 
-    expect(mockAddPromotionCode).toHaveBeenCalledWith("SAVE10");
+    expect(mockApply).toHaveBeenCalledWith({ code: "SAVE10" });
+    expect(mockSetCart).toHaveBeenCalledWith(applied);
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.find("input").element.value).toBe("");
   });
 
-  it("shows the translated error from cart.errors when the code is invalid", async () => {
-    mockCart.value = {
-      errors: {
-        "promotion-not-found": {
-          promotionCode: "INVALID",
-          translatedMessage: 'Gutscheincode "INVALID" existiert nicht.',
-        },
-      },
-    };
+  it("shows the backend's text of a voucher_invalid message at the field", async () => {
+    mockApply.mockResolvedValue(
+      cart({
+        messages: [
+          {
+            code: "voucher_invalid",
+            severity: "error",
+            text: 'Gutscheincode "INVALID" existiert nicht.',
+            subjectId: "INVALID",
+          },
+        ],
+      }),
+    );
     const wrapper = await mountSuspended(CheckoutVoucherInput);
     await wrapper.find("input").setValue("INVALID");
     await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
 
     const alert = wrapper.find('[role="alert"]');
     expect(alert.text()).toBe('Gutscheincode "INVALID" existiert nicht.');
@@ -136,12 +131,12 @@ describe("CheckoutVoucherInput", () => {
     expect(wrapper.find("input").element.value).toBe("INVALID");
   });
 
-  it("shows a generic error at the field when addPromotionCode throws", async () => {
-    mockAddPromotionCode.mockRejectedValueOnce(new Error("network error"));
+  it("shows a generic error at the field when the request fails", async () => {
+    mockApply.mockRejectedValueOnce(new Error("network error"));
     const wrapper = await mountSuspended(CheckoutVoucherInput);
     await wrapper.find("input").setValue("SAVE10");
     await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
 
     expect(wrapper.find('[role="alert"]').text()).toBe(
       "Der Gutscheincode ist ungültig oder abgelaufen.",
@@ -149,28 +144,30 @@ describe("CheckoutVoucherInput", () => {
   });
 
   it("submits the trimmed code with the form", async () => {
-    mockCart.value = { errors: {} };
     const wrapper = await mountSuspended(CheckoutVoucherInput);
     await wrapper.find("input").setValue(" ENTER10 ");
     await wrapper.find("form").trigger("submit");
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
 
-    expect(mockAddPromotionCode).toHaveBeenCalledWith("ENTER10");
+    expect(mockApply).toHaveBeenCalledWith({ code: "ENTER10" });
   });
 
-  it("renders applied promotion codes", async () => {
-    mockAppliedPromotionCodes.value = [
-      { id: "promo-1", label: "10% Rabatt" },
-      { id: "promo-2", label: "Gratis Versand" },
+  it("lists the vouchers in the cart, not the automatic discounts", async () => {
+    discounts.value = [
+      { code: "RABATT10", name: "10% Rabatt", amount: eur(-100) },
+      { code: "VERSAND", name: "Gratis Versand", amount: eur(-250) },
+      { code: null, name: "Mittagsrabatt", amount: eur(-150) },
     ];
     const wrapper = await mountSuspended(CheckoutVoucherInput);
     expect(wrapper.text()).toContain("10% Rabatt");
     expect(wrapper.text()).toContain("Gratis Versand");
+    expect(wrapper.text()).not.toContain("Mittagsrabatt");
   });
 
-  it("calls removeItem when remove button is clicked", async () => {
-    const promo = { id: "promo-1", label: "10% Rabatt" };
-    mockAppliedPromotionCodes.value = [promo];
+  it("removes a voucher by its code", async () => {
+    discounts.value = [
+      { code: "RABATT10", name: "10% Rabatt", amount: eur(-100) },
+    ];
     const wrapper = await mountSuspended(CheckoutVoucherInput);
 
     const removeButtons = wrapper.findAll(
@@ -179,6 +176,6 @@ describe("CheckoutVoucherInput", () => {
     expect(removeButtons).toHaveLength(1);
     await removeButtons[0]!.trigger("click");
 
-    expect(mockRemoveItem).toHaveBeenCalledWith(promo);
+    await vi.waitFor(() => expect(mockRemove).toHaveBeenCalledWith("DELETE"));
   });
 });

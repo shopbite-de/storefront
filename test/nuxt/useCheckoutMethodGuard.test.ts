@@ -1,13 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref } from "vue";
-import {
-  useCheckoutMethodGuard,
-  hasBlockedShippingMethod,
-  hasBlockedPaymentMethod,
-  getCartErrors,
-} from "~/composables/useCheckoutMethodGuard";
+import { useCheckoutMethodGuard } from "~/composables/useCheckoutMethodGuard";
 import type { Schemas } from "#shopware";
+import type { CartMessage, CartMessageCode } from "../../shared/domain";
 
 const {
   mockRefreshCart,
@@ -25,14 +21,16 @@ const {
 
 // Reactive state shared with the mocked composables. Only read lazily
 // inside the composable factories, i.e. after module initialisation.
-const cart = ref<Schemas["Cart"] | undefined>();
+// the cart's messages (domain codes)
+const cart = ref<CartMessage[]>([]);
 const sessionContext = ref<unknown>();
 const selectedShippingMethod = ref<Schemas["ShippingMethod"] | null>(null);
 const selectedPaymentMethod = ref<Schemas["PaymentMethod"] | null>(null);
 
-mockNuxtImport("useCart", () => () => ({
-  cart,
-  refreshCart: mockRefreshCart,
+mockNuxtImport("useCartData", () => () => ({
+  hasMessage: (code: CartMessageCode) =>
+    cart.value.some((message) => message.code === code),
+  refresh: mockRefreshCart,
 }));
 
 mockNuxtImport("useCheckout", () => () => ({
@@ -70,28 +68,30 @@ const paypal = {
   distinguishableName: "PayPal",
 } as Schemas["PaymentMethod"];
 
-const shippingBlocked = {
-  code: 0,
+type KeyedMessage = CartMessage & { key: string };
+
+const shippingBlocked: KeyedMessage = {
   key: "shipping-method-blocked-Lieferung",
-  level: 10 as const,
-  message: "Shipping method Lieferung not available. Reason: not allowed",
-  messageKey: "shipping-method-blocked",
+  code: "shipping_method_blocked",
+  severity: "warning",
+  text: "Shipping method Lieferung not available. Reason: not allowed",
+  subjectId: null,
 };
 
-const paymentBlocked = {
-  code: 0,
+const paymentBlocked: KeyedMessage = {
   key: "payment-method-blocked-Barzahlung",
-  level: 10 as const,
-  message: "Payment method Barzahlung not available. Reason: not allowed",
-  messageKey: "payment-method-blocked",
+  code: "payment_method_blocked",
+  severity: "warning",
+  text: "Payment method Barzahlung not available. Reason: not allowed",
+  subjectId: null,
 };
 
-function cartWith(errors: Schemas["Cart"]["errors"]): Schemas["Cart"] {
-  return { errors } as unknown as Schemas["Cart"];
+function cartWith(messages: Record<string, CartMessage>): CartMessage[] {
+  return Object.values(messages);
 }
 
 /** Makes the next cart refresh resolve to the given cart state. */
-function nextRefreshSets(errors: Schemas["Cart"]["errors"]) {
+function nextRefreshSets(errors: Record<string, CartMessage>) {
   mockRefreshCart.mockImplementationOnce(async () => {
     cart.value = cartWith(errors);
   });
@@ -111,34 +111,6 @@ describe("useCheckoutMethodGuard", () => {
     mockSetPaymentMethod.mockResolvedValue(undefined);
     mockGetShippingMethods.mockResolvedValue(ref([delivery, pickup]));
     mockGetPaymentMethods.mockResolvedValue(ref([cash, paypal]));
-  });
-
-  describe("cart error helpers", () => {
-    it("reads errors delivered as keyed object", () => {
-      const c = cartWith({ [shippingBlocked.key]: shippingBlocked });
-      expect(getCartErrors(c)).toEqual([shippingBlocked]);
-      expect(hasBlockedShippingMethod(c)).toBe(true);
-      expect(hasBlockedPaymentMethod(c)).toBe(false);
-    });
-
-    it("reads errors delivered as array", () => {
-      const c = cartWith([paymentBlocked]);
-      expect(hasBlockedPaymentMethod(c)).toBe(true);
-      expect(hasBlockedShippingMethod(c)).toBe(false);
-    });
-
-    it("ignores unrelated errors and missing carts", () => {
-      const c = cartWith({
-        "promotion-not-found-x": {
-          ...shippingBlocked,
-          messageKey: "promotion-not-found",
-        },
-      });
-      expect(hasBlockedShippingMethod(c)).toBe(false);
-      expect(hasBlockedPaymentMethod(c)).toBe(false);
-      expect(hasBlockedShippingMethod(undefined)).toBe(false);
-      expect(hasBlockedPaymentMethod(undefined)).toBe(false);
-    });
   });
 
   describe("ensureAvailableShippingMethod", () => {

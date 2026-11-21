@@ -8,9 +8,9 @@ const CHECKOUT_PATH_PREFIX = "/bestellung";
 const ADDED_LABEL_MS = 1800;
 
 const route = useRoute();
-const { count, subtotal } = useCart();
+const { count, subtotal } = useCartData();
 const { acceptsOrders } = useShopConfig();
-const { getFormattedPrice } = useCommercePrice();
+const { getFormattedMoney } = useCommercePrice();
 const { show } = useCartQuickView();
 const { onCartItemAdded } = useProductEvents();
 
@@ -87,7 +87,7 @@ onBeforeUnmount(() => clearTimeout(addedTimer));
             <span v-else key="cart" class="flex min-w-0 items-baseline gap-2">
               <span class="font-semibold">Warenkorb</span>
               <span class="truncate text-sm">
-                {{ itemsLabel }} · {{ getFormattedPrice(subtotal) }}
+                {{ itemsLabel }} · {{ getFormattedMoney(subtotal) }}
               </span>
             </span>
           </Transition>

@@ -43,8 +43,8 @@ mockNuxtImport("useShippingMethodChoice", () => () => ({
   load: vi.fn(),
 }));
 
-mockNuxtImport("useCart", () => () => ({
-  refreshCart: mockRefreshCart,
+mockNuxtImport("useCartData", () => () => ({
+  refresh: mockRefreshCart,
 }));
 
 mockNuxtImport("useCheckoutMethodGuard", () => () => ({
