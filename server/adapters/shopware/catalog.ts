@@ -22,6 +22,8 @@ import {
   type VariantGroup,
 } from "../../../shared/domain";
 import type { CatalogPort } from "../../ports";
+import { menuRootReader } from "./menuRoot";
+import { errorCodes, request } from "./request";
 import { text, type AdapterLog } from "./shop";
 import type { StoreApi } from "./storeApi";
 
@@ -194,58 +196,8 @@ const CATEGORY_FIELDS = [
 ];
 const CATEGORY_INCLUDES = { category: CATEGORY_FIELDS, ...MEDIA };
 
-const statusOf = (error: unknown): number | undefined => {
-  const value = error as {
-    statusCode?: number;
-    status?: number;
-    response?: { status?: number };
-  } | null;
-  return value?.statusCode ?? value?.status ?? value?.response?.status;
-};
-
 /** Shopware's answer to a listing page after the last one. */
 const PAGE_OUT_OF_RANGE = "PRODUCT__LISTING_PAGE_OUT_OF_RANGE";
-
-const errorCodes = (error: unknown): string[] =>
-  (
-    (error as { data?: { errors?: { code?: string }[] } } | null)?.data
-      ?.errors ?? []
-  ).flatMap((entry) => (entry.code ? [entry.code] : []));
-
-/**
- * A Store API request as the port answers its failure: 404 is `not_found`,
- * 400 (e.g. an id that is no Shopware id) `invalid_value`, every other
- * failure `backend_unavailable`.
- */
-async function request<T>(what: string, run: () => Promise<T>): Promise<T> {
-  try {
-    return await run();
-  } catch (cause) {
-    const status = statusOf(cause);
-    if (status === 404) {
-      throw new DomainError(
-        "not_found",
-        `Shopware knows no ${what}.`,
-        {},
-        { cause },
-      );
-    }
-    if (status === 400) {
-      throw new DomainError(
-        "invalid_value",
-        `Shopware refused the request for ${what}.`,
-        {},
-        { cause },
-      );
-    }
-    throw new DomainError(
-      "backend_unavailable",
-      `Shopware did not answer ${what}.`,
-      {},
-      { cause },
-    );
-  }
-}
 
 function translated<T extends object, K extends keyof T>(
   entity: Translated<T> | null | undefined,
@@ -601,13 +553,7 @@ export function createShopwareCatalog(
     return kept.code;
   };
 
-  async function menuRoot(): Promise<string> {
-    if (options.menuCategoryId) return options.menuCategoryId;
-    const config = await request("the ShopBite configuration", () =>
-      storeApi.get<{ menuCategoryId?: string | null }>("/shopbite/config"),
-    );
-    return config.menuCategoryId || "main-navigation";
-  }
+  const menuRoot = menuRootReader(storeApi, options.menuCategoryId);
 
   const navigation = (root: string) =>
     post<SwCategory[]>(

@@ -237,9 +237,17 @@ _Avoid_: SEO URL, slug, route
 The one path a menu section is linked and indexed under; other spellings and old paths redirect to it.
 _Avoid_: canonical URL
 
-**Navigation** (main, footer, menu):
-A list of links in the header, the footer or the menu index.
-_Avoid_: navigation tree, main-navigation
+**Former path**:
+A path a menu section had before it was renamed or moved; it redirects to the canonical path.
+_Avoid_: old SEO URL, alias
+
+**Menu root** ("Speisekarte"):
+The menu section the menu hangs from; its page lists every dish, its sub-sections are the menu's sections.
+_Avoid_: navigation root, menu category
+
+**Navigation** (main, footer, menu, home):
+A list of links in the header, the footer, the menu index or on the home page; an entry is a menu section, a content page, a link or a group (a footer column that heads its links).
+_Avoid_: navigation tree, main-navigation, folder
 
 **Breadcrumb**:
 The menu sections above the current one ("Speisekarte › Pizza").
@@ -266,6 +274,9 @@ These Shopware words stay inside the Shopware adapter. Code outside it, the UI a
 | line item, `container` line item, children, payload | cart line with extras and removed ingredients     |
 | context token (`sw-context-token`)                  | session                                           |
 | SEO URL, `seoPathInfo`, `pathInfo`                  | path, canonical path                              |
+| old SEO URL (`isCanonical: null`), technical URL    | former path, a path that redirects                |
+| `menuCategoryId`, navigation category               | menu root                                         |
+| folder category, link category                      | navigation group, navigation link                 |
 | delivery time (entity)                              | lead time                                         |
 | customer comment                                    | note (and the wished time it carries)             |
 | state machine state                                 | order status, payment status                      |

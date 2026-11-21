@@ -48,6 +48,7 @@ export const memoryShop: AdapterFixture<ShopScenario> = {
       },
       checkout: { shippingMethods: [] },
       catalog: demoSeed().catalog,
+      navigation: demoSeed().navigation,
     }),
 };
 

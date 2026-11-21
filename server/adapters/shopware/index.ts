@@ -15,6 +15,7 @@ import { notImplemented } from "../notImplemented";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { createShopwareCatalog } from "./catalog";
 import { createShopwareCheckout } from "./checkout";
+import { createShopwareNavigation } from "./navigation";
 import { createShopwareShop, type AdapterLog } from "./shop";
 import { sharingRequestsInFlight, type StoreApi } from "./storeApi";
 
@@ -56,7 +57,9 @@ export function createShopwareBackend(
       menuCategoryId: options.menuCategoryId,
       log,
     }),
-    navigation: notImplemented("navigation", name),
+    navigation: createShopwareNavigation(storeApi, {
+      menuCategoryId: options.menuCategoryId,
+    }),
     cart: notImplemented("cart", name),
     checkout: createShopwareCheckout(storeApi, { name, log }),
     customer: notImplemented("customer", name),

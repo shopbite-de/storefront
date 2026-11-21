@@ -160,6 +160,8 @@ Open points for later steps:
 - An unavailable extra is still offered in the sheet.
 - The wishlist loads one dish sheet per entry (cached per dish); a batch route would need a port method for several dishes.
 
+**Step 3a (navigation port), done.** `NavigationPort` in both adapters with a contract suite (header, footer, menu and home navigation, the menu root, breadcrumbs, path resolution with redirects for other spellings and former paths, hostile paths, sitemap entries, known paths). The Shopware adapter (`server/adapters/shopware/navigation.ts`) owns the SEO URLs: `seoPathInfo` and `pathInfo` lookups, technical URLs, canonical and former SEO URLs (`isCanonical: null`, then the current one in the same language), the navigation roots and category types; the memory adapter serves the quickstart's menu root, header and footer. The BFF and the app still use the Shopware routes until step 3b.
+
 ### Lint guard
 
 `@typescript-eslint/no-restricted-imports` forbids `#shopware`, `@shopware/*` and the `api-types` (`~~/api-types/*`, relative paths) outside `server/adapters/shopware/**`, the generated types and `shopware.d.ts`. It warns during steps 1 to 7 (111 warnings in 103 files at step 0, the number to bring down) and becomes an error in step 8. `#shopware/*` subpaths are covered too. It sees static `import` and `export … from` only: not type queries (`typeof import("#shopware")`, `import("…").Type` in a type position), not dynamic `import()`, and not composables auto-imported from the Shopware layer (`useShopwareContext`, `useCart`, …). Those disappear with the layer in step 8, and the typecheck finds what is left.

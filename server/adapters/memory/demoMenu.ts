@@ -32,7 +32,8 @@ type MenuJson = {
 };
 
 const NAMESPACE = "0b5f0c1e-7a4d-4c3b-9e8f-5d6a7b8c9d0e";
-const id = (key: string) => uuidv5(key, NAMESPACE).replaceAll("-", "");
+/** The quickstart setup's id of an entity key (`hid()` in its setup.py). */
+export const id = (key: string) => uuidv5(key, NAMESPACE).replaceAll("-", "");
 
 // The demo marks a few dishes; the quickstart's Shopware has none set.
 const TOP_SELLERS = new Set(["21", "3", "35"]);
@@ -196,6 +197,16 @@ export function demoMenu(): MemoryCatalog {
   ];
   const topseller = { key: "topseller", label: "Topseller" };
   return {
+    // the quickstart's "Speisekarte" below the navigation root
+    menuRoot: {
+      id: id("category:speisekarte"),
+      name: "Speisekarte",
+      description: null,
+      icon: "i-lucide-utensils",
+      media: null,
+      path: "/Speisekarte/",
+      seo: { title: null, description: null, indexable: true },
+    },
     sections,
     offMenuSections: [],
     dishes,

@@ -10,6 +10,8 @@ import {
 } from "../../../shared/domain";
 import type { MemoryCatalog } from "./catalog";
 import { demoMenu } from "./demoMenu";
+import { demoNavigation } from "./demoNavigation";
+import type { MemoryNavigation } from "./navigation";
 
 /** What the memory adapter's restaurant looks like, in domain terms. */
 export type MemorySeed = Readonly<{
@@ -24,6 +26,7 @@ export type MemorySeed = Readonly<{
     shippingMethods: readonly ShippingMethod[];
   }>;
   catalog: MemoryCatalog;
+  navigation: MemoryNavigation;
 }>;
 
 const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];
@@ -44,6 +47,11 @@ export function demoSeed(): MemorySeed {
   demo ??= buildDemoSeed();
   return demo;
 }
+
+const withNavigation = (catalog: MemoryCatalog) => ({
+  catalog,
+  navigation: demoNavigation(catalog),
+});
 
 const buildDemoSeed = (): MemorySeed => ({
   shop: {
@@ -87,5 +95,5 @@ const buildDemoSeed = (): MemorySeed => ({
       },
     ],
   },
-  catalog: demoMenu(),
+  ...withNavigation(demoMenu()),
 });
