@@ -1,4 +1,4 @@
-import type { Schemas } from "#shopware";
+import type { NavigationKind, NavigationNode } from "../../shared/domain";
 
 /** A navigation entry of the header, footer and menu navigation. */
 export interface NavigationMenuItem {
@@ -10,56 +10,51 @@ export interface NavigationMenuItem {
 }
 
 /** Loads a navigation from the server cache (server/api/navigation). */
-const fetchNavigation = (type: "main" | "footer" | "menu") =>
-  $fetch<Schemas["Category"][]>(`/api/navigation/${type}`);
+const fetchNavigation = (kind: Exclude<NavigationKind, "home">) =>
+  $fetch<NavigationNode[]>(`/api/navigation/${kind}`);
 
+/**
+ * The header (`main`), footer and menu navigation (ADR 0001, step 3): the
+ * nodes as the BFF answers them, and as menu items for the link lists.
+ */
 export function useNavigation(withChildren: boolean | undefined) {
   // Every page renders these, a 404 too: the server keeps them
-  // (server/api/navigation) instead of asking Shopware per request.
+  // (server/api/navigation) instead of asking the backend per request.
   const { data: mainNavigation } = useAsyncData("main-navigation", () =>
     fetchNavigation("main"),
   );
 
-  const mapCategoryToMenuItem = (
-    category: Schemas["Category"],
-  ): NavigationMenuItem => ({
-    label: category.translated?.name ?? category.name,
-    to: category.translated?.seoUrl ?? category.seoUrl ?? undefined,
-    target: category.linkNewTab ? "_blank" : undefined,
-    icon: (category.customFields as Record<string, string> | null)
-      ?.shopbite_category_icon,
+  const toMenuItem = (node: NavigationNode): NavigationMenuItem => ({
+    label: node.label,
+    to: node.path ?? undefined,
+    target: node.external ? "_blank" : undefined,
+    icon: node.icon ?? undefined,
     children:
-      category.children?.length && withChildren
-        ? category.children.map(mapCategoryToMenuItem)
+      node.children.length && withChildren
+        ? node.children.map(toMenuItem)
         : undefined,
   });
 
-  const mainMenu = computed<NavigationMenuItem[]>(() => {
-    if (!mainNavigation.value) return [];
-
-    return mainNavigation.value?.map(mapCategoryToMenuItem);
-  });
+  const mainMenu = computed<NavigationMenuItem[]>(() =>
+    (mainNavigation.value ?? []).map(toMenuItem),
+  );
 
   const { data: footerNavigation } = useAsyncData("footer-navigation", () =>
     fetchNavigation("footer"),
   );
 
-  const footerMenu = computed<NavigationMenuItem[]>(() => {
-    if (!footerNavigation.value) return [];
-
-    return footerNavigation.value?.map(mapCategoryToMenuItem);
-  });
+  const footerMenu = computed<NavigationMenuItem[]>(() =>
+    (footerNavigation.value ?? []).map(toMenuItem),
+  );
 
   // The menu sections below the menu root (#486, resolved on the server).
   const { data: menuCardNavigation } = useAsyncData("menu-category", () =>
     fetchNavigation("menu"),
   );
 
-  const menuCardMenu = computed<NavigationMenuItem[]>(() => {
-    if (!menuCardNavigation.value) return [];
-
-    return menuCardNavigation.value?.map(mapCategoryToMenuItem);
-  });
+  const menuCardMenu = computed<NavigationMenuItem[]>(() =>
+    (menuCardNavigation.value ?? []).map(toMenuItem),
+  );
 
   return {
     mainNavigation,

@@ -1,48 +1,26 @@
 import { parseURL, withTrailingSlash } from "ufo";
 import type { SitemapUrl } from "#sitemap/types";
-import type { components } from "~~/api-types/storeApiTypes";
-
-type Category = components["schemas"]["Category"];
+import type { SitemapEntry } from "../../shared/domain";
 
 /**
  * `_trailingSlash` marks URLs whose path must keep its trailing slash. The
- * sitemap module strips trailing slashes from every URL, but Shopware
- * category SEO URLs (`/c/Pizza/`) 404 without it; the
- * `sitemap-trailing-slash` server plugin restores them.
+ * sitemap module strips trailing slashes from every URL, but section paths
+ * such as `/Speisekarte/Pizza/` 404 without it at a backend whose paths
+ * end in a slash (Shopware); the `sitemap-trailing-slash` server plugin
+ * restores them.
  */
 export type StorefrontSitemapUrl = SitemapUrl & { _trailingSlash?: boolean };
 
-/** Maps navigation categories to sitemap entries (pages with an SEO URL only). */
-export function categoriesToSitemapUrls(
-  categories: Category[],
+/** The sitemap URLs of the sections' paths, with change date and photo. */
+export function toSitemapUrls(
+  entries: readonly SitemapEntry[],
 ): StorefrontSitemapUrl[] {
-  const urls = new Map<string, StorefrontSitemapUrl>();
-
-  for (const category of categories) {
-    const path = category.seoUrl;
-    // Technical /navigation/<id> URLs have no storefront route.
-    if (
-      category.type !== "page" ||
-      !path?.startsWith("/") ||
-      path.startsWith("//") ||
-      path.startsWith("/navigation/") ||
-      urls.has(path)
-    ) {
-      continue;
-    }
-
-    const lastmod = category.updatedAt ?? category.createdAt;
-    const image = category.media?.url;
-
-    urls.set(path, {
-      loc: path,
-      ...(lastmod && { lastmod }),
-      ...(image && { images: [{ loc: image }] }),
-      ...(path.endsWith("/") && { _trailingSlash: true }),
-    });
-  }
-
-  return [...urls.values()];
+  return entries.map((entry) => ({
+    loc: entry.path,
+    ...(entry.lastModified && { lastmod: entry.lastModified }),
+    ...(entry.image && { images: [{ loc: entry.image }] }),
+    ...(entry.path.endsWith("/") && { _trailingSlash: true }),
+  }));
 }
 
 /** Re-appends the trailing slash to `<loc>` entries whose path is listed. */

@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
-
 // Every path without a file-based page: Markdown content pages first, then
-// the category SEO URLs of the backend, whatever their prefix (`/c/Pizza/`,
-// `/speisekarte/pizza/`).
+// the paths of the menu sections, whatever their prefix (`/c/Pizza/`,
+// `/speisekarte/pizza/`), resolved by the BFF (ADR 0001, step 3).
 const route = useRoute();
 // Server route instead of queryCollection(): keeps the SQLite WASM client
 // out of client-side navigations (#314).
@@ -23,7 +21,7 @@ if ((error.value?.statusCode ?? 0) >= 500) {
   });
 }
 
-let categoryId: Ref<string> | undefined;
+let categoryId: Ref<string | undefined> | undefined;
 
 if (page.value) {
   usePageSeo({
@@ -31,21 +29,13 @@ if (page.value) {
     description: page.value.description,
   });
 } else {
-  // Scanner requests (`/wp-login.php`, `/.env`) are no SEO URLs; answer
-  // them without asking the backend.
+  // Scanner requests (`/wp-login.php`, `/.env`) are no section paths;
+  // answer them without asking the backend.
   if (/\.[a-z0-9]+$/i.test(route.path)) {
     throw createNotFoundError(`Page ${route.path} not found!`);
   }
 
-  const { seoUrl } = await useSeoUrlRoute();
-  categoryId = useNavigationContext(
-    seoUrl as Ref<Schemas["SeoUrl"]>,
-  ).foreignKey;
-
-  const { clearBreadcrumbs } = useBreadcrumbs();
-  onBeforeRouteLeave(() => {
-    clearBreadcrumbs();
-  });
+  categoryId = (await useSectionRoute()).sectionId;
 }
 </script>
 

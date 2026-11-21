@@ -1,46 +1,18 @@
-import type { components } from "~~/api-types/storeApiTypes";
-
-type Schemas = components["schemas"];
-
-const NAVIGATION_CRITERIA = {
-  depth: 10,
-  // flat list: in a tree, children would be dropped by the includes below
-  buildTree: false,
-  includes: {
-    category: ["seoUrl", "type", "updatedAt", "createdAt", "media"],
-    media: ["url"],
-  },
-  associations: {
-    media: {},
-  },
-};
+import { answerDomain } from "../../utils/domainHttp";
+import { toSitemapUrls } from "../../utils/sitemap";
 
 /**
- * Dynamic sitemap source: categories of the main navigation and the menu
- * category tree. Products follow once they have their own pages (#289).
+ * Dynamic sitemap source: the contact page and the menu sections
+ * (`NavigationPort.listSitemapEntries`). Dishes follow once they have their
+ * own pages (#289).
  */
-export default defineSitemapEventHandler(async () => {
-  const { shopware, shopBite } = useRuntimeConfig().public;
-  const rootIds = new Set(["main-navigation", await menuRootId()]);
-
-  const trees = await Promise.all(
-    [...rootIds].map((rootId) =>
-      $fetch<Schemas["Category"][]>(
-        `${shopware.endpoint}/navigation/main-navigation/${rootId}`,
-        {
-          method: "POST",
-          headers: {
-            "sw-access-key": shopware.accessToken,
-            "sw-include-seo-urls": "true",
-          },
-          body: NAVIGATION_CRITERIA,
-        },
-      ),
-    ),
+export default defineSitemapEventHandler(async (event) => {
+  const { shopBite } = useRuntimeConfig().public;
+  const entries = await answerDomain(() =>
+    useBackend(event).navigation.listSitemapEntries(),
   );
-
   return [
     ...(shopBite.feature.contactForm ? ["/kontakt"] : []),
-    ...categoriesToSitemapUrls(trees.flat()),
+    ...toSitemapUrls(entries),
   ];
 });
