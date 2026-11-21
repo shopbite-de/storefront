@@ -97,7 +97,8 @@ const violation = (
  * empty cart; ten failed logins per e-mail and `X-Forwarded-For` give 429
  * `CHECKOUT__CUSTOMER_AUTH_THROTTLED`; another customer's address id is
  * 400 `CHECKOUT__CUSTOMER_ADDRESS_NOT_FOUND`, a default address 400
- * `CHECKOUT__CUSTOMER_ADDRESS_IS_DEFAULT`; the password recovery answers
+ * `CHECKOUT__CUSTOMER_ADDRESS_IS_DEFAULT`; a password change logs every
+ * session of the customer out; the password recovery answers
  * an unknown e-mail like a known one; a wrong password of the e-mail and
  * password changes is the violation `CUSTOMER_PASSWORD_NOT_CORRECT`.
  */
@@ -335,9 +336,13 @@ export function fakeShopwareAccounts(scenario: CustomerScenario) {
           );
         }
         account.password = input.newPassword as string;
+        // Shopware 6.7 logs every session of the customer out
+        for (const [key, value] of fake().customers) {
+          if (value === account) fake().customers.delete(key);
+        }
         return {
           data: { success: true },
-          contextToken: rotate(token, carts, account, false),
+          contextToken: rotate(token, carts, undefined, true),
         };
       }
       if (method === "DELETE" && path === "/account/customer") {

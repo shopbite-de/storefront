@@ -299,11 +299,26 @@ export function createShopwareCustomer(
 
     changePassword: async (session, currentPassword, newPassword) => {
       await loggedIn(session);
+      const customer = await readCustomer(session);
+      if (!customer || customer.guest) {
+        throw fail(
+          "unauthenticated",
+          "The account needs a logged-in customer.",
+        );
+      }
       await ask("the password change", () =>
         send(session, "POST", "/account/change-password", {
           password: currentPassword,
           newPassword,
           newPasswordConfirm: newPassword,
+        }),
+      );
+      // Shopware logs every session of the customer out: the one that
+      // changed it logs in again (its cart stays with the new token)
+      await ask("the login after the password change", () =>
+        send(session, "POST", "/account/login", {
+          email: customer.email,
+          password: newPassword,
         }),
       );
     },

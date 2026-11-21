@@ -548,6 +548,10 @@ function customerSuite(
         PASSWORD,
         "neues-geheim-1",
       );
+      // the customer who changed it stays logged in
+      expect(await backend.customer.getCustomer(session)).toMatchObject({
+        email: REGISTRATION.email,
+      });
       expect(
         await code(() =>
           backend.customer.login(testSession(), REGISTRATION.email, PASSWORD),
