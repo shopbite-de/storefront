@@ -583,7 +583,8 @@ describe("the account behind the BFF", () => {
       path: "/api/account/password",
       body: { currentPassword: PASSWORD, newPassword: "neues-geheim-9" },
     });
-    expect(password.event.status).toBe(204);
+    // the session stays logged in with the new password
+    expect(password.body).toEqual({ loggedIn: true });
     expect(
       (await login(browser(), "neues-geheim-9", "erika.neu@example.com")).error,
     ).toBeUndefined();
