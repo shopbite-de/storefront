@@ -203,6 +203,37 @@ describe("useCartMutations", () => {
     expect(mockRefresh).not.toHaveBeenCalled();
   });
 
+  it("waits before it sends again, and tries twice at most", async () => {
+    const stale = () =>
+      createError({ statusCode: 409, data: { code: "stale_session" } });
+    const times: number[] = [];
+    mockFetch.mockImplementation(async () => {
+      times.push(Date.now());
+      throw stale();
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { addLine } = useCartMutations();
+    expect(await addLine(PLAIN)).toBeUndefined();
+
+    // the first try and two more, each after a pause for the new cookie
+    expect(times).toHaveLength(3);
+    expect(times[1]! - times[0]!).toBeGreaterThanOrEqual(90);
+    expect(times[2]! - times[1]!).toBeGreaterThanOrEqual(90);
+  });
+
+  it("succeeds on the second retry", async () => {
+    const stale = () =>
+      createError({ statusCode: 409, data: { code: "stale_session" } });
+    mockFetch.mockRejectedValueOnce(stale()).mockRejectedValueOnce(stale());
+    const answer = cartWith([{ id: "p1", quantity: 1 }]);
+    mockFetch.mockResolvedValueOnce(answer);
+
+    const { addLine } = useCartMutations();
+    expect(await addLine(PLAIN)).toEqual(answer);
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
   it("does not send other conflicts again", async () => {
     mockFetch.mockRejectedValue(
       createError({ statusCode: 409, data: { code: "dish_unavailable" } }),

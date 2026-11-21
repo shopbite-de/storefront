@@ -9,6 +9,10 @@ export type CartLineRequest = {
   quantity: number;
 };
 
+/** Retries of a write that carried an outdated session, and the pause. */
+const STALE_RETRIES = 2;
+const STALE_RETRY_MS = 150;
+
 /** The BFF's 409 for a request with an outdated session cookie. */
 function isStaleSession(error: unknown): boolean {
   return (
@@ -40,20 +44,22 @@ export function useCartMutations() {
   const isMutating = computed(() => pendingCount.value > 0);
 
   /**
-   * Sends a write; once more when the server says it carried an outdated
-   * session (a parallel request replaced it, e.g. a login): the browser has
-   * the new cookie by then.
+   * Sends a write; again (twice at most, after a short pause) when the
+   * server says it carried an outdated session (a parallel request
+   * replaced it, e.g. a login): by then the browser has stored the new
+   * cookie of that request's answer.
    */
   async function write(request: () => Promise<Cart>): Promise<Cart> {
-    let next: Cart;
-    try {
-      next = await request();
-    } catch (error) {
-      if (!isStaleSession(error)) throw error;
-      next = await request();
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const next = await request();
+        setCart(next);
+        return next;
+      } catch (error) {
+        if (!isStaleSession(error) || attempt >= STALE_RETRIES) throw error;
+        await new Promise((resolve) => setTimeout(resolve, STALE_RETRY_MS));
+      }
     }
-    setCart(next);
-    return next;
   }
 
   /**
