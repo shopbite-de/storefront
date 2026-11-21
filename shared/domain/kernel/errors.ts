@@ -48,6 +48,8 @@ export const DOMAIN_ERROR_CODES = [
    * only answered after the right password.
    */
   "account_not_confirmed",
+  /** The shop locked the account; only answered after the right password. */
+  "account_inactive",
   /** The registration was confirmed before; the customer can log in. */
   "already_confirmed",
   /**

@@ -22,6 +22,7 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<DomainErrorCode, number>> = {
   invalid_credentials: 401,
   email_taken: 409,
   account_not_confirmed: 403,
+  account_inactive: 403,
   already_confirmed: 409,
   rate_limited: 429,
   address_in_use: 409,

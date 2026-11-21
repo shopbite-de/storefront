@@ -139,6 +139,13 @@ export function createMemoryCustomer(options: {
   ): Promise<string> {
     const before = await session.read();
     const next = randomUUID();
+    // the session of another customer: that cart stays theirs
+    const previous = before
+      ? accounts.get(sessions.get(before) ?? "")
+      : undefined;
+    if (before && previous && previous.id !== loggedIn?.id) {
+      options.cart.merge([savedCart(previous), before], savedCart(previous));
+    }
     if (before) {
       sessions.delete(before);
       options.moveSession(before, next);
@@ -232,8 +239,11 @@ export function createMemoryCustomer(options: {
       const token = await session.read();
       const id = token ? sessions.get(token) : undefined;
       const account = id ? accounts.get(id) : undefined;
-      // the cart waits for the customer's next login
-      if (account && token) options.cart.merge([token], savedCart(account));
+      // the cart waits for the customer's next login, with what another
+      // session of the customer saved before
+      if (account && token) {
+        options.cart.merge([savedCart(account), token], savedCart(account));
+      }
       await rotate(session, null);
     },
 
@@ -336,6 +346,7 @@ export function createMemoryCustomer(options: {
       const account = await accountOf(session);
       if (!checkPassword(account, currentPassword)) throw badCredentials();
       setPassword(account, newPassword);
+      return deepFreeze({ loggedIn: true });
     },
 
     requestPasswordReset: async (_session, email, storefrontUrl) => {

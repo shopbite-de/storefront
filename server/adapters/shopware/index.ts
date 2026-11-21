@@ -110,7 +110,7 @@ export function createShopwareBackend(
         }
       : shippingMethods,
     customer: ordering
-      ? createShopwareCustomer(ordering.visitor)
+      ? createShopwareCustomer(ordering.visitor, log)
       : notImplemented("customer", name),
     orders: ordering?.orders ?? notImplemented("orders", name),
     shop,

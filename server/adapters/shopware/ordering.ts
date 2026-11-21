@@ -84,6 +84,8 @@ export type SwCustomer = {
   guest?: boolean;
   active?: boolean;
   doubleOptInRegistration?: boolean;
+  /** Set once the double opt-in link was confirmed. */
+  doubleOptInConfirmDate?: string | null;
   email?: string;
   salutation?: SwSalutation;
   firstName?: string;

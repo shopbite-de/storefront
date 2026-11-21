@@ -59,7 +59,7 @@ export interface CustomerPort {
   /**
    * Logs the session in. `invalid_credentials` (unknown e-mail and wrong
    * password alike), `account_not_confirmed` (right password, double
-   * opt-in pending), `rate_limited` (the backend's limit per e-mail and
+   * opt-in pending), `account_inactive` (locked by the shop), `rate_limited` (the backend's limit per e-mail and
    * visitor address, `BackendSession.forwardedFor`).
    */
   login(
@@ -100,15 +100,20 @@ export interface CustomerPort {
     email: string,
     password: string,
   ): Promise<Customer>;
-  /** `invalid_credentials` for a wrong current password. */
+  /**
+   * `invalid_credentials` for a wrong current password. The password is
+   * changed once this answers; `loggedIn: false` when the session could not
+   * stay logged in with it (the customer logs in again).
+   */
   changePassword(
     session: BackendSession,
     currentPassword: string,
     newPassword: string,
-  ): Promise<void>;
+  ): Promise<Readonly<{ loggedIn: boolean }>>;
   /**
    * Sends a reset link to the e-mail when it has an account; answers the
-   * same when it has none (no account enumeration). `rate_limited`.
+   * same when it has none and when the backend holds back (no account
+   * enumeration: a limit that only known e-mails reach would tell them).
    */
   requestPasswordReset(
     session: BackendSession,

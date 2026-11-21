@@ -39,7 +39,7 @@ const ACCOUNT_REFUSALS: Readonly<Record<string, DomainErrorCode>> = {
   CHECKOUT__CUSTOMER_AUTH_BAD_CREDENTIALS: "invalid_credentials",
   "VIOLATION::CUSTOMER_PASSWORD_NOT_CORRECT": "invalid_credentials",
   CHECKOUT__CUSTOMER_OPTIN_NOT_COMPLETED: "account_not_confirmed",
-  CHECKOUT__CUSTOMER_IS_INACTIVE: "account_not_confirmed",
+  CHECKOUT__CUSTOMER_IS_INACTIVE: "account_inactive",
   "VIOLATION::CUSTOMER_EMAIL_NOT_UNIQUE": "email_taken",
   CHECKOUT__CUSTOMER_IS_ALREADY_CONFIRMED: "already_confirmed",
   CHECKOUT__CUSTOMER_NOT_FOUND_BY_HASH: "not_found",
@@ -106,6 +106,7 @@ const ADDRESS_CRITERIA = { associations: ADDRESS_ASSOCIATIONS };
 
 export function createShopwareCustomer(
   tools: ShopwareVisitorTools,
+  log: (message: string, details?: Record<string, unknown>) => void = () => {},
 ): CustomerPort {
   const { send, shop } = tools;
 
@@ -214,25 +215,27 @@ export function createShopwareCustomer(
     },
 
     register: async (session, registration, storefrontUrl) => {
-      const [billingAddress, shippingAddress, url] = await Promise.all([
-        tools.addressBody({
-          ...registration.billingAddress,
-          firstName:
-            registration.billingAddress.firstName || registration.firstName,
-          lastName:
-            registration.billingAddress.lastName || registration.lastName,
-        }),
-        registration.deliveryAddress
-          ? tools.addressBody(registration.deliveryAddress)
-          : undefined,
-        mailUrl(storefrontUrl),
-      ]);
+      const [billingAddress, shippingAddress, url, salutationId] =
+        await Promise.all([
+          tools.addressBody({
+            ...registration.billingAddress,
+            firstName:
+              registration.billingAddress.firstName || registration.firstName,
+            lastName:
+              registration.billingAddress.lastName || registration.lastName,
+          }),
+          registration.deliveryAddress
+            ? tools.addressBody(registration.deliveryAddress)
+            : undefined,
+          mailUrl(storefrontUrl),
+          tools.salutationId(registration.salutation),
+        ]);
       const created = await ask("the registration", () =>
         send<SwCustomer>(session, "POST", "/account/register", {
           accountType: registration.business ? "business" : "private",
           email: registration.email,
           password: registration.password,
-          salutationId: "",
+          salutationId,
           firstName: registration.firstName,
           lastName: registration.lastName,
           guest: false,
@@ -242,8 +245,11 @@ export function createShopwareCustomer(
           ...(shippingAddress ? { shippingAddress } : {}),
         }),
       );
+      // Shopware 6.7 answers `active: true` with double opt-in: the
+      // missing confirmation date tells that the e-mail waits
       const confirmationRequired =
-        created.doubleOptInRegistration === true && created.active !== true;
+        created.doubleOptInRegistration === true &&
+        !created.doubleOptInConfirmDate;
       if (confirmationRequired) {
         const billing = created.defaultBillingAddress
           ? await tools.toAddress(created.defaultBillingAddress)
@@ -314,13 +320,20 @@ export function createShopwareCustomer(
         }),
       );
       // Shopware logs every session of the customer out: the one that
-      // changed it logs in again (its cart stays with the new token)
-      await ask("the login after the password change", () =>
-        send(session, "POST", "/account/login", {
+      // changed it logs in again (its cart stays with the new token); the
+      // password is changed even when that login does not work
+      try {
+        await send(session, "POST", "/account/login", {
           email: customer.email,
           password: newPassword,
-        }),
-      );
+        });
+        return deepFreeze({ loggedIn: true });
+      } catch (error) {
+        log("[shopware][customer] login after the password change", {
+          error: refusal("the login", error).code,
+        });
+        return deepFreeze({ loggedIn: false });
+      }
     },
 
     requestPasswordReset: async (session, email, storefrontUrl) => {
@@ -333,8 +346,15 @@ export function createShopwareCustomer(
         );
       } catch (error) {
         const failure = refusal("the password reset", error);
-        // an e-mail without account is answered like one with
+        // an e-mail without account is answered like one with; Shopware's
+        // limit counts known e-mails only, so it is answered alike too
         if (failure.code === "not_found") return;
+        if (failure.code === "rate_limited") {
+          log("[shopware][customer] password reset rate limited", {
+            retryAfterSeconds: failure.details.retryAfterSeconds,
+          });
+          return;
+        }
         throw failure;
       }
     },

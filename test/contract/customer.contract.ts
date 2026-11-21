@@ -235,6 +235,16 @@ function customerSuite(
       expect(current?.defaultDeliveryAddressId).toBe(addresses[0]!.id);
     });
 
+    it("keeps the salutation the customer chose", async () => {
+      const { backend } = given();
+      const { customer } = await backend.customer.register(
+        testSession(),
+        { ...REGISTRATION, salutation: "mrs" },
+        STOREFRONT_URL,
+      );
+      expect(customer.salutation).toBe("mrs");
+    });
+
     it("keeps a separate delivery address", async () => {
       const { backend } = given();
       const session = testSession();
@@ -543,11 +553,13 @@ function customerSuite(
           ),
         ),
       ).toBe("invalid_credentials");
-      await backend.customer.changePassword(
-        session,
-        PASSWORD,
-        "neues-geheim-1",
-      );
+      expect(
+        await backend.customer.changePassword(
+          session,
+          PASSWORD,
+          "neues-geheim-1",
+        ),
+      ).toEqual({ loggedIn: true });
       // the customer who changed it stays logged in
       expect(await backend.customer.getCustomer(session)).toMatchObject({
         email: REGISTRATION.email,

@@ -59,6 +59,8 @@ type FakeAccount = FakeCustomer & {
   password: string;
   active: boolean;
   doubleOptIn: boolean;
+  /** ISO date-time once the double opt-in link was confirmed. */
+  confirmedAt: string | null;
   confirmHash: string | null;
   addresses: FakeAddress[];
 };
@@ -183,6 +185,7 @@ export function fakeShopwareAccounts(scenario: CustomerScenario) {
         ...fake().customerJson(customer),
         active: customer.active,
         doubleOptInRegistration: customer.doubleOptIn,
+        doubleOptInConfirmDate: customer.confirmedAt,
       });
 
       if (method === "POST" && path === "/account/login") {
@@ -198,7 +201,7 @@ export function fakeShopwareAccounts(scenario: CustomerScenario) {
           failures.set(key, (failures.get(key) ?? 0) + 1);
           throw violation(401, "CHECKOUT__CUSTOMER_AUTH_BAD_CREDENTIALS");
         }
-        if (!found.active) {
+        if (found.doubleOptIn && !found.confirmedAt) {
           throw violation(401, "CHECKOUT__CUSTOMER_OPTIN_NOT_COMPLETED");
         }
         failures.delete(key);
@@ -250,8 +253,10 @@ export function fakeShopwareAccounts(scenario: CustomerScenario) {
           shipping,
           addresses: shipping === billing ? [billing] : [billing, shipping],
           password: input.password as string,
-          active: !scenario.doubleOptIn,
+          // Shopware 6.7: active right away, the confirmation date tells
+          active: true,
           doubleOptIn: scenario.doubleOptIn === true,
+          confirmedAt: null,
           confirmHash: null,
         };
         accounts.push(created);
@@ -277,10 +282,10 @@ export function fakeShopwareAccounts(scenario: CustomerScenario) {
         );
         if (!found)
           throw violation(404, "CHECKOUT__CUSTOMER_NOT_FOUND_BY_HASH");
-        if (found.active) {
+        if (found.confirmedAt) {
           throw violation(412, "CHECKOUT__CUSTOMER_IS_ALREADY_CONFIRMED");
         }
-        found.active = true;
+        found.confirmedAt = new Date().toISOString();
         return {
           data: json(found),
           contextToken: rotate(token, carts, found, true),

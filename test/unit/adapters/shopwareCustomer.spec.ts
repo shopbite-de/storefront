@@ -149,3 +149,106 @@ describe("Shopware customer adapter", () => {
     expect(patch?.body).not.toHaveProperty("salutationId");
   });
 });
+
+describe("Shopware customer adapter, refusals", () => {
+  /** The adapter over the account fake; `intercept` answers first. */
+  function intercepted(
+    intercept: (path: string) => Error | undefined,
+    log: (message: string) => void = () => {},
+  ) {
+    const fake = fakeShopwareAccounts(RESTAURANT);
+    const wrap = <T extends (...args: never[]) => Promise<unknown>>(
+      path: (args: Parameters<T>) => string,
+      call: T,
+    ) =>
+      (async (...args: Parameters<T>) => {
+        const error = intercept(path(args));
+        if (error) throw error;
+        return call(...args);
+      }) as unknown as T;
+    const backend = createShopwareBackend({
+      storeApi: {
+        get: fake.storeApi.get,
+        post: wrap((args) => args[0] as string, fake.storeApi.post),
+      },
+      visitorApi: {
+        send: wrap(
+          (args) => (args[0] as { path: string }).path,
+          fake.visitorApi.send,
+        ),
+      },
+      countryId: GERMANY,
+      storeUrl: "https://shop.example.com",
+      timeZone: "Europe/Berlin",
+      log,
+    });
+    return backend;
+  }
+
+  const throttled = () =>
+    Object.assign(new Error("429"), {
+      statusCode: 429,
+      data: {
+        errors: [
+          {
+            status: "429",
+            code: "FRAMEWORK__RATE_LIMIT_EXCEEDED",
+            meta: { parameters: { seconds: 30 } },
+          },
+        ],
+      },
+    });
+
+  it("answers a throttled password reset like any other (no enumeration)", async () => {
+    const logged: string[] = [];
+    const backend = intercepted(
+      (path) =>
+        path === "/account/recovery-password" ? throttled() : undefined,
+      (message) => logged.push(message),
+    );
+    await expect(
+      backend.customer.requestPasswordReset(
+        testSession(),
+        "erika@example.com",
+        STOREFRONT_URL,
+      ),
+    ).resolves.toBeUndefined();
+    expect(logged.join(" ")).toContain("rate");
+    expect(logged.join(" ")).not.toContain("erika@example.com");
+  });
+
+  it("reports a changed password whose new login failed", async () => {
+    let logins = 0;
+    const backend = intercepted((path) =>
+      path === "/account/login" && ++logins > 0 ? throttled() : undefined,
+    );
+    const session = testSession();
+    await backend.customer.register(session, REGISTRATION, STOREFRONT_URL);
+    expect(
+      await backend.customer.changePassword(
+        session,
+        REGISTRATION.password,
+        "neues-geheim-1",
+      ),
+    ).toEqual({ loggedIn: false });
+  });
+
+  it("names a locked account apart from a pending confirmation", async () => {
+    const backend = intercepted((path) =>
+      path === "/account/login"
+        ? Object.assign(new Error("401"), {
+            statusCode: 401,
+            data: {
+              errors: [
+                { status: "401", code: "CHECKOUT__CUSTOMER_IS_INACTIVE" },
+              ],
+            },
+          })
+        : undefined,
+    );
+    const error = await failure(() =>
+      backend.customer.login(testSession(), "erika@example.com", "x-x-x-x-1"),
+    );
+    expect(error.code).toBe("account_inactive");
+  });
+});
