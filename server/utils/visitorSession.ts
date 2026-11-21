@@ -25,25 +25,42 @@ export const SESSION_STORAGE = "shopbite-session";
 /** The cookie the Shopware layer of storefronts before 2.7 kept the token in. */
 export const LEGACY_CONTEXT_COOKIE = "sw-context-token";
 
-type SessionConfig = { maxAgeDays?: number | string };
+type SessionConfig = {
+  maxAgeDays?: number | string;
+  maxEntries?: number | string;
+};
 
-let store: { maxAgeSeconds: number; store: SessionStore } | undefined;
+const positive = (value: unknown, fallback: number) => {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+};
 
-function sessionStore(): SessionStore {
+/**
+ * `visitorSession` of the runtime config, validated once: days a session
+ * lives after the last visit (30) and the sessions the default storage
+ * keeps (20000).
+ */
+export function sessionSettings(): {
+  maxAgeSeconds: number;
+  maxEntries: number;
+} {
   const config = (useRuntimeConfig() as { visitorSession?: SessionConfig })
     .visitorSession;
-  const days = Number(config?.maxAgeDays ?? 30);
-  const maxAgeSeconds = Math.round((days > 0 ? days : 30) * 86_400);
-  if (store?.maxAgeSeconds !== maxAgeSeconds) {
-    store = {
-      maxAgeSeconds,
-      store: createSessionStore({
-        storage: useStorage(SESSION_STORAGE) as unknown as SessionStorage,
-        maxAgeSeconds,
-      }),
-    };
-  }
-  return store.store;
+  return {
+    maxAgeSeconds: Math.round(positive(config?.maxAgeDays, 30) * 86_400),
+    maxEntries: Math.floor(positive(config?.maxEntries, 20000)),
+  };
+}
+
+let store: SessionStore | undefined;
+
+/** One store per process; the runtime config is fixed for it. */
+function sessionStore(): SessionStore {
+  store ??= createSessionStore({
+    storage: useStorage(SESSION_STORAGE) as unknown as SessionStorage,
+    maxAgeSeconds: sessionSettings().maxAgeSeconds,
+  });
+  return store;
 }
 
 function isSecure(): boolean {
@@ -76,7 +93,12 @@ export function useVisitorSession(event: H3Event): VisitorSession {
           path: "/",
           maxAge,
         }),
-      remove: (name) => deleteCookie(event, name, { path: "/" }),
+      // a `__Host-` cookie is only deleted by a Secure Set-Cookie
+      remove: (name) =>
+        deleteCookie(event, name, {
+          path: "/",
+          ...(name.startsWith("__Host-") ? { secure: true } : {}),
+        }),
     },
   });
   context[CONTEXT_KEY] = session;
@@ -104,18 +126,18 @@ export async function backendSession(
  * `data.code` `cross_site_request`.
  */
 export function assertSameOriginWrite(event: H3Event): void {
-  let storeHost: string | undefined;
-  try {
-    storeHost = new URL(useRuntimeConfig().public.storeUrl).host;
-  } catch {
-    storeHost = undefined;
-  }
+  const host = getRequestHeader(event, "host");
+  const scheme = (
+    event.node?.req?.socket as { encrypted?: boolean } | undefined
+  )?.encrypted
+    ? "https"
+    : "http";
   const crossSite = isCrossSiteWrite({
     method: event.method,
-    hosts: [
-      getRequestHeader(event, "host"),
-      getRequestHeader(event, "x-forwarded-host")?.split(",")[0]?.trim(),
-      storeHost,
+    // forwarded headers are the client's to choose: not trusted here
+    origins: [
+      useRuntimeConfig().public.storeUrl,
+      host ? `${scheme}://${host}` : undefined,
     ],
     origin: getRequestHeader(event, "origin"),
     secFetchSite: getRequestHeader(event, "sec-fetch-site"),

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  forwardedFor,
   forwardStoreApiRequest,
   type StoreApiSend,
 } from "../../../server/adapters/shopware/sessionBridge";
@@ -52,7 +53,7 @@ function forward(
       search: "",
       headers: {},
       body: undefined,
-      clientIp: "203.0.113.7",
+      forwardedFor: "203.0.113.7",
       ...request,
     },
     {
@@ -66,6 +67,28 @@ function forward(
 
 const json = (bytes: Uint8Array | null) =>
   JSON.parse(new TextDecoder().decode(bytes ?? new Uint8Array()));
+
+describe("forwardedFor", () => {
+  it("appends the address the request came from to the chain it brought", () => {
+    // a forged entry stays on the left, where a proxy-aware Shopware
+    // does not look once it trusts the storefront and the proxies before it
+    expect(forwardedFor("1.2.3.4, 203.0.113.7", "10.0.0.5")).toBe(
+      "1.2.3.4, 203.0.113.7, 10.0.0.5",
+    );
+    expect(forwardedFor(undefined, "10.0.0.5")).toBe("10.0.0.5");
+    expect(forwardedFor(" , ", "::ffff:10.0.0.5")).toBe("::ffff:10.0.0.5");
+  });
+
+  it("sends nothing without the socket address", () => {
+    expect(forwardedFor("1.2.3.4", undefined)).toBeUndefined();
+  });
+
+  it("bounds the chain", () => {
+    const long = Array.from({ length: 40 }, (_, i) => `10.0.0.${i}`).join(",");
+    expect(forwardedFor(long, "10.1.1.1")!.split(", ")).toHaveLength(20);
+    expect(forwardedFor(long, "10.1.1.1")!.endsWith("10.1.1.1")).toBe(true);
+  });
+});
 
 describe("Store API bridge of the Shopware layer", () => {
   it("adds access key and the session's token, drops the browser's", async () => {
@@ -183,6 +206,106 @@ describe("Store API bridge of the Shopware layer", () => {
     expect(result.status).toBe(401);
     expect(json(result.body).errors[0].code).toBe(
       "CHECKOUT__CUSTOMER_AUTH_BAD_CREDENTIALS",
+    );
+  });
+
+  it("removes the token from Shopware's error texts, parameters and keys", async () => {
+    const token = "PhqKLd6O3YbAz2CVYjRcTi0Ru2uQMwuw";
+    const visitor = session(token);
+    const answers = [
+      answer(
+        {
+          errors: [
+            {
+              status: "409",
+              code: "CHECKOUT__CART_LOCKED",
+              title: "Conflict",
+              detail: `Cart with token ${token} is locked due to concurrent write operation`,
+              meta: { parameters: { token } },
+            },
+          ],
+        },
+        { status: 409 },
+      ),
+      answer(
+        {
+          errors: [
+            {
+              status: "404",
+              code: "CHECKOUT__CART_TOKEN_NOT_FOUND",
+              detail: `Cart with token ${token} not found`,
+              meta: { parameters: { token } },
+            },
+          ],
+        },
+        { status: 404 },
+      ),
+      answer({
+        errors: {
+          [`content-hash-${token}`]: {
+            message: `Content hash mismatch for cart ${token}.`,
+          },
+        },
+      }),
+    ];
+    const send = vi.fn<StoreApiSend>(async () => answers.shift()!);
+
+    for (let i = 0; i < 3; i++) {
+      const result = await forward(
+        { path: "checkout/cart/line-item" },
+        { session: visitor.backend, send },
+      );
+      const text = new TextDecoder().decode(result.body!);
+      expect(text).not.toContain(token);
+      expect(() => JSON.parse(text)).not.toThrow();
+    }
+  });
+
+  it("removes the token and the internal endpoint from a text answer", async () => {
+    const visitor = session("token-1");
+    const send = vi.fn<StoreApiSend>(async () =>
+      answer(
+        new TextEncoder().encode(
+          'No route found for "POST http://shopware:8000/store-api/nope" (token-1)',
+        ),
+        { status: 404, contentType: "text/html; charset=UTF-8" },
+      ),
+    );
+
+    const result = await forward(
+      { path: "nope" },
+      { session: visitor.backend, send },
+    );
+
+    const text = new TextDecoder().decode(result.body!);
+    expect(text).not.toContain("token-1");
+    expect(text).not.toContain("shopware:8000");
+  });
+
+  it("removes the internal endpoint from JSON error texts", async () => {
+    const visitor = session();
+    const send = vi.fn<StoreApiSend>(async () =>
+      answer(
+        {
+          errors: [
+            {
+              status: "405",
+              detail:
+                'No route found for "PUT http://shopware:8000/store-api/context": Method Not Allowed',
+            },
+          ],
+        },
+        { status: 405 },
+      ),
+    );
+
+    const result = await forward(
+      { method: "PUT" },
+      { session: visitor.backend, send },
+    );
+
+    expect(json(result.body).errors[0].detail).toBe(
+      'No route found for "PUT /store-api/context": Method Not Allowed',
     );
   });
 

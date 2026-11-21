@@ -1,7 +1,31 @@
-import { forwardStoreApiRequest } from "../../adapters/shopware/sessionBridge";
+import type { H3Event } from "h3";
+import {
+  forwardedFor,
+  forwardStoreApiRequest,
+} from "../../adapters/shopware/sessionBridge";
 
 /** Larger bodies are no Store API request of the storefront. */
 const MAX_BODY_BYTES = 1_000_000;
+
+const tooLarge = () =>
+  createError({ statusCode: 413, statusMessage: "Payload Too Large" });
+
+/** The body, refused before buffering when it is larger than the cap. */
+async function readLimitedBody(
+  event: H3Event,
+): Promise<Uint8Array | undefined> {
+  if (event.method === "GET" || event.method === "HEAD") return undefined;
+  const declared = Number(getRequestHeader(event, "content-length") ?? 0);
+  if (declared > MAX_BODY_BYTES) throw tooLarge();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for await (const chunk of event.node.req as AsyncIterable<Uint8Array>) {
+    size += chunk.length;
+    if (size > MAX_BODY_BYTES) throw tooLarge();
+    chunks.push(chunk);
+  }
+  return size ? new Uint8Array(Buffer.concat(chunks)) : undefined;
+}
 
 /**
  * Transitional (ADR 0001, steps 4 to 7): the Store API for the Shopware
@@ -13,11 +37,7 @@ export default defineEventHandler(async (event) => {
   assertSameOriginWrite(event);
   answerPrivately(event);
 
-  const raw =
-    event.method === "GET" ? undefined : await readRawBody(event, false);
-  if (raw && raw.length > MAX_BODY_BYTES) {
-    throw createError({ statusCode: 413, statusMessage: "Payload Too Large" });
-  }
+  const body = await readLimitedBody(event);
   const config = useRuntimeConfig();
   const shopware = config.public.shopware as {
     endpoint: string;
@@ -33,8 +53,11 @@ export default defineEventHandler(async (event) => {
       path: getRouterParam(event, "path") ?? "",
       search: url.search,
       headers: getRequestHeaders(event),
-      body: raw ? new Uint8Array(raw) : undefined,
-      clientIp: getRequestIP(event, { xForwardedFor: true }),
+      body,
+      forwardedFor: forwardedFor(
+        getRequestHeader(event, "x-forwarded-for"),
+        event.node.req.socket?.remoteAddress,
+      ),
     },
     {
       endpoint: privateEndpoint || shopware.endpoint,

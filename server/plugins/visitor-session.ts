@@ -1,5 +1,9 @@
 import lruCacheDriver from "unstorage/drivers/lru-cache";
-import { backendSession, SESSION_STORAGE } from "../utils/visitorSession";
+import {
+  backendSession,
+  SESSION_STORAGE,
+  sessionSettings,
+} from "../utils/visitorSession";
 
 /**
  * The storefront session (ADR 0001, step 4).
@@ -17,22 +21,13 @@ import { backendSession, SESSION_STORAGE } from "../utils/visitorSession";
  * streams). Nothing is read unless a page renders.
  */
 export default defineNitroPlugin((nitroApp) => {
-  const config = (
-    useRuntimeConfig() as {
-      visitorSession?: {
-        maxEntries?: number | string;
-        maxAgeDays?: number | string;
-      };
-    }
-  ).visitorSession;
   const storage = useStorage();
   // an unmounted path resolves to the root storage (base "")
   if (storage.getMount(`${SESSION_STORAGE}:`).base === "") {
-    const max = Math.floor(Number(config?.maxEntries ?? 20000)) || 20000;
-    const days = Number(config?.maxAgeDays ?? 30) || 30;
+    const { maxEntries, maxAgeSeconds } = sessionSettings();
     storage.mount(
       SESSION_STORAGE,
-      lruCacheDriver({ max, ttl: Math.round(days * 86_400_000) }),
+      lruCacheDriver({ max: maxEntries, ttl: maxAgeSeconds * 1000 }),
     );
   }
 

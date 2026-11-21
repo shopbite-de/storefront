@@ -30,8 +30,11 @@ export type ForwardedRequest = Readonly<{
   search: string;
   headers: Readonly<Record<string, string | undefined>>;
   body: Uint8Array | undefined;
-  /** The visitor's address, forwarded for Shopware's rate limits. */
-  clientIp: string | undefined;
+  /**
+   * `X-Forwarded-For` for Shopware's per-IP rate limits: the incoming chain
+   * with the address the request came from appended (`forwardedFor()`).
+   */
+  forwardedFor: string | undefined;
 }>;
 
 export type ForwardedAnswer = Readonly<{
@@ -72,16 +75,57 @@ const errorAnswer = (status: number, code: string): ForwardedAnswer => ({
   ),
 });
 
+/** Most entries of a forwarded chain; the nearest ones are kept. */
+const MAX_FORWARDED = 20;
+
 /**
- * Removes every value that is one of the tokens: object keys holding one
- * are dropped, array entries become empty strings.
+ * The `X-Forwarded-For` a proxy sends on: the chain the request brought
+ * with the socket address appended. Shopware takes the rightmost address
+ * it does not trust, so with `TRUSTED_PROXIES` listing the storefront and
+ * the proxies in front of it (and nothing else), an entry a visitor forged
+ * on the left is never taken. Without a socket address nothing is sent.
  */
-function withoutTokens(value: unknown, tokens: ReadonlySet<string>): unknown {
+export function forwardedFor(
+  incoming: string | undefined,
+  remoteAddress: string | undefined,
+): string | undefined {
+  if (!remoteAddress) return undefined;
+  const chain = (incoming ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  return [...chain, remoteAddress].slice(-MAX_FORWARDED).join(", ");
+}
+
+/** Replaces every occurrence of a secret in a text. */
+function redactText(
+  text: string,
+  replacements: ReadonlyMap<string, string>,
+): string {
+  let result = text;
+  for (const [secret, by] of replacements) {
+    result = result.replaceAll(secret, by);
+  }
+  return result;
+}
+
+/**
+ * The answer without the secrets: a value that is a token is dropped
+ * (object key) or emptied (array entry); every other string and every key
+ * has the secrets replaced (Shopware writes the token into error texts and
+ * `meta.parameters`, the internal endpoint into routing errors).
+ */
+function redact(
+  value: unknown,
+  tokens: ReadonlySet<string>,
+  replacements: ReadonlyMap<string, string>,
+): unknown {
+  if (typeof value === "string") return redactText(value, replacements);
   if (Array.isArray(value)) {
     return value.map((entry) =>
       typeof entry === "string" && tokens.has(entry)
         ? ""
-        : withoutTokens(entry, tokens),
+        : redact(entry, tokens, replacements),
     );
   }
   if (value && typeof value === "object") {
@@ -89,12 +133,20 @@ function withoutTokens(value: unknown, tokens: ReadonlySet<string>): unknown {
       Object.entries(value).flatMap(([key, entry]) =>
         typeof entry === "string" && tokens.has(entry)
           ? []
-          : [[key, withoutTokens(entry, tokens)]],
+          : [
+              [
+                redactText(key, replacements),
+                redact(entry, tokens, replacements),
+              ],
+            ],
       ),
     );
   }
   return value;
 }
+
+/** Answers the browser may read as text; others (PDF) pass unchanged. */
+const TEXTUAL = /json|text|xml|html|javascript/i;
 
 function isAllowedPath(path: string): boolean {
   return (
@@ -126,9 +178,7 @@ export async function forwardStoreApiRequest(
   }
   headers["sw-access-key"] = options.accessKey;
   if (token) headers["sw-context-token"] = token;
-  if (request.clientIp) {
-    headers["x-forwarded-for"] = request.clientIp;
-  }
+  if (request.forwardedFor) headers["x-forwarded-for"] = request.forwardedFor;
 
   let answer: Awaited<ReturnType<StoreApiSend>>;
   try {
@@ -155,17 +205,24 @@ export async function forwardStoreApiRequest(
   }
 
   const tokens = new Set([token, issued].filter((t): t is string => !!t));
+  const replacements = new Map<string, string>(
+    [...tokens].map((value) => [value, "***"]),
+  );
+  try {
+    replacements.set(new URL(options.endpoint).origin, "");
+  } catch {
+    // no absolute endpoint: nothing to hide
+  }
   let body: Uint8Array | null = answer.body.length ? answer.body : null;
-  if (body && /json/i.test(answered["content-type"] ?? "") && tokens.size) {
+  const type = answered["content-type"] ?? "";
+  if (body && TEXTUAL.test(type)) {
+    const text = decoder.decode(body);
     try {
       body = encoder.encode(
-        JSON.stringify(withoutTokens(JSON.parse(decoder.decode(body)), tokens)),
+        JSON.stringify(redact(JSON.parse(text), tokens, replacements)),
       );
     } catch {
-      // not JSON after all: blank the tokens in the text
-      let text = decoder.decode(body);
-      for (const value of tokens) text = text.replaceAll(value, "");
-      body = encoder.encode(text);
+      body = encoder.encode(redactText(text, replacements));
     }
   }
   return { status: answer.status, headers: answered, body };
