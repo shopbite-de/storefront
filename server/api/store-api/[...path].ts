@@ -38,6 +38,13 @@ export default defineEventHandler(async (event) => {
   answerPrivately(event);
 
   const body = await readLimitedBody(event);
+  const session = await backendSession(event, "shopware", { create: true });
+  // a write with an outdated session would act on a replaced token (or a
+  // throwaway cart): the browser has the new cookie, so it may retry
+  if (event.method !== "GET" && (await useVisitorSession(event).isStale())) {
+    setResponseStatus(event, 409);
+    return { errors: [{ status: "409", code: "stale_session" }] };
+  }
   const config = useRuntimeConfig();
   const shopware = config.public.shopware as {
     endpoint: string;
@@ -62,7 +69,7 @@ export default defineEventHandler(async (event) => {
     {
       endpoint: privateEndpoint || shopware.endpoint,
       accessKey: shopware.accessToken,
-      session: await backendSession(event, "shopware", { create: true }),
+      session,
       send: async (target, init) => {
         const response = await fetch(target, {
           method: init.method,

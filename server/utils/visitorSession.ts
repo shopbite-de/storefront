@@ -1,33 +1,34 @@
 import type { H3Event } from "h3";
 import type { BackendSession } from "../ports";
 import { isCrossSiteWrite } from "../session/sameOrigin";
+import { createSealer, sessionPasswords, type Sealer } from "../session/seal";
 import {
-  createSessionStore,
-  type SessionStorage,
-  type SessionStore,
-} from "../session/store";
-import {
+  createSessionRegistry,
   createVisitorSession,
   type ScopeOptions,
+  type SessionRegistry,
   type VisitorSession,
 } from "../session/visitorSession";
 
 /**
  * The storefront session (ADR 0001, step 4): an HttpOnly, SameSite=Lax
- * cookie with a random id (Secure and `__Host-` prefixed when
- * `public.storeUrl` is https); the backends' states live in the Nitro
- * storage `shopbite-session` (default: a bounded LRU in memory, mounted by
- * `server/plugins/visitor-session.ts`; a shop with several instances mounts
- * Redis there). Server routes hand adapters `backendSession(event, …)`.
+ * cookie (Secure and `__Host-` prefixed when `public.storeUrl` is https)
+ * that carries the backends' states sealed with the shop's password
+ * (`visitorSession.password`, NUXT_VISITOR_SESSION_PASSWORD; previous
+ * passwords for a rotation in `previousPasswords`). No server-side
+ * storage. Server routes hand adapters `backendSession(event, …)`.
  */
-export const SESSION_STORAGE = "shopbite-session";
 
 /** The cookie the Shopware layer of storefronts before 2.7 kept the token in. */
 export const LEGACY_CONTEXT_COOKIE = "sw-context-token";
 
+/** Sessions whose newest version the process remembers. */
+const REGISTRY_ENTRIES = 50_000;
+
 type SessionConfig = {
   maxAgeDays?: number | string;
-  maxEntries?: number | string;
+  password?: string;
+  previousPasswords?: string;
 };
 
 const positive = (value: unknown, fallback: number) => {
@@ -35,32 +36,52 @@ const positive = (value: unknown, fallback: number) => {
   return Number.isFinite(number) && number > 0 ? number : fallback;
 };
 
+let settings: { maxAgeSeconds: number; passwords: string[] } | undefined;
+
 /**
- * `visitorSession` of the runtime config, validated once: days a session
- * lives after the last visit (30) and the sessions the default storage
- * keeps (20000).
+ * `visitorSession` of the runtime config, validated once per process:
+ * days a session lives after the last visit (30) and the passwords. In
+ * production a missing or short password stops the server
+ * (`server/plugins/visitor-session.ts` asks at startup); development
+ * generates one and warns, so sessions end with the dev server.
  */
 export function sessionSettings(): {
   maxAgeSeconds: number;
-  maxEntries: number;
+  passwords: string[];
 } {
-  const config = (useRuntimeConfig() as { visitorSession?: SessionConfig })
-    .visitorSession;
-  return {
-    maxAgeSeconds: Math.round(positive(config?.maxAgeDays, 30) * 86_400),
-    maxEntries: Math.floor(positive(config?.maxEntries, 20000)),
-  };
+  if (!settings) {
+    const config =
+      (useRuntimeConfig() as { visitorSession?: SessionConfig })
+        .visitorSession ?? {};
+    const { passwords, generated } = sessionPasswords({
+      password: String(config.password ?? ""),
+      previousPasswords: String(config.previousPasswords ?? ""),
+      production: !import.meta.dev,
+    });
+    if (generated) {
+      console.warn(
+        "[session] No NUXT_VISITOR_SESSION_PASSWORD: using a random one, sessions end with this process.",
+      );
+    }
+    settings = {
+      maxAgeSeconds: Math.round(positive(config.maxAgeDays, 30) * 86_400),
+      passwords,
+    };
+  }
+  return settings;
 }
 
-let store: SessionStore | undefined;
+let sealer: { name: string; sealer: Sealer } | undefined;
+let registry: SessionRegistry | undefined;
 
-/** One store per process; the runtime config is fixed for it. */
-function sessionStore(): SessionStore {
-  store ??= createSessionStore({
-    storage: useStorage(SESSION_STORAGE) as unknown as SessionStorage,
-    maxAgeSeconds: sessionSettings().maxAgeSeconds,
-  });
-  return store;
+function sealerFor(name: string): Sealer {
+  if (sealer?.name !== name) {
+    sealer = {
+      name,
+      sealer: createSealer({ passwords: sessionSettings().passwords, name }),
+    };
+  }
+  return sealer.sealer;
 }
 
 function isSecure(): boolean {
@@ -80,9 +101,14 @@ export function useVisitorSession(event: H3Event): VisitorSession {
   const existing = context[CONTEXT_KEY] as VisitorSession | undefined;
   if (existing) return existing;
   const secure = isSecure();
+  const cookieName = sessionCookieName();
   const session = createVisitorSession({
-    store: sessionStore(),
-    cookieName: sessionCookieName(),
+    sealer: sealerFor(cookieName),
+    registry: (registry ??= createSessionRegistry({
+      maxEntries: REGISTRY_ENTRIES,
+    })),
+    cookieName,
+    maxAgeSeconds: sessionSettings().maxAgeSeconds,
     cookies: {
       get: (name) => getCookie(event, name),
       write: (name, value, maxAge) =>

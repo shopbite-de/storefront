@@ -1,5 +1,6 @@
+import { randomBytes } from "node:crypto";
 import type { BackendSession } from "../ports";
-import { SESSION_ID, type SessionRecord, type SessionStore } from "./store";
+import type { Sealer } from "./seal";
 
 /** The cookies of one request and its answer. */
 export interface CookieJar {
@@ -13,24 +14,103 @@ export interface CookieJar {
 export type ScopeOptions = Readonly<{ create: boolean }>;
 
 /**
+ * What the sealed cookie carries: the session's id (`sid`, random, stays
+ * the same for the session), its version (`ver`, raised by every change of
+ * a state), when it was sealed (`t`, ms) and one opaque state per adapter.
+ */
+type Payload = Readonly<{
+  v: 1;
+  sid: string;
+  ver: number;
+  t: number;
+  s: Readonly<Record<string, string>>;
+}>;
+
+function isPayload(value: unknown): value is Payload {
+  const payload = value as Payload | null;
+  return (
+    !!payload &&
+    typeof payload === "object" &&
+    payload.v === 1 &&
+    typeof payload.sid === "string" &&
+    Number.isInteger(payload.ver) &&
+    typeof payload.t === "number" &&
+    !!payload.s &&
+    typeof payload.s === "object" &&
+    Object.values(payload.s).every((state) => typeof state === "string")
+  );
+}
+
+/**
+ * The process's knowledge of the sessions it saw: the newest version of
+ * each (bounded, least recently used first out) and a lock per session.
+ * A request whose cookie is older than the newest version this process
+ * sealed carries an outdated session (a parallel request replaced it).
+ */
+export interface SessionRegistry {
+  newest(sid: string): number | undefined;
+  /** Notes a version; an older one never replaces a newer one. */
+  note(sid: string, ver: number): void;
+  exclusive<T>(sid: string, task: () => Promise<T>): Promise<T>;
+  size(): number;
+}
+
+export function createSessionRegistry(options: {
+  maxEntries: number;
+}): SessionRegistry {
+  const versions = new Map<string, number>();
+  const locks = new Map<string, Promise<unknown>>();
+  return {
+    newest: (sid) => versions.get(sid),
+    note: (sid, ver) => {
+      const known = versions.get(sid);
+      versions.delete(sid);
+      versions.set(sid, Math.max(known ?? 0, ver));
+      while (versions.size > options.maxEntries) {
+        versions.delete(versions.keys().next().value!);
+      }
+    },
+    exclusive: <T>(sid: string, task: () => Promise<T>): Promise<T> => {
+      const before = locks.get(sid) ?? Promise.resolve();
+      const run = before.then(task, task);
+      const settled = run.then(
+        () => {},
+        () => {},
+      );
+      locks.set(sid, settled);
+      void settled.then(() => {
+        if (locks.get(sid) === settled) locks.delete(sid);
+      });
+      return run;
+    },
+    size: () => versions.size,
+  };
+}
+
+/**
  * The storefront session of one request (ADR 0001, step 4).
  *
- * - The cookie holds a random id only; the states live in the store.
- * - A session is created by the first state an adapter writes, never by a
- *   read (bots and first page views cost nothing).
- * - When an adapter replaces its state (Shopware: a new context token on
- *   login, logout or registration), the session gets a new id and the old
- *   one is marked moved: a planted or leaked id never carries the new
- *   state (session fixation).
- * - A write only applies to the state the request read: if a parallel
- *   request of the same visitor replaced it in the meantime, the newer
- *   state wins and the stale write is dropped.
- * - An unknown, expired or moved id is a new visitor; its id is not reused.
+ * - The cookie carries the states sealed (encrypted and authenticated,
+ *   `seal.ts`): no server-side storage, so sessions survive restarts and
+ *   deploys, and visitors without one cost nothing.
+ * - A session is created by the first state an adapter writes (`create`).
+ * - Every change of a state seals a new value with a higher version; a
+ *   planted or leaked old value never carries the new state (fixation).
+ * - A cookie is only set when this request changed a state (or extends
+ *   the session once a day), so a request that changed nothing never
+ *   overwrites a newer cookie.
+ * - A request whose cookie is older than the newest version this process
+ *   sealed is stale: its writes are dropped (`isStale()` lets routes answer
+ *   409 before they act). Writes of one visitor run one after the other
+ *   in `exclusive`.
+ * - An expired, foreign or malformed cookie is a new visitor.
  */
 export interface VisitorSession {
   scope(adapter: string, options: ScopeOptions): BackendSession;
   /** Runs `task` after the other exclusive tasks of this visitor. */
   exclusive<T>(task: () => Promise<T>): Promise<T>;
+  /** The request's cookie is older than a state this process sealed. */
+  isStale(): Promise<boolean>;
   /**
    * Takes over a backend token that an older storefront kept in a cookie
    * the browser could read (the Shopware layer's `sw-context-token`), once:
@@ -46,114 +126,111 @@ const LEGACY_TOKEN = /^[A-Za-z0-9_-]{8,128}$/;
 /** A returning visitor's session is extended at most once a day. */
 const TOUCH_AFTER_MS = 86_400_000;
 
+/** Cookies longer than this are not ours. */
+const MAX_COOKIE = 2048;
+
 export function createVisitorSession(options: {
-  store: SessionStore;
+  sealer: Sealer;
+  registry: SessionRegistry;
   cookies: CookieJar;
   cookieName: string;
+  maxAgeSeconds: number;
+  now?: () => number;
 }): VisitorSession {
-  const { store, cookies, cookieName } = options;
-  const fromCookie = cookies.get(cookieName);
-  let id: string | null =
-    fromCookie && SESSION_ID.test(fromCookie) ? fromCookie : null;
-  let loaded: Promise<SessionRecord | null> | null = null;
-  /** The state of each adapter as this request saw it last. */
-  const seen = new Map<string, string | undefined>();
+  const { sealer, registry, cookies, cookieName, maxAgeSeconds } = options;
+  const now = options.now ?? Date.now;
+  let loaded: Promise<Payload | null> | null = null;
+  /** The session as this request knows it, after its own writes. */
+  let current: Payload | null = null;
+  let stale = false;
 
   /** Inside this visitor's `exclusive`: the lock is held already. */
   let holding = false;
-  const locked = <T>(lockId: string, task: () => Promise<T>) =>
-    holding ? task() : store.exclusive(lockId, task);
+  const locked = <T>(sid: string, task: () => Promise<T>) =>
+    holding ? task() : registry.exclusive(sid, task);
 
-  const setCookie = (value: string) =>
-    cookies.write(cookieName, value, store.maxAgeSeconds);
+  const seal = (payload: Payload) =>
+    cookies.write(cookieName, sealer.seal(payload), maxAgeSeconds);
 
-  function load(): Promise<SessionRecord | null> {
+  const outdated = (payload: Payload) =>
+    (registry.newest(payload.sid) ?? 0) > payload.ver;
+
+  function load(): Promise<Payload | null> {
     loaded ??= (async () => {
-      if (!id) return null;
-      const record = await store.get(id);
-      if (record && store.now() - record.touchedAt > TOUCH_AFTER_MS) {
-        const current = id;
-        await locked(current, async () => {
-          const fresh = await store.get(current);
-          if (fresh)
-            await store.save(current, { ...fresh, touchedAt: store.now() });
-        });
-        setCookie(current);
+      const value = cookies.get(cookieName);
+      if (!value || value.length > MAX_COOKIE) return null;
+      const payload = sealer.unseal(value);
+      if (!isPayload(payload)) return null;
+      if (now() - payload.t > maxAgeSeconds * 1000) return null;
+      if (outdated(payload)) {
+        stale = true;
+      } else {
+        registry.note(payload.sid, payload.ver);
+        if (now() - payload.t > TOUCH_AFTER_MS) {
+          current = { ...payload, t: now() };
+          seal(current);
+          return current;
+        }
       }
-      return record;
+      current = payload;
+      return payload;
     })();
     return loaded;
   }
 
-  async function startSession(adapter: string, state: string) {
-    id = await store.create({ [adapter]: state });
-    loaded = Promise.resolve(await store.get(id));
-    setCookie(id);
+  function start(adapter: string, state: string) {
+    current = {
+      v: 1,
+      sid: randomBytes(16).toString("base64url"),
+      ver: 1,
+      t: now(),
+      s: { [adapter]: state },
+    };
+    registry.note(current.sid, current.ver);
+    loaded = Promise.resolve(current);
+    seal(current);
   }
 
   function scope(adapter: string, { create }: ScopeOptions): BackendSession {
     return {
       read: async () => {
-        const state = (await load())?.states[adapter];
-        seen.set(adapter, state);
-        return state;
+        await load();
+        return current?.s[adapter];
       },
       write: async (state) => {
-        const base = seen.has(adapter)
-          ? seen.get(adapter)
-          : (await load())?.states[adapter];
-        if (!id) {
-          if (state !== undefined && create) await startSession(adapter, state);
-          seen.set(adapter, state);
+        await load();
+        const base = current;
+        if (!base) {
+          if (state !== undefined && create && !stale) start(adapter, state);
           return;
         }
-        const current = id;
-        await locked(current, async () => {
-          const record = await store.load(current);
-          if (!record || record.moved) {
-            // expired, evicted or moved away by a parallel request: a
-            // moved id is never revived; an expired one is not reused
-            if (!record && state !== undefined && create) {
-              await startSession(adapter, state);
-              seen.set(adapter, state);
-            }
+        await locked(base.sid, async () => {
+          const payload = current;
+          if (!payload) return;
+          if (outdated(payload)) {
+            // a parallel request replaced the session: its state wins
+            stale = true;
             return;
           }
-          const stored = record.states[adapter];
-          if (stored !== base) {
-            // a parallel request of this visitor replaced the state
-            seen.set(adapter, stored);
-            return;
-          }
-          if (stored === state) return;
-
+          if (payload.s[adapter] === state) return;
           const states = Object.fromEntries([
-            ...Object.entries(record.states).filter(
-              ([name]) => name !== adapter,
-            ),
+            ...Object.entries(payload.s).filter(([name]) => name !== adapter),
             ...(state === undefined ? [] : [[adapter, state]]),
           ]);
-          const next: SessionRecord = {
-            ...record,
-            states,
-            touchedAt: store.now(),
+          const next: Payload = {
+            ...payload,
+            ver: payload.ver + 1,
+            t: now(),
+            s: states,
           };
-
+          registry.note(next.sid, next.ver);
           if (Object.keys(states).length === 0) {
-            await store.remove(current);
             cookies.remove(cookieName);
-            id = null;
-          } else if (stored === undefined) {
-            // the adapter's first state in this session: no new id needed
-            await store.save(current, next);
-          } else {
-            id = await store.move(current, next);
-            setCookie(id);
+            current = null;
+            return;
           }
-          loaded = Promise.resolve(
-            id ? { ...next, touchedAt: store.now() } : null,
-          );
-          seen.set(adapter, state);
+          current = next;
+          seal(next);
         });
       },
     };
@@ -161,9 +238,15 @@ export function createVisitorSession(options: {
 
   return {
     scope,
-    exclusive: (task) => {
-      if (!id || holding) return task();
-      return store.exclusive(id, async () => {
+    isStale: async () => {
+      await load();
+      if (current && outdated(current)) stale = true;
+      return stale;
+    },
+    exclusive: async (task) => {
+      const payload = await load();
+      if (!payload || holding) return task();
+      return registry.exclusive(payload.sid, async () => {
         holding = true;
         try {
           return await task();
@@ -178,7 +261,7 @@ export function createVisitorSession(options: {
       cookies.remove(cookie);
       if (!LEGACY_TOKEN.test(token)) return;
       if (await load()) return;
-      await startSession(adapter, token);
+      if (!stale) start(adapter, token);
     },
   };
 }

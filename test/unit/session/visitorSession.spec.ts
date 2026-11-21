@@ -1,23 +1,24 @@
 import { describe, expect, it } from "vitest";
+import { createSealer } from "../../../server/session/seal";
 import {
-  createSessionStore,
-  memorySessionStorage,
-  type SessionStore,
-} from "../../../server/session/store";
-import {
+  createSessionRegistry,
   createVisitorSession,
   type CookieJar,
+  type SessionRegistry,
   type VisitorSession,
 } from "../../../server/session/visitorSession";
 
 /**
- * The storefront's own session (ADR 0001, step 4): the browser holds an
- * opaque id in an HttpOnly cookie; what a backend needs to recognise the
- * visitor (Shopware: the context token) lives server-side, one state per
- * adapter.
+ * The storefront's own session (ADR 0001, step 4): the HttpOnly cookie
+ * carries what a backend needs to recognise the visitor (Shopware: the
+ * context token), one state per adapter, sealed with the shop's password.
+ * No server-side storage: sessions survive restarts and deploys. A small
+ * registry in the process orders the writes of a visitor and recognises a
+ * request that carries an outdated cookie.
  */
 const COOKIE = "shopbite-session";
 const DAY = 86_400;
+const PASSWORD = "p".repeat(40);
 
 type Jar = CookieJar & {
   values: Map<string, string>;
@@ -45,19 +46,22 @@ function jar(initial: Record<string, string> = {}): Jar {
   };
 }
 
-function setup(options: { now?: () => number; maxEntries?: number } = {}) {
-  const storage = memorySessionStorage({
-    maxEntries: options.maxEntries ?? 100,
-    maxAgeSeconds: 30 * DAY,
-  });
-  const store = createSessionStore({
-    storage,
-    maxAgeSeconds: 30 * DAY,
-    now: options.now,
-  });
+function setup(
+  options: { now?: () => number; registry?: SessionRegistry } = {},
+) {
+  const sealer = createSealer({ passwords: [PASSWORD], name: COOKIE });
+  const registry =
+    options.registry ?? createSessionRegistry({ maxEntries: 100 });
   const visit = (cookies: Jar = jar()): VisitorSession =>
-    createVisitorSession({ store, cookies, cookieName: COOKIE });
-  return { store, storage, visit };
+    createVisitorSession({
+      sealer,
+      registry,
+      cookies,
+      cookieName: COOKIE,
+      maxAgeSeconds: 30 * DAY,
+      now: options.now,
+    });
+  return { sealer, registry, visit };
 }
 
 /** A browser: keeps the cookies the answers set, like a real one. */
@@ -77,8 +81,7 @@ function browser() {
   };
 }
 
-async function sessionWith(
-  _store: SessionStore,
+async function cookieWith(
   visit: (cookies?: Jar) => VisitorSession,
   state: string,
 ) {
@@ -97,170 +100,142 @@ describe("visitor session", () => {
     expect(cookies.set).toEqual([]);
   });
 
-  it("creates the session with the first state: an opaque HttpOnly id, never the state", async () => {
+  it("seals the first state into the cookie: small, and the token is not readable", async () => {
     const { visit } = setup();
     const cookies = jar();
     const session = visit(cookies).scope("shopware", { create: true });
 
-    await session.write("token-1");
+    await session.write("ContextToken0123456789abcdefABCD");
 
     expect(cookies.set).toHaveLength(1);
     const [cookie] = cookies.set;
     expect(cookie!.name).toBe(COOKIE);
-    expect(cookie!.value).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    expect(cookie!.value).not.toContain("token-1");
     expect(cookie!.maxAge).toBe(30 * DAY);
-    expect(await session.read()).toBe("token-1");
+    expect(cookie!.value).toMatch(/^v1\./);
+    expect(cookie!.value).not.toContain("ContextToken");
+    expect(cookie!.value.length).toBeLessThan(400);
+    expect(await session.read()).toBe("ContextToken0123456789abcdefABCD");
   });
 
   it("does not create a session on a read-only request", async () => {
     const { visit } = setup();
     const cookies = jar();
-    const session = visit(cookies).scope("shopware", { create: false });
-
-    await session.write("token-1");
-
+    await visit(cookies).scope("shopware", { create: false }).write("token-1");
     expect(cookies.set).toEqual([]);
-    expect(await session.read()).toBeUndefined();
   });
 
   it("finds the state again on the next request", async () => {
-    const { store, visit } = setup();
-    const id = await sessionWith(store, visit, "token-1");
+    const { visit } = setup();
+    const value = await cookieWith(visit, "token-1");
+    expect(
+      await visit(jar({ [COOKIE]: value }))
+        .scope("shopware", { create: false })
+        .read(),
+    ).toBe("token-1");
+  });
 
-    const next = visit(jar({ [COOKIE]: id })).scope("shopware", {
-      create: false,
+  it("keeps the session over a restart: a new process reads the cookie", async () => {
+    const { visit } = setup();
+    const value = await cookieWith(visit, "token-1");
+
+    const restarted = setup({
+      registry: createSessionRegistry({ maxEntries: 100 }),
     });
-    expect(await next.read()).toBe("token-1");
+    const cookies = jar({ [COOKIE]: value });
+    const session = restarted
+      .visit(cookies)
+      .scope("shopware", { create: true });
+    expect(await session.read()).toBe("token-1");
+    await session.write("token-2");
+    expect(
+      await restarted
+        .visit(jar({ [COOKIE]: cookies.values.get(COOKIE)! }))
+        .scope("shopware", { create: false })
+        .read(),
+    ).toBe("token-2");
   });
 
   it("keeps one state per adapter", async () => {
-    const { store, visit } = setup();
-    const id = await sessionWith(store, visit, "token-1");
+    const { visit } = setup();
+    const value = await cookieWith(visit, "token-1");
+    const cookies = jar({ [COOKIE]: value });
+    await visit(cookies).scope("memory", { create: true }).write("cart-7");
 
-    const cookies = jar({ [COOKIE]: id });
-    const visitor = visit(cookies);
-    await visitor.scope("memory", { create: true }).write("cart-7");
-
-    expect(await visitor.scope("shopware", { create: false }).read()).toBe(
+    const next = visit(jar({ [COOKIE]: cookies.values.get(COOKIE)! }));
+    expect(await next.scope("shopware", { create: false }).read()).toBe(
       "token-1",
     );
-    expect(await visitor.scope("memory", { create: false }).read()).toBe(
-      "cart-7",
-    );
-    // a first state of another adapter is no rotation: same id
-    expect(cookies.set).toEqual([]);
+    expect(await next.scope("memory", { create: false }).read()).toBe("cart-7");
   });
 
-  it("gives a new session id when the backend replaces its state (session fixation)", async () => {
-    const { store, visit } = setup();
-    const id = await sessionWith(store, visit, "token-1");
-
-    const cookies = jar({ [COOKIE]: id });
+  it("seals a new value when the backend replaces its state (session fixation)", async () => {
+    const { visit } = setup();
+    const value = await cookieWith(visit, "token-1");
+    const cookies = jar({ [COOKIE]: value });
     const session = visit(cookies).scope("shopware", { create: false });
-    expect(await session.read()).toBe("token-1");
+    await session.read();
+
     await session.write("token-2");
 
-    const [cookie] = cookies.set;
-    expect(cookie?.value).toBeDefined();
-    expect(cookie!.value).not.toBe(id);
+    expect(cookies.set).toHaveLength(1);
+    expect(cookies.set[0]!.value).not.toBe(value);
     expect(await session.read()).toBe("token-2");
-    // the old id carries nothing any more
-    const old = visit(jar({ [COOKIE]: id })).scope("shopware", {
-      create: true,
-    });
-    expect(await old.read()).toBeUndefined();
-    const fresh = visit(jar({ [COOKIE]: cookie!.value })).scope("shopware", {
-      create: false,
-    });
-    expect(await fresh.read()).toBe("token-2");
   });
 
-  it("writing the same state again changes nothing", async () => {
-    const { store, visit } = setup();
-    const id = await sessionWith(store, visit, "token-1");
-    const cookies = jar({ [COOKIE]: id });
-    const session = visit(cookies).scope("shopware", { create: false });
-
-    await session.write("token-1");
-
+  it("writing the same state again sets no cookie", async () => {
+    const { visit } = setup();
+    const value = await cookieWith(visit, "token-1");
+    const cookies = jar({ [COOKIE]: value });
+    await visit(cookies).scope("shopware", { create: false }).write("token-1");
     expect(cookies.set).toEqual([]);
-    expect(await session.read()).toBe("token-1");
   });
 
-  it("does not lose a rotated state to a parallel request that read the old one", async () => {
-    const { store, visit } = setup();
-    const id = await sessionWith(store, visit, "token-1");
-    const a = visit(jar({ [COOKIE]: id })).scope("shopware", {
-      create: false,
-    });
-    const bCookies = jar({ [COOKIE]: id });
-    const b = visit(bCookies).scope("shopware", { create: true });
-    expect(await a.read()).toBe("token-1");
-    expect(await b.read()).toBe("token-1");
+  it("never lets a parallel request with the old cookie overwrite a rotated state", async () => {
+    const { visit } = setup();
+    const value = await cookieWith(visit, "token-1");
+    const aCookies = jar({ [COOKIE]: value });
+    const bCookies = jar({ [COOKIE]: value });
+    const a = visit(aCookies);
+    const b = visit(bCookies);
+    expect(await a.scope("shopware", { create: false }).read()).toBe("token-1");
+    expect(await b.scope("shopware", { create: true }).read()).toBe("token-1");
 
-    // A logs in (new token), B's answer still carries another token
-    await a.write("token-login");
-    await b.write("token-stale");
+    // A logs in (new token); B's answer carries another token later
+    await a.scope("shopware", { create: false }).write("token-login");
+    await b.scope("shopware", { create: true }).write("token-stale");
 
+    expect(aCookies.set).toHaveLength(1);
     expect(bCookies.set).toEqual([]);
-    const after = await store.get(id);
-    // the old id is gone (moved); B neither revived it nor made a session
-    expect(after).toBeNull();
-    expect(bCookies.values.get(COOKIE)).toBe(id);
+    expect(await b.isStale()).toBe(true);
+    expect(await a.isStale()).toBe(false);
   });
 
-  it("serialises the writes of one visitor in `exclusive`", async () => {
-    const { store, visit } = setup();
-    const id = await sessionWith(store, visit, "token-1");
+  it("serialises the writes of one visitor in `exclusive`; the later one sees it is stale", async () => {
+    const { visit } = setup();
+    const value = await cookieWith(visit, "token-1");
     const order: string[] = [];
-    const first = visit(jar({ [COOKIE]: id })).exclusive(async () => {
-      order.push("first:start");
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      order.push("first:end");
-    });
-    const second = visit(jar({ [COOKIE]: id })).exclusive(async () => {
-      order.push("second");
-    });
-    await Promise.all([first, second]);
+    const first = visit(jar({ [COOKIE]: value }));
+    const second = visit(jar({ [COOKIE]: value }));
 
-    expect(order).toEqual(["first:start", "first:end", "second"]);
-  });
-
-  it("sees the state another request wrote while it waited in `exclusive`", async () => {
-    const { store, visit } = setup();
-    const id = await sessionWith(store, visit, "token-1");
-    const firstCookies = jar({ [COOKIE]: id });
-    const first = visit(firstCookies);
-    const second = visit(jar({ [COOKIE]: id }));
-
-    const run = Promise.all([
+    await Promise.all([
       first.exclusive(async () => {
-        const session = first.scope("shopware", { create: true });
-        await session.read();
-        await session.write("token-2");
+        order.push("first:start");
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        await first.scope("shopware", { create: true }).write("token-2");
+        order.push("first:end");
       }),
-      second.exclusive(async () =>
-        second.scope("shopware", { create: true }).read(),
-      ),
+      second.exclusive(async () => {
+        order.push(`second:stale=${await second.isStale()}`);
+      }),
     ]);
-    const [, seen] = await run;
 
-    // the second request still carries the old id: rotated away, so it
-    // reads nothing (the browser has the new cookie for its next request)
-    expect(seen).toBeUndefined();
-    const next = visit(jar({ [COOKIE]: firstCookies.values.get(COOKIE)! }));
-    expect(await next.scope("shopware", { create: false }).read()).toBe(
-      "token-2",
-    );
+    expect(order).toEqual(["first:start", "first:end", "second:stale=true"]);
   });
 
   it("never mixes the states of two visitors under concurrency", async () => {
     const { visit } = setup();
     const alice = browser();
     const bob = browser();
-
-    // first writes of both visitors interleaved
     const ra = alice.request();
     const rb = bob.request();
     await Promise.all([
@@ -271,80 +246,74 @@ describe("visitor session", () => {
     rb.apply();
 
     const reads = await Promise.all(
-      Array.from({ length: 20 }, (_, i) => {
-        const who = i % 2 ? alice : bob;
-        return visit(who.request()).scope("shopware", { create: false }).read();
-      }),
+      Array.from({ length: 20 }, (_, i) =>
+        visit((i % 2 ? alice : bob).request())
+          .scope("shopware", { create: false })
+          .read(),
+      ),
     );
     expect(reads).toEqual(
       Array.from({ length: 20 }, (_, i) =>
         i % 2 ? "alice-token" : "bob-token",
       ),
     );
-    expect(alice.cookies.get(COOKIE)).not.toBe(bob.cookies.get(COOKIE));
   });
 
-  it("treats an unknown or expired id as a new visitor and never reuses it", async () => {
+  it("treats an expired, foreign or malformed cookie as a new visitor", async () => {
     let now = Date.parse("2026-11-21T12:00:00Z");
-    const { store, visit } = setup({ now: () => now });
-    const id = await sessionWith(store, visit, "token-1");
+    const { visit } = setup({ now: () => now });
+    const value = await cookieWith(visit, "token-1");
 
     now += 31 * DAY * 1000;
-    const cookies = jar({ [COOKIE]: id });
-    const session = visit(cookies).scope("shopware", { create: true });
-    expect(await session.read()).toBeUndefined();
+    expect(
+      await visit(jar({ [COOKIE]: value }))
+        .scope("shopware", { create: true })
+        .read(),
+    ).toBeUndefined();
 
-    await session.write("token-2");
-    expect(cookies.set[0]!.value).not.toBe(id);
-
-    const planted = jar({ [COOKIE]: "a".repeat(43) });
-    const fromPlanted = visit(planted).scope("shopware", { create: true });
-    await fromPlanted.write("token-3");
-    expect(planted.set[0]!.value).not.toBe("a".repeat(43));
-  });
-
-  it("ignores a malformed cookie", async () => {
-    const { visit } = setup();
-    const session = visit(jar({ [COOKIE]: "../../etc" })).scope("shopware", {
-      create: false,
-    });
-    expect(await session.read()).toBeUndefined();
+    const foreign = createSealer({
+      passwords: ["x".repeat(40)],
+      name: COOKIE,
+    }).seal({ v: 1, sid: "s", ver: 1, t: now, s: { shopware: "planted" } });
+    for (const cookie of [foreign, "../../etc", "v1.a.b.c"]) {
+      expect(
+        await visit(jar({ [COOKIE]: cookie }))
+          .scope("shopware", { create: false })
+          .read(),
+      ).toBeUndefined();
+    }
   });
 
   it("extends the session of a returning visitor, at most once a day", async () => {
     let now = Date.parse("2026-11-21T12:00:00Z");
-    const { store, visit } = setup({ now: () => now });
-    const id = await sessionWith(store, visit, "token-1");
+    const { visit } = setup({ now: () => now });
+    const value = await cookieWith(visit, "token-1");
 
     now += 2 * 3600 * 1000;
-    const soon = jar({ [COOKIE]: id });
+    const soon = jar({ [COOKIE]: value });
     await visit(soon).scope("shopware", { create: false }).read();
     expect(soon.set).toEqual([]);
 
     now += 2 * DAY * 1000;
-    const later = jar({ [COOKIE]: id });
+    const later = jar({ [COOKIE]: value });
     await visit(later).scope("shopware", { create: false }).read();
-    expect(later.set).toEqual([{ name: COOKIE, value: id, maxAge: 30 * DAY }]);
-    // 29 days after the last visit it still lives
+    expect(later.set).toHaveLength(1);
     now += 29 * DAY * 1000;
     expect(
-      await visit(jar({ [COOKIE]: id }))
+      await visit(jar({ [COOKIE]: later.set[0]!.value }))
         .scope("shopware", { create: false })
         .read(),
     ).toBe("token-1");
   });
 
   it("forgets the state and the cookie when the adapter writes undefined", async () => {
-    const { store, visit } = setup();
-    const id = await sessionWith(store, visit, "token-1");
-    const cookies = jar({ [COOKIE]: id });
+    const { visit } = setup();
+    const value = await cookieWith(visit, "token-1");
+    const cookies = jar({ [COOKIE]: value });
     const session = visit(cookies).scope("shopware", { create: false });
-
     await session.write(undefined);
-
     expect(await session.read()).toBeUndefined();
     expect(cookies.deleted).toContain(COOKIE);
-    expect(await store.get(id)).toBeNull();
   });
 
   it("takes over the context token cookie of the old layer once", async () => {
@@ -357,18 +326,17 @@ describe("visitor session", () => {
     await visitor.migrateLegacyCookie("sw-context-token", "shopware");
 
     expect(cookies.deleted).toContain("sw-context-token");
-    const id = cookies.values.get(COOKIE);
-    expect(id).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(cookies.values.get(COOKIE)).toMatch(/^v1\./);
     expect(await visitor.scope("shopware", { create: false }).read()).toBe(
       "LegacyToken1234567890abcdefABCDEF",
     );
   });
 
   it("keeps an existing session over a context token cookie left behind", async () => {
-    const { store, visit } = setup();
-    const id = await sessionWith(store, visit, "token-1");
+    const { visit } = setup();
+    const value = await cookieWith(visit, "token-1");
     const cookies = jar({
-      [COOKIE]: id,
+      [COOKIE]: value,
       "sw-context-token": "Leftover12345678",
     });
     const visitor = visit(cookies);
@@ -376,7 +344,7 @@ describe("visitor session", () => {
     await visitor.migrateLegacyCookie("sw-context-token", "shopware");
 
     expect(cookies.deleted).toContain("sw-context-token");
-    expect(cookies.values.get(COOKIE)).toBe(id);
+    expect(cookies.values.get(COOKIE)).toBe(value);
     expect(await visitor.scope("shopware", { create: false }).read()).toBe(
       "token-1",
     );
@@ -385,33 +353,25 @@ describe("visitor session", () => {
   it("drops a malformed context token cookie without a session", async () => {
     const { visit } = setup();
     const cookies = jar({ "sw-context-token": "<script>" });
-    const visitor = visit(cookies);
-
-    await visitor.migrateLegacyCookie("sw-context-token", "shopware");
-
+    await visit(cookies).migrateLegacyCookie("sw-context-token", "shopware");
     expect(cookies.deleted).toContain("sw-context-token");
     expect(cookies.set).toEqual([]);
   });
 
-  it("bounds the storage: the least recently used sessions are dropped", async () => {
-    const { store, visit } = setup({ maxEntries: 3 });
-    const ids: string[] = [];
-    for (let i = 0; i < 5; i++) {
-      ids.push(await sessionWith(store, visit, `token-${i}`));
+  it("bounds the registry: a forgotten session still reads, it is just not ordered", async () => {
+    const registry = createSessionRegistry({ maxEntries: 2 });
+    const { visit } = setup({ registry });
+    const values = [];
+    for (let i = 0; i < 4; i++) {
+      values.push(await cookieWith(visit, `token-${i}`));
     }
-    const states = await Promise.all(
-      ids.map((id) =>
-        visit(jar({ [COOKIE]: id }))
-          .scope("shopware", { create: false })
-          .read(),
-      ),
-    );
-    expect(states).toEqual([
-      undefined,
-      undefined,
-      "token-2",
-      "token-3",
-      "token-4",
-    ]);
+    expect(registry.size()).toBe(2);
+    for (const [i, value] of values.entries()) {
+      const visitor = visit(jar({ [COOKIE]: value }));
+      expect(await visitor.scope("shopware", { create: false }).read()).toBe(
+        `token-${i}`,
+      );
+      expect(await visitor.isStale()).toBe(false);
+    }
   });
 });

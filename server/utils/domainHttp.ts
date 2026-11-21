@@ -19,6 +19,7 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<DomainErrorCode, number>> = {
   invalid_credentials: 401,
   email_taken: 409,
   validation_failed: 422,
+  stale_session: 409,
 };
 
 const STATUS_MESSAGES: Readonly<Record<number, string>> = {

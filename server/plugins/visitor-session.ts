@@ -1,17 +1,12 @@
-import lruCacheDriver from "unstorage/drivers/lru-cache";
-import {
-  backendSession,
-  SESSION_STORAGE,
-  sessionSettings,
-} from "../utils/visitorSession";
+import { backendSession, sessionSettings } from "../utils/visitorSession";
 
 /**
  * The storefront session (ADR 0001, step 4).
  *
- * Storage: unless the shop mounts its own `nitro.storage["shopbite-session"]`
- * (e.g. Redis for several instances, or to keep sessions over a restart),
- * an LRU in memory with at most `visitorSession.maxEntries` sessions, each
- * `maxAgeDays` after the last visit (NUXT_VISITOR_SESSION_*).
+ * Startup: the session's password is checked once; in production a
+ * missing or short NUXT_VISITOR_SESSION_PASSWORD stops the server here
+ * instead of ending every visitor's session with each restart. Not while
+ * the build prerenders (images are built without the secret).
  *
  * Server-side rendering: the Shopware layer renders with the visitor's
  * context token (`useUserContextInSSR`); `app/plugins/store-api-session.ts`
@@ -21,14 +16,14 @@ import {
  * streams). Nothing is read unless a page renders.
  */
 export default defineNitroPlugin((nitroApp) => {
-  const storage = useStorage();
-  // an unmounted path resolves to the root storage (base "")
-  if (storage.getMount(`${SESSION_STORAGE}:`).base === "") {
-    const { maxEntries, maxAgeSeconds } = sessionSettings();
-    storage.mount(
-      SESSION_STORAGE,
-      lruCacheDriver({ max: maxEntries, ttl: maxAgeSeconds * 1000 }),
-    );
+  // the build prerenders pages without visitors (and without the secret)
+  if (!import.meta.prerender) {
+    try {
+      sessionSettings();
+    } catch (error) {
+      console.error(`[session] ${(error as Error).message}`);
+      throw error;
+    }
   }
 
   nitroApp.hooks.hook("request", (event) => {
