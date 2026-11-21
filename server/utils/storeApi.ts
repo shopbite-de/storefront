@@ -1,6 +1,13 @@
 import type { NitroFetchOptions } from "nitropack";
 
 /**
+ * No Store API request waits longer: the cached routes back off after a
+ * failure, the cart answers `backend_unavailable` instead of holding the
+ * visitor's next write (undici's own limit is 300 s).
+ */
+const STORE_API_TIMEOUT_MS = 10_000;
+
+/**
  * Calls the Shopware Store API with a criteria in the request body.
  *
  * Criteria must travel as a POST body: sent as `_criteria` query parameters
@@ -24,6 +31,7 @@ export function storeApiPost<T>(
     // a failing request reaches Shopware once (the cached routes back off
     // instead)
     retry: 0,
+    timeout: STORE_API_TIMEOUT_MS,
   }) as Promise<T>;
 }
 
@@ -43,11 +51,9 @@ export function storeApiGet<T>(
     // ofetch retries a GET once by default; during an outage that doubles
     // every request
     retry: 0,
+    timeout: STORE_API_TIMEOUT_MS,
   }) as Promise<T>;
 }
-
-/** A visitor waits no longer for a cart answer (and its cart writes). */
-const VISITOR_TIMEOUT_MS = 10_000;
 
 /**
  * A Store API request for one visitor (the Shopware adapter's cart): with
@@ -82,7 +88,7 @@ export async function storeApiForVisitor<T>(request: {
       },
       body: request.body,
       retry: 0,
-      timeout: VISITOR_TIMEOUT_MS,
+      timeout: STORE_API_TIMEOUT_MS,
     },
   );
   return {

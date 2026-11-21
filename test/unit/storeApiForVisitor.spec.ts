@@ -17,7 +17,8 @@ async function setup(config: { endpoint?: string } = {}) {
     _data: { lineItems: [] },
     headers: new Headers({ "sw-context-token": "token-2" }),
   }));
-  vi.stubGlobal("$fetch", { raw });
+  const plain = vi.fn(async () => ({}));
+  vi.stubGlobal("$fetch", Object.assign(plain, { raw }));
   vi.stubGlobal("useRuntimeConfig", () => ({
     shopware: { endpoint: config.endpoint ?? "" },
     public: {
@@ -27,8 +28,8 @@ async function setup(config: { endpoint?: string } = {}) {
       },
     },
   }));
-  const { storeApiForVisitor } = await import("../../server/utils/storeApi");
-  return { raw, storeApiForVisitor };
+  const utils = await import("../../server/utils/storeApi");
+  return { raw, plain, ...utils };
 }
 
 describe("storeApiForVisitor", () => {
@@ -67,6 +68,20 @@ describe("storeApiForVisitor", () => {
     )[1].timeout;
     expect(timeout).toBeGreaterThan(0);
     expect(timeout).toBeLessThanOrEqual(15_000);
+  });
+
+  it("shop-wide requests time out as well", async () => {
+    const { plain, storeApiGet, storeApiPost } = await setup();
+    await storeApiGet("/context");
+    await storeApiPost("/product", { ids: [] });
+    for (const call of plain.mock.calls as unknown as [
+      string,
+      { timeout?: number },
+    ][]) {
+      expect(call[1].timeout).toBeGreaterThan(0);
+      expect(call[1].timeout).toBeLessThanOrEqual(15_000);
+    }
+    expect(plain).toHaveBeenCalledTimes(2);
   });
 
   it("falls back to the public endpoint", async () => {

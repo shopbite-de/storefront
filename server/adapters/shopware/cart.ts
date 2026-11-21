@@ -373,7 +373,32 @@ export type ShopwareCartOptions = Readonly<{
   lookupTtlMs?: number;
   /** ms before a cart write refused as locked is sent again. */
   lockRetryDelayMs?: number;
+  /**
+   * ms the cart waits for any Store API answer (default 10 s): the cart's
+   * requests run in the visitor's exclusive section, so a Shopware that
+   * does not answer must not hold the visitor's next write.
+   */
+  requestTimeoutMs?: number;
 }>;
+
+const REQUEST_TIMEOUT_MS = 10_000;
+
+/** The answer, or a TimeoutError after `ms`. */
+function deadline<T>(answer: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          Object.assign(new Error("Shopware did not answer in time."), {
+            name: "TimeoutError",
+          }),
+        ),
+      ms,
+    );
+  });
+  return Promise.race([answer, timeout]).finally(() => clearTimeout(timer));
+}
 
 /**
  * CartPort over the Store API (`/checkout/cart*`) with the visitor's
@@ -381,10 +406,25 @@ export type ShopwareCartOptions = Readonly<{
  * issues (first write, or a replaced one) goes into the session.
  */
 export function createShopwareCart(
-  storeApi: StoreApi,
-  visitorApi: VisitorStoreApi,
+  shopApi: StoreApi,
+  visitor: VisitorStoreApi,
   options: ShopwareCartOptions,
 ): CartPort {
+  // every Store API request of the cart path has a deadline, also the
+  // shop-wide ones (product lookup, extras, currency)
+  const timeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
+  const storeApi: StoreApi = {
+    get: (path, query) => deadline(shopApi.get(path, query), timeoutMs),
+    post: (path, body, headers) =>
+      deadline(shopApi.post(path, body, headers), timeoutMs),
+  };
+  const visitorApi: VisitorStoreApi = {
+    send: (request) => deadline(visitor.send(request), timeoutMs),
+  };
+  const currency = () =>
+    requestOrUnavailable("the currency", () =>
+      deadline(options.currency(), timeoutMs),
+    );
   const lockDelay = options.lockRetryDelayMs ?? LOCK_RETRY_DELAY_MS;
   const products = keptFor<LookedUp>(options.lookupTtlMs);
   const offeredExtras = keptFor<ReadonlySet<Id>>(options.lookupTtlMs);
@@ -514,12 +554,12 @@ export function createShopwareCart(
   }
 
   async function answer(cart: SwCart, session: BackendSession): Promise<Cart> {
-    const [currency, ingredientIds, token] = await Promise.all([
-      options.currency(),
+    const [code, ingredientIds, token] = await Promise.all([
+      currency(),
       ingredientIdsOf(cart),
       session.read(),
     ]);
-    return toCart(cart, currency, ingredientIds, [token]);
+    return toCart(cart, code, ingredientIds, [token]);
   }
 
   async function write(

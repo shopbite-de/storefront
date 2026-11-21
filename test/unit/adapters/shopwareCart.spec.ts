@@ -276,6 +276,63 @@ describe("Shopware cart: no token in texts", () => {
   });
 });
 
+describe("Shopware cart: a Shopware that does not answer", () => {
+  const never = () => new Promise<never>(() => {});
+  const configured = dishConfiguration({
+    dishId: MARGHERITA,
+    extraIds: [CHEESE],
+  });
+
+  async function expectUnavailableSoon(call: () => Promise<unknown>) {
+    const started = Date.now();
+    const error = await call().catch((caught: unknown) => caught);
+    expect(isDomainError(error, "backend_unavailable")).toBe(true);
+    expect(Date.now() - started).toBeLessThan(1000);
+  }
+
+  it("gives up on the product lookup", async () => {
+    const fake = fakeShopwareCart(PIZZERIA);
+    fake.storeApi.post = never;
+    const { cart } = cartOf(fake, { requestTimeoutMs: 30 });
+    await expectUnavailableSoon(() =>
+      cart.addLine(testSession(), configured, 1),
+    );
+  });
+
+  it("gives up on the extras of the dish", async () => {
+    const fake = fakeShopwareCart(PIZZERIA);
+    const post = fake.storeApi.post;
+    fake.storeApi.post = (async (path: string, ...rest: unknown[]) =>
+      path.endsWith("/cross-selling")
+        ? never()
+        : (post as (...args: unknown[]) => Promise<unknown>)(
+            path,
+            ...rest,
+          )) as typeof post;
+    const { cart } = cartOf(fake, { requestTimeoutMs: 30 });
+    await expectUnavailableSoon(() =>
+      cart.addLine(testSession(), configured, 1),
+    );
+  });
+
+  it("gives up on the currency", async () => {
+    const fake = fakeShopwareCart(PIZZERIA);
+    const { cart } = cartOf(fake, { requestTimeoutMs: 30, currency: never });
+    await expectUnavailableSoon(() => cart.getCart(testSession("t")));
+  });
+
+  it("gives up on the cart itself", async () => {
+    const fake = fakeShopwareCart(PIZZERIA);
+    const { cart } = cartOf(
+      { ...fake, visitorApi: { send: never as VisitorStoreApi["send"] } },
+      { requestTimeoutMs: 30 },
+    );
+    await expectUnavailableSoon(() =>
+      cart.addLine(testSession("t"), dishConfiguration({ dishId: COLA }), 1),
+    );
+  });
+});
+
 describe("Shopware cart: context token", () => {
   it("asks without a token for a new visitor and keeps the one Shopware issues", async () => {
     const { cart, fake } = cartOf();
