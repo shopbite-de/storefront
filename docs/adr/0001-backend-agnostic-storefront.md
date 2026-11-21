@@ -165,7 +165,9 @@ Open points for later steps:
 Domain decisions of step 3:
 
 - `NavigationNode.kind` has `group` for a footer column (Shopware folder, `path: null`); `external` means opens in a new tab (`linkNewTab`); `media` is filled for the home navigation only. Shopware link categories stay `link` (a link to another category, an external URL or a storefront path cannot be told apart).
-- `NavigationPort.getMenuRootId()` is new: the menu root decides the cache key of the menu navigations, the root page's single list and `/api/menu/root`. It is strict; only the Shopware sitemap falls back to the navigation root, as before.
+- `NavigationPort.getMenuRootId()` is new: the menu root decides the cache key of the menu navigations, the root page's single list and `/api/menu/root`. It is strict; only the Shopware sitemap falls back to the navigation root, as before. `getNavigation(kind, menuRootId)` takes the root the BFF resolved (cached), so a key and its tree never name two roots and an outage of the plugin configuration keeps the last good root's menu.
+- Handlers that answer domain types under the name a Shopware-shaped handler had (`listing`, `search`, `top-sellers`, `variant`, `navigation`, `breadcrumb`) carry a versioned key (`versionedKey()`, `server/utils/cacheKeys.ts`), so persistent cache storage never serves an old shape. `createResilientLoader` answers a pause as `backend_unavailable`, so every 503 of a BFF route carries `data.code`.
+- Scanner paths: control characters and a leading `//` or `/\` are hostile; a technical URL gets one lookup; a backend path that would redirect to another host (`//host/`) is no route (`isSafeRedirectTarget`), in the adapter and again in the BFF.
 - A redirect names its section (`ResolvedRoute.sectionId`), and every adapter answers with `routeTo()`: the BFF caches one target per lower-cased path and rebuilds the answer for the visited spelling. `toggleTrailingSlash()`, `isHostilePath()`, `pathKey()` and `mayBeKnownPath()` are pure domain rules; the collation-like `pathKey` is the loosest adapter lookup so far, which an adapter's `resolvePath` must not exceed for listed paths.
 - `KnownPaths` is null when there are too many to list, and names `unlistedPrefixes` (Shopware's technical URLs), which resolve without being listed and are cached per entity.
 - `SitemapEntry.image` carries the section's photo for the image sitemap.
@@ -181,7 +183,6 @@ For shops that extend the layer (release notes; breaking only for overrides and 
 
 Open points of step 3:
 
-- The menu navigations key on the cached menu root while the Shopware adapter reads its own root: right after a change of the plugin's menu root one request can store the new root's menu under the old root's key (the newer menu, never a guess), until the key moves with the cached root.
 - `menu` and `home` are two Store API navigations of the same root; `CatalogPort.getMenu()` holds the same sections (with photos). They could share one request once the media of both agree.
 - `llms.txt` and the Restaurant schema still name `/speisekarte` as the menu's URL instead of the menu root's path.
 - Footer links to sections are `link` nodes, also in the memory adapter, to match Shopware; a backend that knows it links a section could answer `menu-section`.

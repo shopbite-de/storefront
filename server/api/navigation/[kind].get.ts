@@ -5,6 +5,7 @@ import {
 } from "../../../shared/domain";
 import { createResilientLoader } from "../../utils/backoff";
 import { answerDomain, toHttpError } from "../../utils/domainHttp";
+import { versionedKey } from "../../utils/cacheKeys";
 import { menuRootData } from "../../utils/navigationData";
 
 const load = createResilientLoader<readonly NavigationNode[]>();
@@ -55,7 +56,8 @@ export default defineCachedEventHandler(
     const root = await rootOf(event, kind);
     return answerDomain(() =>
       load(`${kind}-${root}`, () =>
-        useBackend(event).navigation.getNavigation(kind),
+        // the root the key names, never one read again
+        useBackend(event).navigation.getNavigation(kind, root || undefined),
       ),
     );
   },
@@ -65,7 +67,9 @@ export default defineCachedEventHandler(
     getKey: async (event) => {
       const kind = kindParam(event);
       const root = await rootOf(event, kind);
-      return root ? `navigation-${kind}-${root}` : `navigation-${kind}`;
+      return versionedKey(
+        root ? `navigation-${kind}-${root}` : `navigation-${kind}`,
+      );
     },
   },
 );

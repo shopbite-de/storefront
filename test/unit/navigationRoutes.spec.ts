@@ -110,16 +110,16 @@ describe("/api/navigation/[kind]", () => {
       maxAge: CACHE_TTL.navigation,
     });
     expect(await opts.getKey({ params: { kind: "main" } })).toBe(
-      "navigation-main",
+      "v2-navigation-main",
     );
     expect(await opts.getKey({ params: { kind: "footer" } })).toBe(
-      "navigation-footer",
+      "v2-navigation-footer",
     );
     expect(await opts.getKey({ params: { kind: "menu" } })).toBe(
-      `navigation-menu-${ROOT}`,
+      `v2-navigation-menu-${ROOT}`,
     );
     expect(await opts.getKey({ params: { kind: "home" } })).toBe(
-      `navigation-home-${ROOT}`,
+      `v2-navigation-home-${ROOT}`,
     );
   });
 
@@ -132,7 +132,7 @@ describe("/api/navigation/[kind]", () => {
     const { loaded } = await route(PATH, backend);
     const event = { params: { kind: "menu" }, context: {} };
 
-    expect(await loaded.opts.getKey(event)).toBe(`navigation-menu-${ROOT}`);
+    expect(await loaded.opts.getKey(event)).toBe(`v2-navigation-menu-${ROOT}`);
     await loaded.handler(event);
     expect(getMenuRootId).toHaveBeenCalledOnce();
   });
@@ -199,6 +199,57 @@ describe("/api/navigation/[kind]", () => {
   }
 });
 
+describe("/api/navigation/[kind] with the menu root", () => {
+  const PATH = "../../server/api/navigation/[kind].get";
+
+  it("fetches the tree of the root its key names, the last good one when the plugin config fails", async () => {
+    let configUp = true;
+    let configReads = 0;
+    const { backend, post } = await shopware((storeApi) => ({
+      ...storeApi,
+      get: (path, options) => {
+        if (path === "/shopbite/config") configReads++;
+        return path === "/shopbite/config" && !configUp
+          ? Promise.reject(DOWN)
+          : storeApi.get(path, options);
+      },
+    }));
+    const { loaded } = await route(PATH, backend);
+
+    const first = { params: { kind: "menu" }, context: {} };
+    expect(await loaded.opts.getKey(first)).toBe(`v2-navigation-menu-${ROOT}`);
+    await loaded.handler(first);
+    configUp = false;
+    vi.setSystemTime(61_000); // the cached menu root expired
+    const second = { params: { kind: "menu" }, context: {} };
+    expect(await loaded.opts.getKey(second)).toBe(`v2-navigation-menu-${ROOT}`);
+    expect(await loaded.handler(second)).toHaveLength(2);
+    // the root is read once per refresh of the cached root, never per tree
+    expect(configReads).toBe(2);
+    expect(post.mock.calls.map(([path]) => path)).toEqual([
+      `/navigation/main-navigation/${ROOT}`,
+      `/navigation/main-navigation/${ROOT}`,
+    ]);
+  });
+
+  it("answers an outage with the domain code", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { backend } = await shopware((storeApi) => ({
+      ...storeApi,
+      post: () => Promise.reject(DOWN),
+    }));
+    const { loaded } = await route(PATH, backend);
+    for (let i = 0; i < 2; i++) {
+      await expect(
+        loaded.handler({ params: { kind: "main" }, context: {} }),
+      ).rejects.toMatchObject({
+        statusCode: 503,
+        data: { code: "backend_unavailable" },
+      });
+    }
+  });
+});
+
 describe("/api/breadcrumb/[sectionId]", () => {
   const PATH = "../../server/api/breadcrumb/[sectionId].get";
 
@@ -215,7 +266,7 @@ describe("/api/breadcrumb/[sectionId]", () => {
       name: "breadcrumb",
       maxAge: CACHE_TTL.category,
     });
-    expect(await loaded.opts.getKey(event)).toBe(`breadcrumb-${PIZZA}`);
+    expect(await loaded.opts.getKey(event)).toBe(`v2-breadcrumb-${PIZZA}`);
   });
 
   it("answers an unknown section with 404, so it is not cached", async () => {
@@ -459,6 +510,29 @@ describe("/api/resolve-path", () => {
         }),
       ]),
     );
+  });
+
+  it("answers no route for a redirect to another host", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const resolvePath = vi.fn(async () => ({
+      kind: "redirect" as const,
+      to: "//evil.example/salate/",
+      sectionId: PIZZA,
+    }));
+    const { resolve } = await resolver(await withNavigation({ resolvePath }));
+    expect(await resolve("/Speisekarte/Pizza/")).toBeNull();
+  });
+
+  it("answers the pause after an outage with the domain code", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const resolvePath = vi.fn(() => Promise.reject(DOWN));
+    const { resolve } = await resolver(await withNavigation({ resolvePath }));
+    for (let i = 0; i < 2; i++) {
+      await expect(resolve("/Speisekarte/Pizza/")).rejects.toMatchObject({
+        statusCode: 503,
+        data: { code: "backend_unavailable" },
+      });
+    }
   });
 
   it("fails fast during an outage of the lookups", async () => {

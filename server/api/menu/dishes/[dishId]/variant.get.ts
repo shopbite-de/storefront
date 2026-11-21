@@ -1,3 +1,4 @@
+import { versionedKey } from "../../../../utils/cacheKeys";
 import { askCatalog } from "../../../../utils/catalogData";
 
 /**
@@ -22,7 +23,7 @@ export default defineCachedEventHandler(
       const optionIds = optionIdsParam(
         getQuery(event) as Record<string, unknown>,
       );
-      return `variant-${dishId}-${optionIds.join("|")}`;
+      return versionedKey(`variant-${dishId}-${optionIds.join("|")}`);
     },
   },
 );

@@ -29,3 +29,19 @@ describe("isOutage", () => {
     expect(isOutage(new TypeError("x is undefined"))).toBe(false);
   });
 });
+
+describe("createResilientLoader", () => {
+  it("answers the pause without a last good answer as backend_unavailable", async () => {
+    const { createResilientLoader } =
+      await import("../../server/utils/backoff");
+    const { isDomainError } = await import("../../shared/domain");
+    const load = createResilientLoader<string>();
+    const down = Object.assign(new Error("down"), { name: "FetchError" });
+    const first = await load("k", () => Promise.reject(down)).catch((e) => e);
+    const second = await load("k", async () => "never").catch((e) => e);
+    for (const error of [first, second]) {
+      expect(isDomainError(error, "backend_unavailable")).toBe(true);
+    }
+    expect((first as Error).cause).toBe(down);
+  });
+});

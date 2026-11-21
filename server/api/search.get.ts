@@ -1,3 +1,4 @@
+import { versionedKey } from "../utils/cacheKeys";
 import { askCatalog } from "../utils/catalogData";
 
 /**
@@ -21,7 +22,7 @@ export default defineCachedEventHandler(
       const { search, order, p } = searchParams(
         getQuery(event) as Record<string, unknown>,
       );
-      return [search ?? "", order ?? "", p ?? 1].join("|");
+      return versionedKey([search ?? "", order ?? "", p ?? 1].join("|"));
     },
   },
 );

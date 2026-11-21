@@ -46,7 +46,7 @@ describe("/api/listing/[sectionId] cache key", () => {
     const query = { filters: `${B.toUpperCase()}|${A}|${A}`, p: "2" };
 
     expect(await opts.getKey(listingEvent(query))).toBe(
-      [SECTION, "", `${B}|${A}`, 2].join("|"),
+      `v2-${[SECTION, "", `${B}|${A}`, 2].join("|")}`,
     );
     await handler(listingEvent(query));
     expect(catalog.listDishes).toHaveBeenCalledWith(SECTION, {
@@ -134,7 +134,7 @@ describe("/api/search cache key", () => {
     );
     const query = { query: "  pizza   salami ", order: "score" };
 
-    expect(await opts.getKey({ query })).toBe("pizza salami|score|1");
+    expect(await opts.getKey({ query })).toBe("v2-pizza salami|score|1");
     await handler({ query });
     expect(catalog.searchDishes).toHaveBeenCalledWith("pizza salami", {
       sorting: "score",
