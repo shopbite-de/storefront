@@ -64,7 +64,7 @@ import type { StoreApi, VisitorStoreApi } from "./storeApi";
 
 type Translated<T> = T & { translated?: Partial<T> | null };
 type SwSalutation = { salutationKey?: string | null } | null;
-type SwAddress = {
+export type SwAddress = {
   id: string;
   salutation?: SwSalutation;
   firstName?: string | null;
@@ -79,9 +79,11 @@ type SwAddress = {
   country?: { iso?: string | null } | null;
   phoneNumber?: string | null;
 };
-type SwCustomer = {
+export type SwCustomer = {
   id: string;
   guest?: boolean;
+  active?: boolean;
+  doubleOptInRegistration?: boolean;
   email?: string;
   salutation?: SwSalutation;
   firstName?: string;
@@ -160,7 +162,7 @@ export type SwOrder = {
     | null;
 };
 
-const ADDRESS_ASSOCIATIONS = { country: {}, salutation: {} };
+export const ADDRESS_ASSOCIATIONS = { country: {}, salutation: {} };
 
 /** The associations an order answer needs (`/order`). */
 export const ORDER_ASSOCIATIONS = {
@@ -178,7 +180,7 @@ export const ORDER_ASSOCIATIONS = {
   },
 };
 
-const CUSTOMER_CRITERIA = {
+export const CUSTOMER_CRITERIA = {
   associations: {
     salutation: {},
     defaultBillingAddress: { associations: ADDRESS_ASSOCIATIONS },
@@ -240,7 +242,9 @@ export function readComment(
 
 const SALUTATIONS: readonly Salutation[] = ["mr", "mrs", "not_specified"];
 
-const toSalutation = (value: SwSalutation | undefined): Salutation | null => {
+export const toSalutation = (
+  value: SwSalutation | undefined,
+): Salutation | null => {
   const key = value?.salutationKey;
   return SALUTATIONS.includes(key as Salutation) ? (key as Salutation) : null;
 };
@@ -279,7 +283,7 @@ const REFUSALS: readonly [string, DomainErrorCode][] = [
   ["dish_unavailable", "dish_unavailable"],
 ];
 
-const fail = (code: DomainErrorCode, message: string, cause?: unknown) =>
+export const fail = (code: DomainErrorCode, message: string, cause?: unknown) =>
   new DomainError(code, message, {}, cause ? { cause } : undefined);
 
 /**
@@ -287,7 +291,7 @@ const fail = (code: DomainErrorCode, message: string, cause?: unknown) =>
  * only); a failure without an answer counts as an outage (503) for the
  * BFF's backoff.
  */
-const causeOf = (error: unknown) => {
+export const causeOf = (error: unknown) => {
   const status = statusOf(error);
   return Object.assign(
     new Error(
@@ -298,7 +302,7 @@ const causeOf = (error: unknown) => {
 };
 
 /** The fields Shopware's validation refused (`/email`, `/billingAddress/zipcode`). */
-const refusedFields = (error: unknown): string[] =>
+export const refusedFields = (error: unknown): string[] =>
   (
     (
       error as {
@@ -310,6 +314,38 @@ const refusedFields = (error: unknown): string[] =>
       ? [entry.source.pointer.replace(/^\//, "").replaceAll("/", ".")]
       : [],
   );
+
+/**
+ * What the account (`customer.ts`) shares with the checkout: the visitor's
+ * requests, the address and customer mappings, the storefront URL of the
+ * sales channel.
+ */
+export type ShopwareVisitorTools = Readonly<{
+  shop: {
+    get<T>(path: string): Promise<T>;
+    post<T>(
+      path: string,
+      body: Record<string, unknown>,
+      headers?: Record<string, string>,
+    ): Promise<T>;
+  };
+  send<T>(
+    session: BackendSession,
+    method: "GET" | "POST" | "PATCH" | "DELETE",
+    path: string,
+    body?: Record<string, unknown>,
+  ): Promise<T>;
+  toAddress(address: SwAddress): Promise<Address>;
+  toCustomer(
+    customer: SwCustomer,
+    billingAddress: Address | null,
+    deliveryAddress?: Address | null,
+  ): Customer;
+  addressBody(address: AddressInput): Promise<Record<string, unknown>>;
+  salutationId(salutation: Salutation | null): Promise<string>;
+  readOrderer(session: BackendSession): Promise<Orderer | null>;
+  storefrontUrlFor(preferred: string): Promise<string>;
+}>;
 
 /** How long the order request may take: it must not be cut off early. */
 export const ORDER_TIMEOUT_MS = 60_000;
@@ -343,6 +379,7 @@ export function createShopwareOrdering(
 ): {
   checkout: Omit<CheckoutPort, "listShippingMethods">;
   orders: OrderPort;
+  visitor: ShopwareVisitorTools;
 } {
   const timeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
   const orderTimeoutMs = options.orderTimeoutMs ?? ORDER_TIMEOUT_MS;
@@ -373,7 +410,7 @@ export function createShopwareOrdering(
   /** A Store API request for the visitor; a new token goes into the session. */
   async function send<T>(
     session: BackendSession,
-    method: "GET" | "POST" | "PATCH",
+    method: "GET" | "POST" | "PATCH" | "DELETE",
     path: string,
     body?: Record<string, unknown>,
     ms: number = timeoutMs,
@@ -531,6 +568,29 @@ export function createShopwareOrdering(
     };
   }
 
+  function toCustomer(
+    customer: SwCustomer,
+    billingAddress: Address | null,
+    deliveryAddress: Address | null = billingAddress,
+  ): Customer {
+    return deepFreeze({
+      id: customer.id,
+      guest: customer.guest === true,
+      email: customer.email ?? "",
+      salutation: toSalutation(customer.salutation),
+      firstName: customer.firstName ?? "",
+      lastName: customer.lastName ?? "",
+      phone:
+        billingAddress?.phone ??
+        text(customer.defaultBillingAddress?.phoneNumber) ??
+        null,
+      defaultBillingAddressId:
+        customer.defaultBillingAddressId ?? billingAddress?.id ?? null,
+      defaultDeliveryAddressId:
+        customer.defaultShippingAddressId ?? deliveryAddress?.id ?? null,
+    });
+  }
+
   async function toOrderer(customer: SwCustomer): Promise<Orderer> {
     const billingSource =
       customer.defaultBillingAddress ?? customer.defaultShippingAddress;
@@ -547,19 +607,7 @@ export function createShopwareOrdering(
       deliverySource.id === billingSource.id
         ? billingAddress
         : await toAddress(deliverySource);
-    const value: Customer = {
-      id: customer.id,
-      guest: customer.guest === true,
-      email: customer.email ?? "",
-      salutation: toSalutation(customer.salutation),
-      firstName: customer.firstName ?? "",
-      lastName: customer.lastName ?? "",
-      phone: billingAddress.phone,
-      defaultBillingAddressId:
-        customer.defaultBillingAddressId ?? billingAddress.id,
-      defaultDeliveryAddressId:
-        customer.defaultShippingAddressId ?? deliveryAddress.id,
-    };
+    const value = toCustomer(customer, billingAddress, deliveryAddress);
     return deepFreeze({ customer: value, billingAddress, deliveryAddress });
   }
 
@@ -985,11 +1033,24 @@ export function createShopwareOrdering(
       if (fields.salutation === null) delete body.salutationId;
       await ask(
         "the address",
-        () =>
-          send(session, "PATCH", `/account/address/${encodeURIComponent(id)}`, {
-            ...body,
-            id,
-          }),
+        async () => {
+          try {
+            return await send(
+              session,
+              "PATCH",
+              `/account/address/${encodeURIComponent(id)}`,
+              { ...body, id },
+            );
+          } catch (error) {
+            // another customer's address: Shopware answers 400
+            if (
+              errorCodes(error).includes("CHECKOUT__CUSTOMER_ADDRESS_NOT_FOUND")
+            ) {
+              throw fail("not_found", "There is no such address.");
+            }
+            throw error;
+          }
+        },
         { 403: "not_found", 404: "not_found" },
       );
       const orderer = await readOrderer(session);
@@ -1103,5 +1164,18 @@ export function createShopwareOrdering(
     },
   };
 
-  return { checkout, orders };
+  return {
+    checkout,
+    orders,
+    visitor: {
+      shop,
+      send,
+      toAddress,
+      toCustomer,
+      addressBody,
+      salutationId,
+      readOrderer,
+      storefrontUrlFor,
+    },
+  };
 }

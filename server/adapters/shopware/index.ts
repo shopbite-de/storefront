@@ -16,6 +16,7 @@ import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { createShopwareCart } from "./cart";
 import { createShopwareCatalog, currencyReader } from "./catalog";
 import { createShopwareCheckout } from "./checkout";
+import { createShopwareCustomer } from "./customer";
 import { createShopwareNavigation } from "./navigation";
 import { createShopwareOrdering } from "./ordering";
 import { createShopwareShop, type AdapterLog } from "./shop";
@@ -108,7 +109,9 @@ export function createShopwareBackend(
           ...ordering.checkout,
         }
       : shippingMethods,
-    customer: notImplemented("customer", name),
+    customer: ordering
+      ? createShopwareCustomer(ordering.visitor)
+      : notImplemented("customer", name),
     orders: ordering?.orders ?? notImplemented("orders", name),
     shop,
     wishlist: notImplemented("wishlist", name),

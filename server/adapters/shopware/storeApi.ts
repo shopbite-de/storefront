@@ -22,7 +22,7 @@ export interface StoreApi {
  */
 export interface VisitorStoreApi {
   send<T>(request: {
-    method: "GET" | "POST" | "PATCH";
+    method: "GET" | "POST" | "PATCH" | "DELETE";
     path: string;
     body?: Record<string, unknown>;
     contextToken?: string;

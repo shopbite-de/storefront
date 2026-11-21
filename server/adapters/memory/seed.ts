@@ -33,6 +33,8 @@ export type MemorySeed = Readonly<{
   navigation: MemoryNavigation;
   /** Vouchers the cart accepts; none without. */
   cart?: Readonly<{ vouchers: readonly MemoryVoucher[] }>;
+  /** Accounts: double opt-in for new ones (off without). */
+  customer?: Readonly<{ doubleOptIn?: boolean }>;
 }>;
 
 const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];

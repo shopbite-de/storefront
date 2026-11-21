@@ -63,7 +63,7 @@ export function storeApiGet<T>(
  * answers `backend_unavailable` instead of holding the visitor's writes.
  */
 export async function storeApiForVisitor<T>(request: {
-  method: "GET" | "POST" | "PATCH";
+  method: "GET" | "POST" | "PATCH" | "DELETE";
   path: string;
   body?: Record<string, unknown>;
   contextToken?: string;

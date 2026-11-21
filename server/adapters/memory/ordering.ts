@@ -13,12 +13,25 @@ import {
 import type { BackendSession, CheckoutPort, OrderPort } from "../../ports";
 import type { MemoryCart } from "./cart";
 
-type StoredOrderer = {
+export type StoredOrderer = {
   customer: Orderer["customer"];
   billing: Address;
   delivery: Address;
 };
 type StoredOrder = { owner: string; order: Order };
+
+/**
+ * The logged-in customers of the memory accounts (`customer.ts`), as the
+ * checkout needs them: who orders for a session token (orders belong to
+ * `owner`, so they outlive the session), and their addresses.
+ */
+export type MemoryAccountsView = Readonly<{
+  ordererOf(
+    token: string,
+  ): (StoredOrderer & Readonly<{ owner: string }>) | undefined;
+  /** Changes an address of the account; false when it is not the account's. */
+  updateAddress(token: string, address: Address): boolean;
+}>;
 
 const notFound = (what: string, id: Id) =>
   new DomainError("not_found", `There is no such ${what}.`, { id });
@@ -42,10 +55,16 @@ export function createMemoryOrdering(options: {
   maxSessions?: number;
   /** The shop's country, for an address entered without one. */
   country?: string;
+  /** The logged-in customers (read when asked: built after the checkout). */
+  accounts?: () => MemoryAccountsView | undefined;
 }): {
   checkout: Omit<CheckoutPort, "listShippingMethods">;
   orders: OrderPort;
   selectionOf: (token: string) => CheckoutSelection;
+  /** Moves a session's selection to its new token (login, logout). */
+  moveSelection: (from: string, to: string) => void;
+  /** The guest of a session token, null without. */
+  guestOf: (token: string) => Orderer["customer"] | null;
 } {
   const maxSessions = options.maxSessions ?? 10_000;
   const shippingMethods = options.shippingMethods;
@@ -80,8 +99,19 @@ export function createMemoryOrdering(options: {
     return created;
   }
 
+  const accountOf = (token: string | undefined) =>
+    token ? options.accounts?.()?.ordererOf(token) : undefined;
+
+  /** Whose orders a session sees: the customer's, else the session's. */
+  const ownerOf = (token: string | undefined) =>
+    token ? (accountOf(token)?.owner ?? token) : undefined;
+
+  /** The session's customer, else its guest. */
+  const storedOrdererOf = (token: string | undefined) =>
+    accountOf(token) ?? (token ? orderers.get(token) : undefined);
+
   function ordererOf(token: string | undefined): Orderer | null {
-    const stored = token ? orderers.get(token) : undefined;
+    const stored = storedOrdererOf(token);
     return stored
       ? deepFreeze({
           customer: stored.customer,
@@ -102,10 +132,11 @@ export function createMemoryOrdering(options: {
   }
 
   function orderOf(token: string | undefined, orderId: Id): StoredOrder {
+    const owner = ownerOf(token);
     const stored = orders.find(
-      (entry) => entry.order.id === orderId && entry.owner === token,
+      (entry) => entry.order.id === orderId && entry.owner === owner,
     );
-    if (!token || !stored) throw notFound("order", orderId);
+    if (!owner || !stored) throw notFound("order", orderId);
     return stored;
   }
 
@@ -232,6 +263,15 @@ export function createMemoryOrdering(options: {
 
     updateAddress: async (session, address) => {
       const token = await session.read();
+      if (token && accountOf(token)) {
+        if (
+          !address.id ||
+          !options.accounts?.()?.updateAddress(token, address)
+        ) {
+          throw notFound("address", address.id ?? "");
+        }
+        return ordererOf(token)!;
+      }
       const stored = token ? orderers.get(token) : undefined;
       if (
         !token ||
@@ -258,7 +298,7 @@ export function createMemoryOrdering(options: {
 
     placeOrder: async (session, command) => {
       const token = await session.read();
-      const orderer = token ? orderers.get(token) : undefined;
+      const orderer = storedOrdererOf(token);
       if (!token || !orderer) throw unauthenticated();
       const cart = options.cart.cartOf(token);
       if (!cart.lines.length) {
@@ -271,7 +311,7 @@ export function createMemoryOrdering(options: {
         );
       }
       const order = toOrder(cart, orderer, selectionOf(token), command);
-      orders.push({ owner: token, order });
+      orders.push({ owner: ownerOf(token)!, order });
       options.cart.clear(token);
       return order;
     },
@@ -306,9 +346,10 @@ export function createMemoryOrdering(options: {
 
     listOrders: async (session, page = 1, limit = 10) => {
       const token = await session.read();
-      if (!token || !orderers.has(token)) throw unauthenticated();
+      if (!token || !storedOrdererOf(token)) throw unauthenticated();
+      const owner = ownerOf(token);
       const own = orders
-        .filter((entry) => entry.owner === token)
+        .filter((entry) => entry.owner === owner)
         .map((entry) => entry.order)
         .reverse();
       return deepFreeze({
@@ -320,5 +361,17 @@ export function createMemoryOrdering(options: {
     },
   };
 
-  return { checkout, orders: orderPort, selectionOf };
+  const moveSelection = (from: string, to: string) => {
+    const selection = selections.get(from);
+    selections.delete(from);
+    if (selection) remember(selections, to, selection);
+  };
+
+  return {
+    checkout,
+    orders: orderPort,
+    selectionOf,
+    moveSelection,
+    guestOf: (token) => orderers.get(token)?.customer ?? null,
+  };
 }

@@ -15,8 +15,9 @@ import type { Backend, CheckoutPort, ShopPort } from "../../ports";
 import { notImplemented } from "../notImplemented";
 import { createMemoryCart } from "./cart";
 import { createMemoryCatalog } from "./catalog";
+import { createMemoryCustomer, type MemoryMail } from "./customer";
 import { createMemoryNavigation } from "./navigation";
-import { createMemoryOrdering } from "./ordering";
+import { createMemoryOrdering, type MemoryAccountsView } from "./ordering";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { demoSeed, type MemorySeed } from "./seed";
 
@@ -24,6 +25,7 @@ export { demoSeed, type MemorySeed } from "./seed";
 export type { MemoryCatalog, MemoryDish, MemoryVariant } from "./catalog";
 export type { MemoryVoucher } from "./cart";
 export type { MemoryNavigation } from "./navigation";
+export type { MemoryMail } from "./customer";
 
 function createMemoryShop(seed: MemorySeed["shop"]): ShopPort {
   // a frozen copy: neither the seed's owner nor a caller can change it
@@ -41,7 +43,13 @@ function createMemoryShop(seed: MemorySeed["shop"]): ShopPort {
   };
 }
 
-export function createMemoryBackend(seed: MemorySeed = demoSeed()): Backend {
+export function createMemoryBackend(
+  seed: MemorySeed = demoSeed(),
+  options: {
+    /** What the backend would send by e-mail (default: nothing). */
+    mail?: (mail: MemoryMail) => void;
+  } = {},
+): Backend {
   const name = "memory";
   const shippingMethods = deepFreeze(
     structuredClone(seed.checkout.shippingMethods),
@@ -52,13 +60,23 @@ export function createMemoryBackend(seed: MemorySeed = demoSeed()): Backend {
   const cart = createMemoryCart(seed.catalog, seed.cart?.vouchers ?? [], {
     selectionOf: (token) => selection.of!(token),
   });
+  const accounts: { view?: MemoryAccountsView } = {};
   const ordering = createMemoryOrdering({
     shippingMethods,
     paymentMethods: seed.checkout.paymentMethods ?? [],
     cart,
     acceptsOrders: () => seed.shop.config.acceptsOrders,
+    accounts: () => accounts.view,
   });
   selection.of = ordering.selectionOf;
+  const customer = createMemoryCustomer({
+    cart,
+    guestOf: ordering.guestOf,
+    moveSession: ordering.moveSelection,
+    doubleOptIn: seed.customer?.doubleOptIn,
+    mail: options.mail,
+  });
+  accounts.view = customer.accounts;
   const checkout: CheckoutPort = {
     listShippingMethods: async () => shippingMethods,
     ...ordering.checkout,
@@ -69,7 +87,7 @@ export function createMemoryBackend(seed: MemorySeed = demoSeed()): Backend {
     navigation: createMemoryNavigation(seed.catalog, seed.navigation),
     cart,
     checkout,
-    customer: notImplemented("customer", name),
+    customer: customer.customer,
     orders: ordering.orders,
     shop,
     wishlist: notImplemented("wishlist", name),

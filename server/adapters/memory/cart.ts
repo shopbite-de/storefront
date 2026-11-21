@@ -78,6 +78,13 @@ export type MemoryCart = CartPort &
   Readonly<{
     cartOf(token: string): Cart;
     clear(token: string): void;
+    /**
+     * The carts of `from` (in their order) as one cart of `to`: the lines
+     * of the same configuration add up, as Shopware merges the visitor's
+     * cart into the customer's on login. The carts of `from` are gone.
+     * A key need not be a session token (a customer's saved cart).
+     */
+    merge(from: readonly (string | undefined)[], to: string): void;
   }>;
 
 export function createMemoryCart(
@@ -265,6 +272,36 @@ export function createMemoryCart(
       if (stored) {
         stored.lines = [];
         stored.vouchers = [];
+      }
+    },
+
+    merge: (from, to) => {
+      const merged: StoredCart = { lines: [], vouchers: [] };
+      for (const key of from) {
+        const stored = key ? carts.get(key) : undefined;
+        if (!stored) continue;
+        carts.delete(key!);
+        for (const line of stored.lines) {
+          const existing = merged.lines.find((entry) =>
+            isSameDishConfiguration(entry.configuration, line.configuration),
+          );
+          if (existing) {
+            existing.quantity = Math.min(
+              existing.quantity + line.quantity,
+              MAX_LINE_QUANTITY,
+            );
+          } else merged.lines.push({ ...line });
+        }
+        for (const code of stored.vouchers) {
+          if (!merged.vouchers.includes(code)) merged.vouchers.push(code);
+        }
+      }
+      carts.delete(to);
+      if (!merged.lines.length && !merged.vouchers.length) return;
+      carts.set(to, merged);
+      tokens.set(merged, to);
+      while (carts.size > maxCarts) {
+        carts.delete(carts.keys().next().value!);
       }
     },
 
