@@ -14,6 +14,8 @@ export type Address = Readonly<{
   firstName: string;
   lastName: string;
   company: string | null;
+  /** Of a business address, with the company. */
+  department: string | null;
   street: string;
   /** Floor, door, "Hinterhaus". */
   additionalLine: string | null;
@@ -23,15 +25,24 @@ export type Address = Readonly<{
   phone: string | null;
 }>;
 
+/**
+ * An address as the guest enters it: without an id, and without a country
+ * when the storefront asks for none (the shop's own country then).
+ */
+export type AddressInput = Omit<Address, "id" | "country"> &
+  Readonly<{ country: CountryCode | null }>;
+
 /** What a guest enters to order without an account ("Als Gast bestellen"). */
 export type GuestDetails = Readonly<{
   email: string;
   salutation: Salutation | null;
   firstName: string;
   lastName: string;
-  phone: string | null;
-  billingAddress: Omit<Address, "id">;
-  deliveryAddress: Omit<Address, "id"> | null;
+  /** Orders as a business ("Geschäftskunde"); the address has a company. */
+  business: boolean;
+  billingAddress: AddressInput;
+  /** Null: delivered to the billing address. */
+  deliveryAddress: AddressInput | null;
 }>;
 
 /**
@@ -52,6 +63,17 @@ export type Customer = Readonly<{
 }>;
 
 export type Country = Readonly<{ code: CountryCode; name: string }>;
+
+/**
+ * Who orders in this session: a guest after entering their details, or the
+ * logged-in customer, with the addresses an order would use now (the
+ * delivery address is the billing address unless the guest gave another).
+ */
+export type Orderer = Readonly<{
+  customer: Customer;
+  billingAddress: Address;
+  deliveryAddress: Address;
+}>;
 
 /**
  * A configured dish the guest keeps for later ("Merkliste"); the same dish

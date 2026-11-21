@@ -25,6 +25,17 @@ export type PaymentMethod = Readonly<{
   media: Media | null;
   /** Payment happens on another site after the order (redirect). */
   redirects: boolean;
+  /** The shop's default, chosen when the selected one cannot be used. */
+  preferred: boolean;
+}>;
+
+/**
+ * The shipping and payment method the visitor's next order uses, also
+ * before anything is in the cart (null where the backend has none).
+ */
+export type CheckoutSelection = Readonly<{
+  shippingMethodId: Id | null;
+  paymentMethodId: Id | null;
 }>;
 
 /**
@@ -129,9 +140,11 @@ export type OrderStatus = "open" | "in_progress" | "completed" | "cancelled";
 export type PaymentStatus =
   "open" | "paid" | "failed" | "cancelled" | "refunded";
 
-/** A line of a placed order. */
+/** A line of a placed order: one dish configuration, as it was priced. */
 export type OrderLine = Readonly<{
   id: Id;
+  /** What was ordered, so the order can be repeated. */
+  configuration: DishConfiguration;
   dishNumber: string;
   name: string;
   extras: readonly Readonly<{ name: string; unitPrice: Money }>[];
@@ -155,13 +168,28 @@ export type Order = Readonly<{
   shippingMethod: Readonly<{ id: Id; name: string }>;
   paymentMethod: Readonly<{ id: Id; name: string }>;
   lines: readonly OrderLine[];
+  discounts: readonly CartDiscount[];
+  /** Sum of the lines and the discounts, before shipping. */
   subtotal: Money;
   shippingCosts: Money;
   total: Money;
+  /** Taxes per rate (percent): included in the total, or on top of it. */
+  taxes: readonly Readonly<{ rate: number; amount: Money }>[];
+  /** Gross prices (restaurants); false for a net (business) order. */
+  taxIncluded: boolean;
   billingAddress: Address;
   /** Null for pickup. */
   deliveryAddress: Address | null;
   email: string;
   /** The guest's note to the restaurant, without the wished time. */
   note: string | null;
+}>;
+
+/** The answer to placing an order: the order and where to pay, if elsewhere. */
+export type PlacedOrder = Readonly<{
+  order: Order;
+  /** A payment on another site: send the guest there. */
+  redirectUrl: string | null;
+  /** The order is placed, but its payment could not be started. */
+  paymentFailed: boolean;
 }>;

@@ -52,7 +52,7 @@ type SwPrice = {
   totalPrice?: number;
   calculatedTaxes?: { tax?: number; taxRate?: number }[] | null;
 };
-type SwLineItem = {
+export type SwLineItem = {
   id: string;
   type?: string;
   referencedId?: string | null;
@@ -69,7 +69,7 @@ type SwLineItem = {
   cover?: Parameters<typeof toMedia>[0];
   children?: SwLineItem[] | null;
 };
-type SwCartError = {
+export type SwCartError = {
   messageKey?: string;
   key?: string;
   level?: number;
@@ -118,7 +118,7 @@ export function containerLineId(
 }
 
 /** Cart messages by the backend's key; prefixes end with `-`. */
-const MESSAGE_CODES: readonly [string, CartMessageCode][] = [
+export const MESSAGE_CODES: readonly [string, CartMessageCode][] = [
   ["product-not-found", "dish_unavailable"],
   ["product-out-of-stock", "dish_unavailable"],
   ["product-not-available", "dish_unavailable"],
@@ -132,7 +132,7 @@ const MESSAGE_CODES: readonly [string, CartMessageCode][] = [
   ["promotion-", "voucher_invalid"],
 ];
 
-function messageCode(error: SwCartError): CartMessageCode {
+export function messageCode(error: SwCartError): CartMessageCode {
   const key = error.messageKey ?? error.key ?? "";
   const found = MESSAGE_CODES.find(([prefix]) =>
     prefix.endsWith("-") ? key.startsWith(prefix) : key === prefix,
@@ -167,7 +167,7 @@ function toMessages(
   });
 }
 
-const stringList = (value: unknown): string[] =>
+export const stringList = (value: unknown): string[] =>
   Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === "string")
     : [];
@@ -175,7 +175,7 @@ const stringList = (value: unknown): string[] =>
 /** Product id → its main ingredients by name (`Hauptzutaten`). */
 type IngredientIds = ReadonlyMap<Id, ReadonlyMap<string, Id>>;
 
-function mainChild(line: SwLineItem): SwLineItem | undefined {
+export function mainChild(line: SwLineItem): SwLineItem | undefined {
   const children = (line.children ?? []).filter(
     (child) => (child.type ?? PRODUCT) === PRODUCT,
   );
@@ -291,7 +291,7 @@ type LookedUp = Readonly<{
   ingredients: readonly Readonly<{ id: Id; name: string }>[];
 }>;
 
-const LOOKUP_CRITERIA = {
+export const LOOKUP_CRITERIA = {
   includes: {
     product: [
       "id",
@@ -320,7 +320,7 @@ const MAX_KEPT = 1000;
  * extras a dish offers) are kept for a short while instead of a lookup per
  * answer; a menu change shows within the TTL. Bounded, oldest first out.
  */
-function keptFor<T>(ttlMs: number = LOOKUP_TTL_MS) {
+export function keptFor<T>(ttlMs: number = LOOKUP_TTL_MS) {
   const entries = new Map<string, { at: number; value: T }>();
   return {
     get: (key: string): T | undefined => {
@@ -343,7 +343,7 @@ function keptFor<T>(ttlMs: number = LOOKUP_TTL_MS) {
 }
 
 /** Variants inherit name and main ingredients from their dish. */
-const LOOKUP_HEADERS = { "sw-inheritance": "true" };
+export const LOOKUP_HEADERS = { "sw-inheritance": "true" };
 
 const invalid = (message: string, value: unknown) =>
   new DomainError("invalid_value", message, { value });
@@ -381,10 +381,10 @@ export type ShopwareCartOptions = Readonly<{
   requestTimeoutMs?: number;
 }>;
 
-const REQUEST_TIMEOUT_MS = 10_000;
+export const REQUEST_TIMEOUT_MS = 10_000;
 
 /** The answer, or a TimeoutError after `ms`. */
-function deadline<T>(answer: Promise<T>, ms: number): Promise<T> {
+export function deadline<T>(answer: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(
@@ -752,7 +752,7 @@ export function createShopwareCart(
  * cart does not hold) is `not_found`, 400 `invalid_value`, everything else
  * `backend_unavailable`. DomainErrors of the adapter pass unchanged.
  */
-async function requestOrUnavailable<T>(
+export async function requestOrUnavailable<T>(
   what: string,
   run: () => Promise<T>,
 ): Promise<T> {

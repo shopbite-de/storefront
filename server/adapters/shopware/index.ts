@@ -17,6 +17,7 @@ import { createShopwareCart } from "./cart";
 import { createShopwareCatalog, currencyReader } from "./catalog";
 import { createShopwareCheckout } from "./checkout";
 import { createShopwareNavigation } from "./navigation";
+import { createShopwareOrdering } from "./ordering";
 import { createShopwareShop, type AdapterLog } from "./shop";
 import {
   sharingRequestsInFlight,
@@ -29,7 +30,11 @@ export type { AdapterLog } from "./shop";
 
 export type ShopwareBackendOptions = Readonly<{
   storeApi: StoreApi;
-  /** The Store API with a visitor's context token (cart); without it the cart is not implemented. */
+  /**
+   * The Store API with a visitor's context token (cart, checkout, orders);
+   * without it these ports are not implemented (only the shop's shipping
+   * methods are).
+   */
   visitorApi?: VisitorStoreApi;
   /** `public.storeUrl`: picks this storefront's branch. */
   storeUrl: string;
@@ -39,6 +44,15 @@ export type ShopwareBackendOptions = Readonly<{
   log?: AdapterLog;
   /** `public.shopBite.menuCategoryId`: overrides the plugin's menu root. */
   menuCategoryId?: string;
+  /** ms a visitor's Store API request may take (default 10 s; tests). */
+  requestTimeoutMs?: number;
+  /** ms the order request may take (default 60 s; tests). */
+  orderTimeoutMs?: number;
+  /**
+   * `public.site.countryId`: the country of an address the guest enters
+   * without one, as the checkout form of 2.x sent it.
+   */
+  countryId?: string;
 }>;
 
 export function createShopwareBackend(
@@ -58,6 +72,19 @@ export function createShopwareBackend(
     timeZone: checkTimeZone(options.timeZone),
     log,
   });
+  const currency = currencyReader(storeApi);
+  const timeZone = checkTimeZone(options.timeZone);
+  const shippingMethods = createShopwareCheckout(storeApi, { name, log });
+  const ordering = options.visitorApi
+    ? createShopwareOrdering(storeApi, options.visitorApi, {
+        currency,
+        timeZone,
+        log,
+        requestTimeoutMs: options.requestTimeoutMs,
+        orderTimeoutMs: options.orderTimeoutMs,
+        countryId: options.countryId,
+      })
+    : undefined;
   return {
     name,
     catalog: createShopwareCatalog(storeApi, {
@@ -70,13 +97,19 @@ export function createShopwareBackend(
     }),
     cart: options.visitorApi
       ? createShopwareCart(storeApi, options.visitorApi, {
-          currency: currencyReader(storeApi),
+          currency,
           log,
+          requestTimeoutMs: options.requestTimeoutMs,
         })
       : notImplemented("cart", name),
-    checkout: createShopwareCheckout(storeApi, { name, log }),
+    checkout: ordering
+      ? {
+          listShippingMethods: shippingMethods.listShippingMethods,
+          ...ordering.checkout,
+        }
+      : shippingMethods,
     customer: notImplemented("customer", name),
-    orders: notImplemented("orders", name),
+    orders: ordering?.orders ?? notImplemented("orders", name),
     shop,
     wishlist: notImplemented("wishlist", name),
     contact: notImplemented("contact", name),
@@ -99,5 +132,6 @@ export function shopwareFromRuntimeConfig(
     storeUrl: config.public.storeUrl,
     timeZone: config.shopBite.timeZone,
     menuCategoryId: config.public.shopBite?.menuCategoryId || undefined,
+    countryId: config.public.site?.countryId || undefined,
   });
 }

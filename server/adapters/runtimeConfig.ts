@@ -8,5 +8,7 @@ export type BackendRuntimeConfig = Readonly<{
     storeUrl: string;
     /** Overrides the plugin's menu root (`NUXT_PUBLIC_SHOP_BITE_MENU_CATEGORY_ID`). */
     shopBite?: Readonly<{ menuCategoryId?: string }>;
+    /** `site.countryId`: the Shopware id of the shop's country. */
+    site?: Readonly<{ countryId?: string }>;
   }>;
 }>;

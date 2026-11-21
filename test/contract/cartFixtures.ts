@@ -1,4 +1,8 @@
-import { createMemoryBackend, demoSeed } from "../../server/adapters/memory";
+import {
+  createMemoryBackend,
+  demoSeed,
+  type MemorySeed,
+} from "../../server/adapters/memory";
 import {
   createShopwareBackend,
   type StoreApi,
@@ -10,92 +14,93 @@ import type { AdapterFixture } from "./harness";
 
 const euro = (amount: number) => money(Math.round(amount * 100), "EUR");
 
+/** The memory adapter's seed with the scenario's dishes and vouchers. */
+export function memoryCartSeed(scenario: CartScenario): MemorySeed {
+  const demo = demoSeed();
+  return {
+    ...demo,
+    catalog: {
+      ...demo.catalog,
+      dishes: scenario.dishes.map((dish) => ({
+        id: dish.id,
+        number: dish.number,
+        name: dish.name,
+        description: null,
+        price: euro(dish.price),
+        listPrice: null,
+        sectionIds: [],
+        ingredients: dish.ingredients,
+        diets: [],
+        kitchen: null,
+        foodLabels: { allergens: [], additives: [], checked: false },
+        available: true,
+        media: null,
+        path: null,
+        topSeller: false,
+        upsell: false,
+        variantGroups: [
+          ...new Set(
+            dish.variants.flatMap((variant) =>
+              variant.options.map((choice) => choice.group),
+            ),
+          ),
+        ].map((group) => ({
+          id: `group:${group}`,
+          name: group,
+          options: dish.variants.flatMap((variant) =>
+            variant.options
+              .filter((choice) => choice.group === group)
+              .map((choice) => ({
+                id: `option:${choice.option}`,
+                name: choice.option,
+              })),
+          ),
+        })),
+        variants: dish.variants.map((variant) => ({
+          id: variant.id,
+          number: variant.number,
+          optionIds: variant.options.map((choice) => `option:${choice.option}`),
+          price: euro(variant.price),
+          available: true,
+        })),
+        extraGroups: dish.extras.length
+          ? [
+              {
+                id: `extras:${dish.id}`,
+                name: "Extras",
+                extras: dish.extras.map((extra) => ({
+                  id: extra.id,
+                  number: extra.number,
+                  name: extra.name,
+                  price: euro(extra.price),
+                  available: true,
+                })),
+              },
+            ]
+          : [],
+      })),
+    },
+    cart: {
+      vouchers: scenario.vouchers.map((voucher) => ({
+        code: voucher.code,
+        name: voucher.name,
+        amount: euro(voucher.amount),
+      })),
+    },
+  };
+}
+
 /** The memory adapter with the scenario's dishes and vouchers. */
 export const memoryCart: AdapterFixture<CartScenario> = {
   adapter: "memory",
-  create: (scenario) => {
-    const demo = demoSeed();
-    return createMemoryBackend({
-      ...demo,
-      catalog: {
-        ...demo.catalog,
-        dishes: scenario.dishes.map((dish) => ({
-          id: dish.id,
-          number: dish.number,
-          name: dish.name,
-          description: null,
-          price: euro(dish.price),
-          listPrice: null,
-          sectionIds: [],
-          ingredients: dish.ingredients,
-          diets: [],
-          kitchen: null,
-          foodLabels: { allergens: [], additives: [], checked: false },
-          available: true,
-          media: null,
-          path: null,
-          topSeller: false,
-          upsell: false,
-          variantGroups: [
-            ...new Set(
-              dish.variants.flatMap((variant) =>
-                variant.options.map((choice) => choice.group),
-              ),
-            ),
-          ].map((group) => ({
-            id: `group:${group}`,
-            name: group,
-            options: dish.variants.flatMap((variant) =>
-              variant.options
-                .filter((choice) => choice.group === group)
-                .map((choice) => ({
-                  id: `option:${choice.option}`,
-                  name: choice.option,
-                })),
-            ),
-          })),
-          variants: dish.variants.map((variant) => ({
-            id: variant.id,
-            number: variant.number,
-            optionIds: variant.options.map(
-              (choice) => `option:${choice.option}`,
-            ),
-            price: euro(variant.price),
-            available: true,
-          })),
-          extraGroups: dish.extras.length
-            ? [
-                {
-                  id: `extras:${dish.id}`,
-                  name: "Extras",
-                  extras: dish.extras.map((extra) => ({
-                    id: extra.id,
-                    number: extra.number,
-                    name: extra.name,
-                    price: euro(extra.price),
-                    available: true,
-                  })),
-                },
-              ]
-            : [],
-        })),
-      },
-      cart: {
-        vouchers: scenario.vouchers.map((voucher) => ({
-          code: voucher.code,
-          name: voucher.name,
-          amount: euro(voucher.amount),
-        })),
-      },
-    });
-  },
+  create: (scenario) => createMemoryBackend(memoryCartSeed(scenario)),
 };
 
 /* ------------------------------------------------------------------ */
 /* Shopware: a fake Store API with the ShopBite plugin's dish lines     */
 /* ------------------------------------------------------------------ */
 
-type Json = Record<string, unknown>;
+export type Json = Record<string, unknown>;
 type FakeProduct = {
   id: string;
   parentId: string | null;
@@ -106,7 +111,7 @@ type FakeProduct = {
   options: { group: string; option: string }[];
   ingredients: { id: string; name: string }[];
 };
-type FakeLine = {
+export type FakeLine = {
   id: string;
   type: "product" | "container" | "promotion";
   referencedId: string;
@@ -209,7 +214,29 @@ const price = (unit: number, quantity: number) => ({
  * below 1 is 400, an unknown promotion code is a `promotion-not-found`
  * error.
  */
-export function fakeShopwareCart(scenario: CartScenario) {
+/** Requests the cart fake leaves to a fake of more of the Store API. */
+export type FakeStoreApiExtension = {
+  /** Answers a visitor request, or undefined for the cart's own paths. */
+  visitor?: (
+    request: { method: string; path: string; body?: Json },
+    state: {
+      token: string;
+      lines: FakeLine[];
+      carts: Map<string, FakeLine[]>;
+      /** The cart as `/checkout/cart` answers it now. */
+      cart: () => Json;
+    },
+  ) => { data: unknown; contextToken?: string } | undefined;
+  /** Adds the context's methods and errors to a cart answer. */
+  decorate?: (token: string, cart: Json, lines: FakeLine[]) => void;
+  shopGet?: (path: string) => unknown;
+  shopPost?: (path: string, body: Json) => unknown;
+};
+
+export function fakeShopwareCart(
+  scenario: CartScenario,
+  extension: FakeStoreApiExtension = {},
+) {
   const products = fakeShopwareProducts(scenario);
   const carts = new Map<string, FakeLine[]>();
   const requests: {
@@ -424,6 +451,21 @@ export function fakeShopwareCart(scenario: CartScenario) {
       carts.set(token, lines);
       const errors: Json = {};
       const { method, path, body } = request;
+      const current = () => {
+        const json = cartJson(lines, {});
+        extension.decorate?.(token, json, lines);
+        return json;
+      };
+      const extended = extension.visitor?.(
+        { method, path, body },
+        { token, lines, carts, cart: current },
+      );
+      if (extended) {
+        return {
+          data: structuredClone(extended.data) as T,
+          contextToken: extended.contextToken ?? token,
+        };
+      }
       if (method === "POST" && path === "/checkout/cart/line-item") {
         for (const item of body!.items as Json[]) add(lines, item, errors);
       } else if (method === "PATCH" && path === "/checkout/cart/line-item") {
@@ -448,8 +490,10 @@ export function fakeShopwareCart(scenario: CartScenario) {
       } else if (!(method === "GET" && path === "/checkout/cart")) {
         throw new Error(`unexpected ${method} ${path}`);
       }
+      const answer = cartJson(lines, errors);
+      extension.decorate?.(token, answer, lines);
       return {
-        data: structuredClone(cartJson(lines, errors)) as T,
+        data: structuredClone(answer) as T,
         contextToken: token,
       };
     },
@@ -457,11 +501,15 @@ export function fakeShopwareCart(scenario: CartScenario) {
 
   const storeApi: StoreApi = {
     get: async <T>(path: string) => {
+      const extended = extension.shopGet?.(path);
+      if (extended !== undefined) return structuredClone(extended) as T;
       if (path === "/context") return { currency: { isoCode: "EUR" } } as T;
       throw new Error(`unexpected GET ${path}`);
     },
     post: async <T>(path: string, body: Json) => {
       requests.push({ method: "POST", path, body: structuredClone(body) });
+      const extended = extension.shopPost?.(path, body);
+      if (extended !== undefined) return structuredClone(extended) as T;
       const crossSelling = path.match(/^\/product\/([^/]+)\/cross-selling$/);
       if (crossSelling) {
         const dish = scenario.dishes.find(

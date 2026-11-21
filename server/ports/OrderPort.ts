@@ -10,14 +10,17 @@ export type OrderPage = Readonly<{
 
 /**
  * Ordering: placed orders of the session's customer (account) or guest
- * (the order just placed). Statuses are the storefront's own
+ * (the orders placed in this session). Statuses are the storefront's own
  * (`OrderStatus`, `PaymentStatus`); the adapter maps its backend's states.
+ * An order of another visitor is never readable: it is `not_found`, the
+ * same as one that does not exist.
  *
- * Shopware: `/order` with state machine states. Sylius: orders with
- * `state`, `paymentState`, `shippingState`.
+ * Shopware: `/order` with the visitor's context (a guest stays logged in
+ * as guest customer for the session) and state machine states. Sylius:
+ * orders with `state`, `paymentState`, `shippingState`.
  */
 export interface OrderPort {
-  /** Newest first. Throws `unauthenticated` without a customer. */
+  /** Newest first. Throws `unauthenticated` without a guest or customer. */
   listOrders(
     session: BackendSession,
     page?: number,
