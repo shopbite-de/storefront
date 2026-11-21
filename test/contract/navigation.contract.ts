@@ -189,6 +189,12 @@ export const navigationContract = defineContract<
     expect(await (await port()).getNavigation("menu")).toEqual(MENU);
   });
 
+  it("lists the menu below the root the storefront resolved", async () => {
+    const navigation = await port();
+    const root = await navigation.getMenuRootId();
+    expect(await navigation.getNavigation("menu", root)).toEqual(MENU);
+  });
+
   it("lists the menu sections with their photo for the home page", async () => {
     expect(await (await port()).getNavigation("home")).toEqual([
       node(PIZZA, [], PHOTO),

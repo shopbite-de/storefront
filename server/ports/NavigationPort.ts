@@ -20,9 +20,15 @@ export interface NavigationPort {
   /**
    * A navigation in its order: `main` (header), `footer` (columns of
    * links), `menu` (the menu sections below the menu root, with their
-   * sub-sections) and `home` (the menu sections with their photo).
+   * sub-sections) and `home` (the menu sections with their photo). For
+   * `menu` and `home`, `menuRootId` is the root the storefront resolved
+   * (`getMenuRootId`, cached), so key and tree never name two roots;
+   * without it the adapter asks for its root itself.
    */
-  getNavigation(kind: NavigationKind): Promise<readonly NavigationNode[]>;
+  getNavigation(
+    kind: NavigationKind,
+    menuRootId?: Id,
+  ): Promise<readonly NavigationNode[]>;
   /**
    * The menu section the menu hangs from (its page lists every dish).
    * Rejects when the backend cannot tell, never answers a guess.

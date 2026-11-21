@@ -1,4 +1,5 @@
 import {
+  decodePath,
   deepFreeze,
   DomainError,
   isHostilePath,
@@ -25,20 +26,12 @@ export type MemoryNavigation = Readonly<{
   lastModified: Readonly<Record<Id, string>>;
 }>;
 
-function decoded(path: string): string {
-  try {
-    return decodeURI(path);
-  } catch {
-    return path;
-  }
-}
-
-const sameSpelling = (a: string, b: string) => decoded(a) === decoded(b);
+const sameSpelling = (a: string, b: string) => decodePath(a) === decodePath(b);
 const sameIgnoringCase = (a: string, b: string) =>
-  decoded(a).toLowerCase() === decoded(b).toLowerCase();
+  decodePath(a).toLowerCase() === decodePath(b).toLowerCase();
 
 /** A menu section as a navigation entry, with its sub-sections. */
-function toNode(section: MenuSection): NavigationNode {
+export function toNode(section: MenuSection): NavigationNode {
   return {
     id: section.id,
     label: section.name,

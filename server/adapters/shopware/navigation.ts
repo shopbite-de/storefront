@@ -2,6 +2,7 @@ import {
   deepFreeze,
   DomainError,
   isHostilePath,
+  isSafeRedirectTarget,
   routeTo,
   toggleTrailingSlash,
   type BreadcrumbItem,
@@ -11,11 +12,12 @@ import {
   type ResolvedRoute,
   type SitemapEntry,
 } from "../../../shared/domain";
+import { withLeadingSlash } from "ufo";
 import type { NavigationPort } from "../../ports";
-import { toMedia } from "./catalog";
+import { toMedia, translated, type Translated } from "./catalog";
 import { menuRootReader, NAVIGATION_ROOT } from "./menuRoot";
 import { request } from "./request";
-import { text } from "./shop";
+import { text, type AdapterLog } from "./shop";
 import type { StoreApi } from "./storeApi";
 
 /*
@@ -25,7 +27,6 @@ import type { StoreApi } from "./storeApi";
  * types. The storefront sees paths, navigation nodes and routes.
  */
 
-type Translated<T> = T & { translated?: Partial<T> | null };
 type SwCategory = Translated<{
   id: string;
   name?: string | null;
@@ -158,16 +159,6 @@ export function seoPathCriteria(isCanonical: true | null, page: number) {
   };
 }
 
-const withLeadingSlash = (path: string) =>
-  path.startsWith("/") ? path : `/${path}`;
-
-function translated<T extends object, K extends keyof T>(
-  entity: Translated<T> | null | undefined,
-  key: K,
-): T[K] | undefined {
-  return (entity?.translated?.[key] ?? entity?.[key]) as T[K] | undefined;
-}
-
 const KINDS: Readonly<Record<string, NavigationNode["kind"]>> = {
   page: "menu-section",
   link: "link",
@@ -218,6 +209,8 @@ export function toSitemapEntries(categories: SwCategory[]): SitemapEntry[] {
 export type ShopwareNavigationOptions = Readonly<{
   /** `public.shopBite.menuCategoryId`: overrides the plugin's menu root. */
   menuCategoryId?: string;
+  /** Where a SEO URL the storefront cannot use is reported. */
+  log?: AdapterLog;
 }>;
 
 /**
@@ -231,6 +224,7 @@ export function createShopwareNavigation(
   options: ShopwareNavigationOptions = {},
 ): NavigationPort {
   const menuRoot = menuRootReader(storeApi, options.menuCategoryId);
+  const log: AdapterLog = options.log ?? (() => {});
 
   const navigation = (
     what: string,
@@ -247,7 +241,10 @@ export function createShopwareNavigation(
       ),
     );
 
-  async function treeOf(kind: NavigationKind): Promise<SwCategory[]> {
+  async function treeOf(
+    kind: NavigationKind,
+    menuRootId: string | undefined,
+  ): Promise<SwCategory[]> {
     switch (kind) {
       case "main":
         return navigation(
@@ -268,7 +265,7 @@ export function createShopwareNavigation(
         return navigation(
           `the ${kind} navigation`,
           NAVIGATION_ROOT,
-          await menuRoot(),
+          menuRootId ?? (await menuRoot()),
           kind === "home" ? HOME_CRITERIA : NAVIGATION_CRITERIA,
         );
     }
@@ -315,14 +312,21 @@ export function createShopwareNavigation(
     ]);
   }
 
-  const routeOf = (path: string, seoUrl: SwSeoUrl): ResolvedRoute | null =>
-    seoUrl.foreignKey
-      ? routeTo(
-          path,
-          seoUrl.foreignKey,
-          seoUrl.seoPathInfo ? withLeadingSlash(seoUrl.seoPathInfo) : path,
-        )
-      : null;
+  function routeOf(path: string, seoUrl: SwSeoUrl): ResolvedRoute | null {
+    if (!seoUrl.foreignKey) return null;
+    const canonicalPath = seoUrl.seoPathInfo
+      ? withLeadingSlash(seoUrl.seoPathInfo)
+      : path;
+    // a SEO URL like `/evil.example/` would be a redirect to another host
+    if (!isSafeRedirectTarget(canonicalPath)) {
+      log("Shopware: left out a SEO URL that is no storefront path.", {
+        path,
+        canonicalPath,
+      });
+      return null;
+    }
+    return routeTo(path, seoUrl.foreignKey, canonicalPath);
+  }
 
   async function pathsOf(isCanonical: true | null): Promise<string[] | null> {
     const paths: string[] = [];
@@ -343,8 +347,8 @@ export function createShopwareNavigation(
   }
 
   return {
-    getNavigation: async (kind) => {
-      const tree = await treeOf(kind);
+    getNavigation: async (kind, menuRootId) => {
+      const tree = await treeOf(kind, menuRootId);
       return deepFreeze(tree.map(toNavigationNode));
     },
     getMenuRootId: () => menuRoot(),
@@ -374,6 +378,9 @@ export function createShopwareNavigation(
       // exact on the trailing slash, case-insensitive (#244, #291)
       const match = await currentCategory(path);
       if (match) return routeOf(path, match);
+      // a technical URL has one spelling (`pathInfo`, without the slash)
+      // and no former SEO URLs: one lookup only
+      if (isTechnicalPath(path)) return null;
       const toggled = toggleTrailingSlash(path);
       const toggledMatch = await currentCategory(toggled);
       if (toggledMatch?.seoPathInfo) return routeOf(path, toggledMatch);
