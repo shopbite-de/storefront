@@ -31,7 +31,7 @@ export type BackendData<T> = Readonly<{
   fresh: () => Promise<T>;
 }>;
 
-function defineBackendData<T>(
+export function defineBackendData<T>(
   name: string,
   maxAge: number,
   read: (backend: Backend) => Promise<T>,

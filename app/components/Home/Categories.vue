@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { Media, NavigationNode } from "../../../shared/domain";
 
 /**
  * Menu sections of the presets on the home page (#444): a word list in the
  * display font on the darker band, no dish counts. On desktop one photo
- * follows the hovered or focused section (category media from Shopware);
+ * follows the hovered or focused section (the section's photo);
  * phones get the words stacked and no photo. Wide category banners (as
  * some shops use) do not fit the 4:5 column: then the photo spans the width
  * below the words in the banner's own aspect ratio.
@@ -19,29 +19,25 @@ withDefaults(
 const { categories } = await useHomeMenuCategories();
 
 const sections = computed(() =>
-  (categories.value ?? []).filter((category) => category.seoUrl),
+  (categories.value ?? []).filter((section) => section.path),
 );
 
 const activeId = ref<string | null>(null);
-const active = computed<Schemas["Category"] | undefined>(
+const active = computed<NavigationNode | undefined>(
   () =>
-    sections.value.find((category) => category.id === activeId.value) ??
-    sections.value.find((category) => category.media?.url),
+    sections.value.find((section) => section.id === activeId.value) ??
+    sections.value.find((section) => section.media?.url),
 );
 
-function aspect(media: Schemas["Media"] | null | undefined) {
-  const size =
-    mediaSize(media) ??
-    [...(media?.thumbnails ?? [])].sort(
-      (a, b) => (b.width ?? 0) - (a.width ?? 0),
-    )[0];
-  return size?.width && size?.height ? size.width / size.height : null;
+function aspect(media: Media | null | undefined) {
+  const size = mediaSize(media);
+  return size ? size.width / size.height : null;
 }
 
 // decided once by the first photo, so hovering does not change the layout
 const bannerAspect = computed(() => {
   const ratio = aspect(
-    sections.value.find((category) => category.media?.url)?.media,
+    sections.value.find((section) => section.media?.url)?.media,
   );
   return ratio && ratio > 1.2 ? ratio : null;
 });
@@ -54,8 +50,8 @@ const sizes = computed(() => {
   return `${Math.round(500 * Math.max(ratio, 0.8))}px`;
 });
 
-function name(category: Schemas["Category"]) {
-  return category.translated?.name ?? category.name;
+function name(section: NavigationNode) {
+  return section.label;
 }
 </script>
 
@@ -93,7 +89,7 @@ function name(category: Schemas["Category"]) {
             class="lg:flex lg:items-baseline lg:gap-5"
           >
             <NuxtLink
-              :to="category.seoUrl ?? ''"
+              :to="category.path ?? ''"
               class="flex min-h-14 items-center justify-between border-b border-sb-line font-display text-[32px] leading-tight text-sb-ink hover:underline hover:decoration-sb-accent hover:decoration-[3px] hover:underline-offset-8 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-sb-focus lg:min-h-0 lg:border-0 lg:text-[56px]"
               @mouseenter="activeId = category.id"
               @focus="activeId = category.id"

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { NavigationNode } from "../../../shared/domain";
 import { useNavigation } from "~/composables/useNavigation";
 
 /**
- * Category index of the presets on desktop (#441): the menu sections as a
- * word list in the display font, sub-categories indented. The current
- * category is underlined in the accent colour (the text stays ink: no red
+ * Section index of the presets on desktop (#441): the menu sections as a
+ * word list in the display font, sub-sections indented. The current
+ * section is underlined in the accent colour (the text stays ink: no red
  * on controls) and marked `aria-current`.
  */
 const { menuCardNavigation } = useNavigation(true);
@@ -13,14 +13,10 @@ const route = useRoute();
 
 type Entry = { label: string; to: string; depth: number };
 
-function flatten(categories: Schemas["Category"][], depth = 0): Entry[] {
-  return categories.flatMap((category) => [
-    {
-      label: category.translated?.name ?? category.name ?? "",
-      to: category.seoUrl ?? "",
-      depth,
-    },
-    ...flatten(category.children ?? [], depth + 1),
+function flatten(nodes: readonly NavigationNode[], depth = 0): Entry[] {
+  return nodes.flatMap((node) => [
+    { label: node.label, to: node.path ?? "", depth },
+    ...flatten(node.children, depth + 1),
   ]);
 }
 

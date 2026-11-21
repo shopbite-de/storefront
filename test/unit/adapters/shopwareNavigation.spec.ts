@@ -512,3 +512,83 @@ describe("Shopware NavigationPort review fixes", () => {
     expect(log).toHaveBeenCalled();
   });
 });
+
+describe("Shopware path resolution edge cases", () => {
+  const ID = "0a000000000000000000000000000009";
+
+  /** Answers `/seo-url` lookups from a table: `field:value` → SEO URL. */
+  function resolverWith(table: Record<string, Record<string, unknown>>) {
+    const post = vi.fn(
+      async (
+        _path: string,
+        body: { filter: { field: string; value: unknown }[] },
+      ) => {
+        const key = body.filter
+          .map((filter) => `${filter.field}:${String(filter.value)}`)
+          .join("&");
+        return { elements: table[key] ? [table[key]] : [] } as never;
+      },
+    );
+    const { navigation } = createShopwareBackend({
+      storeApi: { get: async () => ({}) as never, post: post as never },
+      storeUrl: "",
+      timeZone: "Europe/Berlin",
+      log: () => {},
+    });
+    return { navigation, post };
+  }
+
+  it("keeps a technical URL whose category has no SEO path", async () => {
+    const { navigation } = resolverWith({
+      [`pathInfo:/navigation/${ID}`]: {
+        foreignKey: ID,
+        routeName: CATEGORY_ROUTE,
+        pathInfo: `/navigation/${ID}`,
+      },
+    });
+    expect(await navigation.resolvePath(`/navigation/${ID}`)).toEqual({
+      kind: "menu-section",
+      sectionId: ID,
+      canonicalPath: `/navigation/${ID}`,
+    });
+  });
+
+  it("ignores a toggled match without SEO path", async () => {
+    const { navigation } = resolverWith({
+      "seoPathInfo:c/Neu/": { foreignKey: ID, routeName: CATEGORY_ROUTE },
+    });
+    expect(await navigation.resolvePath("/c/Neu")).toBeNull();
+  });
+
+  it("asks for former SEO URLs only when no current one has the path", async () => {
+    const { navigation, post } = resolverWith({
+      "seoPathInfo:Speisekarte/Pizza/": {
+        foreignKey: ID,
+        routeName: CATEGORY_ROUTE,
+        seoPathInfo: "Speisekarte/Pizza/",
+      },
+    });
+    await navigation.resolvePath("/Speisekarte/Pizza");
+    expect(
+      post.mock.calls.some(([, body]) =>
+        body.filter.some((filter) => filter.field === "isCanonical"),
+      ),
+    ).toBe(false);
+  });
+
+  it("redirects a former SEO URL without its trailing slash", async () => {
+    const { navigation } = resolverWith({
+      [`seoPathInfo:c/Pizza/&routeName:${CATEGORY_ROUTE}&isCanonical:null`]: {
+        foreignKey: ID,
+        languageId: LANGUAGE,
+      },
+      [`foreignKey:${ID}&routeName:${CATEGORY_ROUTE}&languageId:${LANGUAGE}&isCanonical:true`]:
+        { foreignKey: ID, seoPathInfo: "speisekarte/pizza/" },
+    });
+    expect(await navigation.resolvePath("/c/Pizza")).toEqual({
+      kind: "redirect",
+      to: "/speisekarte/pizza/",
+      sectionId: ID,
+    });
+  });
+});

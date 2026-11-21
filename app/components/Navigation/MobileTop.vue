@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { NavigationNode } from "../../../shared/domain";
 import { useNavigation } from "~/composables/useNavigation";
 
 /**
- * Menu categories as horizontally scrolling rows on phones and tablets
+ * Menu sections as horizontally scrolling rows on phones and tablets
  * (#445); the desktop menu has the word-list index (MenuCategoryIndex).
  * The first row holds the menu sections. When the open section has
- * sub-categories (e.g. Fleischgerichte → Vom Rind, Hähnchen …),
+ * sub-sections (e.g. Fleischgerichte → Vom Rind, Hähnchen …),
  * a second row lists them, led by "Alle" for the section itself; deeper
  * levels follow in the same row. The current chip scrolls into view.
  */
@@ -21,18 +21,12 @@ const normalize = (path: string) =>
 const isCurrent = (to?: string) =>
   !!to && normalize(route.path) === normalize(to);
 
-function toChip(category: Schemas["Category"]): Chip {
-  return {
-    label: category.translated?.name ?? category.name ?? "",
-    to: category.seoUrl ?? "",
-  };
+function toChip(node: NavigationNode): Chip {
+  return { label: node.label, to: node.path ?? "" };
 }
 
-function descendants(category: Schemas["Category"]): Schemas["Category"][] {
-  return (category.children ?? []).flatMap((child) => [
-    child,
-    ...descendants(child),
-  ]);
+function descendants(node: NavigationNode): NavigationNode[] {
+  return node.children.flatMap((child) => [child, ...descendants(child)]);
 }
 
 const sections = computed(() => menuCardNavigation.value ?? []);
@@ -41,10 +35,8 @@ const sections = computed(() => menuCardNavigation.value ?? []);
 const activeSection = computed(() =>
   sections.value.find(
     (section) =>
-      isCurrent(section.seoUrl ?? undefined) ||
-      descendants(section).some((child) =>
-        isCurrent(child.seoUrl ?? undefined),
-      ),
+      isCurrent(section.path ?? undefined) ||
+      descendants(section).some((child) => isCurrent(child.path ?? undefined)),
   ),
 );
 
@@ -53,7 +45,7 @@ const subChips = computed<Chip[]>(() => {
   if (!section) return [];
   const children = descendants(section).map(toChip);
   if (!children.length) return [];
-  return [{ label: "Alle", to: section.seoUrl ?? "" }, ...children];
+  return [{ label: "Alle", to: section.path ?? "" }, ...children];
 });
 
 const nav = ref<HTMLElement | null>(null);
@@ -87,8 +79,8 @@ const chipClass =
     <ul class="flex gap-1 overflow-x-auto px-4 py-2 sm:px-6">
       <li v-for="section in sections" :key="section.id">
         <NuxtLink
-          :to="section.seoUrl ?? ''"
-          :aria-current="isCurrent(section.seoUrl ?? '') ? 'page' : undefined"
+          :to="section.path ?? ''"
+          :aria-current="isCurrent(section.path ?? '') ? 'page' : undefined"
           :data-section="section === activeSection ? '' : undefined"
           :class="[
             chipClass,

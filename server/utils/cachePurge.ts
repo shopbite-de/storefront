@@ -27,8 +27,8 @@ const LISTS = [
   "dish-number",
 ];
 /**
- * Layout data of every page: navigations, SEO URL matches and breadcrumbs
- * (a renamed or moved section changes them) and payment methods; the
+ * Layout data of every page: navigations and breadcrumbs (a renamed or
+ * moved section changes them) and payment methods; path routes and the
  * restaurant operations are cached functions (`LAYOUT_FUNCTIONS`). Small,
  * so every purge takes all of it.
  */
@@ -38,16 +38,17 @@ const SHARED = [...LISTS, ...LAYOUT];
 const ALL = [...PER_PRODUCT, ...SHARED];
 const HANDLERS = "cache:nitro:handlers:";
 /**
- * Cached functions: SEO URL matches, known SEO paths, the plugin config of
- * the menu root, and the restaurant operations of the BFF (configuration,
- * opening hours, holidays, branches, shipping methods; `BACKEND_DATA_NAMES`
- * in server/utils/shopData.ts).
+ * Cached functions: the routes of paths and the known paths
+ * (server/utils/pathRoutes.ts), the menu root (server/utils/navigationData.ts)
+ * and the restaurant operations of the BFF (configuration, opening hours,
+ * holidays, branches, shipping methods; `BACKEND_DATA_NAMES` in
+ * server/utils/shopData.ts).
  */
 const FUNCTIONS = "cache:nitro:functions:";
 export const LAYOUT_FUNCTIONS = [
-  "seo-url",
-  "seo-paths",
-  "shopbite-config",
+  "path-route",
+  "known-paths",
+  "menu-root",
   "shop-config",
   "shop-opening-hours",
   "shop-holidays",

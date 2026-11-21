@@ -214,21 +214,6 @@ describe("a port the adapter does not implement", () => {
   });
 });
 
-describe("/api/menu/root", () => {
-  it("answers the menu root the server resolves", async () => {
-    stubNitro({
-      menuRootIdStrict: vi
-        .fn()
-        .mockResolvedValue("018dadb399837af3aa669c8fff4f4d6c"),
-    });
-    const handler = (await import("../../server/api/menu/root.get"))
-      .default as Handler;
-    expect(await handler({})).toEqual({
-      id: "018dadb399837af3aa669c8fff4f4d6c",
-    });
-  });
-});
-
 describe("cache purge", () => {
   it("knows every cached value of the restaurant operations", async () => {
     stubNitro({ useBackend: () => createMemoryBackend() });

@@ -3,32 +3,34 @@ import { mountSuspended } from "@nuxt/test-utils/runtime";
 import type { VueWrapper } from "@vue/test-utils";
 import { ref } from "vue";
 import MobileTop from "~/components/Navigation/MobileTop.vue";
+import { navNode } from "../support/navigation";
 
-// A menu where Fleischgerichte has sub-categories, Pizza has none.
-vi.mock("~/composables/useNavigation", () => ({
-  useNavigation: () => ({
-    menuCardNavigation: ref([
-      { id: "pizza", name: "Pizza", seoUrl: "/speisekarte/pizza/" },
-      {
-        id: "fleisch",
-        name: "Fleischgerichte",
-        seoUrl: "/speisekarte/fleischgerichte/",
-        children: [
-          {
-            id: "rind",
-            name: "Vom Rind",
-            seoUrl: "/speisekarte/fleischgerichte/vom-rind/",
-          },
-          {
-            id: "kalb",
-            name: "Vom Kalb",
-            seoUrl: "/speisekarte/fleischgerichte/vom-kalb/",
-          },
-        ],
-      },
-    ]),
-  }),
-}));
+// A menu where Fleischgerichte has sub-sections, Pizza has none.
+vi.mock("~/composables/useNavigation", async () => {
+  const { navNode: node } = await import("../support/navigation");
+  return {
+    useNavigation: () => ({
+      menuCardNavigation: ref([
+        node({ label: "Pizza", path: "/speisekarte/pizza/" }),
+        node({
+          label: "Fleischgerichte",
+          path: "/speisekarte/fleischgerichte/",
+          children: [
+            node({
+              label: "Vom Rind",
+              path: "/speisekarte/fleischgerichte/vom-rind/",
+            }),
+            node({
+              label: "Vom Kalb",
+              path: "/speisekarte/fleischgerichte/vom-kalb/",
+            }),
+          ],
+        }),
+      ]),
+    }),
+  };
+});
+void navNode;
 
 type Row = {
   label: string | undefined;
@@ -46,7 +48,7 @@ function chips(wrapper: VueWrapper): Row[] {
 }
 
 describe("NavigationMobileTop", () => {
-  it("shows only the sections on a section without sub-categories", async () => {
+  it("shows only the sections on a section without sub-sections", async () => {
     const wrapper = await mountSuspended(MobileTop, {
       route: "/speisekarte/pizza/",
     });
@@ -59,7 +61,7 @@ describe("NavigationMobileTop", () => {
     ]);
   });
 
-  it("lists the sub-categories of the open section in a second row", async () => {
+  it("lists the sub-sections of the open section in a second row", async () => {
     const wrapper = await mountSuspended(MobileTop, {
       route: "/speisekarte/fleischgerichte/",
     });
@@ -73,7 +75,7 @@ describe("NavigationMobileTop", () => {
     ]);
   });
 
-  it("keeps the section and its row open on a sub-category", async () => {
+  it("keeps the section and its row open on a sub-section", async () => {
     const wrapper = await mountSuspended(MobileTop, {
       route: "/speisekarte/fleischgerichte/vom-kalb/",
     });

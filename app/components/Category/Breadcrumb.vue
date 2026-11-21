@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Schemas } from "#shopware";
+import type { BreadcrumbItem } from "../../../shared/domain";
 
 const props = defineProps<{
   categoryId: string | undefined;
@@ -27,7 +27,7 @@ const { data } = await useAsyncData(cacheKey, async () => {
   if (!categoryId.value) return [];
   // cached on the server (server/api/breadcrumb); 404 = empty breadcrumb
   try {
-    return await $fetch<Schemas["BreadcrumbCollection"]>(
+    return await $fetch<BreadcrumbItem[]>(
       `/api/breadcrumb/${categoryId.value}`,
     );
   } catch (error) {
@@ -38,12 +38,7 @@ const { data } = await useAsyncData(cacheKey, async () => {
 
 const items = computed<{ label?: string; to: string }[]>(() => {
   if (!data.value) return [{ label: "Kategorie", to: "#" }];
-  return data.value?.map((item: Schemas["Breadcrumb"]) => {
-    return {
-      label: item.name,
-      to: "/" + item.path,
-    };
-  });
+  return data.value.map((item) => ({ label: item.label, to: item.path }));
 });
 
 watchEffect(() => {

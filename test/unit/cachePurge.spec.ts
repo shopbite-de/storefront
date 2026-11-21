@@ -21,13 +21,15 @@ const KEYS = [
 // layout data of every page, purged with any target
 const LAYOUT_KEYS = [
   `cache:nitro:handlers:navigation:navigationmenu${PIZZA}.json`,
-  `cache:nitro:handlers:navigation:navigationmainmainnavigation.json`,
+  `cache:nitro:handlers:navigation:navigationmain.json`,
   `cache:nitro:handlers:breadcrumb:breadcrumb${PIZZA}.json`,
   `cache:nitro:handlers:payment-methods:paymentmethods.json`,
   `cache:nitro:handlers:top-sellers:topsellers.json`,
-  `cache:nitro:functions:seo-url:3f786850e387550fdab836ed7e6dc881de23001b.json`,
-  `cache:nitro:functions:seo-paths:seo-paths.json`,
-  `cache:nitro:functions:shopbite-config:shopbite-config.json`,
+  // navigation and routing behind the BFF (server/utils/pathRoutes.ts,
+  // server/utils/navigationData.ts)
+  `cache:nitro:functions:path-route:3f786850e387550fdab836ed7e6dc881de23001b.json`,
+  `cache:nitro:functions:known-paths:known-paths.json`,
+  `cache:nitro:functions:menu-root:menu-root.json`,
   // restaurant operations behind the BFF (server/utils/shopData.ts)
   `cache:nitro:functions:shop-config:shop-config.json`,
   `cache:nitro:functions:shop-opening-hours:shop-opening-hours.json`,
