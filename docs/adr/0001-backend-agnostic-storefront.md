@@ -104,6 +104,8 @@ Within this frame:
 
 Each step moves one area behind its port, keeps the shop working, and ships as a 2.x minor. Within a step, the old route or composable is replaced, not duplicated.
 
+Before and after are compared against the quickstart on every page type the step touches, the menu root included: status, redirect, the whole `<head>` (title, canonical, description, og/twitter), JSON-LD and visible text, plus a cache purge after a rename in the Admin and, from step 4 on, the normalised Store API cart. Any difference is either fixed or listed under the step's allowed behaviour changes.
+
 | Step | Area                                                                                                         | Release |
 | ---- | ------------------------------------------------------------------------------------------------------------ | ------- |
 | 0    | Glossary, this ADR, domain types and value objects, port interfaces, adapter registry, contract harness, lint guard; no behaviour change | 2.x minor |
@@ -209,11 +211,9 @@ Recommendations from the review of step 0, to settle when the area moves:
   - *Overnight interval after a holiday:* the plugin ignores the after-midnight part of an interval that started on a holiday; splitting rows into weekday intervals loses that origin, so the domain treats it as open. Keep the origin day of a split interval (or apply the holiday to the continuation) when this matters.
   - *DST:* a wished time can land in the spring-forward gap or the ambiguous fall-back hour, and the 24 h search limit is wall-clock time. Decide whether to skip such slots.
 
-- **Catalog (step 2, done)**: `DishDetail` names the selected variant when opened by a variant's number; `Variant` gets its own name, media and main ingredients; an `Extra` can be unavailable; main ingredients get ids (removals by id from step 4, names only for display); list and strike-through prices (mapped, not shown yet).
 - **Cart (step 4)**: a structured variant label instead of one name string; removed ingredients are part of a line's identity, so two configurations that differ only in removals stay two lines (Shopware's container key today hashes dish and extras only); taxes as gross or net; subtotals before and after discounts.
 - **Checkout (step 1 and 5)**: `listShippingMethods` takes an optional session (Sylius prices shipping per cart; in the port since step 1, unused by both adapters). It is implemented in step 1 already, because ShopPort's consumers (home page, `llms.txt`, the time choice) need the lead times. Guest details stay editable after `registerGuest`.
 - **Orders (step 5)**: a guest opens an order by an e-mail deep link or token, without an account; `OrderLine` carries its `DishConfiguration` so an order can be repeated.
-- **BFF (step 1, done)**: one shared mapper from `DomainError` codes to HTTP answers for all routes (`server/utils/domainHttp.ts`).
 - **Session (step 4)**: the backend token can rotate (login, logout) while parallel requests of the same visitor are in flight; writes to the session must not lose a newer token.
 
 ## Sylius as a sanity check
