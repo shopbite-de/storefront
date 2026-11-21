@@ -8,6 +8,7 @@
 import { deepFreeze, sortOpeningHours, timeZone } from "../../../shared/domain";
 import type { Backend, CheckoutPort, ShopPort } from "../../ports";
 import { notImplemented, partlyImplemented } from "../notImplemented";
+import { createMemoryCart } from "./cart";
 import { createMemoryCatalog } from "./catalog";
 import { createMemoryNavigation } from "./navigation";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
@@ -15,6 +16,7 @@ import { demoSeed, type MemorySeed } from "./seed";
 
 export { demoSeed, type MemorySeed } from "./seed";
 export type { MemoryCatalog, MemoryDish, MemoryVariant } from "./catalog";
+export type { MemoryVoucher } from "./cart";
 export type { MemoryNavigation } from "./navigation";
 
 function createMemoryShop(seed: MemorySeed["shop"]): ShopPort {
@@ -49,7 +51,7 @@ export function createMemoryBackend(seed: MemorySeed = demoSeed()): Backend {
     name,
     catalog: createMemoryCatalog(seed.catalog),
     navigation: createMemoryNavigation(seed.catalog, seed.navigation),
-    cart: notImplemented("cart", name),
+    cart: createMemoryCart(seed.catalog, seed.cart?.vouchers ?? []),
     checkout: createMemoryCheckout(seed.checkout, name),
     customer: notImplemented("customer", name),
     orders: notImplemented("orders", name),

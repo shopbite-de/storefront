@@ -40,20 +40,30 @@ export type OrderingWindow = Readonly<{
 export type CartLineExtra = Readonly<{
   id: Id;
   name: string;
+  /** For one dish. */
   unitPrice: Money;
 }>;
+
+/** The chosen option of one variant group ("Größe: Groß 40 cm"). */
+export type VariantChoice = Readonly<{ group: string; option: string }>;
 
 /**
  * One configured dish in the cart with its quantity: the dish (variant),
  * its extras and its removed ingredients are one line, priced together.
+ * Two lines never hold the same configuration.
  */
 export type CartLine = Readonly<{
   id: Id;
   configuration: DishConfiguration;
+  /** Menu number of the dish or the chosen variant. */
   dishNumber: string;
-  /** Dish name as ordered ("Pizza Salami, Groß 40 cm"). */
+  /** The dish's name as ordered, without extras and removals. */
   name: string;
+  /** The chosen variant's options, in the dish's group order. */
+  variant: readonly VariantChoice[];
+  /** In the order the guest chose them. */
   extras: readonly CartLineExtra[];
+  /** Names of the removed main ingredients, in the guest's order. */
   removedIngredients: readonly string[];
   quantity: number;
   /** Dish plus extras, for one. */
@@ -70,6 +80,7 @@ export type CartMessageCode =
   | "payment_method_blocked"
   | "voucher_invalid"
   | "minimum_order_value"
+  | "ordering_closed"
   | "other";
 
 /**
@@ -81,7 +92,7 @@ export type CartMessage = Readonly<{
   severity: "info" | "warning" | "error";
   /** The backend's text, shown when the storefront has none of its own. */
   text: string;
-  /** Line, voucher or method the message is about. */
+  /** Line, voucher code or method the message is about. */
   subjectId: Id | null;
 }>;
 
@@ -97,12 +108,15 @@ export type CartDiscount = Readonly<{
 
 /** The guest's cart ("Warenkorb"). */
 export type Cart = Readonly<{
+  /** In the order they were added. */
   lines: readonly CartLine[];
   discounts: readonly CartDiscount[];
-  /** Sum of the lines and the discounts. */
+  /** Sum of the lines and the discounts, before shipping. */
   subtotal: Money;
   shippingCosts: Money;
+  /** What the guest pays: subtotal plus shipping. */
   total: Money;
+  /** Taxes included in the total, per rate (percent). */
   taxes: readonly Readonly<{ rate: number; amount: Money }>[];
   shippingMethodId: Id | null;
   paymentMethodId: Id | null;

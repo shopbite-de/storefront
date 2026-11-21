@@ -14,4 +14,9 @@ export interface BackendSession {
    * or logout; undefined forgets it.
    */
   write(state: string | undefined): Promise<void>;
+  /**
+   * The visitor's `X-Forwarded-For` chain (the incoming one with the
+   * address the request came from), for a backend's per-IP rate limits.
+   */
+  readonly forwardedFor?: string;
 }

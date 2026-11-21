@@ -13,17 +13,24 @@ import {
 import type { Backend } from "../../ports";
 import { notImplemented } from "../notImplemented";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
-import { createShopwareCatalog } from "./catalog";
+import { createShopwareCart } from "./cart";
+import { createShopwareCatalog, currencyReader } from "./catalog";
 import { createShopwareCheckout } from "./checkout";
 import { createShopwareNavigation } from "./navigation";
 import { createShopwareShop, type AdapterLog } from "./shop";
-import { sharingRequestsInFlight, type StoreApi } from "./storeApi";
+import {
+  sharingRequestsInFlight,
+  type StoreApi,
+  type VisitorStoreApi,
+} from "./storeApi";
 
-export type { StoreApi } from "./storeApi";
+export type { StoreApi, VisitorStoreApi } from "./storeApi";
 export type { AdapterLog } from "./shop";
 
 export type ShopwareBackendOptions = Readonly<{
   storeApi: StoreApi;
+  /** The Store API with a visitor's context token (cart); without it the cart is not implemented. */
+  visitorApi?: VisitorStoreApi;
   /** `public.storeUrl`: picks this storefront's branch. */
   storeUrl: string;
   /** `shopBite.timeZone`: the plugin does not report one. */
@@ -61,7 +68,12 @@ export function createShopwareBackend(
       menuCategoryId: options.menuCategoryId,
       log,
     }),
-    cart: notImplemented("cart", name),
+    cart: options.visitorApi
+      ? createShopwareCart(storeApi, options.visitorApi, {
+          currency: currencyReader(storeApi),
+          log,
+        })
+      : notImplemented("cart", name),
     checkout: createShopwareCheckout(storeApi, { name, log }),
     customer: notImplemented("customer", name),
     orders: notImplemented("orders", name),
@@ -83,6 +95,7 @@ export function shopwareFromRuntimeConfig(
       get: (path, options) => storeApiGet(path, options),
       post: (path, body, options) => storeApiPost(path, body, options),
     },
+    visitorApi: { send: (request) => storeApiForVisitor(request) },
     storeUrl: config.public.storeUrl,
     timeZone: config.shopBite.timeZone,
     menuCategoryId: config.public.shopBite?.menuCategoryId || undefined,

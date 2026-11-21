@@ -8,6 +8,7 @@ import {
   type ShopConfig,
   type Weekday,
 } from "../../../shared/domain";
+import type { MemoryVoucher } from "./cart";
 import type { MemoryCatalog } from "./catalog";
 import { demoMenu } from "./demoMenu";
 import { demoNavigation } from "./demoNavigation";
@@ -27,6 +28,8 @@ export type MemorySeed = Readonly<{
   }>;
   catalog: MemoryCatalog;
   navigation: MemoryNavigation;
+  /** Vouchers the cart accepts; none without. */
+  cart?: Readonly<{ vouchers: readonly MemoryVoucher[] }>;
 }>;
 
 const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];

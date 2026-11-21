@@ -492,6 +492,32 @@ export type ShopwareCatalogOptions = Readonly<{
 const CURRENCY_TTL_MS = 10 * 60_000;
 
 /**
+ * The sales channel's currency, in which every price is: one request per
+ * `ttlMs` instead of one per answer; a failure is not kept.
+ */
+export function currencyReader(
+  storeApi: StoreApi,
+  ttlMs: number = CURRENCY_TTL_MS,
+): () => Promise<CurrencyCode> {
+  let kept: { at: number; code: Promise<CurrencyCode> } | undefined;
+  return () => {
+    if (!kept || Date.now() - kept.at > ttlMs) {
+      const entry = {
+        at: Date.now(),
+        code: request("the context", () =>
+          storeApi.get<{ currency?: { isoCode?: string } }>("/context"),
+        ).then((context) => context.currency?.isoCode ?? "EUR"),
+      };
+      kept = entry;
+      entry.code.catch(() => {
+        if (kept === entry) kept = undefined;
+      });
+    }
+    return kept.code;
+  };
+}
+
+/**
  * Variants in a fixed order, their ids (the order Shopware lists them in
  * without a sorting), so a partial choice always finds the same variant.
  */
@@ -533,25 +559,7 @@ export function createShopwareCatalog(
   ) =>
     request(what, () => storeApi.post<T>(path, body, headers && { headers }));
 
-  // One request for the currency instead of one per answer; a failure is
-  // not kept.
-  let kept: { at: number; code: Promise<CurrencyCode> } | undefined;
-  const currency = (): Promise<CurrencyCode> => {
-    const ttl = options.currencyTtlMs ?? CURRENCY_TTL_MS;
-    if (!kept || Date.now() - kept.at > ttl) {
-      const entry = {
-        at: Date.now(),
-        code: request("the context", () =>
-          storeApi.get<{ currency?: { isoCode?: string } }>("/context"),
-        ).then((context) => context.currency?.isoCode ?? "EUR"),
-      };
-      kept = entry;
-      entry.code.catch(() => {
-        if (kept === entry) kept = undefined;
-      });
-    }
-    return kept.code;
-  };
+  const currency = currencyReader(storeApi, options.currencyTtlMs);
 
   const menuRoot = menuRootReader(storeApi, options.menuCategoryId);
 
