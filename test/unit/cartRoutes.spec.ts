@@ -409,10 +409,12 @@ describe("the session behind the cart (Shopware)", () => {
 
   it("answers an outage with 503 and the domain code", async () => {
     const fake = await shopware();
+    const client = browser();
+    await addCola(client);
     fake.visitorApi.send = async () => {
       throw new Error("ECONNREFUSED");
     };
-    const { error } = await send(browser(), {
+    const { error } = await send(client, {
       method: "GET",
       path: "/api/cart",
     });
