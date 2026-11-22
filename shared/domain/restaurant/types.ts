@@ -1,5 +1,11 @@
 import type { Salutation } from "../customer";
-import type { CalendarDate, Id, TimeOfDay, TimeZone } from "../kernel";
+import type {
+  CalendarDate,
+  CurrencyCode,
+  Id,
+  TimeOfDay,
+  TimeZone,
+} from "../kernel";
 
 /** Whether the restaurant is open right now ("Geöffnet"/"Geschlossen"). */
 export type StoreStatus =
@@ -40,9 +46,16 @@ export type ShopConfig = Readonly<{
   telephone: string | null;
   address: PostalAddress | null;
   googleBusinessProfileUrl: string | null;
+  /** ISO 4217 code of the shop's prices ("EUR"). */
+  currency: CurrencyCode;
+  /** BCP 47 tag in which prices are written ("de-DE": "9,50 €"). */
+  locale: string;
 }>;
 
-/** A message from a visitor to the restaurant ("Kontakt"). */
+/**
+ * A message from a visitor to the restaurant ("Kontakt"). Null for a field
+ * the visitor left empty; the contact form asks for no salutation.
+ */
 export type ContactMessage = Readonly<{
   salutation: Salutation | null;
   firstName: string | null;
@@ -51,4 +64,12 @@ export type ContactMessage = Readonly<{
   phone: string | null;
   subject: string;
   message: string;
+}>;
+
+/**
+ * What the restaurant's contact form asks for beside e-mail, subject and
+ * message: whether first name, last name and phone are required.
+ */
+export type ContactForm = Readonly<{
+  required: Readonly<{ firstName: boolean; lastName: boolean; phone: boolean }>;
 }>;

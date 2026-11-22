@@ -2,6 +2,7 @@ import {
   leadTime,
   openingInterval,
   type Branch,
+  type ContactForm,
   type Holiday,
   type OpeningHours,
   type PaymentMethod,
@@ -35,6 +36,14 @@ export type MemorySeed = Readonly<{
   cart?: Readonly<{ vouchers: readonly MemoryVoucher[] }>;
   /** Accounts: double opt-in for new ones (off without). */
   customer?: Readonly<{ doubleOptIn?: boolean }>;
+  /**
+   * The contact form: the restaurant's own confirmation (none without) and
+   * the fields it requires beside e-mail, subject and message.
+   */
+  contact?: Readonly<{
+    confirmation?: string | null;
+    required?: Partial<ContactForm["required"]>;
+  }>;
 }>;
 
 const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];
@@ -73,6 +82,8 @@ const buildDemoSeed = (): MemorySeed => ({
         city: "Musterstadt",
       },
       googleBusinessProfileUrl: null,
+      currency: "EUR",
+      locale: "de-DE",
     },
     openingHours: {
       intervals: WEEK.map((weekday) => ({

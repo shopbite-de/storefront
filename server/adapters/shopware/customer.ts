@@ -18,7 +18,7 @@ import {
   type SwAddress,
   type SwCustomer,
 } from "./ordering";
-import { errorCodes, statusOf } from "./request";
+import { errorCodes, retryAfter, statusOf } from "./request";
 import { text } from "./shop";
 
 /*
@@ -49,18 +49,6 @@ const ACCOUNT_REFUSALS: Readonly<Record<string, DomainErrorCode>> = {
   CHECKOUT__CUSTOMER_ADDRESS_IS_DEFAULT: "address_in_use",
   CHECKOUT__CUSTOMER_AUTH_THROTTLED: "rate_limited",
   FRAMEWORK__RATE_LIMIT_EXCEEDED: "rate_limited",
-};
-
-/** How long Shopware's rate limit holds, from its error answer. */
-const retryAfter = (error: unknown): number | undefined => {
-  const seconds = (
-    error as {
-      data?: { errors?: { meta?: { parameters?: { seconds?: unknown } } }[] };
-    } | null
-  )?.data?.errors?.find((entry) => entry.meta?.parameters?.seconds)?.meta
-    ?.parameters?.seconds;
-  const value = Number(seconds);
-  return Number.isFinite(value) && value > 0 ? Math.ceil(value) : undefined;
 };
 
 /**

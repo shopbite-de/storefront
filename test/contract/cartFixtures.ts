@@ -535,7 +535,10 @@ export function fakeShopwareCart(
             ? [
                 {
                   crossSelling: { id: `extras-${dish.id}`, name: "Extras" },
-                  products: dish.extras.map((extra) => ({ id: extra.id })),
+                  products: dish.extras.map((extra) => ({
+                    id: extra.id,
+                    productNumber: extra.number,
+                  })),
                 },
               ]
             : []

@@ -118,10 +118,14 @@ describe("Shopware CheckoutPort adapter (anti-corruption)", () => {
       backend.shop.getConfig(),
       backend.checkout.listShippingMethods(),
     ]);
-    expect(get).toHaveBeenCalledOnce();
+    const configReads = () =>
+      (get.mock.calls as unknown as [string][]).filter(
+        ([path]) => path === "/shopbite/config",
+      ).length;
+    expect(configReads()).toBe(1);
     // not cached beyond the request in flight
     await backend.shop.getConfig();
-    expect(get).toHaveBeenCalledTimes(2);
+    expect(configReads()).toBe(2);
   });
 
   it("logs and drops a lead time the domain cannot express", async () => {

@@ -18,6 +18,7 @@ import {
   type WeeklyOpeningInterval,
 } from "../../../shared/domain";
 import type { ShopPort } from "../../ports";
+import { priceFormatReader, type PriceFormat } from "./catalog";
 import type { StoreApi } from "./storeApi";
 
 type Schemas = components["schemas"];
@@ -51,9 +52,16 @@ const isWeekday = (value: unknown): value is Weekday =>
 
 const nextWeekday = (weekday: Weekday) => ((weekday % 7) + 1) as Weekday;
 
+/** The storefront's price format when the backend names none. */
+export const DEFAULT_PRICE_FORMAT: PriceFormat = {
+  currency: "EUR",
+  locale: "de-DE",
+};
+
 export function toShopConfig(
   config: Schemas["ShopBiteConfig"],
   timeZone: TimeZone,
+  priceFormat: PriceFormat = DEFAULT_PRICE_FORMAT,
 ): ShopConfig {
   const street = text(config.addressStreet);
   const postalCode = text(config.addressPostalCode);
@@ -64,6 +72,8 @@ export function toShopConfig(
     telephone: text(config.telephone),
     address: street && postalCode && city ? { street, postalCode, city } : null,
     googleBusinessProfileUrl: text(config.googleBusinessProfileUrl),
+    currency: priceFormat.currency,
+    locale: priceFormat.locale,
   };
 }
 
@@ -185,18 +195,32 @@ export function toBranches(
  */
 export function createShopwareShop(
   storeApi: StoreApi,
-  options: Readonly<{ storeUrl: string; timeZone: TimeZone; log: AdapterLog }>,
+  options: Readonly<{
+    storeUrl: string;
+    timeZone: TimeZone;
+    log: AdapterLog;
+    /** The sales channel's currency and locale (`/context`, kept a while). */
+    priceFormat?: () => Promise<PriceFormat>;
+  }>,
 ): ShopPort {
   const { storeUrl, timeZone, log } = options;
+  const priceFormat = options.priceFormat ?? priceFormatReader(storeApi);
   const get = <T>(path: string) => call(path, () => storeApi.get<T>(path));
   return {
-    getConfig: async () =>
-      deepFreeze(
-        toShopConfig(
-          await get<Schemas["ShopBiteConfig"]>("/shopbite/config"),
-          timeZone,
-        ),
-      ),
+    getConfig: async () => {
+      const [config, format] = await Promise.all([
+        get<Schemas["ShopBiteConfig"]>("/shopbite/config"),
+        // the price format must not take the switch that accepts orders
+        // down with it: the storefront's default, asked again next time
+        priceFormat().catch((error: unknown) => {
+          log("[shopware][shop] the price format could not be read", {
+            error: (error as Error | null)?.message,
+          });
+          return DEFAULT_PRICE_FORMAT;
+        }),
+      ]);
+      return deepFreeze(toShopConfig(config, timeZone, format));
+    },
     getOpeningHours: async () =>
       deepFreeze(
         toOpeningHours(

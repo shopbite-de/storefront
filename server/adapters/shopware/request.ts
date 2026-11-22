@@ -16,6 +16,18 @@ export const errorCodes = (error: unknown): string[] =>
       ?.errors ?? []
   ).flatMap((entry) => (entry.code ? [entry.code] : []));
 
+/** How long Shopware's rate limit holds, from its error answer. */
+export const retryAfter = (error: unknown): number | undefined => {
+  const seconds = (
+    error as {
+      data?: { errors?: { meta?: { parameters?: { seconds?: unknown } } }[] };
+    } | null
+  )?.data?.errors?.find((entry) => entry.meta?.parameters?.seconds)?.meta
+    ?.parameters?.seconds;
+  const value = Number(seconds);
+  return Number.isFinite(value) && value > 0 ? Math.ceil(value) : undefined;
+};
+
 /**
  * A Store API request as the port answers its failure: 404 is `not_found`,
  * 400 (e.g. an id that is no Shopware id) `invalid_value`, every other

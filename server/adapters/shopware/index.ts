@@ -2,9 +2,8 @@
  * The Shopware adapter (ADR 0001): the anti-corruption layer between the
  * storefront's domain and the Shopware Store API with the ShopBite plugin.
  * The only place outside the generated types that may import `#shopware`,
- * `@shopware/*` or `api-types`. Ports move here one step at a time; the
- * rest still answers `not_implemented` (today's routes and composables
- * keep talking to Shopware directly until their step).
+ * `@shopware/*` or `api-types`. Without a visitor transport
+ * (`visitorApi`) the visitor's ports answer `not_implemented`.
  */
 import {
   timeZone as checkTimeZone,
@@ -14,12 +13,22 @@ import type { Backend } from "../../ports";
 import { notImplemented } from "../notImplemented";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { createShopwareCart } from "./cart";
-import { createShopwareCatalog, currencyReader } from "./catalog";
+import {
+  createShopwareCatalog,
+  currencyOf,
+  priceFormatReader,
+} from "./catalog";
 import { createShopwareCheckout } from "./checkout";
+import {
+  contactOverStoreApi,
+  contactOverVisitorApi,
+  createShopwareContact,
+} from "./contact";
 import { createShopwareCustomer } from "./customer";
 import { createShopwareNavigation } from "./navigation";
 import { createShopwareOrdering } from "./ordering";
 import { createShopwareShop, type AdapterLog } from "./shop";
+import { createShopwareWishlist } from "./wishlist";
 import {
   sharingRequestsInFlight,
   type StoreApi,
@@ -68,12 +77,16 @@ export function createShopwareBackend(
     "/shopbite/config",
     "/context",
   ]);
+  // one read of the context per 10 minutes for the shop's price format
+  // and the currency of every price
+  const priceFormat = priceFormatReader(storeApi);
   const shop = createShopwareShop(storeApi, {
     storeUrl: options.storeUrl,
     timeZone: checkTimeZone(options.timeZone),
     log,
+    priceFormat,
   });
-  const currency = currencyReader(storeApi);
+  const currency = currencyOf(priceFormat);
   const timeZone = checkTimeZone(options.timeZone);
   const shippingMethods = createShopwareCheckout(storeApi, { name, log });
   const ordering = options.visitorApi
@@ -114,8 +127,20 @@ export function createShopwareBackend(
       : notImplemented("customer", name),
     orders: ordering?.orders ?? notImplemented("orders", name),
     shop,
-    wishlist: notImplemented("wishlist", name),
-    contact: notImplemented("contact", name),
+    wishlist: ordering
+      ? createShopwareWishlist(ordering.visitor, { log })
+      : notImplemented("wishlist", name),
+    contact: createShopwareContact(
+      options.visitorApi
+        ? contactOverVisitorApi(options.visitorApi)
+        : contactOverStoreApi(storeApi),
+      {
+        requestTimeoutMs: options.requestTimeoutMs,
+        log,
+        pluginConfig: () =>
+          storeApi.get<Record<string, unknown>>("/shopbite/config"),
+      },
+    ),
   };
 }
 

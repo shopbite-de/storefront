@@ -31,6 +31,8 @@ export type MemoryAccountsView = Readonly<{
   ): (StoredOrderer & Readonly<{ owner: string }>) | undefined;
   /** Changes an address of the account; false when it is not the account's. */
   updateAddress(token: string, address: Address): boolean;
+  /** The account id of a logged-in session token (the wishlist's owner). */
+  customerOf(token: string): Id | undefined;
 }>;
 
 const notFound = (what: string, id: Id) =>

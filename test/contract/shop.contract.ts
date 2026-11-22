@@ -33,6 +33,8 @@ export const RESTAURANT: ShopScenario = {
       city: "Musterstadt",
     },
     googleBusinessProfileUrl: null,
+    currency: "EUR",
+    locale: "de-DE",
   },
   hours: {
     1: [],
@@ -80,6 +82,8 @@ export const shopContract = defineContract<"shop", ShopScenario>(
           telephone: null,
           address: null,
           googleBusinessProfileUrl: null,
+          currency: "EUR",
+          locale: "de-DE",
         },
       });
       expect(await shop.getConfig()).toEqual({
@@ -88,7 +92,18 @@ export const shopContract = defineContract<"shop", ShopScenario>(
         telephone: null,
         address: null,
         googleBusinessProfileUrl: null,
+        currency: "EUR",
+        locale: "de-DE",
       });
+    });
+
+    it("answers the currency and locale prices are written in", async () => {
+      const shop = await given({
+        ...RESTAURANT,
+        config: { ...RESTAURANT.config, currency: "CHF", locale: "de-CH" },
+      });
+      const config = await shop.getConfig();
+      expect([config.currency, config.locale]).toEqual(["CHF", "de-CH"]);
     });
 
     it("answers the opening hours by weekday, intervals in time order", async () => {

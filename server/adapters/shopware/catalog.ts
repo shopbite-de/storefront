@@ -491,31 +491,54 @@ export type ShopwareCatalogOptions = Readonly<{
 /** The sales channel's currency changes with its settings only. */
 const CURRENCY_TTL_MS = 10 * 60_000;
 
+/** The currency and locale of the sales channel's prices. */
+export type PriceFormat = Readonly<{ currency: CurrencyCode; locale: string }>;
+
 /**
- * The sales channel's currency, in which every price is: one request per
+ * The sales channel's price format from its context without a visitor
+ * (`/context`: currency, `languageInfo.localeCode`): one request per
  * `ttlMs` instead of one per answer; a failure is not kept.
  */
-export function currencyReader(
+export function priceFormatReader(
   storeApi: StoreApi,
   ttlMs: number = CURRENCY_TTL_MS,
-): () => Promise<CurrencyCode> {
-  let kept: { at: number; code: Promise<CurrencyCode> } | undefined;
+): () => Promise<PriceFormat> {
+  let kept: { at: number; format: Promise<PriceFormat> } | undefined;
   return () => {
     if (!kept || Date.now() - kept.at > ttlMs) {
       const entry = {
         at: Date.now(),
-        code: request("the context", () =>
-          storeApi.get<{ currency?: { isoCode?: string } }>("/context"),
-        ).then((context) => context.currency?.isoCode ?? "EUR"),
+        format: request("the context", () =>
+          storeApi.get<{
+            currency?: { isoCode?: string };
+            languageInfo?: { localeCode?: string };
+          }>("/context"),
+        ).then((context) => ({
+          currency: context?.currency?.isoCode || "EUR",
+          locale: context?.languageInfo?.localeCode || "de-DE",
+        })),
       };
       kept = entry;
-      entry.code.catch(() => {
+      entry.format.catch(() => {
         if (kept === entry) kept = undefined;
       });
     }
-    return kept.code;
+    return kept.format;
   };
 }
+
+/** The sales channel's currency, in which every price is. */
+export function currencyReader(
+  storeApi: StoreApi,
+  ttlMs: number = CURRENCY_TTL_MS,
+): () => Promise<CurrencyCode> {
+  return currencyOf(priceFormatReader(storeApi, ttlMs));
+}
+
+export const currencyOf =
+  (format: () => Promise<PriceFormat>): (() => Promise<CurrencyCode>) =>
+  async () =>
+    (await format()).currency;
 
 /**
  * Variants in a fixed order, their ids (the order Shopware lists them in

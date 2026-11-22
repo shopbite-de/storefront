@@ -104,7 +104,11 @@ const violation = (
  * an unknown e-mail like a known one; a wrong password of the e-mail and
  * password changes is the violation `CUSTOMER_PASSWORD_NOT_CORRECT`.
  */
-export function fakeShopwareAccounts(scenario: CustomerScenario) {
+export function fakeShopwareAccounts(
+  scenario: CustomerScenario,
+  /** More of the Store API (the wishlist plugin), asked first. */
+  more: FakeStoreApiExtension = {},
+) {
   const sent: SentMail[] = [];
   const accounts: FakeAccount[] = [];
   const failures = new Map<string, number>();
@@ -178,7 +182,11 @@ export function fakeShopwareAccounts(scenario: CustomerScenario) {
   };
 
   const extension: FakeStoreApiExtension = {
-    visitor: ({ method, path, body, forwardedFor }, { token, carts }) => {
+    visitor: (request, state) => {
+      const extended = more.visitor?.(request, state);
+      if (extended) return extended;
+      const { method, path, body, forwardedFor } = request;
+      const { token, carts } = state;
       const input = (body ?? {}) as Json;
       const account = accountOf(token);
       const json = (customer: FakeAccount) => ({
@@ -410,7 +418,9 @@ export function fakeShopwareAccounts(scenario: CustomerScenario) {
       return undefined;
     },
 
-    shopPost: (path, body) => {
+    shopPost: (path, body, headers) => {
+      const extended = more.shopPost?.(path, body, headers);
+      if (extended !== undefined) return extended;
       if (path === "/account/recovery-password") {
         const found = byEmail(String(body.email));
         if (found) {
@@ -438,7 +448,7 @@ export function fakeShopwareAccounts(scenario: CustomerScenario) {
   };
 
   holder.fake = fakeShopwareOrdering(scenario, extension);
-  return { ...holder.fake, accounts, mails: () => sent };
+  return { ...holder.fake, accounts, accountOf, mails: () => sent };
 }
 
 export const shopwareCustomer: CustomerFixture = {
