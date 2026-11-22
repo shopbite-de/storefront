@@ -63,10 +63,10 @@ export function storeApiGet<T>(
 }
 
 /**
- * A Store API request for one visitor (the Shopware adapter's cart): with
- * the visitor's context token and address chain, answering the token
- * Shopware holds the context under. The server's endpoint (as the Store
- * API bridge and server-side rendering), with a timeout: a paused Shopware
+ * A Store API request for one visitor (the Shopware adapter's cart,
+ * checkout, account and wishlist): with the visitor's context token and
+ * address chain, answering the token Shopware holds the context under.
+ * The server's endpoint, with a timeout: a paused Shopware
  * answers `backend_unavailable` instead of holding the visitor's writes.
  */
 export async function storeApiForVisitor<T>(request: {

@@ -101,6 +101,13 @@ export const shippingMethodsData = defineBackendData(
   (backend) => backend.checkout.listShippingMethods(),
 );
 
+/** The contact form's required fields (Shopware's settings change rarely). */
+export const contactFormData = defineBackendData(
+  "contact-form",
+  cacheTtl.config,
+  (backend) => backend.contact.getForm(),
+);
+
 /** Names of the cached functions above, for the cache purge. */
 export const BACKEND_DATA_NAMES = [
   shopConfigData,
@@ -108,6 +115,7 @@ export const BACKEND_DATA_NAMES = [
   holidaysData,
   branchesData,
   shippingMethodsData,
+  contactFormData,
 ].map((data) => data.name);
 
 /** `?fresh=1`: the browser asks for the live value. */

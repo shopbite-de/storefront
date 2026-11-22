@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { DialogDescription, DialogTitle } from "reka-ui";
 import type { Dish, Variant } from "../../../shared/domain";
-import type { WishlistConfiguration } from "~/composables/useWishlistEntries";
+import type { WishlistSelection } from "~/utils/wishlist";
 
 /** The dish sheet over a listing (#325, #442): a dish or a variant. */
 const props = defineProps<{
@@ -18,7 +18,7 @@ const description = ref(props.dish?.description);
 // Follows the selected variant, like the URL (#411).
 const productNumber = ref(props.dish?.number);
 // The dish as configured right now, for the save button (#467).
-const selection = ref<WishlistConfiguration>();
+const selection = ref<WishlistSelection>();
 // Built in script: a trailing space in the template would be condensed away.
 const numberLabel = computed(() => `Nr. ${productNumber.value} `);
 

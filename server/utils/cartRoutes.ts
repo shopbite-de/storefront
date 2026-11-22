@@ -67,6 +67,28 @@ function ids(value: unknown, field: string, max: number): string[] {
 }
 
 /**
+ * A dish configuration of a request body: `{ dishId, variantId?,
+ * extraIds?, removedIngredientIds? }` (the cart's lines, the wishlist).
+ */
+export function configurationBody(
+  input: Record<string, unknown>,
+): DishConfiguration {
+  return dishConfiguration({
+    dishId: id(input.dishId, "dishId"),
+    variantId:
+      input.variantId === undefined || input.variantId === null
+        ? null
+        : id(input.variantId, "variantId"),
+    extraIds: ids(input.extraIds, "extraIds", MAX_EXTRAS),
+    removedIngredientIds: ids(
+      input.removedIngredientIds,
+      "removedIngredientIds",
+      MAX_REMOVED,
+    ),
+  });
+}
+
+/**
  * The body of `POST /api/cart/lines`: `{ dishId, variantId?, extraIds?,
  * removedIngredientIds?, quantity }`.
  */
@@ -79,19 +101,7 @@ export function cartLineBody(body: unknown): {
   const quantity = input.quantity;
   if (typeof quantity !== "number") invalid("quantity", quantity);
   return {
-    configuration: dishConfiguration({
-      dishId: id(input.dishId, "dishId"),
-      variantId:
-        input.variantId === undefined || input.variantId === null
-          ? null
-          : id(input.variantId, "variantId"),
-      extraIds: ids(input.extraIds, "extraIds", MAX_EXTRAS),
-      removedIngredientIds: ids(
-        input.removedIngredientIds,
-        "removedIngredientIds",
-        MAX_REMOVED,
-      ),
-    }),
+    configuration: configurationBody(input),
     quantity: quantity as number,
   };
 }

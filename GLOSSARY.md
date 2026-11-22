@@ -207,7 +207,7 @@ The address of the account an order uses for billing or delivery unless the cust
 _Avoid_: default shipping address, active address
 
 **Wishlist** ("Merkliste"):
-The configured dishes a guest or customer keeps for later; the same dish can be kept twice with different configurations.
+The configured dishes a guest or customer keeps for later; the same dish can be kept twice with different configurations. A guest's stays in the browser, a customer's in the shop backend; on login the guest's joins the customer's.
 _Avoid_: favourites, wish list (two words)
 
 **Wishlist entry**:
@@ -253,7 +253,7 @@ Another location of the same restaurant with its own shop; guests switch between
 _Avoid_: sales channel, store, channel
 
 **Contact message** ("Kontakt"):
-A message from a visitor to the restaurant through the contact form.
+A message from a visitor to the restaurant through the contact form; the restaurant may answer it with its own confirmation text. The backend may limit messages per visitor address.
 
 ## Discoverability
 
@@ -291,33 +291,37 @@ The lists of paths for search engines and of shop facts for AI assistants.
 
 These Shopware words stay inside the Shopware adapter. Code outside it, the UI and the docs use the term on the right.
 
-| Shopware                                            | Storefront term                                   |
-| --------------------------------------------------- | ------------------------------------------------- |
-| sales channel                                       | shop; branch (multi-channel group)                |
-| category, navigation root, main-navigation          | menu section, menu, navigation                    |
-| product, product number                             | dish, menu number                                 |
-| child product, variant product                      | variant                                           |
-| property group / option (`Hauptzutaten`)            | main ingredient, variant group, diet, filter      |
-| cross-selling (`productList`)                       | extra group                                       |
-| line item, `container` line item, children, payload | cart line with extras and removed ingredients     |
-| context token (`sw-context-token`)                  | session                                           |
-| SEO URL, `seoPathInfo`, `pathInfo`                  | path, canonical path                              |
-| old SEO URL (`isCanonical: null`), technical URL    | former path, a path that redirects                |
-| `menuCategoryId`, navigation category               | menu root                                         |
-| folder category, link category                      | navigation group, navigation link                 |
-| delivery time (entity)                              | lead time                                         |
-| customer comment                                    | note (and the wished time it carries)             |
-| state machine state                                 | order status, payment status                      |
-| business hour, holiday (plugin entities)            | opening interval, holiday                         |
-| promotion, promotion line item                      | discount, voucher                                 |
-| `isCheckoutEnabled`                                 | accepts orders                                    |
-| custom fields `shopbite_*`, criteria, includes      | named fields of the domain types                  |
-| `countryId`, salutation entity                      | country code, salutation (`mr`, `mrs`, not given) |
-| guest customer (`guest: true`)                      | guest                                             |
-| `accountType: business`                             | business                                          |
-| sales channel context (selected methods)            | checkout selection                                |
-| `deepLinkCode`, `/account/order/…`                  | the order's e-mail link (not served yet)          |
-| customer address, `defaultShippingAddress`          | address, default delivery address                 |
-| `doubleOptInRegistration`, `register-confirm`       | registration confirmation                         |
-| recovery hash, `recovery-password`                  | password reset (token)                            |
-| `CUSTOMER_AUTH_THROTTLED`, rate limiter             | `rate_limited`                                    |
+| Shopware                                              | Storefront term                                   |
+| ----------------------------------------------------- | ------------------------------------------------- |
+| sales channel                                         | shop; branch (multi-channel group)                |
+| category, navigation root, main-navigation            | menu section, menu, navigation                    |
+| product, product number                               | dish, menu number                                 |
+| child product, variant product                        | variant                                           |
+| property group / option (`Hauptzutaten`)              | main ingredient, variant group, diet, filter      |
+| cross-selling (`productList`)                         | extra group                                       |
+| line item, `container` line item, children, payload   | cart line with extras and removed ingredients     |
+| context token (`sw-context-token`)                    | session                                           |
+| SEO URL, `seoPathInfo`, `pathInfo`                    | path, canonical path                              |
+| old SEO URL (`isCanonical: null`), technical URL      | former path, a path that redirects                |
+| `menuCategoryId`, navigation category                 | menu root                                         |
+| folder category, link category                        | navigation group, navigation link                 |
+| delivery time (entity)                                | lead time                                         |
+| customer comment                                      | note (and the wished time it carries)             |
+| state machine state                                   | order status, payment status                      |
+| business hour, holiday (plugin entities)              | opening interval, holiday                         |
+| promotion, promotion line item                        | discount, voucher                                 |
+| `isCheckoutEnabled`                                   | accepts orders                                    |
+| custom fields `shopbite_*`, criteria, includes        | named fields of the domain types                  |
+| `countryId`, salutation entity                        | country code, salutation (`mr`, `mrs`, not given) |
+| guest customer (`guest: true`)                        | guest                                             |
+| `accountType: business`                               | business                                          |
+| sales channel context (selected methods)              | checkout selection                                |
+| `deepLinkCode`, `/account/order/…`                    | the order's e-mail link (not served yet)          |
+| customer address, `defaultShippingAddress`            | address, default delivery address                 |
+| `doubleOptInRegistration`, `register-confirm`         | registration confirmation                         |
+| recovery hash, `recovery-password`                    | password reset (token)                            |
+| `CUSTOMER_AUTH_THROTTLED`, rate limiter               | `rate_limited`                                    |
+| `shopbite_wishlist_item`, `without`, `extras`         | wishlist entry with its dish configuration        |
+| Shopware wishlist (`/customer/wishlist`)              | (moved into the wishlist on a read)               |
+| `contact-form`, `comment`, `individualSuccessMessage` | contact message, its message, the confirmation    |
+| `/context` currency, `languageInfo.localeCode`        | `ShopConfig.currency`, `ShopConfig.locale`        |

@@ -1,5 +1,6 @@
-import type { Money } from "../../shared/domain";
+import type { Money, ShopConfig } from "../../shared/domain";
 import { moneyAmount } from "../utils/money";
+import { SHOP_CONFIG_KEY } from "./useShopConfig";
 
 export interface CommercePriceConfig {
   currencyCode: string;
@@ -14,15 +15,19 @@ const DEFAULT_CONFIG: CommercePriceConfig = {
 /**
  * Platform-agnostic price formatting.
  *
- * The shop-wide currency/locale is seeded once from the commerce backend's
- * session context (see `app.vue`) via `setPriceConfig` and shared through
- * `useState`, so server render and client hydration always format
- * identically — never based on the visitor's browser locale.
+ * The shop-wide currency and locale are the shop's (`ShopConfig.currency`
+ * and `locale`, ADR 0001 step 7), which the server renders from its cache
+ * and hands over in the payload (`useShopConfig`, app.vue), so server render
+ * and client hydration always format identically, never by the visitor's
+ * browser locale. `setPriceConfig` overrides them for the whole app
+ * (`useState`); `params` for one caller.
  */
 export function useCommercePrice(params?: Partial<CommercePriceConfig>) {
-  const config = useState<CommercePriceConfig>("commerce-price-config", () => ({
-    ...DEFAULT_CONFIG,
-  }));
+  const config = useState<Partial<CommercePriceConfig>>(
+    "commerce-price-config",
+    () => ({}),
+  );
+  const shop = useNuxtData<ShopConfig | null>(SHOP_CONFIG_KEY).data;
 
   function setPriceConfig(update: Partial<CommercePriceConfig>) {
     config.value = {
@@ -32,10 +37,18 @@ export function useCommercePrice(params?: Partial<CommercePriceConfig>) {
   }
 
   const currencyCode = computed(
-    () => params?.currencyCode ?? config.value.currencyCode,
+    () =>
+      params?.currencyCode ??
+      config.value.currencyCode ??
+      shop.value?.currency ??
+      DEFAULT_CONFIG.currencyCode,
   );
   const localeCode = computed(
-    () => params?.localeCode ?? config.value.localeCode,
+    () =>
+      params?.localeCode ??
+      config.value.localeCode ??
+      shop.value?.locale ??
+      DEFAULT_CONFIG.localeCode,
   );
 
   // Memoized: constructing Intl.NumberFormat is expensive and listing pages
