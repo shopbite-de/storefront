@@ -31,7 +31,11 @@ registerEndpoint("/api/wishlist/merge", {
   method: "POST",
   handler: async (event: H3Event) => mocks.merge(await readBody(event)),
 });
-for (const id of ["p1", "v21-gross", "d21", "gone", "flaky"]) {
+registerEndpoint("/api/wishlist/entries/gone-entry", {
+  method: "DELETE",
+  handler: () => mocks.remove("gone-entry"),
+});
+for (const id of ["p1", "v21-gross", "d21", "gone", "flaky", "refused"]) {
   registerEndpoint(`/api/menu/dishes/${id}`, () => mocks.dish(id));
 }
 mockNuxtImport("useCustomer", () => () => ({ isLoggedIn }));
@@ -100,6 +104,7 @@ describe("useWishlistEntries (#467, ADR 0001 step 7)", () => {
         });
       }
       if (id === "gone") throw failure(404, "not_found");
+      if (id === "refused") throw failure(400, "invalid_value");
       throw failure(503, "backend_unavailable");
     });
   });
@@ -199,16 +204,17 @@ describe("useWishlistEntries (#467, ADR 0001 step 7)", () => {
 
     await load();
 
+    // the order of 2.x: the stored list, then the plain ids of before #467
     expect(
       entries.value.map((known) => [known.configuration, known.dishNumber]),
     ).toEqual([
-      // the plain dish, taken over now, with no variant chosen
+      // a name the dish no longer has is left out, as the page did
       [
         {
-          dishId: "d21",
+          dishId: "p1",
           variantId: null,
-          extraIds: [],
-          removedIngredientIds: [],
+          extraIds: ["x1"],
+          removedIngredientIds: ["i-pilze"],
         },
         "21",
       ],
@@ -221,20 +227,20 @@ describe("useWishlistEntries (#467, ADR 0001 step 7)", () => {
         },
         "21-groß",
       ],
-      // a name the dish no longer has is left out, as the page did
+      // the plain dish, with no variant chosen
       [
         {
-          dishId: "p1",
+          dishId: "d21",
           variantId: null,
-          extraIds: ["x1"],
-          removedIngredientIds: ["i-pilze"],
+          extraIds: [],
+          removedIngredientIds: [],
         },
         "21",
       ],
     ]);
-    expect(entries.value.slice(1).map((known) => known.id)).toEqual([
-      "old2",
+    expect(entries.value.slice(0, 2).map((known) => known.id)).toEqual([
       "old1",
+      "old2",
     ]);
     // a dish off the menu is dropped, one that could not be loaded stays
     expect(
@@ -330,5 +336,118 @@ describe("useWishlistEntries (#467, ADR 0001 step 7)", () => {
     expect(entries.value).toHaveLength(1);
     expect(stored().entries).toHaveLength(1);
     expect(mocks.add).not.toHaveBeenCalled();
+  });
+
+  it("drops a 2.x entry whose id the backend refuses", async () => {
+    localStorage.setItem(
+      "shopbite-wishlist",
+      JSON.stringify([
+        {
+          id: "r1",
+          productId: "refused",
+          productNumber: "",
+          without: [],
+          extras: [],
+          createdAt: "",
+        },
+      ]),
+    );
+    const { load, entries } = useWishlistEntries();
+    await load();
+    expect(entries.value).toEqual([]);
+    expect(localStorage.getItem("shopbite-wishlist")).toBeNull();
+  });
+
+  it("keeps the converted entries when a guest saves while they still load", async () => {
+    localStorage.setItem(
+      "shopbite-wishlist",
+      JSON.stringify([
+        {
+          id: "old1",
+          productId: "p1",
+          productNumber: "21",
+          without: [],
+          extras: [],
+          createdAt: "2026-10-08T12:00:00Z",
+        },
+      ]),
+    );
+    const { load, add, entries } = useWishlistEntries();
+    const loading = load();
+    const adding = add({
+      ...pizza,
+      configuration: { ...pizza.configuration, extraIds: [] },
+    });
+    await Promise.all([loading, adding]);
+    expect(entries.value).toHaveLength(2);
+    expect(stored().entries).toHaveLength(2);
+  });
+
+  it("keeps a guest's wishlist at 100 entries", async () => {
+    const { add, entries } = useWishlistEntries();
+    for (let index = 0; index < 100; index++) {
+      await add({
+        configuration: {
+          dishId: `d${index}`,
+          variantId: null,
+          extraIds: [],
+          removedIngredientIds: [],
+        },
+        dishNumber: String(index),
+      });
+    }
+    await expect(add(pizza)).rejects.toBeInstanceOf(WishlistFullError);
+    expect(entries.value).toHaveLength(100);
+  });
+
+  it("merges the newest 100 guest entries", async () => {
+    const { add, mergeGuestEntries } = useWishlistEntries();
+    for (let index = 0; index < 100; index++) {
+      await add({
+        configuration: {
+          dishId: `d${index}`,
+          variantId: null,
+          extraIds: [],
+          removedIngredientIds: [],
+        },
+        dishNumber: String(index),
+      });
+    }
+    // a 101st from 2.x storage
+    const kept = stored();
+    kept.pending = [];
+    kept.entries.push({
+      id: "x",
+      configuration: {
+        dishId: "d-old",
+        variantId: null,
+        extraIds: [],
+        removedIngredientIds: [],
+      },
+      dishNumber: "1",
+      addedAt: "2020-01-01T00:00:00Z",
+    });
+    localStorage.setItem("shopbite-wishlist", JSON.stringify(kept));
+    isLoggedIn.value = true;
+    mocks.merge.mockResolvedValue([]);
+    await mergeGuestEntries();
+    const { configurations } = mocks.merge.mock.calls[0]![0] as {
+      configurations: { dishId: string }[];
+    };
+    expect(configurations).toHaveLength(100);
+    expect(configurations[0]!.dishId).toBe("d99");
+    expect(configurations.map((entry) => entry.dishId)).not.toContain("d-old");
+  });
+
+  it("treats an entry the backend no longer has as removed", async () => {
+    isLoggedIn.value = true;
+    mocks.list.mockResolvedValue([entry("gone-entry")]);
+    mocks.remove.mockImplementation(() => {
+      throw failure(404, "not_found");
+    });
+    const { load, remove, entries } = useWishlistEntries();
+    await load();
+    await remove("gone-entry");
+    expect(entries.value).toEqual([]);
   });
 });

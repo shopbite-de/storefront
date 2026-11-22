@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from "zod";
+import type { ContactForm } from "../../../shared/domain";
 
 /**
  * Contact form of the presets (#445): the same call as Contact/Form.vue
@@ -8,12 +9,62 @@ import { z } from "zod";
  */
 const { send } = useContactForm();
 
-const schema = contactFormSchema.extend({
-  email: z.string().email("Bitte geben Sie eine gültige E-Mail-Adresse ein."),
-  subject: z.string().min(3, "Bitte geben Sie einen Betreff an."),
-  comment: z.string().min(10, "Die Nachricht braucht mindestens 10 Zeichen."),
-});
-type Field = keyof z.output<typeof schema>;
+// the fields the restaurant requires beside e-mail, subject and message
+const { data: formSettings } = await useFetch<ContactForm>(
+  "/api/contact/form",
+  {
+    key: "contact-form",
+    default: () => ({
+      required: { firstName: false, lastName: false, phone: false },
+    }),
+  },
+);
+const required = computed(
+  () =>
+    formSettings.value?.required ?? {
+      firstName: false,
+      lastName: false,
+      phone: false,
+    },
+);
+
+const MESSAGES = {
+  firstName: "Bitte geben Sie Ihren Vornamen an.",
+  lastName: "Bitte geben Sie Ihren Nachnamen an.",
+  phone: "Bitte geben Sie Ihre Telefonnummer an.",
+  email: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+  subject: "Bitte geben Sie einen Betreff an.",
+  comment: "Die Nachricht braucht mindestens 10 Zeichen.",
+} as const;
+
+const requiredText = (field: keyof typeof MESSAGES, needed: boolean) =>
+  needed ? z.string().trim().min(1, MESSAGES[field]) : z.string().optional();
+
+const schema = computed(() =>
+  contactFormSchema.extend({
+    firstName: requiredText("firstName", required.value.firstName),
+    lastName: requiredText("lastName", required.value.lastName),
+    phone: requiredText("phone", required.value.phone),
+    email: z.string().email(MESSAGES.email),
+    subject: z
+      .string()
+      .refine((value) => value.trim().length >= 3, MESSAGES.subject),
+    comment: z
+      .string()
+      .refine((value) => value.trim().length >= 10, MESSAGES.comment),
+  }),
+);
+type Field = keyof z.output<typeof contactFormSchema>;
+
+/** A field the server named (the domain's `message` is the form's comment). */
+const FORM_FIELDS: Record<string, Field> = {
+  firstName: "firstName",
+  lastName: "lastName",
+  phone: "phone",
+  email: "email",
+  subject: "subject",
+  message: "comment",
+};
 
 const empty = () => ({
   firstName: "",
@@ -33,7 +84,7 @@ const resultBox = ref<HTMLElement | null>(null);
 
 async function onSubmit() {
   result.value = null;
-  const parsed = schema.safeParse(state);
+  const parsed = schema.value.safeParse(state);
   if (!parsed.success) {
     const next: typeof errors.value = {};
     for (const issue of parsed.error.issues) {
@@ -56,10 +107,24 @@ async function onSubmit() {
   } catch (error) {
     // the code only: the error of a request carries its body
     console.error("[contact] send", domainErrorCode(error) ?? "no answer");
+    // fields the server or the restaurant refused: said at the fields
+    const details = domainErrorDetails(error);
+    const named = [
+      ...(typeof details.field === "string" ? [details.field] : []),
+      ...(Array.isArray(details.fields) ? (details.fields as string[]) : []),
+    ].flatMap((name) => (FORM_FIELDS[name] ? [FORM_FIELDS[name]] : []));
+    if (named.length) {
+      const next: typeof errors.value = {};
+      for (const field of named) {
+        if (field !== "hp") next[field] = MESSAGES[field];
+      }
+      errors.value = next;
+    }
     result.value = {
       ok: false,
-      message:
-        "Die Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es später noch einmal.",
+      message: named.length
+        ? "Bitte prüfen Sie die markierten Angaben."
+        : "Die Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es später noch einmal.",
     };
   } finally {
     sending.value = false;
@@ -100,22 +165,34 @@ async function onSubmit() {
         {{ result.message }}
       </p>
       <div class="grid gap-4 sm:grid-cols-2">
-        <SbField v-slot="{ id, describedBy }" label="Vorname" optional>
+        <SbField
+          v-slot="{ id, describedBy, invalid }"
+          label="Vorname"
+          :optional="!required.firstName"
+          :error="errors.firstName"
+        >
           <SbInput
             :id="id"
             v-model="state.firstName"
             name="firstName"
             autocomplete="given-name"
             :aria-describedby="describedBy"
+            :invalid="invalid"
           />
         </SbField>
-        <SbField v-slot="{ id, describedBy }" label="Nachname" optional>
+        <SbField
+          v-slot="{ id, describedBy, invalid }"
+          label="Nachname"
+          :optional="!required.lastName"
+          :error="errors.lastName"
+        >
           <SbInput
             :id="id"
             v-model="state.lastName"
             name="lastName"
             autocomplete="family-name"
             :aria-describedby="describedBy"
+            :invalid="invalid"
           />
         </SbField>
       </div>
@@ -135,7 +212,12 @@ async function onSubmit() {
           :invalid="invalid"
         />
       </SbField>
-      <SbField v-slot="{ id, describedBy }" label="Telefon" optional>
+      <SbField
+        v-slot="{ id, describedBy, invalid }"
+        label="Telefon"
+        :optional="!required.phone"
+        :error="errors.phone"
+      >
         <SbInput
           :id="id"
           v-model="state.phone"
@@ -143,6 +225,7 @@ async function onSubmit() {
           type="tel"
           autocomplete="tel"
           :aria-describedby="describedBy"
+          :invalid="invalid"
         />
       </SbField>
       <SbField

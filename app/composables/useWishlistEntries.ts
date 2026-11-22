@@ -92,7 +92,8 @@ function readStored(): {
         productNumber: "",
         without: [],
         extras: [],
-        createdAt: new Date().toISOString(),
+        // older than every configured entry: listed last, as in 2.x
+        createdAt: new Date(0).toISOString(),
       });
     }
   }
@@ -104,9 +105,11 @@ const statusOf = (error: unknown) =>
   (error as { status?: number } | null)?.status;
 
 /**
- * The guest's entries; 2.x entries are converted with their dish's sheet
- * (a dish off the menu, 404, is dropped: its row was not shown either; one
- * that could not be loaded stays for the next visit).
+ * The guest's entries in their order (newest first; 2.x entries after the
+ * converted ones, as 2.x listed them). 2.x entries are converted with
+ * their dish's sheet: a dish off the menu (404) or an id the backend
+ * refuses (400) is dropped (its row was not shown either), one that could
+ * not be loaded stays for the next visit.
  */
 async function readGuestEntries(): Promise<WishlistEntry[]> {
   const { entries, legacy } = readStored();
@@ -120,7 +123,8 @@ async function readGuestEntries(): Promise<WishlistEntry[]> {
         );
         return fromLegacyEntry(entry, detail);
       } catch (error) {
-        if (statusOf(error) !== 404) pending.push(entry);
+        const status = statusOf(error);
+        if (status !== 404 && status !== 400) pending.push(entry);
         return null;
       }
     }),
@@ -136,9 +140,19 @@ async function readGuestEntries(): Promise<WishlistEntry[]> {
       next.push(entry);
     }
   }
-  next.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
   writeStorage({ version: STORAGE_VERSION, entries: next, pending });
   return next;
+}
+
+/** Local storage can be written (not in a blocking private mode). */
+function storageWorks(): boolean {
+  try {
+    localStorage.setItem("shopbite-wishlist-probe", "1");
+    localStorage.removeItem("shopbite-wishlist-probe");
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function writeGuestEntries(entries: WishlistEntry[]) {
@@ -148,6 +162,18 @@ function writeGuestEntries(entries: WishlistEntry[]) {
 
 const write = <T>(task: () => Promise<T>) =>
   queuedWrite(() => withStaleRetry(task));
+
+/** Most entries a guest keeps (and a merge takes over, the backend's limit). */
+export const WISHLIST_LIMIT = 100;
+
+/** A guest's wishlist is full: an entry must go before another is kept. */
+export class WishlistFullError extends Error {
+  override readonly name = "WishlistFullError";
+}
+
+// the load in flight: a change waits for it, so it never writes over
+// entries the load is still converting (module-level, browser only)
+let loading: Promise<void> | null = null;
 
 export function useWishlistEntries() {
   const { isLoggedIn } = useCustomer();
@@ -170,8 +196,16 @@ export function useWishlistEntries() {
     domainErrorCode(error) === "not_implemented";
   const codeOf = (error: unknown) => domainErrorCode(error) ?? "no answer";
 
-  async function load() {
-    if (!import.meta.client) return;
+  function load(): Promise<void> {
+    if (!import.meta.client) return Promise.resolve();
+    const run = loadNow();
+    loading = run.finally(() => {
+      if (loading === run) loading = null;
+    });
+    return run;
+  }
+
+  async function loadNow() {
     if (remote.value) {
       try {
         const answer = await guardedAccountRead((signal) =>
@@ -197,21 +231,28 @@ export function useWishlistEntries() {
   /** Moves the guest entries into the account, right after the login. */
   async function mergeGuestEntries() {
     if (!import.meta.client || !remote.value) return load();
+    await loading;
     const local = await readGuestEntries();
     if (!local.length) return load();
     try {
-      const answer = await write(() =>
-        $fetch<WishlistEntry[]>("/api/wishlist/merge", {
-          method: "POST",
-          body: {
-            configurations: local.map((entry) => entry.configuration),
-          },
-        }),
+      // the newest entries, as many as the backend takes over at once
+      const configurations = local
+        .slice(0, WISHLIST_LIMIT)
+        .map((entry) => entry.configuration);
+      const answer = await guardedAccountRead(() =>
+        write(() =>
+          $fetch<WishlistEntry[]>("/api/wishlist/merge", {
+            method: "POST",
+            body: { configurations },
+          }),
+        ),
       );
-      entries.value = [...answer];
-      loaded.value = true;
       // the guest entries are the account's now; unconverted ones stay
       writeGuestEntries([]);
+      // the customer switched meanwhile: the newer load answers
+      if (!answer) return;
+      entries.value = [...answer];
+      loaded.value = true;
     } catch (error) {
       if (isMissing(error)) routesMissing.value = true;
       else console.error("[wishlist][mergeGuestEntries]", codeOf(error));
@@ -226,6 +267,7 @@ export function useWishlistEntries() {
   }
 
   async function add(selection: WishlistSelection) {
+    await loading;
     if (find(selection.configuration)) return;
     if (remote.value) {
       const entry = await write(() =>
@@ -239,21 +281,47 @@ export function useWishlistEntries() {
       }
       return;
     }
-    entries.value = [newWishlistEntry(selection), ...entries.value];
+    // the stored list, which another tab may have changed meanwhile (the
+    // page's own when storage is blocked)
+    const stored = storageWorks() ? readStored().entries : entries.value;
+    if (
+      stored.some((known) =>
+        sameConfiguration(known.configuration, selection.configuration),
+      )
+    ) {
+      entries.value = stored;
+      return;
+    }
+    if (stored.length >= WISHLIST_LIMIT) {
+      entries.value = stored;
+      throw new WishlistFullError("The guest wishlist is full.");
+    }
+    entries.value = [newWishlistEntry(selection), ...stored];
     writeGuestEntries(entries.value);
   }
 
-  const removeRemote = (id: string) =>
-    write(() =>
-      $fetch(`/api/wishlist/entries/${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      }),
-    );
+  /** Removes an entry; one the backend no longer has counts as removed. */
+  const removeRemote = async (id: string) => {
+    try {
+      await write(() =>
+        $fetch(`/api/wishlist/entries/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        }),
+      );
+    } catch (error) {
+      if (domainErrorCode(error) !== "not_found") throw error;
+    }
+  };
 
   async function remove(id: string) {
+    await loading;
     if (remote.value) await removeRemote(id);
+    if (!remote.value && storageWorks()) {
+      writeGuestEntries(
+        readStored().entries.filter((entry) => entry.id !== id),
+      );
+    }
     entries.value = entries.value.filter((entry) => entry.id !== id);
-    if (!remote.value) writeGuestEntries(entries.value);
   }
 
   async function clear() {

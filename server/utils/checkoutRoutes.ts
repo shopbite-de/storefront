@@ -29,6 +29,12 @@ export async function answerVisitor<T>(
      * outdated session (the order of a double click's first request).
      */
     known?: (backend: Backend, session: BackendSession) => T | undefined;
+    /**
+     * A read that may change the backend (the wishlist's read moves
+     * Shopware's own wishlist): it runs one after the visitor's writes,
+     * without a staleness check and without creating a session.
+     */
+    exclusiveRead?: boolean;
   } = {},
 ): Promise<T> {
   if (access === "write") assertSameOriginWrite(event);
@@ -38,8 +44,12 @@ export async function answerVisitor<T>(
     const session = await backendSession(event, backend.name, {
       create: access === "write",
     });
-    if (access === "read") return run(backend, session);
     const visitor = useVisitorSession(event);
+    if (access === "read") {
+      return options.exclusiveRead
+        ? visitor.exclusive(() => run(backend, session))
+        : run(backend, session);
+    }
     return visitor.exclusive(async () => {
       const answered = options.known?.(backend, session);
       if (answered !== undefined) return answered;
@@ -98,7 +108,12 @@ export function textOf(
   }
   if (typeof value !== "string" || value.length > max) invalid(field);
   const text = value as string;
-  if (hasControl(text) || (!multiline && /[\r\n\t]/.test(text))) {
+  // single-line fields: no line break of any kind (CR, LF, tab, NEL, the
+  // Unicode line and paragraph separators)
+  if (
+    hasControl(text) ||
+    (!multiline && /[\r\n\t\u0085\u2028\u2029]/.test(text))
+  ) {
     invalid(field);
   }
   if (required && !text.trim()) invalid(field);

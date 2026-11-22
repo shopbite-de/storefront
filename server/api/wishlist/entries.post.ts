@@ -7,7 +7,7 @@ export default defineEventHandler((event) =>
   answerVisitor(event, "write", async (backend, session) =>
     backend.wishlist.addEntry(
       session,
-      wishlistEntryBody(await readBody(event)),
+      wishlistEntryBody(await readSmallBody(event)),
     ),
   ),
 );

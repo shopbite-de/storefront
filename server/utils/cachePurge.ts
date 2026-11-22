@@ -41,7 +41,8 @@ const HANDLERS = "cache:nitro:handlers:";
  * Cached functions: the routes of paths and the known paths
  * (server/utils/pathRoutes.ts), the menu root (server/utils/navigationData.ts)
  * and the restaurant operations of the BFF (configuration, opening hours,
- * holidays, branches, shipping methods; `BACKEND_DATA_NAMES` in
+ * holidays, branches, shipping methods, the contact form's required
+ * fields; `BACKEND_DATA_NAMES` in
  * server/utils/shopData.ts).
  */
 const FUNCTIONS = "cache:nitro:functions:";
@@ -54,6 +55,7 @@ export const LAYOUT_FUNCTIONS = [
   "shop-holidays",
   "shop-branches",
   "shipping-methods",
+  "contact-form",
 ];
 /** Route rules with `swr` (llms.txt lists the menu). */
 const ROUTES = "cache:nitro:routes:";

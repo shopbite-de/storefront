@@ -5,10 +5,10 @@
  * reach Shopware any more, neither from the browser (with the public
  * access key) nor during server-side rendering (with a visitor's token).
  *
- * - In the browser the layer's API client gets a base URL no request can
- *   be sent to: a layer composable a shop still calls fails at once,
- *   before anything leaves the browser.
- * - During server-side rendering it carries no context token.
+ * - In the browser and during server-side rendering the layer's API client
+ *   gets a base URL no request can be sent to: a layer composable a shop
+ *   still calls fails at once, before anything leaves the storefront.
+ * - It carries no context token.
  *
  * The bridge `/api/store-api/**` of steps 4 to 6 is gone. Removed with the
  * layer in step 8.
@@ -28,8 +28,6 @@ export default defineNuxtPlugin({
       LayerApiClient | undefined;
     if (!apiClient) return;
     apiClient.defaultHeaders["sw-context-token"] = "";
-    if (import.meta.client) {
-      apiClient.updateBaseConfig({ baseURL: OFFLINE_BASE_URL });
-    }
+    apiClient.updateBaseConfig({ baseURL: OFFLINE_BASE_URL });
   },
 });

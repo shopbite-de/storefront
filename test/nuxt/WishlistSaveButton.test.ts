@@ -69,4 +69,26 @@ describe("WishlistSaveButton (#467)", () => {
     expect(wrapper.get("button").attributes("aria-pressed")).toBe("false");
     expect(useWishlistEntries().entries.value).toEqual([]);
   });
+
+  it("says when the guest's wishlist is full", async () => {
+    for (let index = 0; index < 100; index++) {
+      await useWishlistEntries().add({
+        configuration: {
+          dishId: `d${index}`,
+          variantId: null,
+          extraIds: [],
+          removedIngredientIds: [],
+        },
+        dishNumber: String(index),
+      });
+    }
+    const wrapper = await mountSuspended(WishlistSaveButton, {
+      props: { selection, name: "Pizza Mix" },
+    });
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.get('[role="status"]').text()).toContain(
+      "Ihre Merkliste ist voll (100 Gerichte)",
+    );
+  });
 });

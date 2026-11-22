@@ -4,17 +4,24 @@ import { z } from "zod";
  * Contact form logic (#445, ADR 0001 step 7): the checks and the message
  * to the restaurant through the BFF (`POST /api/contact`), which checks the
  * fields again and hands the message to the backend. The form asks for no
- * salutation; the backend gets "not given".
+ * salutation (the backend gets "not given"); first name, last name and
+ * phone are required when the restaurant requires them (`/api/contact/form`).
  */
 export const contactFormSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   email: z.string().email("Ungültige E-Mail-Adresse"),
   phone: z.string().optional(),
-  subject: z.string().min(3, "Bitte gib einen Betreff an"),
+  // the shortest subject and message count without the spaces around them
+  subject: z
+    .string()
+    .refine((value) => value.trim().length >= 3, "Bitte gib einen Betreff an"),
   comment: z
     .string()
-    .min(10, "Die Nachricht muss mindestens 10 Zeichen lang sein"),
+    .refine(
+      (value) => value.trim().length >= 10,
+      "Die Nachricht muss mindestens 10 Zeichen lang sein",
+    ),
   hp: z.string().optional(),
 });
 

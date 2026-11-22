@@ -46,6 +46,13 @@ const ROUTES = [
     port: "checkout",
     method: "listShippingMethods",
   },
+  {
+    path: "../../server/api/contact/form.get",
+    name: "contact-form",
+    ttl: CACHE_TTL.config,
+    port: "contact",
+    method: "getForm",
+  },
 ] as const;
 
 /** The class the freshly loaded routes see (modules are reset per test). */
@@ -66,7 +73,7 @@ afterEach(() => {
 
 /** A memory backend whose port method is a spy. */
 function backendWith(
-  port: "shop" | "checkout",
+  port: "shop" | "checkout" | "contact",
   method: string,
   impl?: () => Promise<unknown>,
 ) {

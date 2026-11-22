@@ -29,21 +29,25 @@ export function wishlistEntryBody(body: unknown): DishConfiguration {
   return configurationBody(asObject(body));
 }
 
+/** More configurations are no guest wishlist of the storefront. */
+const MAX_MERGE_BODY = 1000;
+
 /**
  * `POST /api/wishlist/merge`: `{ configurations }`, the guest's entries
- * newest first, at most the port's limit.
+ * newest first; the newest `WISHLIST_MERGE_LIMIT` are taken over (the
+ * port's limit), the rest are left out.
  */
 export function wishlistMergeBody(body: unknown): DishConfiguration[] {
   const configurations = asObject(body).configurations;
   if (
     !Array.isArray(configurations) ||
-    configurations.length > WISHLIST_MERGE_LIMIT
+    configurations.length > MAX_MERGE_BODY
   ) {
     invalid("configurations");
   }
-  return (configurations as unknown[]).map((entry) =>
-    configurationBody(asObject(entry)),
-  );
+  return (configurations as unknown[])
+    .slice(0, WISHLIST_MERGE_LIMIT)
+    .map((entry) => configurationBody(asObject(entry)));
 }
 
 export function entryIdParam(event: H3Event): string {

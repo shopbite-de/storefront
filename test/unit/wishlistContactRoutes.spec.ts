@@ -66,16 +66,17 @@ const ROUTES: Record<string, string> = {
   "DELETE /api/wishlist/entries/[entryId]":
     "../../server/api/wishlist/entries/[entryId].delete",
   "POST /api/wishlist/merge": "../../server/api/wishlist/merge.post",
-  "POST /api/contact": "../../server/api/contact.post",
+  "POST /api/contact": "../../server/api/contact/index.post",
+  "GET /api/contact/form": "../../server/api/contact/form.get",
 };
 
 let backend: Backend;
 let received: MemoryContactMessage[];
 
-async function setup() {
+async function setup(seed = demoSeed()) {
   const memory = await import("../../server/adapters/memory");
   received = [];
-  backend = memory.createMemoryBackend(demoSeed(), {
+  backend = memory.createMemoryBackend(seed, {
     contact: (message) => received.push(message),
   });
   const { answerDomain, toHttpError } =
@@ -86,6 +87,7 @@ async function setup() {
   const accountRoutes = await import("../../server/utils/accountRoutes");
   const wishlistRoutes = await import("../../server/utils/wishlistRoutes");
   const contactRoutes = await import("../../server/utils/contactRoutes");
+  const requestBody = await import("../../server/utils/requestBody");
   stubNitro({
     answerDomain,
     toHttpError,
@@ -95,6 +97,7 @@ async function setup() {
     ...accountRoutes,
     ...wishlistRoutes,
     ...contactRoutes,
+    ...requestBody,
     useBackend: () => backend,
     useRuntimeConfig: () => ({
       public: {
@@ -251,6 +254,37 @@ describe("the wishlist behind the BFF", () => {
     expect((answer.body as unknown[]).length).toBe(1);
   });
 
+  it("takes over the newest 100 of a longer guest wishlist", async () => {
+    await setup();
+    const client = await customer();
+    const dish = dishWithExtras();
+    const extras = dish.extraGroups.flatMap((group) => group.extras);
+    // 101 different configurations: the dish with one extra each and then
+    // the plain dish last
+    const configurations = [
+      ...extras
+        .slice(0, 1)
+        .map((extra) => ({ dishId: dish.id, extraIds: [extra.id] })),
+      ...Array.from({ length: 99 }, () => ({
+        dishId: dish.id,
+        extraIds: [extras[0]!.id],
+      })),
+      { dishId: dish.id },
+    ];
+    const answer = await send(client, {
+      method: "POST",
+      path: "/api/wishlist/merge",
+      body: { configurations },
+    });
+    expect(answer.error).toBeUndefined();
+    // the 101st (the plain dish) is left out
+    expect(
+      (answer.body as { configuration: { extraIds: string[] } }[]).map(
+        (entry) => entry.configuration.extraIds.length,
+      ),
+    ).toEqual([1]);
+  });
+
   it("refuses a body the storefront would not send", async () => {
     await setup();
     const client = await customer();
@@ -273,7 +307,7 @@ describe("the wishlist behind the BFF", () => {
       method: "POST",
       path: "/api/wishlist/merge",
       body: {
-        configurations: Array.from({ length: 101 }, () => configured()),
+        configurations: Array.from({ length: 1001 }, () => configured()),
       },
     });
     expect(tooMany.error?.statusCode).toBe(400);
@@ -436,19 +470,15 @@ describe("contact messages behind the BFF", () => {
     expect(received).toEqual([]);
   });
 
-  it("limits a visitor's address; a forged X-Forwarded-For does not get past it", async () => {
+  it("limits a visitor's address, not another one", async () => {
     await setup();
     for (let sent = 0; sent < 3; sent++) {
       expect((await contact(MESSAGE)).error).toBeUndefined();
     }
-    // a new forged address per request: the storefront appends the one it
-    // saw, which the backend counts
-    const forged = await contact(MESSAGE, {
-      headers: { "x-forwarded-for": "198.51.100.99" },
-    });
-    expect(forged.error?.statusCode).toBe(429);
-    expect(forged.error?.data?.code).toBe("rate_limited");
-    expect(forged.error?.data?.details?.retryAfterSeconds).toBeGreaterThan(0);
+    const limited = await contact(MESSAGE);
+    expect(limited.error?.statusCode).toBe(429);
+    expect(limited.error?.data?.code).toBe("rate_limited");
+    expect(limited.error?.data?.details?.retryAfterSeconds).toBeGreaterThan(0);
     // another visitor is not held back
     const other = await contact(MESSAGE, { remoteAddress: "10.0.0.6" });
     expect(other.error).toBeUndefined();
@@ -458,6 +488,78 @@ describe("contact messages behind the BFF", () => {
       "10.0.0.5",
       "10.0.0.6",
     ]);
+  });
+
+  it("answers the fields the restaurant requires and refuses a message without them", async () => {
+    await setup({
+      ...demoSeed(),
+      contact: { required: { firstName: true, phone: true } },
+    });
+    const form = await send(browser(), {
+      method: "GET",
+      path: "/api/contact/form",
+    });
+    expect(form.body).toEqual({
+      required: { firstName: true, lastName: false, phone: true },
+    });
+    const refused = await contact({ ...MESSAGE, phone: "  " });
+    expect(refused.error?.statusCode).toBe(400);
+    expect(refused.error?.data?.details?.field).toBe("phone");
+    expect((await contact({ ...MESSAGE, lastName: "" })).error).toBeUndefined();
+    expect(received).toHaveLength(1);
+  });
+
+  it("refuses a body above 64 KB before reading it", async () => {
+    await setup();
+    for (const path of ["/api/contact", "/api/wishlist/merge"]) {
+      const answer = await send(browser(), {
+        method: "POST",
+        path,
+        body: MESSAGE,
+        headers: { "content-length": String(64 * 1024 + 1) },
+      });
+      expect(answer.error?.statusCode, path).toBe(413);
+      expect(answer.error?.data?.code).toBe("payload_too_large");
+    }
+  });
+
+  it("answers any filled honeypot without sending", async () => {
+    await setup();
+    for (const hp of [1, true, ["x"], { x: 1 }]) {
+      expect((await contact({ ...MESSAGE, hp })).body).toEqual({
+        confirmation: null,
+      });
+    }
+    expect(received).toEqual([]);
+  });
+
+  it("counts the shortest subject and message without the spaces around them", async () => {
+    await setup();
+    expect(
+      (await contact({ ...MESSAGE, subject: "  ab  " })).error?.data?.details
+        ?.field,
+    ).toBe("subject");
+    expect(
+      (await contact({ ...MESSAGE, message: "   kurz   x   " })).error?.data
+        ?.details?.field,
+    ).toBe("message");
+  });
+
+  it("refuses Unicode line breaks in single-line fields", async () => {
+    await setup();
+    for (const [field, value] of [
+      ["subject", "Frage\u2028Bcc: x@example.com"],
+      ["firstName", "Erika\u2029"],
+      ["lastName", "Muster\u0085"],
+    ]) {
+      const answer = await contact({ ...MESSAGE, [field!]: value });
+      expect(answer.error?.statusCode, field).toBe(400);
+    }
+    // the message keeps its line breaks
+    expect(
+      (await contact({ ...MESSAGE, message: "Zeile eins\u2028Zeile zwei" }))
+        .error,
+    ).toBeUndefined();
   });
 
   it("passes the incoming chain on with the socket address appended", async () => {

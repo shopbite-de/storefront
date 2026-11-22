@@ -4,6 +4,9 @@
  */
 export default defineEventHandler((event) =>
   answerVisitor(event, "write", async (backend, session) =>
-    backend.wishlist.merge(session, wishlistMergeBody(await readBody(event))),
+    backend.wishlist.merge(
+      session,
+      wishlistMergeBody(await readSmallBody(event)),
+    ),
   ),
 );

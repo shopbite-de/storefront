@@ -19,12 +19,12 @@ const saved = computed(() =>
   props.selection ? find(props.selection.configuration) : undefined,
 );
 const busy = ref(false);
-const failed = ref(false);
+const failed = ref<"full" | "error" | null>(null);
 
 async function toggle() {
   if (!props.selection || busy.value) return;
   busy.value = true;
-  failed.value = false;
+  failed.value = null;
   try {
     if (saved.value) {
       await remove(saved.value.id);
@@ -33,8 +33,12 @@ async function toggle() {
       trackAddToWishlist({ productNumber: props.selection.dishNumber });
     }
   } catch (error) {
-    console.error("[wishlist][toggle]", error);
-    failed.value = true;
+    if (error instanceof WishlistFullError) {
+      failed.value = "full";
+      return;
+    }
+    console.error("[wishlist][toggle]", domainErrorCode(error) ?? "no answer");
+    failed.value = "error";
   } finally {
     busy.value = false;
   }
@@ -52,6 +56,10 @@ async function toggle() {
     <SbIcon name="heart" :filled="!!saved" />
   </SbIconButton>
   <span class="sr-only" role="status">{{
-    failed ? "Merken hat nicht geklappt. Bitte versuchen Sie es erneut." : ""
+    failed === "full"
+      ? `Ihre Merkliste ist voll (${WISHLIST_LIMIT} Gerichte). Bitte entfernen Sie zuerst ein Gericht.`
+      : failed
+        ? "Merken hat nicht geklappt. Bitte versuchen Sie es erneut."
+        : ""
   }}</span>
 </template>
