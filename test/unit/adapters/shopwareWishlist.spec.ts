@@ -244,4 +244,63 @@ describe("Shopware WishlistPort adapter (anti-corruption)", () => {
     expect(isDomainError(error, "backend_unavailable")).toBe(true);
     expect(`${error.message} ${error.cause?.message}`).not.toContain(token);
   });
+
+  it("asks Shopware's own wishlist once while it is empty, and lists after a move only once", async () => {
+    const { fake, backend } = setup();
+    const session = await customer(backend);
+    const core = () =>
+      fake.requests.filter((request) => request.path === "/customer/wishlist");
+
+    await backend.wishlist.listEntries(session);
+    await backend.wishlist.listEntries(session);
+    expect(core()).toHaveLength(1);
+  });
+
+  it("moves Shopware's wishlist once for two reads at the same time", async () => {
+    const { fake, backend } = setup();
+    const session = await customer(backend);
+    fake.core.set(fake.accounts[0]!.id, [MARGHERITA]);
+
+    const [first, second] = await Promise.all([
+      backend.wishlist.listEntries(session),
+      backend.wishlist.listEntries(session),
+    ]);
+
+    expect(first).toHaveLength(1);
+    expect(second).toHaveLength(1);
+    const merges = fake.requests.filter(
+      (request) => request.path === "/shopbite/wishlist/merge",
+    );
+    expect(merges).toHaveLength(1);
+    // the move answered the list: no list request after it
+    expect(
+      fake.requests.filter((request) => request.path === "/shopbite/wishlist"),
+    ).toHaveLength(0);
+  });
+
+  it("looks up all configurations of a merge at once and unknown dishes once", async () => {
+    const { fake, backend } = setup();
+    const session = await customer(backend);
+    const unknown = Array.from({ length: 60 }, (_, index) =>
+      dishConfiguration({ dishId: index.toString(16).padStart(32, "a") }),
+    );
+    const lookups = () =>
+      fake.requests.filter((request) => request.path === "/product").length;
+    const before = lookups();
+
+    await backend.wishlist.merge(session, [
+      ...unknown,
+      dishConfiguration({ dishId: "no-shopware-id" }),
+      dishConfiguration({ dishId: MARGHERITA, extraIds: [CHEESE] }),
+      dishConfiguration({ dishId: SALAMI, variantId: LARGE }),
+    ]);
+    expect(lookups() - before).toBe(1);
+    const ids = fake.requests
+      .filter((request) => request.path === "/product")
+      .at(-1)!.body!.ids as string[];
+    expect(ids).not.toContain("no-shopware-id");
+
+    await backend.wishlist.merge(session, unknown);
+    expect(lookups() - before).toBe(1);
+  });
 });

@@ -19,7 +19,11 @@ import {
   priceFormatReader,
 } from "./catalog";
 import { createShopwareCheckout } from "./checkout";
-import { createShopwareContact } from "./contact";
+import {
+  contactOverStoreApi,
+  contactOverVisitorApi,
+  createShopwareContact,
+} from "./contact";
 import { createShopwareCustomer } from "./customer";
 import { createShopwareNavigation } from "./navigation";
 import { createShopwareOrdering } from "./ordering";
@@ -126,9 +130,12 @@ export function createShopwareBackend(
     wishlist: ordering
       ? createShopwareWishlist(ordering.visitor, { log })
       : notImplemented("wishlist", name),
-    contact: createShopwareContact(storeApi, {
-      requestTimeoutMs: options.requestTimeoutMs,
-    }),
+    contact: createShopwareContact(
+      options.visitorApi
+        ? contactOverVisitorApi(options.visitorApi)
+        : contactOverStoreApi(storeApi),
+      { requestTimeoutMs: options.requestTimeoutMs, log },
+    ),
   };
 }
 

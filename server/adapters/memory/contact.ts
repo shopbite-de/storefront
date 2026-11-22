@@ -1,6 +1,7 @@
 import {
   deepFreeze,
   DomainError,
+  type ContactForm,
   type ContactMessage,
 } from "../../../shared/domain";
 import type { ContactPort } from "../../ports";
@@ -20,22 +21,43 @@ const MAX_SENDERS = 10_000;
 /**
  * ContactPort in memory (ADR 0001, step 7): the message is handed to
  * `received` (the demo sends no mail) and the restaurant's confirmation
- * text answered. Three messages per visitor address (the nearest entry of
- * the address chain) within 30 seconds, then `rate_limited`.
+ * text answered. Fields the seed requires are checked like Shopware does
+ * (`validation_failed` with the fields). Three messages per visitor
+ * within 30 seconds, then `rate_limited`; the visitor is the client
+ * address of the chain (its first entry; the demo trusts the chain).
  */
 export function createMemoryContact(options: {
   confirmation?: string | null;
+  required?: Partial<ContactForm["required"]>;
   received?: (message: MemoryContactMessage) => void;
   now?: () => number;
 }): ContactPort {
   const now = options.now ?? Date.now;
   const confirmation = options.confirmation?.trim() || null;
+  const form: ContactForm = deepFreeze({
+    required: {
+      firstName: options.required?.firstName === true,
+      lastName: options.required?.lastName === true,
+      phone: options.required?.phone === true,
+    },
+  });
   const sent = new Map<string, number[]>();
 
   return {
+    getForm: async () => form,
+
     send: async (message, sender) => {
-      const address =
-        sender.forwardedFor?.split(",").at(-1)?.trim() || "unknown";
+      const missing = (["firstName", "lastName", "phone"] as const).filter(
+        (field) => form.required[field] && !message[field]?.trim(),
+      );
+      if (missing.length) {
+        throw new DomainError(
+          "validation_failed",
+          "The restaurant requires these fields.",
+          { fields: missing },
+        );
+      }
+      const address = sender.forwardedFor?.split(",")[0]?.trim() || "unknown";
       const at = now();
       const recent = (sent.get(address) ?? []).filter(
         (time) => at - time < WINDOW_MS,

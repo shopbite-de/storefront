@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isDomainError,
+  type ContactForm,
   type ContactMessage,
   type DomainError,
 } from "../../shared/domain";
@@ -10,6 +11,8 @@ import type { Backend } from "../../server/ports";
 export type ContactScenario = Readonly<{
   /** The restaurant's own confirmation text, or none. */
   confirmation: string | null;
+  /** Fields the restaurant requires beside e-mail, subject and message. */
+  required?: Partial<ContactForm["required"]>;
 }>;
 
 /** A message as the restaurant received it, with the sender's address. */
@@ -101,11 +104,45 @@ export function runContactContract(fixtures: readonly ContactFixture[]): void {
         expect(received()).toHaveLength(4);
       });
 
+      it("names no further required field by default", async () => {
+        const { backend } = fixture.create({ confirmation: null });
+        expect(await backend.contact.getForm()).toEqual({
+          required: { firstName: false, lastName: false, phone: false },
+        });
+      });
+
+      it("names the fields the restaurant requires and refuses a message without them", async () => {
+        const { backend, received } = fixture.create({
+          confirmation: null,
+          required: { firstName: true, lastName: true, phone: true },
+        });
+        expect(await backend.contact.getForm()).toEqual({
+          required: { firstName: true, lastName: true, phone: true },
+        });
+
+        const refused = await refusal(() =>
+          backend.contact.send(
+            { ...MESSAGE, lastName: null, phone: null },
+            VISITOR,
+          ),
+        );
+
+        expect(refused.code).toBe("validation_failed");
+        expect([...(refused.details.fields as string[])].sort()).toEqual([
+          "lastName",
+          "phone",
+        ]);
+        expect(received()).toEqual([]);
+        await backend.contact.send(MESSAGE, VISITOR);
+        expect(received()).toHaveLength(1);
+      });
+
       it("answers a value a caller cannot change", async () => {
         const { backend } = fixture.create({ confirmation: null });
         expect(
           Object.isFrozen(await backend.contact.send(MESSAGE, VISITOR)),
         ).toBe(true);
+        expect(Object.isFrozen(await backend.contact.getForm())).toBe(true);
       });
     });
   }

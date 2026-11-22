@@ -65,3 +65,11 @@ export type ContactMessage = Readonly<{
   subject: string;
   message: string;
 }>;
+
+/**
+ * What the restaurant's contact form asks for beside e-mail, subject and
+ * message: whether first name, last name and phone are required.
+ */
+export type ContactForm = Readonly<{
+  required: Readonly<{ firstName: boolean; lastName: boolean; phone: boolean }>;
+}>;

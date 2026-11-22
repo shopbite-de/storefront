@@ -100,6 +100,7 @@ export function createMemoryBackend(
     }),
     contact: createMemoryContact({
       confirmation: seed.contact?.confirmation,
+      required: seed.contact?.required,
       received: options.contact,
     }),
   };

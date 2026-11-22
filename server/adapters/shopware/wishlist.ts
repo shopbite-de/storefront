@@ -60,6 +60,13 @@ const EXTRAS_CRITERIA = {
   },
 };
 
+/** Shopware ids: 32 hex digits (the domain's ids are opaque). */
+const SHOPWARE_ID = /^[0-9a-f]{32}$/i;
+/** Ids per product lookup (the Store API's limit). */
+const LOOKUP_LIMIT = 100;
+/** How long an empty or switched-off Shopware wishlist is not asked again. */
+const CORE_TTL_MS = 600_000;
+
 /** Shopware's own wishlist: the product ids only. */
 const CORE_CRITERIA = { limit: 100, includes: { product: ["id"] } };
 
@@ -123,6 +130,11 @@ export function createShopwareWishlist(
   const log = options.log ?? (() => {});
   const products = keptFor<Looked>(options.lookupTtlMs);
   const extrasOf = keptFor<Extras>(options.lookupTtlMs);
+  const unknown = keptFor<true>(options.lookupTtlMs);
+  /** Customers (by token) whose Shopware wishlist is empty or switched off. */
+  const noCoreWishlist = keptFor<true>(CORE_TTL_MS);
+  /** A move of Shopware's wishlist in flight, per token (two reads, one move). */
+  const moving = new Map<string, Promise<SwWishlistEntry[] | undefined>>();
 
   async function ask<T>(what: string, run: () => Promise<T>): Promise<T> {
     try {
@@ -137,33 +149,48 @@ export function createShopwareWishlist(
     if (!(await session.read())) throw unauthenticated();
   }
 
-  /** Number, dish and main ingredients of products, kept a while. */
+  /**
+   * Number, dish and main ingredients of products, kept a while; ids
+   * Shopware does not know (or that are no Shopware ids) are remembered as
+   * unknown for as long, so a guest's list of dishes off the menu costs one
+   * lookup. At most 100 ids per request (the Store API's limit).
+   */
   async function lookUp(ids: readonly Id[]): Promise<Map<Id, Looked>> {
     const result = new Map<Id, Looked>();
-    for (const id of new Set(ids)) {
+    const wanted = [...new Set(ids)];
+    for (const id of wanted) {
       const kept = products.get(id);
       if (kept) result.set(id, kept);
     }
-    const missing = [...new Set(ids)].filter((id) => !result.has(id));
-    if (missing.length) {
-      const answer = await ask("the products", () =>
-        shop.post<{ elements?: SwProduct[] }>(
-          "/product",
-          { ids: missing, ...LOOKUP_CRITERIA },
-          LOOKUP_HEADERS,
-        ),
-      );
-      for (const product of answer.elements ?? []) {
-        const looked: Looked = {
-          id: product.id,
-          parentId: product.parentId ?? null,
-          number: product.productNumber,
-          ingredients: toIngredients(product),
-        };
-        products.set(product.id, looked);
-        result.set(product.id, looked);
-      }
+    const missing = wanted.filter(
+      (id) => !result.has(id) && !unknown.get(id) && SHOPWARE_ID.test(id),
+    );
+    const chunks: Id[][] = [];
+    for (let at = 0; at < missing.length; at += LOOKUP_LIMIT) {
+      chunks.push(missing.slice(at, at + LOOKUP_LIMIT));
     }
+    const answers = await Promise.all(
+      chunks.map((chunk) =>
+        ask("the products", () =>
+          shop.post<{ elements?: SwProduct[] }>(
+            "/product",
+            { ids: chunk, limit: chunk.length, ...LOOKUP_CRITERIA },
+            LOOKUP_HEADERS,
+          ),
+        ),
+      ),
+    );
+    for (const product of answers.flatMap((answer) => answer.elements ?? [])) {
+      const looked: Looked = {
+        id: product.id,
+        parentId: product.parentId ?? null,
+        number: product.productNumber,
+        ingredients: toIngredients(product),
+      };
+      products.set(product.id, looked);
+      result.set(product.id, looked);
+    }
+    for (const id of missing) if (!result.has(id)) unknown.set(id, true);
     return result;
   }
 
@@ -191,14 +218,45 @@ export function createShopwareWishlist(
     return found;
   }
 
+  /** The products and the dishes' extras the configurations name. */
+  async function lookUpConfigurations(
+    configurations: readonly DishConfiguration[],
+  ) {
+    const looked = await lookUp(
+      configurations.flatMap((configuration) =>
+        configuration.variantId
+          ? [configuration.dishId, configuration.variantId]
+          : [configuration.dishId],
+      ),
+    );
+    const dishes = [
+      ...new Set(
+        configurations
+          .filter(
+            (configuration) =>
+              configuration.extraIds.length && looked.has(configuration.dishId),
+          )
+          .map((configuration) => configuration.dishId),
+      ),
+    ];
+    const offered = new Map(
+      await Promise.all(
+        dishes.map(async (id) => [id, await extras(id)] as const),
+      ),
+    );
+    return { looked, offered };
+  }
+
   /**
    * A configuration as the plugin keeps it; refuses what the menu does not
    * offer (an unknown dish, a variant of another dish, an extra the dish
    * does not offer, a removal it does not have).
    */
-  async function toPlugin(configuration: DishConfiguration) {
+  function toPlugin(
+    configuration: DishConfiguration,
+    { looked, offered }: Awaited<ReturnType<typeof lookUpConfigurations>>,
+  ) {
     const ordered = configuration.variantId ?? configuration.dishId;
-    const looked = await lookUp([configuration.dishId, ordered]);
     const dish = looked.get(configuration.dishId);
     const product = looked.get(ordered);
     if (!dish || dish.parentId) throw unavailable(configuration.dishId);
@@ -211,11 +269,8 @@ export function createShopwareWishlist(
       if (!ingredient) throw invalid("The dish has no such ingredient.", id);
       return ingredient.name;
     });
-    const offered = configuration.extraIds.length
-      ? await extras(dish.id)
-      : undefined;
     const extraNumbers = configuration.extraIds.map((id) => {
-      const number = offered?.byId.get(id);
+      const number = offered.get(dish.id)?.byId.get(id);
       if (!number) throw invalid("The dish has no such extra.", id);
       return number;
     });
@@ -291,58 +346,81 @@ export function createShopwareWishlist(
 
   /**
    * Shopware's own wishlist of the customer (plain products, kept before
-   * the plugin's wishlist) moves into the plugin once; answers the
-   * plugin's list after the move, or undefined when there was nothing.
+   * the plugin's wishlist) moves into the plugin; answers the plugin's list
+   * after the move, or undefined when there was nothing to move. An empty
+   * or switched-off one is not asked again for 10 minutes; two reads at once
+   * share one move (the BFF also runs it in the visitor's exclusive section).
    */
   async function moveCoreWishlist(
     session: BackendSession,
   ): Promise<SwWishlistEntry[] | undefined> {
-    let productIds: string[];
+    const token = (await session.read())!;
+    if (noCoreWishlist.get(token)) return undefined;
+    const running = moving.get(token);
+    if (running) return running;
+    const move = (async () => {
+      let productIds: string[];
+      try {
+        const answer = await send<{
+          products?: { elements?: { id: string }[] };
+        }>(session, "POST", "/customer/wishlist", CORE_CRITERIA);
+        productIds = (answer.products?.elements ?? []).map(
+          (product) => product.id,
+        );
+      } catch (error) {
+        // none (404) or switched off in the shop (403); else ask next time
+        const status = statusOf(error);
+        if (status === 404 || status === 403) noCoreWishlist.set(token, true);
+        return undefined;
+      }
+      if (!productIds.length) {
+        noCoreWishlist.set(token, true);
+        return undefined;
+      }
+      try {
+        const merged = await send<{ elements?: SwWishlistEntry[] }>(
+          session,
+          "POST",
+          "/shopbite/wishlist/merge",
+          { items: productIds.map((productId) => ({ productId })) },
+        );
+        await Promise.all(
+          productIds.map((productId) =>
+            send(session, "DELETE", `/customer/wishlist/delete/${productId}`),
+          ),
+        );
+        noCoreWishlist.set(token, true);
+        return merged.elements ?? [];
+      } catch (error) {
+        log("[shopware][wishlist] moving the Shopware wishlist failed", {
+          status: statusOf(error),
+          codes: errorCodes(error),
+        });
+        return undefined;
+      }
+    })();
+    moving.set(token, move);
     try {
-      const answer = await send<{
-        products?: { elements?: { id: string }[] };
-      }>(session, "POST", "/customer/wishlist", CORE_CRITERIA);
-      productIds = (answer.products?.elements ?? []).map(
-        (product) => product.id,
-      );
-    } catch {
-      // none (404) or switched off in the shop (403)
-      return undefined;
-    }
-    if (!productIds.length) return undefined;
-    try {
-      const merged = await send<{ elements?: SwWishlistEntry[] }>(
-        session,
-        "POST",
-        "/shopbite/wishlist/merge",
-        { items: productIds.map((productId) => ({ productId })) },
-      );
-      await Promise.all(
-        productIds.map((productId) =>
-          send(session, "DELETE", `/customer/wishlist/delete/${productId}`),
-        ),
-      );
-      return merged.elements ?? [];
-    } catch (error) {
-      log("[shopware][wishlist] moving the Shopware wishlist failed", {
-        status: statusOf(error),
-        codes: errorCodes(error),
-      });
-      return undefined;
+      return await move;
+    } finally {
+      moving.delete(token);
     }
   }
 
   return {
     listEntries: async (session) => {
       await loggedIn(session);
-      const answer = await list(session);
+      // the move answers the whole list; else the list is asked
       const moved = await moveCoreWishlist(session);
-      return toEntries(moved ?? answer.elements ?? []);
+      return toEntries(moved ?? (await list(session)).elements ?? []);
     },
 
     addEntry: async (session, configuration) => {
       await loggedIn(session);
-      const body = await toPlugin(configuration);
+      const body = toPlugin(
+        configuration,
+        await lookUpConfigurations([configuration]),
+      );
       const entry = await ask("the wishlist entry", () =>
         send<SwWishlistEntry>(session, "POST", "/shopbite/wishlist/add", body),
       );
@@ -362,13 +440,13 @@ export function createShopwareWishlist(
 
     merge: async (session, configurations) => {
       await loggedIn(session);
-      const items: Awaited<ReturnType<typeof toPlugin>>[] = [];
-      for (const configuration of configurations.slice(
-        0,
-        WISHLIST_MERGE_LIMIT,
-      )) {
+      const wanted = configurations.slice(0, WISHLIST_MERGE_LIMIT);
+      // one lookup for all products, the extras of each dish at once
+      const known = await lookUpConfigurations(wanted);
+      const items: ReturnType<typeof toPlugin>[] = [];
+      for (const configuration of wanted) {
         try {
-          items.push(await toPlugin(configuration));
+          items.push(toPlugin(configuration, known));
         } catch (error) {
           // what the menu no longer offers is left out, like the plugin does
           if (

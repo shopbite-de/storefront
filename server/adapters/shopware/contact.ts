@@ -1,6 +1,7 @@
 import {
   deepFreeze,
   DomainError,
+  type ContactForm,
   type DomainErrorCode,
   type Salutation,
 } from "../../../shared/domain";
@@ -8,7 +9,8 @@ import type { ContactPort } from "../../ports";
 import { deadline, keptFor, REQUEST_TIMEOUT_MS } from "./cart";
 import { causeOf, refusedFields } from "./ordering";
 import { errorCodes, retryAfter, statusOf } from "./request";
-import type { StoreApi } from "./storeApi";
+import type { AdapterLog } from "./shop";
+import type { StoreApi, VisitorStoreApi } from "./storeApi";
 
 /*
  * Contact messages over Shopware's `/contact-form` (ADR 0001, step 7): the
@@ -16,13 +18,16 @@ import type { StoreApi } from "./storeApi";
  * template `contact_form`, exactly as the 2.x form sent it. Shopware needs
  * a salutation id although its template prints none: a message without one
  * is sent as "not given" (`not_specified`). Fields the visitor left empty
- * are empty strings, as before. Shopware's per-IP limit (`contact_form`)
- * sees the visitor through `X-Forwarded-For` (`TRUSTED_PROXIES`).
+ * are empty strings, as before. The requests go to the server's endpoint
+ * with the visitor's `X-Forwarded-For` (`ContactTransport`), so Shopware's
+ * per-IP limit (`contact_form`) sees the visitor (`TRUSTED_PROXIES`).
  */
 
 type SwSalutation = { id: string; salutationKey?: string | null };
 
 const SALUTATION_TTL_MS = 600_000;
+const FORM_TTL_MS = 600_000;
+const FORM_FALLBACK_TTL_MS = 60_000;
 
 /** Shopware's answer as a domain error; its texts never reach the guest. */
 function refusal(error: unknown): DomainError {
@@ -41,7 +46,11 @@ function refusal(error: unknown): DomainError {
   }
   if (code === "validation_failed") {
     details.fields = refusedFields(error).map((field) =>
-      field === "comment" ? "message" : field,
+      field === "comment"
+        ? "message"
+        : field === "salutationId"
+          ? "salutation"
+          : field,
     );
   }
   return new DomainError(
@@ -54,19 +63,75 @@ function refusal(error: unknown): DomainError {
   );
 }
 
+/**
+ * How the contact adapter reaches `/contact-form`: through the server's
+ * endpoint with the visitor's address chain (the visitor transport without
+ * a token, like the removed bridge did), so Shopware's per-IP limit sees the
+ * visitor also when the public endpoint sits behind a proxy of its own.
+ */
+export type ContactTransport = <T>(
+  path: string,
+  body: Record<string, unknown>,
+  forwardedFor?: string,
+) => Promise<T>;
+
+/** A transport over the shop-wide Store API (tests, no visitor transport). */
+export const contactOverStoreApi =
+  (storeApi: StoreApi): ContactTransport =>
+  (path, body, forwardedFor) =>
+    forwardedFor
+      ? storeApi.post(path, body, {
+          headers: { "x-forwarded-for": forwardedFor },
+        })
+      : storeApi.post(path, body);
+
+/** A transport over the visitor's Store API (the server endpoint). */
+export const contactOverVisitorApi =
+  (visitorApi: VisitorStoreApi): ContactTransport =>
+  async <T>(
+    path: string,
+    body: Record<string, unknown>,
+    forwardedFor?: string,
+  ) =>
+    (
+      await visitorApi.send<T>({
+        method: "POST",
+        path,
+        body,
+        ...(forwardedFor ? { forwardedFor } : {}),
+      })
+    ).data;
+
+const OPTIONAL: ContactForm = deepFreeze({
+  required: { firstName: false, lastName: false, phone: false },
+});
+
+/** The fields Shopware's validation of an empty message names as blank. */
+const REQUIRABLE = ["firstName", "lastName", "phone"] as const;
+
 export function createShopwareContact(
-  storeApi: StoreApi,
-  options: { requestTimeoutMs?: number } = {},
+  send: ContactTransport,
+  options: {
+    requestTimeoutMs?: number;
+    log?: AdapterLog;
+    formTtlMs?: number;
+  } = {},
 ): ContactPort {
   const timeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
+  const log = options.log ?? (() => {});
   const salutations = keptFor<ReadonlyMap<string, string>>(SALUTATION_TTL_MS);
+  const forms = keptFor<ContactForm>(options.formTtlMs ?? FORM_TTL_MS);
+  const fallbacks = keptFor<ContactForm>(FORM_FALLBACK_TTL_MS);
 
-  /** The salutation's id; Shopware requires one, "not given" without. */
+  /**
+   * The salutation's id; Shopware requires one: "not given" without, the
+   * first one when the shop has no "not given".
+   */
   async function salutationId(salutation: Salutation | null): Promise<string> {
     let map = salutations.get("all");
     if (!map) {
       const answer = await deadline(
-        storeApi.post<{ elements?: SwSalutation[] }>("/salutation", {
+        send<{ elements?: SwSalutation[] }>("/salutation", {
           includes: { salutation: ["id", "salutationKey"] },
         }),
         timeoutMs,
@@ -79,7 +144,9 @@ export function createShopwareContact(
       salutations.set("all", map);
     }
     const id =
-      map.get(salutation ?? "not_specified") ?? map.get("not_specified");
+      map.get(salutation ?? "not_specified") ??
+      map.get("not_specified") ??
+      map.values().next().value;
     if (!id) {
       throw new DomainError(
         "backend_unavailable",
@@ -89,11 +156,56 @@ export function createShopwareContact(
     return id;
   }
 
+  /**
+   * Shopware's settings `core.basicInformation.firstNameFieldRequired`,
+   * `lastNameFieldRequired` and `phoneNumberFieldRequired` are not in the
+   * Store API: an empty message shows them, since Shopware validates before
+   * its limit and sends nothing for a refused message. Kept 10 minutes; when
+   * Shopware does not answer, nothing is required (as the form said before)
+   * for a minute.
+   */
+  async function readForm(): Promise<ContactForm> {
+    try {
+      await deadline(send("/contact-form", {}), timeoutMs);
+    } catch (error) {
+      if (statusOf(error) === 400) {
+        const blank = new Set(refusedFields(error));
+        return deepFreeze({
+          required: {
+            firstName: blank.has(REQUIRABLE[0]),
+            lastName: blank.has(REQUIRABLE[1]),
+            phone: blank.has(REQUIRABLE[2]),
+          },
+        });
+      }
+      throw error;
+    }
+    // an empty message accepted: nothing is required
+    return OPTIONAL;
+  }
+
   return {
+    getForm: async () => {
+      const kept = forms.get("form") ?? fallbacks.get("form");
+      if (kept) return kept;
+      try {
+        const form = await readForm();
+        forms.set("form", form);
+        return form;
+      } catch (error) {
+        log("[shopware][contact] the contact form's fields could not be read", {
+          status: statusOf(error),
+          codes: errorCodes(error),
+        });
+        fallbacks.set("form", OPTIONAL);
+        return OPTIONAL;
+      }
+    },
+
     send: async (message, sender) => {
       try {
         const answer = await deadline(
-          storeApi.post<{ individualSuccessMessage?: unknown }>(
+          send<{ individualSuccessMessage?: unknown }>(
             "/contact-form",
             {
               salutationId: await salutationId(message.salutation),
@@ -104,9 +216,7 @@ export function createShopwareContact(
               subject: message.subject,
               comment: message.message,
             },
-            sender.forwardedFor
-              ? { headers: { "x-forwarded-for": sender.forwardedFor } }
-              : undefined,
+            sender.forwardedFor,
           ),
           timeoutMs,
         );

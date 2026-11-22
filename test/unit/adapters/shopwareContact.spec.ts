@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createShopwareBackend,
   type StoreApi,
+  type VisitorStoreApi,
 } from "../../../server/adapters/shopware";
 import { isDomainError } from "../../../shared/domain";
 import { MESSAGE } from "../../contract/contact.contract";
@@ -144,5 +145,101 @@ describe("Shopware ContactPort adapter (anti-corruption)", () => {
     const { contact } = setup(() => new Promise(() => {}));
     const error = await failure(() => contact.send(MESSAGE, {}));
     expect(isDomainError(error, "backend_unavailable")).toBe(true);
+  });
+
+  it("sends through the server's endpoint with the visitor's chain, without a token", async () => {
+    const send = vi.fn(async (request: { path: string }) => ({
+      data: (request.path === "/salutation"
+        ? { elements: [{ id: NOT_SPECIFIED, salutationKey: "not_specified" }] }
+        : { individualSuccessMessage: "" }) as never,
+      contextToken: "issued-token",
+    }));
+    const storeApi: StoreApi = {
+      get: () => Promise.reject(new Error("no GET")),
+      post: () => Promise.reject(new Error("not the public endpoint")),
+    };
+    const { contact } = createShopwareBackend({
+      storeApi,
+      visitorApi: { send } as unknown as VisitorStoreApi,
+      storeUrl: "https://shop.example.com",
+      timeZone: "Europe/Berlin",
+      log: () => {},
+    });
+
+    await contact.send(MESSAGE, { forwardedFor: "203.0.113.7" });
+
+    const request = send.mock.calls
+      .map(([call]) => call as Record<string, unknown>)
+      .find((call) => call.path === "/contact-form")!;
+    expect(request).toMatchObject({
+      method: "POST",
+      forwardedFor: "203.0.113.7",
+    });
+    expect(request.contextToken).toBeUndefined();
+  });
+
+  it('takes the first salutation when the shop has no "not given"', async () => {
+    const posts: Record<string, unknown>[] = [];
+    const storeApi: StoreApi = {
+      get: () => Promise.reject(new Error("no GET")),
+      post: async <T>(path: string, body: Record<string, unknown>) => {
+        if (path === "/salutation") {
+          return {
+            elements: [
+              { id: "id-mrs", salutationKey: "mrs" },
+              { id: "id-mr", salutationKey: "mr" },
+            ],
+          } as T;
+        }
+        posts.push(body);
+        return {} as T;
+      },
+    };
+    const { contact } = createShopwareBackend({
+      storeApi,
+      storeUrl: "",
+      timeZone: "Europe/Berlin",
+      log: () => {},
+    });
+    await contact.send(MESSAGE, {});
+    expect(posts[0]!.salutationId).toBe("id-mrs");
+  });
+
+  it("learns the required fields from Shopware's validation of an empty message, once a while", async () => {
+    const { contact, post } = setup((body) => {
+      if (Object.keys(body).length === 0) {
+        throw refused(400, "VIOLATION::IS_BLANK_ERROR", {
+          source: { pointer: "/lastName" },
+        });
+      }
+      return {};
+    });
+
+    expect(await contact.getForm()).toEqual({
+      required: { firstName: false, lastName: true, phone: false },
+    });
+    await contact.getForm();
+    expect(
+      post.mock.calls.filter(([path]) => path === "/contact-form"),
+    ).toHaveLength(1);
+  });
+
+  it("requires nothing when Shopware cannot tell, and asks again soon", async () => {
+    const log = vi.fn();
+    const storeApi: StoreApi = {
+      get: () => Promise.reject(new Error("no GET")),
+      post: () =>
+        Promise.reject(Object.assign(new Error("503"), { statusCode: 503 })),
+    };
+    const { contact } = createShopwareBackend({
+      storeApi,
+      storeUrl: "",
+      timeZone: "Europe/Berlin",
+      log,
+    });
+    expect(await contact.getForm()).toEqual({
+      required: { firstName: false, lastName: false, phone: false },
+    });
+    expect(log).toHaveBeenCalledOnce();
   });
 });

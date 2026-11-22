@@ -17,7 +17,13 @@ export const memoryContact: ContactFixture = {
   create: (scenario) => {
     const received: ReceivedMessage[] = [];
     const backend = createMemoryBackend(
-      { ...demoSeed(), contact: { confirmation: scenario.confirmation } },
+      {
+        ...demoSeed(),
+        contact: {
+          confirmation: scenario.confirmation,
+          required: scenario.required,
+        },
+      },
       {
         contact: ({ message, forwardedFor }: MemoryContactMessage) =>
           received.push({ ...message, forwardedFor }),
@@ -32,6 +38,21 @@ const SALUTATIONS: Record<Salutation, string> = {
   mrs: "0191c12dd4b970949e8e6ba4d6a0d7b2",
   not_specified: "0191c12dd4b970949e8e6ba4d5fc80c6",
 };
+
+/** Shopware's 400 of blank fields, as ofetch throws it. */
+const violations = (fields: string[]) =>
+  Object.assign(new Error("400"), {
+    name: "FetchError",
+    statusCode: 400,
+    status: 400,
+    data: {
+      errors: fields.map((field) => ({
+        status: "400",
+        code: "VIOLATION::IS_BLANK_ERROR",
+        source: { pointer: `/${field}` },
+      })),
+    },
+  });
 
 /** Shopware's answer of an error, as ofetch throws it. */
 const refusal = (status: number, code: string, parameters: Json = {}) =>
@@ -83,6 +104,19 @@ export const shopwareContact: ContactFixture = {
         }
         if (path !== "/contact-form")
           throw new Error(`unexpected POST ${path}`);
+        // Shopware validates before its limit: blank required fields
+        const blank = (field: string) =>
+          typeof body[field] !== "string" || !(body[field] as string).trim();
+        const missing = [
+          "salutationId",
+          "email",
+          "subject",
+          "comment",
+          ...(scenario.required?.firstName ? ["firstName"] : []),
+          ...(scenario.required?.lastName ? ["lastName"] : []),
+          ...(scenario.required?.phone ? ["phone"] : []),
+        ].filter(blank);
+        if (missing.length) throw violations(missing);
         const forwardedFor = options?.headers?.["x-forwarded-for"];
         const client = forwardedFor?.split(",").at(-1)?.trim() ?? "storefront";
         const count = sent.get(client) ?? 0;

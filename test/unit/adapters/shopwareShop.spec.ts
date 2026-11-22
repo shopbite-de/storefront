@@ -223,4 +223,37 @@ describe("Shopware ShopPort adapter (anti-corruption)", () => {
     const hours = await shop.getOpeningHours();
     expect(Object.isFrozen(hours.intervals[0])).toBe(true);
   });
+
+  it("answers the configuration with the default price format when the context fails", async () => {
+    const log = vi.fn();
+    let contextFails = true;
+    const get = vi.fn(async (path: string) => {
+      if (path === "/context") {
+        if (contextFails)
+          throw Object.assign(new Error("503"), { statusCode: 503 });
+        return {
+          currency: { isoCode: "CHF" },
+          languageInfo: { localeCode: "de-CH" },
+        };
+      }
+      return { isCheckoutEnabled: true, shippingMethods: [] };
+    });
+    const shop = shopOf({
+      storeApi: {
+        get: get as StoreApi["get"],
+        post: () => Promise.reject(new Error("no POST")),
+      },
+      log,
+    });
+
+    const config = await shop.getConfig();
+    expect(config.acceptsOrders).toBe(true);
+    expect([config.currency, config.locale]).toEqual(["EUR", "de-DE"]);
+    expect(log).toHaveBeenCalledOnce();
+
+    // the default is not kept: the next read asks the context again
+    contextFails = false;
+    const next = await shop.getConfig();
+    expect([next.currency, next.locale]).toEqual(["CHF", "de-CH"]);
+  });
 });
