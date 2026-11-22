@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Extra, Variant } from "../../../shared/domain";
 import type { QuickViewConfiguration } from "~/utils/productUrl";
-import type { WishlistConfiguration } from "~/composables/useWishlistEntries";
+import type { WishlistSelection } from "~/utils/wishlist";
 
 const props = defineProps<{
   /** A dish, or a variant (its dish opens with the variant selected). */
@@ -16,7 +16,7 @@ const emit = defineEmits<{
   "variant-selected": [variant: Variant];
   "configuration-changed": [configuration: QuickViewConfiguration];
   // The dish as configured right now, for the save button (#467).
-  "selection-changed": [selection: WishlistConfiguration];
+  "selection-changed": [selection: WishlistSelection];
 }>();
 
 const {
@@ -64,14 +64,24 @@ function emitConfiguration() {
 }
 
 watch(
-  () => {
+  (): WishlistSelection | undefined => {
     const dish = selectedDish.value;
-    if (!dish?.number) return undefined;
+    const dishId = detail.value?.id;
+    if (!dish?.number || !dishId) return undefined;
     return {
-      productId: dish.id,
-      productNumber: dish.number,
-      without: [...deselectedIngredients.value],
-      extras: selectedExtras.value.map((extra) => extra.number),
+      configuration: {
+        dishId,
+        variantId: dish.id === dishId ? null : dish.id,
+        extraIds: selectedExtras.value.map((extra) => extra.id),
+        // the sheet names removals; the wishlist keeps their ids
+        removedIngredientIds: deselectedIngredients.value.flatMap((name) => {
+          const ingredient = dish.ingredients.find(
+            (candidate) => candidate.name === name,
+          );
+          return ingredient ? [ingredient.id] : [];
+        }),
+      },
+      dishNumber: dish.number,
     };
   },
   (selection) => {

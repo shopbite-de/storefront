@@ -54,7 +54,8 @@ async function onSubmit() {
     result.value = { ok: true, message };
     Object.assign(state, empty());
   } catch (error) {
-    console.error("Error sending contact mail:", error);
+    // the code only: the error of a request carries its body
+    console.error("[contact] send", domainErrorCode(error) ?? "no answer");
     result.value = {
       ok: false,
       message:

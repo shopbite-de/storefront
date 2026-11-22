@@ -1,30 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { mountSuspended, registerEndpoint } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
+import { createError, readBody, type H3Event } from "h3";
 import ContactForm from "~/components/Contact/Form.vue";
 
-// Contact form of the presets (#445).
-const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
+// Contact form of the presets (#445), through the BFF (ADR 0001, step 7).
+const mocks = vi.hoisted(() => ({ contact: vi.fn() }));
 
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: { invoke: mocks.invoke },
-}));
+registerEndpoint("/api/contact", {
+  method: "POST",
+  handler: async (event: H3Event) => mocks.contact(await readBody(event)),
+});
 
-const salutations = {
-  data: { elements: [{ id: "sal-none", displayName: "Keine Angabe" }] },
-};
-
-/** Answers the salutation request and lets `send` handle the contact mail. */
+/** Answers the contact message with `send`. */
 function mockSend(send: () => Promise<unknown>) {
-  mocks.invoke.mockImplementation(async (operation: string) =>
-    operation.includes("salutation") ? salutations : send(),
-  );
+  mocks.contact.mockImplementation(send);
 }
 
-const sendCalls = () =>
-  mocks.invoke.mock.calls.filter(
-    ([operation]) => operation === "sendContactMail post /contact-form",
-  );
+const sendCalls = () => mocks.contact.mock.calls;
 
 async function fill(wrapper: Awaited<ReturnType<typeof mountSuspended>>) {
   await wrapper.find('input[name="email"]').setValue("gast@example.de");
@@ -36,8 +29,8 @@ async function fill(wrapper: Awaited<ReturnType<typeof mountSuspended>>) {
 
 describe("contact form with a preset (#445)", () => {
   beforeEach(() => {
-    mocks.invoke.mockReset();
-    mockSend(async () => ({ data: {} }));
+    mocks.contact.mockReset();
+    mockSend(async () => ({ confirmation: null }));
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -52,21 +45,22 @@ describe("contact form with a preset (#445)", () => {
   });
 
   it("sends the message and shows the shop's success text", async () => {
-    mockSend(async () => ({
-      data: { individualSuccessMessage: "Danke, wir melden uns." },
-    }));
+    mockSend(async () => ({ confirmation: "Danke, wir melden uns." }));
     const wrapper = await mountSuspended(ContactForm);
     await fill(wrapper);
     await wrapper.find("form").trigger("submit");
     await flushPromises();
-    expect(mocks.invoke).toHaveBeenCalledWith(
-      "sendContactMail post /contact-form",
-      expect.objectContaining({
-        body: expect.objectContaining({
-          email: "gast@example.de",
-          subject: "Allergene",
-        }),
-      }),
+    // the fields the form has, empty ones as not given
+    expect(mocks.contact).toHaveBeenCalledWith({
+      firstName: null,
+      lastName: null,
+      email: "gast@example.de",
+      phone: null,
+      subject: "Allergene",
+      message: "Ist der Teig ohne Ei gemacht?",
+    });
+    await vi.waitFor(() =>
+      expect(wrapper.find('[role="status"]').exists()).toBe(true),
     );
     expect(wrapper.find('[role="status"]').text()).toContain(
       "Danke, wir melden uns.",
@@ -74,11 +68,13 @@ describe("contact form with a preset (#445)", () => {
   });
 
   it("falls back to the default text and offers another message", async () => {
-    mockSend(async () => ({ data: { individualSuccessMessage: " " } }));
+    mockSend(async () => ({ confirmation: null }));
     const wrapper = await mountSuspended(ContactForm);
     await fill(wrapper);
     await wrapper.find("form").trigger("submit");
-    await flushPromises();
+    await vi.waitFor(() =>
+      expect(wrapper.find('[role="status"]').exists()).toBe(true),
+    );
     const status = wrapper.find('[role="status"]');
     expect(status.text()).toContain(
       "Vielen Dank, Ihre Nachricht ist bei uns angekommen.",
@@ -102,14 +98,19 @@ describe("contact form with a preset (#445)", () => {
     expect(wrapper.find('[role="status"]').exists()).toBe(true);
   });
 
-  it("reports a failed send in the form", async () => {
-    mockSend(() => Promise.reject(new Error("500")));
+  it.each([
+    [503, "backend_unavailable"],
+    [429, "rate_limited"],
+    [400, "invalid_value"],
+  ])("reports a failed send in the form (%i %s)", async (statusCode, code) => {
+    mockSend(() => Promise.reject(createError({ statusCode, data: { code } })));
     const wrapper = await mountSuspended(ContactForm);
     await fill(wrapper);
     await wrapper.find("form").trigger("submit");
-    await flushPromises();
-    expect(wrapper.find('[role="alert"]').text()).toContain(
-      "konnte nicht gesendet werden",
+    await vi.waitFor(() =>
+      expect(wrapper.find('[role="alert"]').text()).toContain(
+        "konnte nicht gesendet werden",
+      ),
     );
   });
 });

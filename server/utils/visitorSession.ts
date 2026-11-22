@@ -1,6 +1,6 @@
 import type { H3Event } from "h3";
 import type { BackendSession } from "../ports";
-import { forwardedFor } from "../adapters/shopware/sessionBridge";
+import { forwardedFor } from "../session/forwardedFor";
 import { isCrossSiteWrite } from "../session/sameOrigin";
 import { createSealer, sessionPasswords, type Sealer } from "../session/seal";
 import {

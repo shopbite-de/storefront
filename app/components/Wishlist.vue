@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { LocationQueryRaw } from "vue-router";
-import type { Dish, DishDetail, Extra } from "../../shared/domain";
-import type { WishlistEntry } from "~/composables/useWishlistEntries";
+import type {
+  Dish,
+  DishDetail,
+  Extra,
+  WishlistEntry,
+} from "../../shared/domain";
 import type { OrderableDish } from "~/utils/dish";
 import { withQuickViewConfiguration } from "~/utils/productUrl";
 
@@ -11,7 +15,8 @@ import { withQuickViewConfiguration } from "~/utils/productUrl";
  * dish and extras, adds it to the cart as the dish sheet would (same
  * container line item, `useAddToCart`) and opens the sheet with the saved
  * configuration ("Anpassen", the dish sheet URL of #411 on this page). The
- * dishes come from the BFF's dish sheets (`/api/menu/dishes/[dishId]`).
+ * dishes come from the BFF's dish sheets (`/api/menu/dishes/[dishId]`);
+ * an entry names extras and removed ingredients by id (ADR 0001, step 7).
  */
 withDefaults(defineProps<{ showMenuButton?: boolean }>(), {
   showMenuButton: false,
@@ -28,12 +33,12 @@ const {
   addToCart,
 } = useAddToCart();
 
-/** The dish sheet of each saved dish or variant, by its id. */
+/** The dish sheet of each saved dish, by its id. */
 const details = ref<Record<string, DishDetail>>({});
 const loadingDishes = ref(false);
 
 async function loadDishes(list: WishlistEntry[]) {
-  const ids = [...new Set(list.map((entry) => entry.productId))];
+  const ids = [...new Set(list.map((entry) => entry.configuration.dishId))];
   if (!ids.length) {
     details.value = {};
     return;
@@ -41,7 +46,9 @@ async function loadDishes(list: WishlistEntry[]) {
   loadingDishes.value = true;
   try {
     const answers = await Promise.allSettled(
-      ids.map((id) => $fetch<DishDetail>(`/api/menu/dishes/${id}`)),
+      ids.map((id) =>
+        $fetch<DishDetail>(`/api/menu/dishes/${encodeURIComponent(id)}`),
+      ),
     );
     const found: Record<string, DishDetail> = {};
     answers.forEach((answer, index) => {
@@ -69,27 +76,39 @@ type Row = {
   dishId: string;
   orderable: OrderableDish;
   extras: Extra[];
+  /** The removed main ingredients by name, as the dish sheet's URL. */
+  without: string[];
   configuration: string;
   price: Dish["price"];
-  // a parent with variants (saved before #467) needs a choice first
+  // a dish with variants saved without one (before #467) needs a choice
   needsChoice: boolean;
 };
 
 const rows = computed<Row[]>(() =>
   entries.value.flatMap((entry) => {
-    const detail = details.value[entry.productId];
+    const { configuration } = entry;
+    const detail = details.value[configuration.dishId];
     if (!detail) return [];
-    const variant = detail.variants.find(
-      (candidate) => candidate.id === entry.productId,
-    );
+    const variant = configuration.variantId
+      ? detail.variants.find(
+          (candidate) => candidate.id === configuration.variantId,
+        )
+      : undefined;
+    // a variant the dish no longer has
+    if (configuration.variantId && !variant) return [];
     const dish = variant ? variantAsDish(detail, variant) : detail;
     const offered = detail.extraGroups.flatMap((group) => group.extras);
-    const chosenExtras = entry.extras
-      .map((number) => offered.find((extra) => extra.number === number))
+    const chosenExtras = configuration.extraIds
+      .map((id) => offered.find((extra) => extra.id === id))
       .filter((extra): extra is Extra => !!extra);
-    const configuration = [
+    const ingredients = (variant ?? detail).ingredients;
+    const without = configuration.removedIngredientIds.flatMap((id) => {
+      const ingredient = ingredients.find((candidate) => candidate.id === id);
+      return ingredient ? [ingredient.name] : [];
+    });
+    const label = [
       ...chosenExtras.map((extra) => `+${extra.name}`),
-      ...entry.without.map((name) => `ohne ${name}`),
+      ...without.map((name) => `ohne ${name}`),
     ].join(", ");
     return [
       {
@@ -98,7 +117,8 @@ const rows = computed<Row[]>(() =>
         dishId: detail.id,
         orderable: variant ?? detail,
         extras: chosenExtras,
-        configuration,
+        without,
+        configuration: label,
         price: sumMoney(
           [dish.price, ...chosenExtras.map((extra) => extra.price)],
           dish.price.currency,
@@ -116,8 +136,8 @@ function customizeLink(row: Row) {
   return {
     query: withQuickViewConfiguration(route.query, {
       productNumber: row.dish.number,
-      without: row.entry.without,
-      extras: row.entry.extras,
+      without: row.without,
+      extras: row.extras.map((extra) => extra.number),
     }) as LocationQueryRaw,
   };
 }
@@ -132,7 +152,7 @@ function rowLabel(row: Row) {
 async function addRow(row: Row) {
   setSelectedDish(row.orderable, row.dishId);
   setSelectedExtras(row.extras);
-  setRemovedIngredients(row.entry.without);
+  setRemovedIngredients(row.without);
   selectedQuantity.value = 1;
   let added = false;
   await addToCart(() => (added = true));

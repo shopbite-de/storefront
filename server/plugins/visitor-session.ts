@@ -1,8 +1,4 @@
-import {
-  backendSession,
-  sessionSettings,
-  useVisitorSession,
-} from "../utils/visitorSession";
+import { sessionSettings, useVisitorSession } from "../utils/visitorSession";
 
 /**
  * The storefront session (ADR 0001, step 4).
@@ -12,12 +8,8 @@ import {
  * instead of ending every visitor's session with each restart. Not while
  * the build prerenders (images are built without the secret).
  *
- * Server-side rendering: the Shopware layer renders with the visitor's
- * context token (`useUserContextInSSR`); `app/plugins/store-api-session.ts`
- * reads it through `event.context.shopbiteStoreApiSession`, which takes over
- * the old `sw-context-token` cookie first. Read only: rendering never
- * creates or replaces a session (bots, and a cookie set while the HTML
- * streams). Nothing is read unless a page renders.
+ * Server-side rendering never reads the backend's state of the visitor
+ * (the layer's context of steps 4 to 6 is gone, step 7).
  * `event.context.shopbiteHasVisitorSession` tells the app whether the
  * request brought a session (`app/plugins/visitor-has-session.server.ts`).
  */
@@ -34,10 +26,6 @@ export default defineNitroPlugin((nitroApp) => {
   }
 
   nitroApp.hooks.hook("request", (event) => {
-    event.context.shopbiteStoreApiSession = {
-      read: async () =>
-        (await backendSession(event, "shopware", { create: false })).read(),
-    };
     // whether the request brought a session this server can unseal (a
     // malformed cookie or one of a dropped password is none): the app
     // starts one before the first write when not

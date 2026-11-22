@@ -10,8 +10,7 @@ import Wishlist from "~/components/Wishlist.vue";
 import { dishDetail, eur, pizzaWithSizes } from "../support/dishes";
 import { cart } from "../support/cart";
 
-const { invoke, addLine, dishes } = vi.hoisted(() => ({
-  invoke: vi.fn(),
+const { addLine, dishes } = vi.hoisted(() => ({
   addLine: vi.fn(),
   dishes: vi.fn(),
 }));
@@ -19,9 +18,6 @@ const { invoke, addLine, dishes } = vi.hoisted(() => ({
 registerEndpoint("/api/menu/dishes/p1", () => dishes("p1"));
 registerEndpoint("/api/menu/dishes/v21-gross", () => dishes("v21-gross"));
 registerEndpoint("/api/menu/dishes/d21", () => dishes("d21"));
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: { invoke },
-}));
 mockNuxtImport("useCustomer", () => () => ({ isLoggedIn: ref(false) }));
 mockNuxtImport("useCartMutations", () => () => ({
   addLine,
@@ -54,6 +50,17 @@ const pizza = dishDetail({
   ],
 });
 
+/** The large Margherita with Extra Käse. */
+const GROSS_WITH_CHEESE = {
+  configuration: {
+    dishId: "d21",
+    variantId: "v21-gross",
+    extraIds: ["x900"],
+    removedIngredientIds: [],
+  },
+  dishNumber: "21-groß",
+};
+
 describe("wishlist page (#467)", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -69,10 +76,13 @@ describe("wishlist page (#467)", () => {
     const wishlist = useWishlistEntries();
     wishlist.entries.value = [];
     await wishlist.add({
-      productId: "p1",
-      productNumber: "21",
-      without: ["Pilze"],
-      extras: ["X1"],
+      configuration: {
+        dishId: "p1",
+        variantId: null,
+        extraIds: ["x1"],
+        removedIngredientIds: ["i-pilze"],
+      },
+      dishNumber: "21",
     });
     wishlist.loaded.value = true;
   });
@@ -112,17 +122,16 @@ describe("wishlist page (#467)", () => {
   it("shows a saved variant by its number and price, a saved parent as a choice", async () => {
     const wishlist = useWishlistEntries();
     wishlist.entries.value = [];
+    await wishlist.add(GROSS_WITH_CHEESE);
+    // a dish with variants saved without one (before #467)
     await wishlist.add({
-      productId: "v21-gross",
-      productNumber: "21-groß",
-      without: [],
-      extras: ["900"],
-    });
-    await wishlist.add({
-      productId: "d21",
-      productNumber: "21",
-      without: [],
-      extras: [],
+      configuration: {
+        dishId: "d21",
+        variantId: null,
+        extraIds: [],
+        removedIngredientIds: [],
+      },
+      dishNumber: "21",
     });
     const wrapper = await mountSuspended(Wishlist);
     await flushPromises();
@@ -141,12 +150,7 @@ describe("wishlist page (#467)", () => {
   it("adds a saved variant as the variant of its dish", async () => {
     const wishlist = useWishlistEntries();
     wishlist.entries.value = [];
-    await wishlist.add({
-      productId: "v21-gross",
-      productNumber: "21-groß",
-      without: [],
-      extras: ["900"],
-    });
+    await wishlist.add(GROSS_WITH_CHEESE);
     const wrapper = await mountSuspended(Wishlist);
     await flushPromises();
 

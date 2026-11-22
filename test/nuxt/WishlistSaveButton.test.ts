@@ -1,20 +1,19 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
 import { ref } from "vue";
 import WishlistSaveButton from "~/components/WishlistSaveButton.vue";
 
-const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
-mockNuxtImport("useShopwareContext", () => () => ({
-  apiClient: { invoke },
-}));
 mockNuxtImport("useCustomer", () => () => ({ isLoggedIn: ref(false) }));
 
 const selection = {
-  productId: "p1",
-  productNumber: "21",
-  without: ["Pilze"],
-  extras: ["X1"],
+  configuration: {
+    dishId: "p1",
+    variantId: null,
+    extraIds: ["x1"],
+    removedIngredientIds: ["i-pilze"],
+  },
+  dishNumber: "21",
 };
 
 describe("WishlistSaveButton (#467)", () => {
@@ -36,14 +35,20 @@ describe("WishlistSaveButton (#467)", () => {
 
     expect(button.attributes("aria-pressed")).toBe("true");
     expect(useWishlistEntries().entries.value).toMatchObject([
-      { productId: "p1", without: ["Pilze"], extras: ["X1"] },
+      { configuration: selection.configuration, dishNumber: "21" },
     ]);
   });
 
   it("is not pressed for another configuration of the same dish", async () => {
     await useWishlistEntries().add(selection);
     const wrapper = await mountSuspended(WishlistSaveButton, {
-      props: { selection: { ...selection, extras: [] }, name: "Pizza Mix" },
+      props: {
+        selection: {
+          ...selection,
+          configuration: { ...selection.configuration, extraIds: [] },
+        },
+        name: "Pizza Mix",
+      },
     });
 
     expect(wrapper.get("button").attributes("aria-pressed")).toBe("false");

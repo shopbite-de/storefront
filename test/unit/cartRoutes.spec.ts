@@ -63,7 +63,6 @@ const ROUTES: Record<string, string> = {
   "POST /api/cart/vouchers": "../../server/api/cart/vouchers.post",
   "DELETE /api/cart/vouchers/[code]":
     "../../server/api/cart/vouchers/[code].delete",
-  "POST /api/store-api/[...path]": "../../server/api/store-api/[...path]",
 };
 
 let backend: Backend;
@@ -432,99 +431,6 @@ describe("the session behind the cart (Shopware)", () => {
     expect(read.event.setCookies).toEqual([]);
     // the browser's current cookie works
     expect((await addCola(client)).error).toBeUndefined();
-  });
-
-  it("never loses a cart write that overlaps a token change through the bridge", async () => {
-    const outcomes: string[] = [];
-    for (let trial = 0; trial < 15; trial++) {
-      vi.resetModules();
-      const fake = await shopware();
-      const client = browser();
-      await addCola(client);
-      const cookie = Object.fromEntries(client.cookies);
-
-      // Shopware registers the guest: a new token, the cart moves with it
-      vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
-        await new Promise((resolve) => setTimeout(resolve, 5 + (trial % 4)));
-        const old = (init.headers as Record<string, string>)[
-          "sw-context-token"
-        ]!;
-        const registered = `registered-${trial}-0123456789abcdefABCD`;
-        fake.carts.set(registered, fake.carts.get(old) ?? []);
-        fake.carts.delete(old);
-        return new Response("{}", {
-          headers: {
-            "content-type": "application/json",
-            "sw-context-token": registered,
-          },
-        });
-      });
-
-      // the cart's own write to Shopware is slower than the registration:
-      // without one-at-a-time it would land in the replaced token's cart
-      const send0 = fake.visitorApi.send;
-      fake.visitorApi.send = async (request) => {
-        await new Promise((resolve) => setTimeout(resolve, 15));
-        return send0(request);
-      };
-
-      const registering = browser(cookie);
-      const adding = browser(cookie);
-      const order = trial % 2;
-      const [register, add] = await Promise.all(
-        order
-          ? [
-              send(registering, {
-                method: "POST",
-                path: "/api/store-api/[...path]",
-                params: { path: "shopbite/wishlist/merge" },
-                body: "{}",
-              }),
-              addCola(adding),
-            ]
-          : [
-              new Promise<Awaited<ReturnType<typeof send>>>((resolve) =>
-                setTimeout(
-                  () =>
-                    resolve(
-                      send(registering, {
-                        method: "POST",
-                        path: "/api/store-api/[...path]",
-                        params: { path: "shopbite/wishlist/merge" },
-                        body: "{}",
-                      }),
-                    ),
-                  1,
-                ),
-              ),
-              addCola(adding),
-            ],
-      );
-      expect(register.error).toBeUndefined();
-      expect(register.event.status).toBe(200);
-
-      // the browser now holds the newest cookie
-      const now = browser(Object.fromEntries(registering.cookies));
-      const after = await send(now, { method: "GET", path: "/api/cart" });
-      const quantity =
-        (after.body as CartAnswer).lines.find(
-          (line) => line.configuration.dishId === COLA,
-        )?.quantity ?? 0;
-      if (add.error) {
-        expect(add.error).toMatchObject({
-          statusCode: 409,
-          data: { code: "stale_session" },
-        });
-        expect(quantity).toBe(1);
-        outcomes.push("409");
-      } else {
-        // the write went first, with the old token: the cart moved with it
-        expect(quantity).toBe(2);
-        outcomes.push("200");
-      }
-      vi.unstubAllGlobals();
-    }
-    expect(outcomes).toHaveLength(15);
   });
 
   it("keeps the cart of a visitor of the old layer (sw-context-token cookie) once", async () => {

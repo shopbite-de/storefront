@@ -1,61 +1,22 @@
 <script setup lang="ts">
 import Footer from "~/components/Footer.vue";
 
-const { apiClient } = useShopwareContext();
-
 // The footer is below the fold on every page; its hydration waits until it
 // scrolls into view (#314).
 const FooterWhenVisible = hydrateWhenVisible(Footer);
 
 // The session's customer (ADR 0001, step 6), rendered on the server so the
-// header knows the login on the first paint. Read in parallel with the
-// layer's context: during an outage the page waits for one deadline, not
-// two (step 6 review).
+// header knows the login on the first paint. The price format (currency,
+// locale) is the shop's configuration (`useShopConfig` below, step 7); the
+// page reads no backend context of the visitor any more.
 const { isLoggedIn, refresh: refreshCustomer } = useCustomer();
-const [{ data: sessionContextData }] = await Promise.all([
-  useAsyncData(
-    "sessionContext",
-    async () => {
-      try {
-        // with a deadline, without token and customer (`readLayerContext`)
-        return (await readLayerContext(
-          apiClient as unknown as Parameters<typeof readLayerContext>[0],
-        )) as Awaited<
-          ReturnType<typeof apiClient.invoke<"readContext get /context">>
-        >["data"];
-      } catch (error) {
-        console.error(
-          "Failed to load session context",
-          (error as Error | null)?.name ?? "no answer",
-        );
-        return null;
-      }
-    },
-    {
-      default: () => null,
-    },
-  ),
-  useAsyncData("customer", () =>
-    refreshCustomer().catch((error) => {
-      // the code only: the error of a request carries its options
-      console.error(
-        "[account] customer",
-        domainErrorCode(error) ?? "no answer",
-      );
-      return null;
-    }),
-  ),
-]);
-
-const { setPriceConfig } = useCommercePrice();
-
-if (sessionContextData.value) {
-  setPriceConfig({
-    currencyCode: sessionContextData.value.currency?.isoCode,
-    localeCode: sessionContextData.value.languageInfo?.localeCode,
-  });
-  useSessionContext(sessionContextData.value);
-}
+await useAsyncData("customer", () =>
+  refreshCustomer().catch((error) => {
+    // the code only: the error of a request carries its options
+    console.error("[account] customer", domainErrorCode(error) ?? "no answer");
+    return null;
+  }),
+);
 
 // Opening hours, holidays, the switch that accepts orders and the lead
 // times feed the store status (HeaderStoreStatus), the wished time choice
@@ -63,7 +24,7 @@ if (sessionContextData.value) {
 // hydration the browser loads their live values (useLiveShopData).
 useOpeningHours();
 useHolidays();
-useShopConfig();
+const { config: shopConfig } = useShopConfig();
 useShippingMethods();
 useLiveShopData();
 
@@ -73,8 +34,9 @@ useLiveShopData();
 const { refresh: refreshCart } = useCartData();
 const loadCart = () =>
   refreshCart().catch((error) => console.error("[cart] refresh", error));
-// Wishlist entries (#467): loaded in the browser, not during SSR. A login
-// moves the guest entries into the account, a logout shows the guest's.
+// Wishlist entries (#467, ADR 0001 step 7): loaded in the browser, not
+// during SSR. A login moves the guest entries into the account, a logout
+// shows the guest's.
 const { load: loadWishlist, mergeGuestEntries } = useWishlistEntries();
 onMounted(loadWishlist);
 // a login or logout replaces the visitor's backend context: the methods
@@ -139,9 +101,7 @@ useSeoMeta({
   ogUrl: canonicalUrl,
   ogType: "website",
   ogSiteName: site.name,
-  ogLocale: (
-    sessionContextData.value?.languageInfo?.localeCode ?? "de-DE"
-  ).replace("-", "_"),
+  ogLocale: () => (shopConfig.value?.locale ?? "de-DE").replace("-", "_"),
   ogImage: site.ogImage
     ? toAbsoluteUrl(siteConfig.url, site.ogImage)
     : undefined,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WishlistConfiguration } from "~/composables/useWishlistEntries";
+import type { WishlistSelection } from "~/utils/wishlist";
 
 /**
  * Saves the dish as configured right now (#467): variant, deselected
@@ -8,7 +8,7 @@ import type { WishlistConfiguration } from "~/composables/useWishlistEntries";
  * saving shows the new combination as not saved yet.
  */
 const props = defineProps<{
-  selection: WishlistConfiguration | undefined;
+  selection: WishlistSelection | undefined;
   name: string;
 }>();
 
@@ -16,7 +16,7 @@ const { find, add, remove } = useWishlistEntries();
 const { trackAddToWishlist } = useTrackEvent();
 
 const saved = computed(() =>
-  props.selection ? find(props.selection) : undefined,
+  props.selection ? find(props.selection.configuration) : undefined,
 );
 const busy = ref(false);
 const failed = ref(false);
@@ -30,7 +30,7 @@ async function toggle() {
       await remove(saved.value.id);
     } else {
       await add(props.selection);
-      trackAddToWishlist({ productNumber: props.selection.productNumber });
+      trackAddToWishlist({ productNumber: props.selection.dishNumber });
     }
   } catch (error) {
     console.error("[wishlist][toggle]", error);
