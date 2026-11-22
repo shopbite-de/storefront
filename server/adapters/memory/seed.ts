@@ -35,6 +35,8 @@ export type MemorySeed = Readonly<{
   cart?: Readonly<{ vouchers: readonly MemoryVoucher[] }>;
   /** Accounts: double opt-in for new ones (off without). */
   customer?: Readonly<{ doubleOptIn?: boolean }>;
+  /** The restaurant's own confirmation of a contact message (none without). */
+  contact?: Readonly<{ confirmation?: string | null }>;
 }>;
 
 const WEEK: Weekday[] = [1, 2, 3, 4, 5, 6, 7];
@@ -73,6 +75,8 @@ const buildDemoSeed = (): MemorySeed => ({
         city: "Musterstadt",
       },
       googleBusinessProfileUrl: null,
+      currency: "EUR",
+      locale: "de-DE",
     },
     openingHours: {
       intervals: WEEK.map((weekday) => ({

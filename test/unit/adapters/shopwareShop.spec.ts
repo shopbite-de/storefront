@@ -82,7 +82,40 @@ describe("Shopware ShopPort adapter (anti-corruption)", () => {
       telephone: null,
       address: null,
       googleBusinessProfileUrl: null,
+      // without a context: the storefront's defaults
+      currency: "EUR",
+      locale: "de-DE",
     });
+  });
+
+  it("takes currency and locale from the sales channel's context, read once a while", async () => {
+    const get = vi.fn(
+      async (path: string) =>
+        ({
+          "/shopbite/config": { isCheckoutEnabled: true, shippingMethods: [] },
+          "/context": {
+            currency: { isoCode: "CHF" },
+            languageInfo: { name: "Deutsch", localeCode: "de-CH" },
+          },
+        })[path],
+    );
+    const shop = shopOf({
+      storeApi: {
+        get: get as StoreApi["get"],
+        post: () => Promise.reject(new Error("no POST")),
+      },
+    });
+
+    const config = await shop.getConfig();
+    await shop.getConfig();
+
+    expect([config.currency, config.locale]).toEqual(["CHF", "de-CH"]);
+    expect(get.mock.calls.filter(([path]) => path === "/context")).toHaveLength(
+      1,
+    );
+    expect(
+      get.mock.calls.filter(([path]) => path === "/shopbite/config"),
+    ).toHaveLength(2);
   });
 
   it("splits a row that runs past midnight at midnight (closing at or before opening)", async () => {

@@ -448,6 +448,10 @@ export function createMemoryCustomer(options: {
       changeAddress(account, address);
       return true;
     },
+    customerOf: (token) => {
+      const id = sessions.get(token);
+      return id && accounts.has(id) ? id : undefined;
+    },
   };
 
   return { customer, accounts: view };

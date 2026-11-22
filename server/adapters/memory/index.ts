@@ -12,20 +12,22 @@ import {
   type CheckoutSelection,
 } from "../../../shared/domain";
 import type { Backend, CheckoutPort, ShopPort } from "../../ports";
-import { notImplemented } from "../notImplemented";
 import { createMemoryCart } from "./cart";
 import { createMemoryCatalog } from "./catalog";
+import { createMemoryContact, type MemoryContactMessage } from "./contact";
 import { createMemoryCustomer, type MemoryMail } from "./customer";
 import { createMemoryNavigation } from "./navigation";
 import { createMemoryOrdering, type MemoryAccountsView } from "./ordering";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { demoSeed, type MemorySeed } from "./seed";
+import { createMemoryWishlist } from "./wishlist";
 
 export { demoSeed, type MemorySeed } from "./seed";
 export type { MemoryCatalog, MemoryDish, MemoryVariant } from "./catalog";
 export type { MemoryVoucher } from "./cart";
 export type { MemoryNavigation } from "./navigation";
 export type { MemoryMail } from "./customer";
+export type { MemoryContactMessage } from "./contact";
 
 function createMemoryShop(seed: MemorySeed["shop"]): ShopPort {
   // a frozen copy: neither the seed's owner nor a caller can change it
@@ -48,6 +50,8 @@ export function createMemoryBackend(
   options: {
     /** What the backend would send by e-mail (default: nothing). */
     mail?: (mail: MemoryMail) => void;
+    /** Where contact messages go (default: nowhere, the demo sends none). */
+    contact?: (message: MemoryContactMessage) => void;
   } = {},
 ): Backend {
   const name = "memory";
@@ -90,8 +94,14 @@ export function createMemoryBackend(
     customer: customer.customer,
     orders: ordering.orders,
     shop,
-    wishlist: notImplemented("wishlist", name),
-    contact: notImplemented("contact", name),
+    wishlist: createMemoryWishlist({
+      catalog: seed.catalog,
+      customerOf: (token) => customer.accounts.customerOf(token),
+    }),
+    contact: createMemoryContact({
+      confirmation: seed.contact?.confirmation,
+      received: options.contact,
+    }),
   };
 }
 

@@ -18,6 +18,7 @@ import {
   type WeeklyOpeningInterval,
 } from "../../../shared/domain";
 import type { ShopPort } from "../../ports";
+import { priceFormatReader, type PriceFormat } from "./catalog";
 import type { StoreApi } from "./storeApi";
 
 type Schemas = components["schemas"];
@@ -54,6 +55,7 @@ const nextWeekday = (weekday: Weekday) => ((weekday % 7) + 1) as Weekday;
 export function toShopConfig(
   config: Schemas["ShopBiteConfig"],
   timeZone: TimeZone,
+  priceFormat: PriceFormat = { currency: "EUR", locale: "de-DE" },
 ): ShopConfig {
   const street = text(config.addressStreet);
   const postalCode = text(config.addressPostalCode);
@@ -64,6 +66,8 @@ export function toShopConfig(
     telephone: text(config.telephone),
     address: street && postalCode && city ? { street, postalCode, city } : null,
     googleBusinessProfileUrl: text(config.googleBusinessProfileUrl),
+    currency: priceFormat.currency,
+    locale: priceFormat.locale,
   };
 }
 
@@ -185,18 +189,25 @@ export function toBranches(
  */
 export function createShopwareShop(
   storeApi: StoreApi,
-  options: Readonly<{ storeUrl: string; timeZone: TimeZone; log: AdapterLog }>,
+  options: Readonly<{
+    storeUrl: string;
+    timeZone: TimeZone;
+    log: AdapterLog;
+    /** The sales channel's currency and locale (`/context`, kept a while). */
+    priceFormat?: () => Promise<PriceFormat>;
+  }>,
 ): ShopPort {
   const { storeUrl, timeZone, log } = options;
+  const priceFormat = options.priceFormat ?? priceFormatReader(storeApi);
   const get = <T>(path: string) => call(path, () => storeApi.get<T>(path));
   return {
-    getConfig: async () =>
-      deepFreeze(
-        toShopConfig(
-          await get<Schemas["ShopBiteConfig"]>("/shopbite/config"),
-          timeZone,
-        ),
-      ),
+    getConfig: async () => {
+      const [config, format] = await Promise.all([
+        get<Schemas["ShopBiteConfig"]>("/shopbite/config"),
+        priceFormat(),
+      ]);
+      return deepFreeze(toShopConfig(config, timeZone, format));
+    },
     getOpeningHours: async () =>
       deepFreeze(
         toOpeningHours(

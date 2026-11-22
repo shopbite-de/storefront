@@ -114,6 +114,11 @@ export const shopwareShop: AdapterFixture<ShopScenario> = {
         addressCity: config.address?.city ?? null,
         googleBusinessProfileUrl: config.googleBusinessProfileUrl,
       },
+      // the sales channel's context without a visitor: currency, language
+      "/context": {
+        currency: { isoCode: config.currency },
+        languageInfo: { name: "Deutsch", localeCode: config.locale },
+      },
       "/shopbite/business-hour": {
         // reversed: the plugin does not promise an order
         businessHours: pluginRows(intervalsOf(scenario))
