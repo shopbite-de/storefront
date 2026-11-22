@@ -134,7 +134,12 @@ export function createShopwareBackend(
       options.visitorApi
         ? contactOverVisitorApi(options.visitorApi)
         : contactOverStoreApi(storeApi),
-      { requestTimeoutMs: options.requestTimeoutMs, log },
+      {
+        requestTimeoutMs: options.requestTimeoutMs,
+        log,
+        pluginConfig: () =>
+          storeApi.get<Record<string, unknown>>("/shopbite/config"),
+      },
     ),
   };
 }

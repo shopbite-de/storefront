@@ -205,26 +205,77 @@ describe("Shopware ContactPort adapter (anti-corruption)", () => {
     expect(posts[0]!.salutationId).toBe("id-mrs");
   });
 
-  it("learns the required fields from Shopware's validation of an empty message, once a while", async () => {
+  it("learns the required fields from Shopware's validation of an empty message, keeping nothing itself", async () => {
+    let required = "/lastName";
     const { contact, post } = setup((body) => {
       if (Object.keys(body).length === 0) {
         throw refused(400, "VIOLATION::IS_BLANK_ERROR", {
-          source: { pointer: "/lastName" },
+          source: { pointer: required },
         });
       }
       return {};
     });
+    const probes = () =>
+      post.mock.calls.filter(([path]) => path === "/contact-form").length;
 
     expect(await contact.getForm()).toEqual({
       required: { firstName: false, lastName: true, phone: false },
     });
-    await contact.getForm();
+    // the shop changed its settings: the next read (after the BFF's cache
+    // was purged) sees it, the adapter keeps no copy
+    required = "/phone";
+    expect(await contact.getForm()).toEqual({
+      required: { firstName: false, lastName: false, phone: true },
+    });
+    expect(probes()).toBe(2);
+  });
+
+  it("sends one probe for reads at the same time", async () => {
+    const { contact, post } = setup((body) => {
+      if (Object.keys(body).length === 0) {
+        throw refused(400, "VIOLATION::IS_BLANK_ERROR", {
+          source: { pointer: "/firstName" },
+        });
+      }
+      return {};
+    });
+    const forms = await Promise.all(
+      Array.from({ length: 50 }, () => contact.getForm()),
+    );
+    expect(new Set(forms.map((form) => JSON.stringify(form))).size).toBe(1);
     expect(
       post.mock.calls.filter(([path]) => path === "/contact-form"),
     ).toHaveLength(1);
   });
 
-  it("requires nothing when Shopware cannot tell, and asks again soon", async () => {
+  it("prefers the required fields the ShopBite plugin's configuration names", async () => {
+    const post = vi.fn(async () => {
+      throw new Error("no probe when the plugin tells");
+    });
+    const { contact } = createShopwareBackend({
+      storeApi: {
+        get: async <T>(path: string) =>
+          (path === "/shopbite/config"
+            ? {
+                isCheckoutEnabled: true,
+                firstNameFieldRequired: true,
+                lastNameFieldRequired: false,
+                phoneNumberFieldRequired: true,
+              }
+            : {}) as T,
+        post: post as StoreApi["post"],
+      },
+      storeUrl: "",
+      timeZone: "Europe/Berlin",
+      log: () => {},
+    });
+    expect(await contact.getForm()).toEqual({
+      required: { firstName: true, lastName: false, phone: true },
+    });
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("requires nothing when Shopware cannot tell", async () => {
     const log = vi.fn();
     const storeApi: StoreApi = {
       get: () => Promise.reject(new Error("no GET")),

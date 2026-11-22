@@ -26,8 +26,6 @@ import type { StoreApi, VisitorStoreApi } from "./storeApi";
 type SwSalutation = { id: string; salutationKey?: string | null };
 
 const SALUTATION_TTL_MS = 600_000;
-const FORM_TTL_MS = 600_000;
-const FORM_FALLBACK_TTL_MS = 60_000;
 
 /** Shopware's answer as a domain error; its texts never reach the guest. */
 function refusal(error: unknown): DomainError {
@@ -114,14 +112,18 @@ export function createShopwareContact(
   options: {
     requestTimeoutMs?: number;
     log?: AdapterLog;
-    formTtlMs?: number;
+    /**
+     * The ShopBite plugin's configuration (`/shopbite/config`): a plugin
+     * that names the required contact fields is preferred over the probe.
+     */
+    pluginConfig?: () => Promise<Record<string, unknown>>;
   } = {},
 ): ContactPort {
   const timeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
   const log = options.log ?? (() => {});
   const salutations = keptFor<ReadonlyMap<string, string>>(SALUTATION_TTL_MS);
-  const forms = keptFor<ContactForm>(options.formTtlMs ?? FORM_TTL_MS);
-  const fallbacks = keptFor<ContactForm>(FORM_FALLBACK_TTL_MS);
+  /** The read in flight: reads at the same time share one probe. */
+  let reading: Promise<ContactForm> | null = null;
 
   /**
    * The salutation's id; Shopware requires one: "not given" without, the
@@ -158,13 +160,34 @@ export function createShopwareContact(
 
   /**
    * Shopware's settings `core.basicInformation.firstNameFieldRequired`,
-   * `lastNameFieldRequired` and `phoneNumberFieldRequired` are not in the
-   * Store API: an empty message shows them, since Shopware validates before
-   * its limit and sends nothing for a refused message. Kept 10 minutes; when
-   * Shopware does not answer, nothing is required (as the form said before)
-   * for a minute.
+   * `lastNameFieldRequired` and `phoneNumberFieldRequired`: from the ShopBite
+   * plugin's configuration when it names them, else learnt from an empty
+   * message, since Shopware validates before its limit and sends nothing for
+   * a refused message. Nothing is kept here: the BFF caches the answer
+   * (`contact-form`, emptied by every purge); when Shopware cannot tell,
+   * nothing is required (as the form said before).
    */
+  async function fromPlugin(): Promise<ContactForm | null> {
+    if (!options.pluginConfig) return null;
+    const config = await deadline(options.pluginConfig(), timeoutMs);
+    const flags = [
+      config?.firstNameFieldRequired,
+      config?.lastNameFieldRequired,
+      config?.phoneNumberFieldRequired,
+    ];
+    if (!flags.every((flag) => typeof flag === "boolean")) return null;
+    return deepFreeze({
+      required: {
+        firstName: flags[0] as boolean,
+        lastName: flags[1] as boolean,
+        phone: flags[2] as boolean,
+      },
+    });
+  }
+
   async function readForm(): Promise<ContactForm> {
+    const named = await fromPlugin().catch(() => null);
+    if (named) return named;
     try {
       await deadline(send("/contact-form", {}), timeoutMs);
     } catch (error) {
@@ -185,21 +208,19 @@ export function createShopwareContact(
   }
 
   return {
-    getForm: async () => {
-      const kept = forms.get("form") ?? fallbacks.get("form");
-      if (kept) return kept;
-      try {
-        const form = await readForm();
-        forms.set("form", form);
-        return form;
-      } catch (error) {
-        log("[shopware][contact] the contact form's fields could not be read", {
-          status: statusOf(error),
-          codes: errorCodes(error),
+    getForm: () => {
+      reading ??= readForm()
+        .catch((error: unknown) => {
+          log(
+            "[shopware][contact] the contact form's fields could not be read",
+            { status: statusOf(error), codes: errorCodes(error) },
+          );
+          return OPTIONAL;
+        })
+        .finally(() => {
+          reading = null;
         });
-        fallbacks.set("form", OPTIONAL);
-        return OPTIONAL;
-      }
+      return reading;
     },
 
     send: async (message, sender) => {
