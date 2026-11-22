@@ -56,6 +56,9 @@ const invalid = (field: string): never => {
   throw new DomainError("invalid_value", `Invalid ${field}.`, { field });
 };
 
+/** Refuses a field of a request body (400 `invalid_value`). */
+export const invalidField = (field: string): never => invalid(field);
+
 /** The backends' opaque ids; case is kept. */
 const ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 /** Control characters other than line breaks and tabs. */
@@ -84,7 +87,7 @@ export function opaqueId(value: unknown, field: string): string {
   return value as string;
 }
 
-function textOf(
+export function textOf(
   value: unknown,
   field: string,
   { required = false, max = MAX_TEXT, multiline = false } = {},
@@ -111,7 +114,7 @@ function phoneOf(value: unknown, field: string): string | null {
   return phone;
 }
 
-function salutationOf(value: unknown, field: string): Salutation | null {
+export function salutationOf(value: unknown, field: string): Salutation | null {
   if (value === undefined || value === null) return null;
   if (!SALUTATIONS.includes(value as Salutation)) invalid(field);
   return value as Salutation;
@@ -154,12 +157,18 @@ export function addressInput(
   };
 }
 
+/** An e-mail address as the checkout and the account take it. */
+export function emailOf(value: unknown, field = "email"): string {
+  const email = required(value, field, 254);
+  if (!EMAIL.test(email)) invalid(field);
+  return email;
+}
+
 /** `POST /api/checkout/guest`: the guest's details (`GuestDetails`). */
 export function guestBody(body: unknown): GuestDetails {
   if (!body || typeof body !== "object") invalid("body");
   const input = body as Record<string, unknown>;
-  const email = required(input.email, "email", 254);
-  if (!EMAIL.test(email)) invalid("email");
+  const email = emailOf(input.email);
   if (input.business !== undefined && typeof input.business !== "boolean") {
     invalid("business");
   }
