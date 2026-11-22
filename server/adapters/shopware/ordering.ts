@@ -425,6 +425,8 @@ export function createShopwareOrdering(
         body,
         contextToken: token,
         ...(session.forwardedFor ? { forwardedFor: session.forwardedFor } : {}),
+        // the transport's own deadline must not cut the order off earlier
+        timeoutMs: ms,
       }),
       ms,
     );

@@ -434,7 +434,7 @@ describe("the session behind the cart (Shopware)", () => {
     expect((await addCola(client)).error).toBeUndefined();
   });
 
-  it("never loses a cart write that overlaps a registration through the bridge", async () => {
+  it("never loses a cart write that overlaps a token change through the bridge", async () => {
     const outcomes: string[] = [];
     for (let trial = 0; trial < 15; trial++) {
       vi.resetModules();
@@ -477,7 +477,7 @@ describe("the session behind the cart (Shopware)", () => {
               send(registering, {
                 method: "POST",
                 path: "/api/store-api/[...path]",
-                params: { path: "account/register" },
+                params: { path: "shopbite/wishlist/merge" },
                 body: "{}",
               }),
               addCola(adding),
@@ -490,7 +490,7 @@ describe("the session behind the cart (Shopware)", () => {
                       send(registering, {
                         method: "POST",
                         path: "/api/store-api/[...path]",
-                        params: { path: "account/register" },
+                        params: { path: "shopbite/wishlist/merge" },
                         body: "{}",
                       }),
                     ),

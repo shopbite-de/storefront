@@ -1,3 +1,4 @@
+import { guardedRequest } from "./outageBreaker";
 import type { NitroFetchOptions } from "nitropack";
 
 /**
@@ -24,15 +25,18 @@ export function storeApiPost<T>(
 
   // Nitro's typed $fetch resolves the response type per internal route; for
   // a generic T on an external URL it cannot, so the type is asserted.
-  return $fetch<T>(`${endpoint}${path}`, {
-    method: "POST",
-    headers: { "sw-access-key": accessToken, ...options.headers },
-    body,
-    // a failing request reaches Shopware once (the cached routes back off
-    // instead)
-    retry: 0,
-    timeout: STORE_API_TIMEOUT_MS,
-  }) as Promise<T>;
+  return guardedRequest(
+    () =>
+      $fetch<T>(`${endpoint}${path}`, {
+        method: "POST",
+        headers: { "sw-access-key": accessToken, ...options.headers },
+        body,
+        // a failing request reaches Shopware once (the cached routes back
+        // off instead)
+        retry: 0,
+        timeout: STORE_API_TIMEOUT_MS,
+      }) as Promise<T>,
+  );
 }
 
 /**
@@ -45,14 +49,17 @@ export function storeApiGet<T>(
 ): Promise<T> {
   const { endpoint, accessToken } = useRuntimeConfig().public.shopware;
 
-  return $fetch<T>(`${endpoint}${path}`, {
-    headers: { "sw-access-key": accessToken, ...options.headers },
-    query: options.query,
-    // ofetch retries a GET once by default; during an outage that doubles
-    // every request
-    retry: 0,
-    timeout: STORE_API_TIMEOUT_MS,
-  }) as Promise<T>;
+  return guardedRequest(
+    () =>
+      $fetch<T>(`${endpoint}${path}`, {
+        headers: { "sw-access-key": accessToken, ...options.headers },
+        query: options.query,
+        // ofetch retries a GET once by default; during an outage that
+        // doubles every request
+        retry: 0,
+        timeout: STORE_API_TIMEOUT_MS,
+      }) as Promise<T>,
+  );
 }
 
 /**
@@ -68,14 +75,15 @@ export async function storeApiForVisitor<T>(request: {
   body?: Record<string, unknown>;
   contextToken?: string;
   forwardedFor?: string;
+  /** ms this request may take (the order: 60 s); default 10 s. */
+  timeoutMs?: number;
 }): Promise<{ data: T; contextToken: string | null }> {
   const config = useRuntimeConfig();
   const { endpoint, accessToken } = config.public.shopware;
   const serverEndpoint = (config.shopware as { endpoint?: string } | undefined)
     ?.endpoint;
-  const response = await $fetch.raw<T>(
-    `${serverEndpoint || endpoint}${request.path}`,
-    {
+  const response = await guardedRequest(() =>
+    $fetch.raw<T>(`${serverEndpoint || endpoint}${request.path}`, {
       method: request.method,
       headers: {
         "sw-access-key": accessToken,
@@ -88,8 +96,8 @@ export async function storeApiForVisitor<T>(request: {
       },
       body: request.body,
       retry: 0,
-      timeout: STORE_API_TIMEOUT_MS,
-    },
+      timeout: request.timeoutMs ?? STORE_API_TIMEOUT_MS,
+    }),
   );
   return {
     data: response._data as T,

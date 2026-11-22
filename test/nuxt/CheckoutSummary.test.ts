@@ -53,7 +53,7 @@ mockNuxtImport("useCartData", () => () => ({
   refresh: vi.fn().mockResolvedValue(undefined),
 }));
 
-mockNuxtImport("useUser", () => () => ({
+mockNuxtImport("useCustomer", () => () => ({
   isLoggedIn: ref(false),
 }));
 

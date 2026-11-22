@@ -135,25 +135,25 @@ describe("/api/store-api/**", () => {
     fetchMock.mockImplementationOnce(answer("token-1"));
     await send(client, {
       method: "POST",
-      path: "/api/store-api/account/customer",
+      path: "/api/store-api/shopbite/wishlist",
       body: "{}",
     });
     const cookie = client.cookies.get("__Host-shopbite-session")!;
     expect(cookie).toMatch(/^v1\./);
 
-    // registration: slow, and Shopware replaces the token
+    // a slow write during which Shopware replaces the token
     fetchMock.mockImplementationOnce(answer("token-registered", 30));
     const tab1 = browser({ "__Host-shopbite-session": cookie });
     const tab2 = browser({ "__Host-shopbite-session": cookie });
     const [register, other] = await Promise.all([
       send(tab1, {
         method: "POST",
-        path: "/api/store-api/account/register",
+        path: "/api/store-api/shopbite/wishlist/merge",
         body: "{}",
       }),
       send(tab2, {
         method: "POST",
-        path: "/api/store-api/account/login",
+        path: "/api/store-api/contact-form",
         body: "{}",
       }),
     ]);
@@ -175,7 +175,7 @@ describe("/api/store-api/**", () => {
     fetchMock.mockImplementationOnce(answer("token-1"));
     await send(client, {
       method: "POST",
-      path: "/api/store-api/account/customer",
+      path: "/api/store-api/shopbite/wishlist",
       body: "{}",
     });
     let running = 0;
@@ -210,7 +210,7 @@ describe("/api/store-api/**", () => {
     ]) {
       const { error } = await send(browser(), {
         method: "POST",
-        path: "/api/store-api/account/customer",
+        path: "/api/store-api/shopbite/wishlist",
         body: "{}",
         headers: { origin },
       });
@@ -218,7 +218,7 @@ describe("/api/store-api/**", () => {
     }
     const { error } = await send(browser(), {
       method: "POST",
-      path: "/api/store-api/account/customer",
+      path: "/api/store-api/shopbite/wishlist",
       body: "{}",
       headers: { origin: "https://evil.example" },
     });

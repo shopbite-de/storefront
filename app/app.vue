@@ -7,24 +7,45 @@ const { apiClient } = useShopwareContext();
 // scrolls into view (#314).
 const FooterWhenVisible = hydrateWhenVisible(Footer);
 
-const { data: sessionContextData } = await useAsyncData(
-  "sessionContext",
-  async () => {
-    try {
-      const { data } = await apiClient.invoke("readContext get /context");
-      // The context token stays on the server (ADR 0001, step 4): the
-      // context goes into the page payload without it.
-      const { token: _token, ...context } = data;
-      return context as typeof data;
-    } catch (error) {
-      console.error("Failed to load session context", error);
+// The session's customer (ADR 0001, step 6), rendered on the server so the
+// header knows the login on the first paint. Read in parallel with the
+// layer's context: during an outage the page waits for one deadline, not
+// two (step 6 review).
+const { isLoggedIn, refresh: refreshCustomer } = useCustomer();
+const [{ data: sessionContextData }] = await Promise.all([
+  useAsyncData(
+    "sessionContext",
+    async () => {
+      try {
+        // with a deadline, without token and customer (`readLayerContext`)
+        return (await readLayerContext(
+          apiClient as unknown as Parameters<typeof readLayerContext>[0],
+        )) as Awaited<
+          ReturnType<typeof apiClient.invoke<"readContext get /context">>
+        >["data"];
+      } catch (error) {
+        console.error(
+          "Failed to load session context",
+          (error as Error | null)?.name ?? "no answer",
+        );
+        return null;
+      }
+    },
+    {
+      default: () => null,
+    },
+  ),
+  useAsyncData("customer", () =>
+    refreshCustomer().catch((error) => {
+      // the code only: the error of a request carries its options
+      console.error(
+        "[account] customer",
+        domainErrorCode(error) ?? "no answer",
+      );
       return null;
-    }
-  },
-  {
-    default: () => null,
-  },
-);
+    }),
+  ),
+]);
 
 const { setPriceConfig } = useCommercePrice();
 
@@ -54,7 +75,6 @@ const loadCart = () =>
   refreshCart().catch((error) => console.error("[cart] refresh", error));
 // Wishlist entries (#467): loaded in the browser, not during SSR. A login
 // moves the guest entries into the account, a logout shows the guest's.
-const { isLoggedIn } = useUser();
 const { load: loadWishlist, mergeGuestEntries } = useWishlistEntries();
 onMounted(loadWishlist);
 // a login or logout replaces the visitor's backend context: the methods

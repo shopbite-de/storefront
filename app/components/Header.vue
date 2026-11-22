@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useUser } from "@shopware/composables";
-
 /**
  * Header of the presets (#455): logo, main navigation, store status,
  * phone, account, wishlist and the cart button with the item count, which
@@ -27,7 +25,7 @@ const {
 const { count: cartCount } = useCartData();
 const { count: wishlistCount } = useWishlistEntries();
 const { acceptsOrders } = useShopConfig();
-const { isLoggedIn, isGuestSession, logout } = useUser();
+const { isLoggedIn, isGuest: isGuestSession, logout } = useCustomer();
 const { status } = useStoreStatus();
 
 // The cart button pops when a product goes into the cart (#325).
@@ -76,7 +74,9 @@ function isCurrent(to: unknown) {
 }
 
 function logoutHandler() {
-  logout();
+  logout().catch((error) =>
+    console.error("[account] logout", domainErrorCode(error) ?? "no answer"),
+  );
   menuOpen.value = false;
 }
 </script>

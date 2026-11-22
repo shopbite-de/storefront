@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import * as z from "zod";
-import { ApiClientError } from "@shopware/api-client";
 
 /**
- * Login of the presets (#443), same checks and call as User/LoginForm.vue
- * with the base components; errors show at the fields and above the form.
+ * Login of the presets (#443) through the BFF (ADR 0001, step 6): errors
+ * show at the fields and above the form, in the storefront's words by
+ * domain code (wrong password and unknown e-mail alike, the backend's
+ * limit with the seconds to wait).
  */
 const emit = defineEmits<{ "login-success": [email: string] }>();
 
-const { login } = useUser();
+const { login } = useCustomer();
 
 const schema = z.object({
   email: z.string().email("Bitte geben Sie eine gültige E-Mail-Adresse ein."),
@@ -36,21 +37,14 @@ async function onSubmit() {
   errors.value = {};
   submitting.value = true;
   try {
-    await login({ username: state.email, password: state.password });
+    await login(state.email, state.password);
+    state.password = "";
     emit("login-success", state.email);
   } catch (error) {
-    console.error("Login failed:", error);
-    let message = "Bitte überprüfen Sie Ihre Zugangsdaten.";
-    if (error instanceof ApiClientError) {
-      const details = error.details?.errors;
-      if (Array.isArray(details) && details.length > 0) {
-        message = details
-          .map((detail) => detail.detail || detail.title)
-          .filter(Boolean)
-          .join("\n");
-      }
-    }
-    loginError.value = message;
+    const code = domainErrorCode(error);
+    // the code only: the error of a request carries its body
+    console.error("Login failed:", code ?? "no answer");
+    loginError.value = loginMessage(code, domainErrorDetails(error));
     await nextTick();
     alertBox.value?.focus();
   } finally {

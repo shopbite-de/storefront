@@ -1,3 +1,4 @@
+import { bypassOutageBreaker } from "./outageBreaker";
 import {
   DomainError,
   isDomainError,
@@ -177,7 +178,10 @@ export function createOrderPlacement(
     for (const delay of pollDelaysMs) {
       if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
       try {
-        const { orders } = await backend.orders.listOrders(session, 1, 1);
+        // past an open outage breaker: the order may have landed
+        const { orders } = await bypassOutageBreaker(() =>
+          backend.orders.listOrders(session, 1, 1),
+        );
         const newest = orders[0];
         if (newest && Date.parse(newest.placedAt) >= since - skewMs) {
           return newest;
@@ -198,7 +202,9 @@ export function createOrderPlacement(
     session: BackendSession,
   ): Promise<Order | null> {
     try {
-      const { orders } = await backend.orders.listOrders(session, 1, 1);
+      const { orders } = await bypassOutageBreaker(() =>
+        backend.orders.listOrders(session, 1, 1),
+      );
       const newest = orders[0];
       return newest &&
         Date.parse(newest.placedAt) >= Date.now() - recentMs - skewMs
@@ -277,11 +283,14 @@ export function createOrderPlacement(
     const at = Date.now();
     let order: Order;
     try {
-      order = await backend.checkout.placeOrder(session, {
-        wishedTime: input.wishedTime,
-        fulfillment: lead.fulfillment,
-        note: input.note,
-      });
+      // a slow order (a lock in Shopware) never opens the outage breaker
+      order = await bypassOutageBreaker(() =>
+        backend.checkout.placeOrder(session, {
+          wishedTime: input.wishedTime,
+          fulfillment: lead.fulfillment,
+          note: input.note,
+        }),
+      );
     } catch (error) {
       if (!isDomainError(error, "backend_unavailable")) throw error;
       // the request went out and got no answer: the order may exist

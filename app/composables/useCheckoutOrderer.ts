@@ -1,13 +1,18 @@
-import type { Address, GuestDetails, Orderer } from "../../shared/domain";
+import type {
+  Address,
+  Customer,
+  GuestDetails,
+  Orderer,
+} from "../../shared/domain";
 
 /**
  * Who orders in this session (ADR 0001, step 5): the guest after "Angaben
  * speichern", or the logged-in customer, with the billing and delivery
  * address the order uses (`/api/checkout/orderer`). `undefined` until it
  * is loaded, `null` for a visitor without details. A guest registers and
- * edits an address through the BFF; login and account registration are
- * still the Shopware layer's (step 6), after which the checkout loads the
- * orderer again.
+ * edits an address through the BFF; after a login or an account
+ * registration (`useCustomer`, step 6) the checkout loads the orderer
+ * again.
  */
 export function useCheckoutOrderer() {
   const orderer = useState<Orderer | null | undefined>(
@@ -15,10 +20,9 @@ export function useCheckoutOrderer() {
     () => undefined,
   );
 
-  // the Shopware layer's account state (header "Mein Konto") knows the
-  // guest from its context until accounts move behind the BFF (step 6);
-  // taken here: after an await there is no app context to inject it from
-  const { refreshSessionContext } = useSessionContext();
+  // the session's customer (`useCustomer`, header "Mein Konto"): the
+  // guest; taken here, after an await there is no app context
+  const customer = useState<Customer | null | undefined>("customer");
 
   async function refresh(): Promise<Orderer | null> {
     const answer = await $fetch<{ orderer: Orderer | null }>(
@@ -38,9 +42,7 @@ export function useCheckoutOrderer() {
       ),
     );
     orderer.value = next;
-    refreshSessionContext().catch((error) => {
-      console.error("[checkout][session context]", error);
-    });
+    customer.value = next.customer;
     return next;
   }
 

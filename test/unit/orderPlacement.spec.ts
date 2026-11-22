@@ -16,6 +16,7 @@ import {
   type ServiceSchedule,
   type Weekday,
 } from "../../shared/domain";
+import { isOutageBreakerBypassed } from "../../server/utils/outageBreaker";
 import { testSession } from "../contract/cart.contract";
 import { GUEST, STOREFRONT_URL } from "../contract/ordering.contract";
 
@@ -122,6 +123,43 @@ describe("placing an order once", () => {
   }
 
   const fastPolls = { pollDelaysMs: [0, 20, 40, 80] };
+
+  it("places and looks up past the outage breaker (a slow order never opens it)", async () => {
+    const { backend: slow } = slowBackend(30);
+    const seen: string[] = [];
+    const backend: Backend = {
+      ...slow,
+      checkout: {
+        ...slow.checkout,
+        placeOrder: async (session, command) => {
+          seen.push(`place ${isOutageBreakerBypassed()}`);
+          return slow.checkout.placeOrder(session, command);
+        },
+      },
+      orders: {
+        ...slow.orders,
+        listOrders: async (session, page, limit) => {
+          seen.push(`look ${isOutageBreakerBypassed()}`);
+          return slow.orders.listOrders(session, page, limit);
+        },
+      },
+    };
+    const session = await guestWithMargherita(backend);
+    const placement = createOrderPlacement({ now: () => NOW, ...fastPolls });
+    await placement.place({
+      backend,
+      session,
+      visitorKey: "visitor-1",
+      gates: gates(),
+      urls: () => ({ success: "s", failure: "f" }),
+      input: input(),
+    });
+    expect(seen[0]).toBe("place true");
+    expect(seen.filter((entry) => entry.startsWith("look"))).not.toHaveLength(
+      0,
+    );
+    expect(seen.every((entry) => entry.endsWith("true"))).toBe(true);
+  });
 
   it("finds the order of an attempt whose answer did not come, without placing again", async () => {
     const { backend, calls } = slowBackend(30);

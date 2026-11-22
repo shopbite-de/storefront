@@ -8,7 +8,7 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 mockNuxtImport("useShopwareContext", () => () => ({
   apiClient: { invoke },
 }));
-mockNuxtImport("useUser", () => () => ({ isLoggedIn: ref(false) }));
+mockNuxtImport("useCustomer", () => () => ({ isLoggedIn: ref(false) }));
 
 const selection = {
   productId: "p1",

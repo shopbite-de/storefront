@@ -92,4 +92,18 @@ describe("storeApiForVisitor", () => {
       expect.objectContaining({ headers: { "sw-access-key": "SWSC" } }),
     );
   });
+
+  it("takes a longer timeout for a request that needs one (the order)", async () => {
+    const { raw, storeApiForVisitor } = await setup();
+    await storeApiForVisitor({
+      method: "POST",
+      path: "/checkout/order",
+      body: {},
+      timeoutMs: 60_000,
+    });
+    expect(
+      (raw.mock.calls[0] as unknown as [string, { timeout: number }])[1]
+        .timeout,
+    ).toBe(60_000);
+  });
 });

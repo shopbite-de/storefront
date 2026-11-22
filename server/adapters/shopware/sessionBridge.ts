@@ -2,13 +2,13 @@ import type { BackendSession } from "../../ports";
 
 /**
  * Transitional (ADR 0001, steps 4 to 7): the Shopware layer
- * (`@shopware/composables`) still runs account, wishlist and contact in
- * the browser (`BRIDGE_ROUTES`; cart and checkout moved behind the BFF). Its requests reach the Store API through the
- * storefront (`/api/store-api/**`), which adds the access key and the
- * visitor's context token from the session. The browser never receives the
- * token: not as a header, not in a JSON answer (`/context`, `/checkout/cart`
- * and `/account/login` carry it in their body). A token Shopware issues
- * (first request, login, logout, registration) goes into the session.
+ * (`@shopware/composables`) still runs wishlist and contact in the browser
+ * (`BRIDGE_ROUTES`; cart, checkout and account moved behind the BFF). Its
+ * requests reach the Store API through the storefront (`/api/store-api/**`),
+ * which adds the access key and the visitor's context token from the
+ * session. The browser never receives the token: not as a header, not in a
+ * JSON answer (`/context` carries it in its body). A token Shopware issues
+ * (a new visitor's first request) goes into the session.
  * Removed with the layer in step 8.
  *
  * The session state of the Shopware adapter is the context token itself.
@@ -187,35 +187,19 @@ const ID = "[0-9a-fA-F]{32}";
 
 /**
  * What the Shopware layer in the browser still needs (ADR 0001): the
- * context it renders the account state from, the account (step 6:
- * login, logout, registration, profile, password, addresses, the order
- * list, deletion; the layer reads the cart after a login), the wishlist
- * and the contact form (step 7). Cart, checkout, orders and payment moved
- * behind the BFF (steps 4 and 5) and are refused here, like every other
- * path: 404 without a request to Shopware.
+ * context it keeps for the price format, the wishlist and the contact form
+ * with its salutations (step 7). Cart, checkout, orders and payment (steps
+ * 4 and 5) and the account (step 6: login, logout, registration, profile,
+ * password, addresses, the order list, deletion) moved behind the BFF and
+ * are refused here, like every other path: 404 without a request to
+ * Shopware.
  */
 export const BRIDGE_ROUTES: readonly Readonly<{
   method: string;
   path: RegExp;
 }>[] = [
   { method: "GET", path: /^context$/ },
-  // the layer's `useUser` refreshes its cart after a login (unused)
-  { method: "GET", path: /^checkout\/cart$/ },
-  {
-    method: "POST",
-    path: /^account\/(login|logout|register|register-confirm|customer|change-profile|change-email|change-password|recovery-password|recovery-password-confirm|list-address|address)$/,
-  },
-  {
-    method: "PATCH",
-    path: new RegExp(
-      `^account/address/(default-shipping/|default-billing/)?${ID}$`,
-    ),
-  },
-  { method: "DELETE", path: new RegExp(`^account/address/${ID}$`) },
-  { method: "DELETE", path: /^account\/customer$/ },
-  // the account's order list (`/konto/bestellungen`)
-  { method: "POST", path: /^order$/ },
-  { method: "POST", path: /^(salutation|country|contact-form)$/ },
+  { method: "POST", path: /^(salutation|contact-form)$/ },
   { method: "POST", path: /^shopbite\/wishlist(\/add|\/merge)?$/ },
   { method: "DELETE", path: new RegExp(`^shopbite/wishlist/${ID}$`) },
   {
@@ -315,8 +299,25 @@ export async function forwardStoreApiRequest(
   if (body && isTextual(type, body)) {
     const text = decoder.decode(body);
     try {
+      const parsed = JSON.parse(text) as unknown;
+      // the account is the BFF's (step 6): the layer's context carries no
+      // customer to the browser
+      if (
+        request.path === "context" &&
+        parsed &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed)
+      ) {
+        const context = parsed as Record<string, unknown>;
+        delete context.customer;
+        // the customer's own address, with the customer's id
+        const location = context.shippingLocation;
+        if (location && typeof location === "object") {
+          delete (location as Record<string, unknown>).address;
+        }
+      }
       body = encoder.encode(
-        JSON.stringify(redact(JSON.parse(text), tokens, replacements)),
+        JSON.stringify(redact(parsed, tokens, replacements)),
       );
     } catch {
       body = encoder.encode(redactText(text, replacements));

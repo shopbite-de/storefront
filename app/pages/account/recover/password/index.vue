@@ -14,7 +14,7 @@ const MIN_PASSWORD_LENGTH = 8;
 const PASSWORD_MIN_LENGTH_ERROR = "Das Passwort braucht mindestens 8 Zeichen.";
 const PASSWORD_MISMATCH_ERROR = "Die Passwörter stimmen nicht überein.";
 
-const { apiClient } = useShopwareContext();
+const { resetPassword: setNewPassword } = useCustomer();
 const route = useRoute();
 const router = useRouter();
 
@@ -63,18 +63,9 @@ onMounted(() => {
   }
 });
 
-async function resetPassword(data: PasswordResetSchema) {
-  await apiClient.invoke(
-    "recoveryPassword post /account/recovery-password-confirm",
-    {
-      body: {
-        newPassword: data.newPassword,
-        newPasswordConfirm: data.newPasswordConfirm,
-        hash: recoveryHash.value,
-      },
-    },
-  );
-}
+// the link's hash is the reset token (ADR 0001, step 6)
+const resetPassword = (data: PasswordResetSchema) =>
+  setNewPassword(recoveryHash.value, data.newPassword);
 
 // Errors and the result show in the form (#445).
 const passwords = reactive({ newPassword: "", newPasswordConfirm: "" });
@@ -101,7 +92,8 @@ async function onSubmit() {
     await resetPassword(parsed.data);
     result.value = "done";
   } catch (error) {
-    console.error("Password recovery error:", error);
+    // the code only: the error of a request carries its body
+    console.error("Password recovery error:", domainErrorCode(error));
     result.value = "failed";
   } finally {
     saving.value = false;

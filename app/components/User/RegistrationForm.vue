@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { RegistrationSchema } from "~/validation/registrationSchema";
-import type { Schemas } from "#shopware";
 
 /**
  * Registration and guest order form of the presets (#443): the logic of
@@ -15,7 +14,8 @@ const props = withDefaults(defineProps<{ allowGuest?: boolean }>(), {
 const emit = defineEmits<{
   "registration-success": [
     data: RegistrationSchema,
-    customer: Schemas["Customer"] | undefined,
+    /** Double opt-in: the e-mail is to be confirmed before the login. */
+    needsConfirmation: boolean,
   ];
 }>();
 
@@ -100,7 +100,7 @@ async function onSubmit() {
       notice.value =
         "Fast geschafft: Wir haben Ihnen eine E-Mail geschickt. Bitte bestätigen Sie den Link darin, um Ihr Konto zu aktivieren.";
     }
-    emit("registration-success", outcome.data, outcome.customer);
+    emit("registration-success", outcome.data, outcome.needsConfirmation);
   } finally {
     submitting.value = false;
   }

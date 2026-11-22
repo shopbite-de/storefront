@@ -3,7 +3,7 @@ useSeoMeta({
   title: "Anmelden",
 });
 
-const { isLoggedIn } = useUser();
+const { isLoggedIn } = useCustomer();
 
 onBeforeMount(async () => {
   if (import.meta.client && isLoggedIn.value) {

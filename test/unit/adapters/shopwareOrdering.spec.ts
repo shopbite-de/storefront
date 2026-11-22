@@ -475,6 +475,41 @@ describe("Shopware ordering adapter: as the 2.x storefront did", () => {
     expect(bodiesOf(sent, "/checkout/order")).toHaveLength(1);
   });
 
+  it("gives the transport the order's own deadline (a placement answering after 15 s)", async () => {
+    // the transport honours the request's timeout, like storeApiForVisitor
+    const { shopware, sent } = backend(
+      (request, fake) =>
+        request.path === "/checkout/order"
+          ? new Promise((resolve, reject) => {
+              const limit = request.timeoutMs ?? 10;
+              setTimeout(
+                () =>
+                  limit < 150
+                    ? reject(new Error("aborted by the transport"))
+                    : resolve(undefined),
+                Math.min(limit, 150),
+              );
+            })
+              .then(() => fake.visitorApi.send(request))
+              .then((answer) => answer.data)
+          : undefined,
+      { requestTimeoutMs: 20, orderTimeoutMs: 1000 },
+    );
+    const session = await guestWithCola(shopware);
+    const order = await shopware.checkout.placeOrder(session, {
+      wishedTime: WISHED,
+      fulfillment: "delivery",
+      note: null,
+    });
+    expect(order.number).toMatch(/\S/);
+    const request = sent.find((entry) => entry.path === "/checkout/order");
+    expect(request?.timeoutMs).toBe(1000);
+    // other requests keep theirs
+    expect(
+      sent.find((entry) => entry.path === "/account/register")?.timeoutMs,
+    ).toBe(20);
+  });
+
   it("lists the payment methods when only the shop's default cannot be read", async () => {
     const { shopware } = backend(
       (request) =>

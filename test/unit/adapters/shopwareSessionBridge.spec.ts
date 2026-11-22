@@ -49,7 +49,7 @@ function forward(
   return forwardStoreApiRequest(
     {
       method: "POST",
-      path: "account/customer",
+      path: "shopbite/wishlist",
       search: "",
       headers: {},
       body: undefined,
@@ -97,8 +97,8 @@ describe("Store API bridge of the Shopware layer", () => {
 
     await forward(
       {
-        method: "PATCH",
-        path: "account/address/0123456789abcdef0123456789abcdef",
+        method: "DELETE",
+        path: "shopbite/wishlist/0123456789abcdef0123456789abcdef",
         search: "?a=1",
         headers: {
           "content-type": "application/json",
@@ -115,9 +115,9 @@ describe("Store API bridge of the Shopware layer", () => {
 
     const [url, init] = send.mock.calls[0]!;
     expect(url).toBe(
-      `${ENDPOINT}/account/address/0123456789abcdef0123456789abcdef?a=1`,
+      `${ENDPOINT}/shopbite/wishlist/0123456789abcdef0123456789abcdef?a=1`,
     );
-    expect(init.method).toBe("PATCH");
+    expect(init.method).toBe("DELETE");
     expect(init.headers).toEqual({
       "content-type": "application/json",
       "sw-language-id": "lang",
@@ -156,7 +156,7 @@ describe("Store API bridge of the Shopware layer", () => {
     );
 
     const result = await forward(
-      { path: "account/login" },
+      { path: "shopbite/wishlist/merge" },
       { session: visitor.backend, send },
     );
 
@@ -170,6 +170,29 @@ describe("Store API bridge of the Shopware layer", () => {
     expect(new TextDecoder().decode(result.body!)).not.toMatch(/token-[12]/);
   });
 
+  it("answers the context without the customer (the account is the BFF's)", async () => {
+    const visitor = session("token-1");
+    const send = vi.fn<StoreApiSend>(async () =>
+      answer({
+        token: "token-1",
+        customer: { email: "gina@example.de", firstName: "Gina" },
+        currency: { isoCode: "EUR" },
+        shippingLocation: {
+          country: { iso: "DE" },
+          address: { street: "Ginaweg 1", customerId: "gina" },
+        },
+      }),
+    );
+    const result = await forward(
+      { path: "context", method: "GET" },
+      { session: visitor.backend, send },
+    );
+    expect(json(result.body)).toEqual({
+      currency: { isoCode: "EUR" },
+      shippingLocation: { country: { iso: "DE" } },
+    });
+  });
+
   it("does not write the token the session holds already", async () => {
     const visitor = session("token-1");
     const send = vi.fn<StoreApiSend>(async () =>
@@ -177,7 +200,7 @@ describe("Store API bridge of the Shopware layer", () => {
     );
 
     await forward(
-      { path: "checkout/cart", method: "GET" },
+      { path: "context", method: "GET" },
       {
         session: visitor.backend,
         send,
@@ -201,7 +224,7 @@ describe("Store API bridge of the Shopware layer", () => {
     );
 
     const result = await forward(
-      { path: "account/login" },
+      { path: "shopbite/wishlist/merge" },
       { session: visitor.backend, send },
     );
 
@@ -254,7 +277,7 @@ describe("Store API bridge of the Shopware layer", () => {
 
     for (let i = 0; i < 3; i++) {
       const result = await forward(
-        { path: "account/register" },
+        { path: "contact-form" },
         { session: visitor.backend, send },
       );
       const text = new TextDecoder().decode(result.body!);
@@ -340,7 +363,7 @@ describe("Store API bridge of the Shopware layer", () => {
     const result = await forwardStoreApiRequest(
       {
         method: "POST",
-        path: "account/login",
+        path: "shopbite/wishlist/merge",
         search: "",
         headers: {},
         body: undefined,
@@ -425,23 +448,12 @@ describe("Store API bridge of the Shopware layer", () => {
     });
   });
 
-  it("forwards only what the layer still needs: account, wishlist, contact", async () => {
+  it("forwards only what the layer still needs: context, wishlist, contact", async () => {
     const visitor = session("token-1");
     const send = vi.fn<StoreApiSend>(async () => answer({}));
     const id = "0123456789abcdef0123456789abcdef";
     const allowed: [string, string][] = [
       ["GET", "context"],
-      ["GET", "checkout/cart"],
-      ["POST", "account/login"],
-      ["POST", "account/logout"],
-      ["POST", "account/register"],
-      ["POST", "account/customer"],
-      ["POST", "account/address"],
-      ["PATCH", `account/address/${id}`],
-      ["PATCH", `account/address/default-billing/${id}`],
-      ["DELETE", `account/address/${id}`],
-      ["DELETE", "account/customer"],
-      ["POST", "order"],
       ["POST", "salutation"],
       ["POST", "contact-form"],
       ["POST", "shopbite/wishlist/merge"],
@@ -459,8 +471,28 @@ describe("Store API bridge of the Shopware layer", () => {
     expect(send).toHaveBeenCalledTimes(allowed.length);
     send.mockClear();
 
-    // moved behind the BFF (steps 4 and 5): checkout, orders, payment, cart writes
+    // moved behind the BFF (steps 4 to 6): checkout, orders, payment, cart,
+    // the account
     const moved: [string, string][] = [
+      ["GET", "checkout/cart"],
+      ["POST", "account/login"],
+      ["POST", "account/logout"],
+      ["POST", "account/register"],
+      ["POST", "account/register-confirm"],
+      ["POST", "account/customer"],
+      ["POST", "account/change-profile"],
+      ["POST", "account/change-email"],
+      ["POST", "account/change-password"],
+      ["POST", "account/recovery-password"],
+      ["POST", "account/recovery-password-confirm"],
+      ["POST", "account/list-address"],
+      ["POST", "account/address"],
+      ["PATCH", `account/address/${id}`],
+      ["PATCH", `account/address/default-billing/${id}`],
+      ["DELETE", `account/address/${id}`],
+      ["DELETE", "account/customer"],
+      ["POST", "order"],
+      ["POST", "country"],
       ["POST", "checkout/order"],
       ["POST", "handle-payment"],
       ["POST", "order/payment"],
