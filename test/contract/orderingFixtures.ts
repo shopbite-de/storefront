@@ -1,48 +1,55 @@
-import { createMemoryBackend } from "../../server/adapters/memory";
+import {
+  createMemoryBackend,
+  type MemorySeed,
+} from "../../server/adapters/memory";
 import { createShopwareBackend } from "../../server/adapters/shopware";
 import { leadTime } from "../../shared/domain";
 import {
   fakeShopwareCart,
   httpError,
   memoryCartSeed,
+  type FakeStoreApiExtension,
   type Json,
 } from "./cartFixtures";
 import type { BackendFixture, OrderingScenario } from "./ordering.contract";
 
+/** The memory seed of an ordering scenario. */
+export function memoryOrderingSeed(scenario: OrderingScenario): MemorySeed {
+  const seed = memoryCartSeed(scenario.cart);
+  return {
+    ...seed,
+    shop: {
+      ...seed.shop,
+      config: {
+        ...seed.shop.config,
+        acceptsOrders: !scenario.orderingClosed,
+      },
+    },
+    checkout: {
+      shippingMethods: scenario.shippingMethods.map((method) => ({
+        id: method.id,
+        name: method.name,
+        description: method.description,
+        fulfillment: method.fulfillment,
+        leadTime:
+          method.leadTimeMinutes === null
+            ? null
+            : leadTime(method.leadTimeMinutes),
+        media: null,
+      })),
+      paymentMethods: scenario.paymentMethods.map((method) => ({
+        ...method,
+        media: null,
+        redirects: false,
+      })),
+    },
+  };
+}
+
 /** The memory adapter with the scenario's menu, methods and switch. */
 export const memoryOrdering: BackendFixture<OrderingScenario> = {
   adapter: "memory",
-  create: (scenario) => {
-    const seed = memoryCartSeed(scenario.cart);
-    return createMemoryBackend({
-      ...seed,
-      shop: {
-        ...seed.shop,
-        config: {
-          ...seed.shop.config,
-          acceptsOrders: !scenario.orderingClosed,
-        },
-      },
-      checkout: {
-        shippingMethods: scenario.shippingMethods.map((method) => ({
-          id: method.id,
-          name: method.name,
-          description: method.description,
-          fulfillment: method.fulfillment,
-          leadTime:
-            method.leadTimeMinutes === null
-              ? null
-              : leadTime(method.leadTimeMinutes),
-          media: null,
-        })),
-        paymentMethods: scenario.paymentMethods.map((method) => ({
-          ...method,
-          media: null,
-          redirects: false,
-        })),
-      },
-    });
-  },
+  create: (scenario) => createMemoryBackend(memoryOrderingSeed(scenario)),
 };
 
 /* ------------------------------------------------------------------ */
@@ -51,18 +58,22 @@ export const memoryOrdering: BackendFixture<OrderingScenario> = {
 
 export const GERMANY = "f0e1d2c3b4a54968a7b6c5d4e3f2a1b0";
 const AUSTRIA = "a1b2c3d4e5f64a7b8c9d0e1f2a3b4c5d";
-const MR = "b2c3d4e5f6a74b8c9d0e1f2a3b4c5d6e";
+export const MR = "b2c3d4e5f6a74b8c9d0e1f2a3b4c5d6e";
+export const MRS = "c3d4e5f6a7b84c9d0e1f2a3b4c5d6e7f";
 /** The instant every fake order is placed at (17:00 in Berlin). */
 export const PLACED_AT = "2026-11-21T16:00:00.000+00:00";
 
-type FakeAddress = Json & { id: string };
-type FakeCustomer = {
+export type FakeAddress = Json & { id: string };
+export type FakeCustomer = {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   billing: FakeAddress;
   shipping: FakeAddress;
+  /** Guest customers unless false (an account). */
+  guest?: boolean;
+  salutationId?: string;
 };
 type Selection = { shippingMethodId: string; paymentMethodId: string };
 
@@ -74,7 +85,11 @@ type Selection = { shippingMethodId: string; paymentMethodId: string };
  * `CHECKOUT__CART_EMPTY`, the plugin's `shopbite-ordering-paused`), the
  * customer's orders, the payment.
  */
-export function fakeShopwareOrdering(scenario: OrderingScenario) {
+export function fakeShopwareOrdering(
+  scenario: OrderingScenario,
+  /** More of the Store API, asked first (the account). */
+  extra: FakeStoreApiExtension = {},
+) {
   const selections = new Map<string, Selection>();
   const customers = new Map<string, FakeCustomer>();
   const orders: { owner: string; json: Json }[] = [];
@@ -111,6 +126,13 @@ export function fakeShopwareOrdering(scenario: OrderingScenario) {
     };
   };
 
+  const salutationOf = (id: unknown) =>
+    id === MR
+      ? { salutationKey: "mr" }
+      : id === MRS
+        ? { salutationKey: "mrs" }
+        : null;
+
   const addressJson = (address: FakeAddress): Json => ({
     ...address,
     country: {
@@ -121,16 +143,16 @@ export function fakeShopwareOrdering(scenario: OrderingScenario) {
             ? "AT"
             : "XX",
     },
-    salutation: address.salutationId === MR ? { salutationKey: "mr" } : null,
+    salutation: salutationOf(address.salutationId),
   });
 
   const customerJson = (customer: FakeCustomer): Json => ({
     id: customer.id,
-    guest: true,
+    guest: customer.guest ?? true,
     email: customer.email,
     firstName: customer.firstName,
     lastName: customer.lastName,
-    salutation: null,
+    salutation: salutationOf(customer.salutationId),
     defaultBillingAddressId: customer.billing.id,
     defaultShippingAddressId: customer.shipping.id,
     defaultBillingAddress: addressJson(customer.billing),
@@ -272,7 +294,11 @@ export function fakeShopwareOrdering(scenario: OrderingScenario) {
         cart.errors = { ...(cart.errors as Json), ...pausedError };
       }
     },
-    visitor: ({ method, path, body }, { token, lines, carts, cart }) => {
+    visitor: (request, state) => {
+      const extended = extra.visitor?.(request, state);
+      if (extended) return extended;
+      const { method, path, body } = request;
+      const { token, lines, carts, cart } = state;
       const customer = customers.get(token);
       if (method === "GET" && path === "/context") {
         return { data: contextJson(token) };
@@ -410,7 +436,9 @@ export function fakeShopwareOrdering(scenario: OrderingScenario) {
       return undefined;
     },
     shopGet: (path) => (path === "/context" ? contextJson() : undefined),
-    shopPost: (path, body) => {
+    shopPost: (path, body, headers) => {
+      const extended = extra.shopPost?.(path, body, headers);
+      if (extended !== undefined) return extended;
       if (path === "/payment-method") {
         return { elements: scenario.paymentMethods.map(paymentMethodJson) };
       }
@@ -432,12 +460,25 @@ export function fakeShopwareOrdering(scenario: OrderingScenario) {
         };
       }
       if (path === "/salutation") {
-        return { elements: [{ id: MR, salutationKey: "mr" }] };
+        return {
+          elements: [
+            { id: MR, salutationKey: "mr" },
+            { id: MRS, salutationKey: "mrs" },
+          ],
+        };
       }
       return undefined;
     },
   });
-  return { ...fake, customers, orders, selections };
+  return {
+    ...fake,
+    customers,
+    orders,
+    selections,
+    nextId,
+    addressJson,
+    customerJson,
+  };
 }
 
 export const shopwareOrdering: BackendFixture<OrderingScenario> = {

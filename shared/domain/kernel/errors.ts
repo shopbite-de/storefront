@@ -43,6 +43,22 @@ export const DOMAIN_ERROR_CODES = [
   "invalid_credentials",
   /** An account with this email exists already. */
   "email_taken",
+  /**
+   * The account waits for the confirmation of its e-mail (double opt-in);
+   * only answered after the right password.
+   */
+  "account_not_confirmed",
+  /** The shop locked the account; only answered after the right password. */
+  "account_inactive",
+  /** The registration was confirmed before; the customer can log in. */
+  "already_confirmed",
+  /**
+   * The backend refuses more attempts for now (login, password reset);
+   * `details.retryAfterSeconds` when it says how long.
+   */
+  "rate_limited",
+  /** The address is a default address of the account and stays. */
+  "address_in_use",
   /** The input was rejected by the backend's validation (see `details`). */
   "validation_failed",
   /**

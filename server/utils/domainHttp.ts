@@ -21,6 +21,11 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<DomainErrorCode, number>> = {
   unauthenticated: 401,
   invalid_credentials: 401,
   email_taken: 409,
+  account_not_confirmed: 403,
+  account_inactive: 403,
+  already_confirmed: 409,
+  rate_limited: 429,
+  address_in_use: 409,
   validation_failed: 422,
   stale_session: 409,
 };
@@ -28,9 +33,11 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<DomainErrorCode, number>> = {
 const STATUS_MESSAGES: Readonly<Record<number, string>> = {
   400: "Bad Request",
   401: "Unauthorized",
+  403: "Forbidden",
   404: "Not Found",
   409: "Conflict",
   422: "Unprocessable Content",
+  429: "Too Many Requests",
   501: "Not Implemented",
   503: "Service Unavailable",
 };

@@ -218,7 +218,12 @@ const price = (unit: number, quantity: number) => ({
 export type FakeStoreApiExtension = {
   /** Answers a visitor request, or undefined for the cart's own paths. */
   visitor?: (
-    request: { method: string; path: string; body?: Json },
+    request: {
+      method: string;
+      path: string;
+      body?: Json;
+      forwardedFor?: string;
+    },
     state: {
       token: string;
       lines: FakeLine[];
@@ -230,7 +235,11 @@ export type FakeStoreApiExtension = {
   /** Adds the context's methods and errors to a cart answer. */
   decorate?: (token: string, cart: Json, lines: FakeLine[]) => void;
   shopGet?: (path: string) => unknown;
-  shopPost?: (path: string, body: Json) => unknown;
+  shopPost?: (
+    path: string,
+    body: Json,
+    headers?: Record<string, string>,
+  ) => unknown;
 };
 
 export function fakeShopwareCart(
@@ -244,6 +253,7 @@ export function fakeShopwareCart(
     path: string;
     body?: Json;
     contextToken?: string;
+    forwardedFor?: string;
   }[] = [];
   let tokens = 0;
 
@@ -444,6 +454,7 @@ export function fakeShopwareCart(
       path: string;
       body?: Json;
       contextToken?: string;
+      forwardedFor?: string;
     }) => {
       requests.push(structuredClone(request));
       const token = request.contextToken ?? `context-${++tokens}`;
@@ -457,7 +468,7 @@ export function fakeShopwareCart(
         return json;
       };
       const extended = extension.visitor?.(
-        { method, path, body },
+        { method, path, body, forwardedFor: request.forwardedFor },
         { token, lines, carts, cart: current },
       );
       if (extended) {
@@ -506,9 +517,13 @@ export function fakeShopwareCart(
       if (path === "/context") return { currency: { isoCode: "EUR" } } as T;
       throw new Error(`unexpected GET ${path}`);
     },
-    post: async <T>(path: string, body: Json) => {
+    post: async <T>(
+      path: string,
+      body: Json,
+      options?: { headers?: Record<string, string> },
+    ) => {
       requests.push({ method: "POST", path, body: structuredClone(body) });
-      const extended = extension.shopPost?.(path, body);
+      const extended = extension.shopPost?.(path, body, options?.headers);
       if (extended !== undefined) return structuredClone(extended) as T;
       const crossSelling = path.match(/^\/product\/([^/]+)\/cross-selling$/);
       if (crossSelling) {
