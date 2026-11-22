@@ -21,13 +21,18 @@ type LayerApiClient = {
 /** Not fetchable: the browser refuses the scheme without a request. */
 export const OFFLINE_BASE_URL = "about:invalid";
 
+/** No token, no reachable base URL: in the browser and during SSR alike. */
+export function cutOffLayerClient(apiClient: LayerApiClient): void {
+  apiClient.defaultHeaders["sw-context-token"] = "";
+  apiClient.updateBaseConfig({ baseURL: OFFLINE_BASE_URL });
+}
+
 export default defineNuxtPlugin({
   name: "shopbite:shopware-layer-offline",
   setup(nuxtApp) {
     const apiClient = nuxtApp.$shopwareApiClient as unknown as
       LayerApiClient | undefined;
     if (!apiClient) return;
-    apiClient.defaultHeaders["sw-context-token"] = "";
-    apiClient.updateBaseConfig({ baseURL: OFFLINE_BASE_URL });
+    cutOffLayerClient(apiClient);
   },
 });

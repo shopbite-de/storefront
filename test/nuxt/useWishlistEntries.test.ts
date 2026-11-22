@@ -450,4 +450,22 @@ describe("useWishlistEntries (#467, ADR 0001 step 7)", () => {
     await remove("gone-entry");
     expect(entries.value).toEqual([]);
   });
+
+  it("drops the answer of a merge when the customer switched meanwhile", async () => {
+    const { add, mergeGuestEntries, entries } = useWishlistEntries();
+    await add(pizza);
+    isLoggedIn.value = true;
+    mocks.merge.mockImplementation(() => {
+      // another login or a logout in this tab while the merge ran
+      switchAccount();
+      return [entry("earlier-customer")];
+    });
+    entries.value = [];
+
+    await mergeGuestEntries();
+
+    expect(entries.value.map((known) => known.id)).not.toContain(
+      "earlier-customer",
+    );
+  });
 });

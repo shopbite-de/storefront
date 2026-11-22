@@ -46,13 +46,6 @@ const ROUTES = [
     port: "checkout",
     method: "listShippingMethods",
   },
-  {
-    path: "../../server/api/contact/form.get",
-    name: "contact-form",
-    ttl: CACHE_TTL.config,
-    port: "contact",
-    method: "getForm",
-  },
 ] as const;
 
 /** The class the freshly loaded routes see (modules are reset per test). */
@@ -226,9 +219,39 @@ describe("cache purge", () => {
     stubNitro({ useBackend: () => createMemoryBackend() });
     const { BACKEND_DATA_NAMES } = await import("../../server/utils/shopData");
     const { LAYOUT_FUNCTIONS } = await import("../../server/utils/cachePurge");
-    expect(BACKEND_DATA_NAMES).toEqual(ROUTES.map((route) => route.name));
+    expect(BACKEND_DATA_NAMES).toEqual([
+      ...ROUTES.map((route) => route.name),
+      "contact-form",
+    ]);
     expect(LAYOUT_FUNCTIONS).toEqual(
       expect.arrayContaining(BACKEND_DATA_NAMES),
     );
+  });
+});
+
+describe("/api/contact/form", () => {
+  const path = "../../server/api/contact/form.get";
+
+  it("answers the cached fields, also for ?fresh=1 (the purge empties it)", async () => {
+    const { backend, spy, expected } = backendWith("contact", "getForm");
+    const { handler, stubs } = await load(path, backend);
+
+    expect(await handler({ query: { fresh: "1" } })).toEqual(await expected());
+    await handler({ query: { fresh: "1" } });
+    await handler({});
+    expect(spy).toHaveBeenCalledOnce();
+    const cached = stubs.defineCachedFunction!.mock.results.find(
+      (result) =>
+        (result.value as CachedFunction<[], unknown>).opts.name ===
+        "contact-form",
+    )?.value as CachedFunction<[], unknown> & {
+      store: Map<string, unknown>;
+    };
+    expect(cached.opts).toMatchObject({ maxAge: CACHE_TTL.config, swr: false });
+
+    // a purge empties the cached function: the next read asks the backend
+    cached.store.clear();
+    await handler({});
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 });

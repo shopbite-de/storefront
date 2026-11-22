@@ -319,6 +319,40 @@ describe("the wishlist behind the BFF", () => {
     expect(badId.error?.statusCode).toBe(400);
   });
 
+  it("reads the wishlist after the visitor's write in flight (it may move entries)", async () => {
+    await setup();
+    const client = await customer();
+    const order: string[] = [];
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const { wishlist } = backend;
+    backend = {
+      ...backend,
+      wishlist: {
+        ...wishlist,
+        addEntry: async (...args) => {
+          await held;
+          order.push("write");
+          return wishlist.addEntry(...args);
+        },
+        listEntries: async (...args) => {
+          order.push("read");
+          return wishlist.listEntries(...args);
+        },
+      },
+    };
+
+    const writing = add(client);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const reading = list(client);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(order).toEqual([]);
+    release();
+    await Promise.all([writing, reading]);
+    expect(order).toEqual(["write", "read"]);
+    expect(((await reading).body as unknown[]).length).toBe(1);
+  });
+
   it("refuses a dish the menu does not offer with a domain code", async () => {
     await setup();
     const client = await customer();
