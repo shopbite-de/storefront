@@ -115,7 +115,7 @@ export default defineNuxtConfig({
 | Account      | `/konto`, `/konto/profil`                          | `/account`, `/account/profile`                  |
 | Login        | `/anmelden`                                        | `/login`                                        |
 | Registration | `/registrierung`                                   | `/register`                                     |
-| Wishlist     | `/merkliste`                                       | `/wishlist`                                     |
+| Wishlist     | `/merkliste`                                       | `/favourites`                                   |
 | Search       | `/suche`                                           | `/search`                                       |
 | Contact      | `/kontakt`                                         | `/contact`                                      |
 | Password     | `/passwort-vergessen`, `/account/recover/password` | `/forgot-password`, `/account/recover/password` |
@@ -123,7 +123,7 @@ export default defineNuxtConfig({
 Menu sections keep the paths the backend gives them. Texts, dates, times and prices follow the locale (`de-DE`, `en-GB`); prices stay in the backend's currency and times in the restaurant's time zone. The content folder holds the shop's pages in its language. Single paths can be changed with `shopBite.paths`, by route name or content page (`imprint`, `privacy`, `terms`, `shipping`):
 
 ```ts
-shopBite: { locale: "en", paths: { merkliste: "/favourites", terms: "/terms-of-sale" } },
+shopBite: { locale: "en", paths: { merkliste: "/saved-dishes", terms: "/terms-of-sale" } },
 ```
 
 **Override single messages** in the shop's own locale file; it is merged over the storefront's ([`i18n/locales/`](./i18n/locales/), one file per area, top-level key = area):
@@ -136,7 +136,11 @@ i18n: { locales: [{ code: "de", file: "de.json" }] },
 ```json
 // i18n/locales/de.json
 {
-  "order": { "checkout": { "placeOrder": "Jetzt zahlungspflichtig bestellen" } }
+  "order": {
+    "summary": {
+      "button": { "placeOrder": "Jetzt zahlungspflichtig bestellen" }
+    }
+  }
 }
 ```
 
@@ -147,6 +151,8 @@ i18n: { locales: [{ code: "de", file: "de.json" }] },
 shopBite: { locale: "nl", paths: { "bestellung-kasse": "/bestelling/kassa" } },
 i18n: { locales: [{ code: "nl", language: "nl-NL", file: "nl.json" }] },
 ```
+
+[`test/layer/`](./test/layer/) is such a shop: it overrides a German message and adds Dutch, and CI builds and checks it in both languages.
 
 ## Scripts
 
@@ -162,6 +168,7 @@ pnpm lint:fix         # Prettier + ESLint, autofix
 pnpm test:unit        # Vitest (unit + Nuxt environments)
 pnpm bdd:memory       # behaviour tests (Gherkin, test/bdd) on the memory backend
 pnpm bdd:shopware     # the same features against the quickstart's Shopware (CLAUDE.md, Behaviour tests)
+pnpm i18n:en          # an English build: main flows in English, no German left (test/i18n)
 pnpm test:ui          # Vitest UI
 
 pnpm generate-types   # Regenerate Store API types after plugin changes
