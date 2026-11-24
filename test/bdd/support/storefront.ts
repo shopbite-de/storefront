@@ -109,12 +109,23 @@ export function cartLine(cart: Locator, label: string): Locator {
   return cart.getByRole("group", { name: `Menge ${label}`, exact: true });
 }
 
-/** The value next to a term of a list (`<dt>`/`<dd>`), e.g. "Gesamt". */
-export function definitionOf(scope: Locator, term: string): Locator {
-  return scope
-    .getByRole("term")
-    .filter({ hasText: new RegExp(`^${escape(term)}$`) })
-    .locator("xpath=following-sibling::*[1]");
+/**
+ * The definition of a term in a description list (`<dt>`/`<dd>`, roles
+ * term and definition), e.g. "Gesamt": terms and definitions pair up in
+ * document order.
+ */
+export async function definitionOf(
+  scope: Locator,
+  term: string,
+): Promise<Locator> {
+  const terms = scope.getByRole("term");
+  await expect(
+    terms.filter({ hasText: new RegExp(`^\\s*${escape(term)}\\s*$`) }),
+  ).toHaveCount(1);
+  const index = (await terms.allTextContents()).findIndex(
+    (text) => text.trim() === term,
+  );
+  return scope.getByRole("definition").nth(index);
 }
 
 /** Logs in on the login page. */

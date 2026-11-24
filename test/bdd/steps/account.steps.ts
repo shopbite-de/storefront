@@ -164,20 +164,19 @@ When(
       page,
       new URL(link.pathname + link.search, baseURL).toString(),
     );
-    world.password = `${world.password}-new`;
     const form = page.getByRole("main");
     await form
       .getByRole("textbox", { name: "Neues Passwort", exact: true })
-      .fill(world.password);
+      .fill(world.newPassword);
     await form
       .getByRole("textbox", { name: "Neues Passwort wiederholen", exact: true })
-      .fill(world.password);
+      .fill(world.newPassword);
     await form.getByRole("button", { name: "Passwort speichern" }).click();
     await expect(form.getByText("Ihr Passwort ist geändert.")).toBeVisible();
   },
 );
 
 Then("I can log in with the new password", async ({ page, world }) => {
-  await logIn(page, world.email, world.password);
+  await logIn(page, world.email, world.newPassword);
   await expectLoggedIn(page);
 });

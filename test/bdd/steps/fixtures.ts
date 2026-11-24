@@ -6,6 +6,8 @@ export type World = {
   /** The visitor's account (or guest) e-mail and password. */
   email: string;
   password: string;
+  /** The password a reset sets; it opens nothing before. */
+  newPassword: string;
   /** The wished time ("HH:MM") the checkout was left with. */
   wishedTime?: string;
   /** Links of the last mail a step looked for. */
@@ -49,6 +51,7 @@ export const test = base.extend<{ backend: Backend; world: World }>({
     await use({
       email: `bdd-${unique()}@example.com`,
       password: `Bdd-${unique()}-pass`,
+      newPassword: `Bdd-${unique()}-new`,
     });
   },
 });
