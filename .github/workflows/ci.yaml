@@ -50,6 +50,15 @@ jobs:
           NODE_OPTIONS: "--max_old_space_size=4096"
         run: pnpm run build
 
+      # the behaviour tests' seam (modules/test-seams.ts) exists only in
+      # builds made with SHOPBITE_TEST_SEAMS=1, never in this one
+      - name: No test seams in the production build
+        run: |
+          if grep -rqs "/api/_test/" .output/server; then
+            echo "::error::The production build contains the test seams (/api/_test/)"
+            exit 1
+          fi
+
       - name: Save workspace to cache
         uses: actions/cache/save@v6
         with:
@@ -213,51 +222,60 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
-#  e2e-test:
-#    name: E2E tests
-#    environment: test
-#    needs: [setup]
-#    timeout-minutes: 15
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v6
-#
-#      - uses: pnpm/action-setup@v5
-#        with:
-#          version: 10.33.0
-#
-#      - uses: actions/setup-node@v6
-#        with:
-#          node-version: '26'
-#
-#      - name: Restore workspace from cache
-#        uses: actions/cache/restore@v5
-#        with:
-#          path: |
-#            ~/.local/share/pnpm/store
-#            node_modules
-#            .nuxt
-#            .output
-#          key: workspace-${{ runner.os }}-${{ github.sha }}
-#
-#      - name: Cache Playwright browsers
-#        uses: actions/cache@v5
-#        with:
-#          path: ~/.cache/ms-playwright
-#          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-#
-#      - name: Install Playwright browsers
-#        run: pnpm exec playwright install --with-deps chromium
-#
-#      - name: E2E tests
-#        env:
-#          TEST_USER: ${{ secrets.TEST_USER }}
-#          TEST_USER_PASS: ${{ secrets.TEST_USER_PASS }}
-#        run: pnpm test:e2e
-#
-#      - uses: actions/upload-artifact@v7
-#        if: ${{ !cancelled() }}
-#        with:
-#          name: playwright-report
-#          path: playwright-report/
-#          retention-days: 30
+  e2e-test:
+    name: Behaviour tests (memory)
+    # the Gherkin features of test/bdd against the in-memory backend: no
+    # Shopware, no secrets (the Shopware run: bdd-shopware.yaml)
+    needs: [setup]
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.21.0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+
+      - name: Restore workspace from cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules
+            .nuxt
+            .output
+          key: workspace-${{ runner.os }}-${{ github.sha }}
+
+      # a build of its own with the scenario seam; the cached production
+      # build stays without it
+      - name: Build with test seams
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+          SHOPBITE_TEST_SEAMS: '1'
+        run: pnpm run build
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      # playwright.config.ts starts .output/server/index.mjs (webServer)
+      - name: Behaviour tests
+        run: pnpm test:bdd --reporter=list,html
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: bdd-memory-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

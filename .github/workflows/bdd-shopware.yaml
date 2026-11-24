@@ -1,0 +1,92 @@
+name: Behaviour tests (Shopware)
+# The Gherkin features of test/bdd against a real Shopware with the
+# ShopBite plugin: the public quickstart's images and seed
+# (github.com/shopbite-de/shopbite), the storefront built from the branch.
+# Nightly, on demand (Actions → Run workflow, any branch) and before a
+# release: `gh workflow run bdd-shopware.yaml --ref <branch>`.
+on:
+  schedule:
+    # 02:30 UTC: far from Berlin midnight, when the quickstart's restaurant
+    # (open 00:00–23:59, Berlin) takes no orders in its last half hour
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+    inputs:
+      shopware_image:
+        description: Shopware image of the quickstart
+        default: ghcr.io/shopbite-de/shopbite-shopware:latest
+      quickstart_ref:
+        description: Branch or tag of shopbite-de/shopbite
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bdd-shopware-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bdd-shopware:
+    name: Behaviour tests (Shopware)
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    env:
+      SHOPWARE_IMAGE: ${{ inputs.shopware_image || 'ghcr.io/shopbite-de/shopbite-shopware:latest' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: shopbite-de/shopbite
+          ref: ${{ inputs.quickstart_ref || 'main' }}
+          path: .quickstart
+
+      - name: Start Shopware (quickstart without its storefront)
+        env:
+          QUICKSTART_DIR: .quickstart
+        run: test/bdd/shopware-stack.sh up
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.21.0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      # a production build: no test seams, the Shopware run needs none
+      - name: Build
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+        run: pnpm run build
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      # playwright.config.ts starts the build on :3001 with .bdd-stack/storefront.env
+      - name: Behaviour tests
+        env:
+          CI: 'true'
+        run: pnpm test:bdd:shopware --reporter=list,html
+
+      - name: Stack log
+        if: ${{ !cancelled() }}
+        run: test/bdd/shopware-stack.sh logs > compose.log 2>&1 || true
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: bdd-shopware-report
+          path: |
+            playwright-report/
+            test-results/
+            compose.log
+          retention-days: 14
+
+      - name: Stop Shopware
+        if: ${{ always() }}
+        run: test/bdd/shopware-stack.sh down
