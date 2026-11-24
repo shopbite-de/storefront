@@ -218,7 +218,8 @@ export function buildLlmsTxt(input: LlmsTxtInput, words: LlmsWords): string {
       : undefined,
     `- ${t("server.llms.website")}: ${input.url}`,
     input.googleBusinessProfileUrl
-      ? `- Google: ${input.googleBusinessProfileUrl}`
+      ? // eslint-disable-next-line shopbite/no-literal-text -- a name
+        `- Google: ${input.googleBusinessProfileUrl}`
       : undefined,
   ].filter((line): line is string => Boolean(line));
 

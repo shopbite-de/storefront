@@ -1,6 +1,7 @@
 {
   "menu": {
     "breadcrumb": {
+      "loading": "Kategorie",
       "label": "Brotkrumen"
     },
     "searchInput": {

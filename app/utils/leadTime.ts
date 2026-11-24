@@ -54,10 +54,12 @@ export function fulfillmentLeadTime(
  * them, so they stay German in every locale (ADR 0002). The checkout's
  * words for the time choice are the messages `order.fulfillment.*`.
  */
+/* eslint-disable shopbite/no-literal-text -- a protocol: the receipt printer and the backoffice read these words in every locale */
 const WISHED_TIME_PREFIX = {
   delivery: "Wunschlieferzeit",
   pickup: "Wunschabholzeit",
 } as const satisfies Record<Fulfillment, string>;
+/* eslint-enable shopbite/no-literal-text */
 
 /**
  * The order's customer comment carries the wished time, e.g.

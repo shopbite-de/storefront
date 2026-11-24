@@ -1,5 +1,7 @@
 import { computed, ref, type Ref } from "vue";
 
+// the select's value for "no sorting chosen", never shown
+// eslint-disable-next-line shopbite/no-literal-text -- a value, not a text
 export const SORTING_PLACEHOLDER = "Sortieren";
 
 /**

@@ -1,3 +1,4 @@
+/* eslint-disable shopbite/no-literal-text -- Matomo event categories and actions (`Cart`, `AddToCart`) name the shop's reports, they are no texts */
 import type { Dish, Order } from "../../shared/domain";
 import { cartLineLabel } from "../utils/dish";
 import { moneyAmount } from "../utils/money";

@@ -5,6 +5,7 @@
  * of error logs a day (#363). In the browser only a fatal error shows the
  * error page, so it stays fatal there for client-side navigation.
  */
+// eslint-disable-next-line shopbite/no-literal-text -- the HTTP status text; error.vue shows its own
 export function createNotFoundError(statusMessage = "Page not found") {
   return createError({
     statusCode: 404,

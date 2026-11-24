@@ -6,6 +6,7 @@ const props = defineProps<{
 }>();
 
 const { categoryId } = toRefs(props);
+const { t } = useI18n();
 
 const breadcrumbJsonLd = ref<object | null>(null);
 
@@ -37,7 +38,7 @@ const { data } = await useAsyncData(cacheKey, async () => {
 });
 
 const items = computed<{ label?: string; to: string }[]>(() => {
-  if (!data.value) return [{ label: "Kategorie", to: "#" }];
+  if (!data.value) return [{ label: t("menu.breadcrumb.loading"), to: "#" }];
   return data.value.map((item) => ({ label: item.label, to: item.path }));
 });
 

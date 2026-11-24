@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { germanWords } from "../../../eslint/germanText.mjs";
+import { germanWords } from "../../support/germanText.mjs";
 import { resolveShopLocale } from "../../../i18n/shopLocale";
 import { createMemoryBackend } from "../../../server/adapters/memory";
 import { demoSeed } from "../../../server/adapters/memory/seed";

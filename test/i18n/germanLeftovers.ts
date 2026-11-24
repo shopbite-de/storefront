@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import type { Page } from "@playwright/test";
-import { germanWords } from "../../eslint/germanText.mjs";
+import { germanWords } from "../support/germanText.mjs";
 
 /**
  * The demo menu's own texts (dish, section, extra, ingredient and food
