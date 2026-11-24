@@ -1,7 +1,8 @@
 /**
  * How the Shopware adapter reaches the Store API with the storefront's
- * access key. The registry passes the Nitro utils `storeApiGet` and
- * `storeApiPost`; contract tests pass a fake that answers Shopware JSON.
+ * access key. The running storefront passes `createShopwareTransport()`
+ * (`transport.ts`: Nitro's `$fetch` to the private endpoint); contract
+ * tests pass a fake that answers Shopware JSON.
  */
 export interface StoreApi {
   get<T>(
