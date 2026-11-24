@@ -50,7 +50,7 @@ async function confirmRegistration() {
   }
 
   refreshCart().catch((error) => console.error("[cart] refresh", error));
-  await navigateTo({ path: "/konto" });
+  await navigateTo({ name: "konto" });
 }
 
 // The route is client-side rendered (routeRules), so this never runs on the
@@ -71,8 +71,11 @@ confirmRegistration();
         {{ messages[error].description }}
       </p>
       <div class="flex flex-wrap gap-3">
-        <SbButton to="/anmelden">Zur Anmeldung</SbButton>
-        <SbButton v-if="error === 'invalid'" variant="secondary" to="/kontakt"
+        <SbButton :to="{ name: 'anmelden' }">Zur Anmeldung</SbButton>
+        <SbButton
+          v-if="error === 'invalid'"
+          variant="secondary"
+          :to="{ name: 'kontakt' }"
           >Kontakt</SbButton
         >
       </div>

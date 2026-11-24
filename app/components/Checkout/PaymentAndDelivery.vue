@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 // The one-page checkout of the presets shows shipping and payment as
 // separate numbered sections (#443).
 const props = withDefaults(
@@ -121,7 +122,7 @@ watch(selectedShippingMethodId, async (newValue: string | undefined) => {
       :options="paymentOptions"
     />
     <NuxtLink
-      to="/zahlung-und-versand"
+      :to="shopLocale.contentPaths.shipping"
       class="inline-flex min-h-11 items-center self-start text-sm font-semibold text-sb-primary-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-sb-focus"
     >
       {{
@@ -137,7 +138,7 @@ watch(selectedShippingMethodId, async (newValue: string | undefined) => {
         <h2 id="checkout-shipping" class="font-display text-[28px]">
           Lieferung oder Abholung
         </h2>
-        <SbButton variant="ghost" to="/zahlung-und-versand">
+        <SbButton variant="ghost" :to="shopLocale.contentPaths.shipping">
           Versandarten erklärt
         </SbButton>
       </div>
@@ -154,7 +155,7 @@ watch(selectedShippingMethodId, async (newValue: string | undefined) => {
         <h2 id="checkout-payment" class="font-display text-[28px]">
           Bezahlung
         </h2>
-        <SbButton variant="ghost" to="/zahlung-und-versand">
+        <SbButton variant="ghost" :to="shopLocale.contentPaths.shipping">
           Zahlungsarten erklärt
         </SbButton>
       </div>

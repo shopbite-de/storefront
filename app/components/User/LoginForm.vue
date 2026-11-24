@@ -100,7 +100,7 @@ async function onSubmit() {
       />
     </SbField>
     <NuxtLink
-      to="/passwort-vergessen"
+      :to="{ name: 'passwort-vergessen' }"
       class="inline-flex min-h-11 items-center self-start text-sm font-semibold text-sb-primary-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-sb-focus"
       >Passwort vergessen?</NuxtLink
     >

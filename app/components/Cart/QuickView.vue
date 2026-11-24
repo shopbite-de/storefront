@@ -66,7 +66,7 @@ const emit = defineEmits(["go-to-cart"]);
         v-if="withToCartButton"
         block
         size="lg"
-        to="/bestellung/kasse"
+        :to="{ name: 'bestellung-kasse' }"
         @click="emit('go-to-cart')"
       >
         Zur Kasse

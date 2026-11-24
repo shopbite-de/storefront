@@ -3,6 +3,7 @@
  * seam only, `modules/test-seams.ts`): its restaurant, the mails its
  * backend would have sent and the orders it took.
  */
+import { shopLocale } from "#shopbite-locale";
 import type { Backend, ShopPort } from "../../../server/ports";
 import {
   createMemoryBackend,
@@ -64,7 +65,7 @@ export function startScenario(
   // order: `changeScenario` swaps the config object in this same `shop`
   const memory = createMemoryBackend(
     { ...demo, shop },
-    { mail: (mail) => outbox.push(mail) },
+    { mail: (mail) => outbox.push(mail), pagePaths: shopLocale.pagePaths },
   );
   const checkout: Backend["checkout"] = {
     ...memory.checkout,

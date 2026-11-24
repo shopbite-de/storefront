@@ -8,7 +8,7 @@ const id = useId();
 function submit() {
   const term = query.value.trim();
   if (!term) return;
-  router.push({ path: "/suche", query: { q: term } });
+  router.push({ name: "suche", query: { q: term } });
 }
 </script>
 

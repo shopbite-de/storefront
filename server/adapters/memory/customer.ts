@@ -18,6 +18,11 @@ import {
 import type { AccountAddress, BackendSession, CustomerPort } from "../../ports";
 import type { MemoryCart } from "./cart";
 import type { MemoryAccountsView } from "./ordering";
+import {
+  FILE_PAGE_PATHS,
+  pathOf,
+  type PathTable,
+} from "../../../i18n/shopLocale";
 
 /** What the memory backend would send by e-mail (it sends none). */
 export type MemoryMail =
@@ -91,10 +96,16 @@ export function createMemoryCustomer(options: {
   doubleOptIn?: boolean;
   country?: string;
   mail?: (mail: MemoryMail) => void;
+  /**
+   * Paths of the storefront's pages the mails link to (the shop's locale,
+   * ADR 0002), like Shopware's configured links; German by default.
+   */
+  pagePaths?: PathTable;
   now?: () => number;
 }): { customer: CustomerPort; accounts: MemoryAccountsView } {
   const now = options.now ?? Date.now;
   const country = options.country ?? "DE";
+  const pagePaths = options.pagePaths ?? FILE_PAGE_PATHS;
   const accounts = new Map<Id, Account>();
   /** Logged-in session tokens. */
   const sessions = new Map<string, Id>();
@@ -287,7 +298,7 @@ export function createMemoryCustomer(options: {
         options.mail?.({
           to: account.email,
           kind: "registration",
-          url: `${storefrontUrl.replace(/\/+$/, "")}/registrierung/bestaetigen?${new URLSearchParams(confirmation)}`,
+          url: `${storefrontUrl.replace(/\/+$/, "")}${pathOf(pagePaths, "registrierung-bestaetigen")}?${new URLSearchParams(confirmation)}`,
           confirmation,
         });
         return deepFreeze({
@@ -360,7 +371,7 @@ export function createMemoryCustomer(options: {
       options.mail?.({
         to: account.email,
         kind: "password_reset",
-        url: `${storefrontUrl.replace(/\/+$/, "")}/account/recover/password?hash=${resetToken}`,
+        url: `${storefrontUrl.replace(/\/+$/, "")}${pathOf(pagePaths, "account-recover-password")}?hash=${resetToken}`,
         resetToken,
       });
     },

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 import type { RegistrationSchema } from "~/validation/registrationSchema";
 
 /**
@@ -302,7 +303,7 @@ async function onSubmit() {
       >
         Ich habe die
         <NuxtLink
-          to="/datenschutz"
+          :to="shopLocale.contentPaths.privacy"
           class="font-semibold text-sb-primary-ink underline underline-offset-2"
           >Datenschutzerklärung</NuxtLink
         >

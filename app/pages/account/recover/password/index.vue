@@ -115,7 +115,7 @@ async function onSubmit() {
         <strong class="block">Ihr Passwort ist geändert.</strong>
         Sie können sich jetzt mit dem neuen Passwort anmelden.
       </p>
-      <SbButton to="/anmelden">Zur Anmeldung</SbButton>
+      <SbButton :to="{ name: 'anmelden' }">Zur Anmeldung</SbButton>
     </div>
     <form
       v-else
@@ -135,7 +135,7 @@ async function onSubmit() {
         >
         Der Link ist vielleicht abgelaufen.
         <NuxtLink
-          to="/passwort-vergessen"
+          :to="{ name: 'passwort-vergessen' }"
           class="font-semibold text-sb-primary-ink underline underline-offset-4"
           >Neuen Link anfordern</NuxtLink
         >

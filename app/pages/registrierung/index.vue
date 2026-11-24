@@ -6,12 +6,12 @@ useSeoMeta({
 const { isLoggedIn } = useCustomer();
 
 if (import.meta.client && isLoggedIn.value) {
-  navigateTo({ path: "/konto" });
+  navigateTo({ name: "konto" });
 }
 
 watch(isLoggedIn, (isLoggedIn) => {
   if (isLoggedIn) {
-    navigateTo({ path: "/konto" });
+    navigateTo({ name: "konto" });
   }
 });
 
@@ -26,7 +26,7 @@ function onRegistrationSuccess(_data: unknown, needsConfirmation: boolean) {
     return;
   }
 
-  navigateTo("/konto");
+  navigateTo({ name: "konto" });
 }
 </script>
 
@@ -55,7 +55,7 @@ function onRegistrationSuccess(_data: unknown, needsConfirmation: boolean) {
     <template #footer>
       Schon registriert?
       <NuxtLink
-        to="/anmelden"
+        :to="{ name: 'anmelden' }"
         class="font-semibold text-sb-primary-ink underline underline-offset-4"
         >Anmelden</NuxtLink
       >

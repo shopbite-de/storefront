@@ -4,7 +4,6 @@
 // themselves. The cart is loaded on the client, so the bar never renders on
 // the server (no hydration mismatch). Adding a dish pops the bar and
 // names the dish for a moment; this replaces the add-to-cart toast (#325).
-const CHECKOUT_PATH_PREFIX = "/bestellung";
 const ADDED_LABEL_MS = 1800;
 
 const route = useRoute();
@@ -18,7 +17,7 @@ const visible = computed(
   () =>
     acceptsOrders.value &&
     count.value > 0 &&
-    !route.path.startsWith(CHECKOUT_PATH_PREFIX),
+    !String(route.name).startsWith("bestellung"),
 );
 
 const itemsLabel = computed(() =>

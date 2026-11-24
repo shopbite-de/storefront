@@ -41,7 +41,7 @@ const sameAddress = computed(
           <span class="block">{{ user?.firstName }} {{ user?.lastName }}</span>
           <span class="text-sb-ink-muted">{{ user?.email }}</span>
         </p>
-        <SbButton variant="secondary" to="/konto/profil"
+        <SbButton variant="secondary" :to="{ name: 'konto-profil' }"
           >Profil bearbeiten</SbButton
         >
       </section>
@@ -50,7 +50,7 @@ const sameAddress = computed(
       >
         <h2 class="font-display text-xl">Bestellungen</h2>
         <p class="text-sb-ink-muted">Alle Bestellungen mit Status und Beleg.</p>
-        <SbButton variant="secondary" to="/konto/bestellungen"
+        <SbButton variant="secondary" :to="{ name: 'konto-bestellungen' }"
           >Bestellungen ansehen</SbButton
         >
       </section>
@@ -59,7 +59,10 @@ const sameAddress = computed(
         :address="userDefaultShippingAddress"
         :title="sameAddress ? 'Liefer- und Rechnungsadresse' : 'Lieferadresse'"
       >
-        <SbButton variant="secondary" to="/konto/adressen" class="self-start"
+        <SbButton
+          variant="secondary"
+          :to="{ name: 'konto-adressen' }"
+          class="self-start"
           >Adressen verwalten</SbButton
         >
       </AddressCard>
