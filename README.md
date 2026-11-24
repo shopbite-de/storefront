@@ -96,6 +96,58 @@ export default defineNuxtConfig({
 Everything — pages, components, composables, server routes — comes along. Override any
 file by recreating it at the same path in your own `app/` directory.
 
+### Language of the shop
+
+A shop speaks one language ([ADR 0002](./docs/adr/0002-one-locale-per-shop.md)): German (`de`, the default) or English (`en`), set at build time, because it also decides the paths of the pages:
+
+```ts
+// nuxt.config.ts of the shop
+export default defineNuxtConfig({
+  extends: ["@shopbite-de/storefront"],
+  shopBite: { locale: "en" }, // or NUXT_SHOPBITE_LOCALE=en for the build
+});
+```
+
+| Page         | `de` (default)                                     | `en`                                            |
+| ------------ | -------------------------------------------------- | ----------------------------------------------- |
+| Checkout     | `/bestellung/kasse`                                | `/order/checkout`                               |
+| Order        | `/bestellung/<id>`                                 | `/order/<id>`                                   |
+| Account      | `/konto`, `/konto/profil`                          | `/account`, `/account/profile`                  |
+| Login        | `/anmelden`                                        | `/login`                                        |
+| Registration | `/registrierung`                                   | `/register`                                     |
+| Wishlist     | `/merkliste`                                       | `/wishlist`                                     |
+| Search       | `/suche`                                           | `/search`                                       |
+| Contact      | `/kontakt`                                         | `/contact`                                      |
+| Password     | `/passwort-vergessen`, `/account/recover/password` | `/forgot-password`, `/account/recover/password` |
+
+Menu sections keep the paths the backend gives them. Texts, dates, times and prices follow the locale (`de-DE`, `en-GB`); prices stay in the backend's currency and times in the restaurant's time zone. The content folder holds the shop's pages in its language. Single paths can be changed with `shopBite.paths`, by route name or content page (`imprint`, `privacy`, `terms`, `shipping`):
+
+```ts
+shopBite: { locale: "en", paths: { merkliste: "/favourites", terms: "/terms-of-sale" } },
+```
+
+**Override single messages** in the shop's own locale file; it is merged over the storefront's ([`i18n/locales/`](./i18n/locales/), one file per area, top-level key = area):
+
+```ts
+// nuxt.config.ts
+i18n: { locales: [{ code: "de", file: "de.json" }] },
+```
+
+```json
+// i18n/locales/de.json
+{
+  "order": { "checkout": { "placeOrder": "Jetzt zahlungspflichtig bestellen" } }
+}
+```
+
+**Add a language** the same way and select it; messages it does not translate fall back to English, its pages keep the German paths unless `shopBite.paths` moves them:
+
+```ts
+// nuxt.config.ts
+shopBite: { locale: "nl", paths: { "bestellung-kasse": "/bestelling/kassa" } },
+i18n: { locales: [{ code: "nl", language: "nl-NL", file: "nl.json" }] },
+```
+
 ## Scripts
 
 ```bash
@@ -128,7 +180,7 @@ pnpm test:bdd cart.feature
 app/
 ├── components/     Cart, Checkout, Product, Food, Navigation, Header, …
 ├── composables/    Business logic — useOpeningHours, useDeliveryTime, useAddToCart, …
-├── pages/          German routes: /speisekarte, /warenkorb, /konto, /bestellung
+├── pages/          Routes at the German paths (/bestellung, /konto); other locales move them (i18n/shopLocale.ts)
 ├── validation/     Zod schemas for forms
 └── assets/css/     Tailwind v4 theme tokens
 server/api/         BFF routes (domain types from the ports), cached Store API proxies, the Geoapify key guard
