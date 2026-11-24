@@ -27,6 +27,8 @@ onMounted(async () => {
 });
 
 const { getFormattedMoney } = useCommercePrice();
+// the restaurant's clock, on the server and in the browser
+const { timeZone } = useShopConfig();
 </script>
 
 <template>
@@ -66,7 +68,7 @@ const { getFormattedMoney } = useCommercePrice();
             getFormattedMoney(order.total)
           }}</span>
           <span class="text-sm text-sb-ink-muted">
-            {{ formatDate(order.placedAt, shopLocale.language) }}
+            {{ formatDate(order.placedAt, shopLocale.language, timeZone) }}
             · {{ $t(ORDER_STATUS_MESSAGE[order.status]) }}
           </span>
           <span
