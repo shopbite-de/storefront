@@ -68,6 +68,16 @@ export default defineConfig<ConfigOptions>({
       workers: 1,
       use: { ...devices["Desktop Chrome"], trace: "retain-on-failure" },
     },
+    /*
+     * The main flows of an English build (ADR 0002): a build with
+     * NUXT_SHOPBITE_LOCALE=en and SHOPBITE_TEST_SEAMS=1, memory backend.
+     */
+    {
+      name: "i18n-en",
+      testDir: "./test/i18n",
+      workers: 1,
+      use: { ...devices["Desktop Chrome"], trace: "retain-on-failure" },
+    },
     /* Accessibility checks of the preset pages (#446), no login needed. */
     {
       name: "a11y",
