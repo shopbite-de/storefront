@@ -21,7 +21,8 @@ pnpm prettier         # Check Prettier
 
 # Testing
 pnpm test:unit        # Vitest (unit + nuxt environments, with coverage)
-pnpm test:e2E         # Playwright e2e (Chromium, requires .env.test)
+pnpm test:bdd         # behaviour tests (Gherkin, test/bdd) on the memory backend
+pnpm test:bdd:shopware # the same features against a Shopware (see Behaviour tests)
 
 # Shopware API types
 pnpm generate-types   # Regenerate api-types/storeApiTypes.d.ts from schema (then run pnpm lint:fix)
@@ -49,8 +50,9 @@ Server paths that call the backend are tested slow, not only failing:
 pnpm vitest run test/nuxt/useDeliveryTime.test.ts
 pnpm vitest run --reporter=verbose -t "should return true"
 
-# Playwright – filter by file
-pnpm playwright test test/e2e/checkout.spec.ts
+# Behaviour tests – filter by feature file or scenario name
+pnpm test:bdd cart.feature
+pnpm test:bdd -g "Pickup asks"
 ```
 
 ### Typecheck note
@@ -192,7 +194,15 @@ In `test/nuxt/`, a `mockNuxtImport("useRuntimeConfig")` without `app.baseURL` br
 
 Accessibility checks (#446) in `test/a11y/` run axe (WCAG 2.1 AA) on home, menu, product sheet, cart, checkout, order confirmation and payment failure (the order is a mocked answer of `/api/orders/[orderId]`), login, registration and the password pages, search, contact, wishlist, a content page and the 404 page, desktop and phone (`pnpm test:a11y`, Playwright projects `a11y` and `a11y-mobile`); serious and critical violations fail. They need no login and only add a product to a guest cart. They test the running build (Playwright starts `.output/server/index.mjs`); the preset is runtime config, so CI runs the `a11y` matrix job per preset on one build with `NUXT_PUBLIC_SHOP_BITE_THEME_PRESET`. Locally: `pnpm build`, then `NUXT_PUBLIC_SHOP_BITE_THEME_PRESET=grill NUXT_PUBLIC_STORE_URL=http://localhost:<port> pnpm test:a11y`.
 
-E2E tests in `test/e2e/` use Playwright (Chromium only) and require `TEST_USER` / `TEST_USER_PASS` env vars. A local dev server must be running before the suite executes.
+### Behaviour tests (test/bdd, #433)
+
+Gherkin features run by [playwright-bdd](https://vitalets.github.io/playwright-bdd/) (`bddgen` writes Playwright tests to `.features-gen/`; project `bdd` in `playwright.config.ts`, one worker, since a scenario sets the restaurant of the one backend). The same `test/bdd/features/*.feature` run against both backends; `NUXT_SHOP_BITE_BACKEND` selects the storefront's adapter and the test driver (`test/bdd/support/backends.ts`).
+
+- Features are English and behaviour-level ("Given the restaurant has paused ordering", "When I add a "Pizza Margherita" with "Extra Salami" to the cart"); the steps (`test/bdd/steps/*.steps.ts`, fixtures `backend` and `world` in `steps/fixtures.ts`) match the German UI by role, label and text (`test/bdd/support/storefront.ts`), never by CSS class. Cucumber ignores the keyword: two steps may not share a text (`Given I am a logged-in customer` vs `Then I am logged in`).
+- **Memory** (`pnpm build` with `SHOPBITE_TEST_SEAMS=1`, then `pnpm test:bdd`; CI job `e2e-test` on every PR): every scenario starts on a fresh demo restaurant through the test seam `POST /api/_test/scenario` (`PATCH` changes the running one and keeps its visitors, `GET /api/_test/mails` lists what it would have mailed). Time is deterministic without a fake clock: the restaurant's time zone is an `Etc/GMT±N` zone in which it is 12:xx now (`test/bdd/seam/scenario.ts`), open 10:00–22:00, "closed for today" 06:00–11:00. The seam is never in a production build: `modules/test-seams.ts` adds the routes only with `SHOPBITE_TEST_SEAMS=1` and only when the storefront itself is the project (never in a shop extending the layer), they answer 404 unless the backend is `memory`, and CI's production build, `node.dockerfile` and `bun.dockerfile` fail when `.output/server` contains `/api/_test/`.
+- **Shopware** (`bdd-shopware.yaml`: nightly, `workflow_dispatch` on any branch, run it before a release): the public quickstart's Shopware and seed without its storefront, the branch's production build on :3001. Locally: `QUICKSTART_DIR=<clone of shopbite-de/shopbite> test/bdd/shopware-stack.sh up` (Compose project `bdd`, fixed ports 8000, 3000, 8025; writes `.bdd-stack/storefront.env`, which `playwright.config.ts` loads), `pnpm build && pnpm test:bdd:shopware`, then `test/bdd/shopware-stack.sh down`. The driver sets hours and the switch through the Admin API (`admin`/`shopbite`), purges the storefront's layout cache (`NUXT_CACHE_PURGE_SECRET`) and reads mails from Mailpit. Its clock is Berlin's: between 23:25 and 24:00 the quickstart takes no delivery orders, so the ordering scenarios fail there.
+- Locally the browser runs in `mcr.microsoft.com/playwright:v<@playwright/test version>-noble` (`--network host`, repo mounted) where Playwright's own Chromium does not start (NixOS).
+- **Adding a step**: write the scenario first and run it (`missingSteps` fails at generation with a snippet), add the step to the `*.steps.ts` of its area with roles and labels, put shared UI paths in `support/storefront.ts` and backend differences in the driver (both backends, or a tag). A scenario one backend cannot run gets `@memory-only` or `@shopware-only` with the reason in a comment above it; it shows as skipped. A new scenario must be seen failing for its reason: add its mutant (step left out or expectation changed) to `test/bdd/mutants/mutants.feature`; `pnpm test:bdd:mutants` is green only when every mutant fails (`@fail`).
 
 ### Route rendering strategy
 
@@ -203,4 +213,4 @@ Most pages are SSR. Exceptions defined in `nuxt.config.ts` route rules:
 
 ### CI
 
-`.github/workflows/ci.yaml` runs four jobs in sequence: **setup** (install + build, cached) → **lint** → **unit tests** → **e2e tests**. The `build.yaml` workflow handles Docker image builds (`ghcr.io/shopbite-de/storefront-app`) and NPM publishing on releases; the version comes from the tag. Release with `gh release create vX.Y.Z --target <full SHA>` (a short SHA is refused) and upgrade notes for operators (new required settings, removed routes). The registry serves the version a few minutes after the publish log: poll `https://registry.npmjs.org/@shopbite-de/storefront/X.Y.Z` for 200.
+`.github/workflows/ci.yaml` runs **setup** (install + build, cached, checked for test seams) → **lint**, **unit tests**, **layer build**, **a11y** and **behaviour tests** (memory backend, its own build with test seams). `bdd-shopware.yaml` runs the behaviour tests against the quickstart's Shopware nightly and on demand. The `build.yaml` workflow handles Docker image builds (`ghcr.io/shopbite-de/storefront-app`) and NPM publishing on releases; the version comes from the tag. Release with `gh release create vX.Y.Z --target <full SHA>` (a short SHA is refused) and upgrade notes for operators (new required settings, removed routes). The registry serves the version a few minutes after the publish log: poll `https://registry.npmjs.org/@shopbite-de/storefront/X.Y.Z` for 200.
