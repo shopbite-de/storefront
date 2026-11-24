@@ -47,3 +47,4 @@ test/layer/.data
 # Playwright tests generated from the features (bddgen)
 .features-gen
 .bdd-stack
+.bdd-quickstart
