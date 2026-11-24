@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { germanWords } from "../../eslint/germanText.mjs";
+import { germanWords } from "../support/germanText.mjs";
 
 /**
  * The storefront's messages (ADR 0002): English has every German message

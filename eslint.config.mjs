@@ -1,7 +1,7 @@
 // @ts-check
 import withNuxt from "./.nuxt/eslint.config.mjs";
 import eslintConfigPrettier from "eslint-config-prettier";
-import shopbite from "./eslint/noGermanText.mjs";
+import shopbite from "./eslint/noLiteralText.mjs";
 
 export default withNuxt(
   {
@@ -52,18 +52,10 @@ export default withNuxt(
   },
   {
     // ADR 0002: every text a guest reads comes from the locale files
-    // (i18n/locales). Bare text in templates and German string literals
-    // in code are refused; backend data and the order comment's protocol
-    // words are disabled where they occur, with the reason.
+    // (i18n/locales): bare text in templates is refused.
     name: "shopbite/locale-texts",
-    files: ["app/**/*.{ts,vue}", "server/**/*.ts", "shared/**/*.ts"],
-    ignores: [
-      // backend data: Shopware's entity names, the demo restaurant's menu
-      "server/adapters/**",
-    ],
-    plugins: { shopbite },
+    files: ["app/**/*.vue"],
     rules: {
-      "shopbite/no-german-text": "error",
       "vue/no-bare-strings-in-template": [
         "error",
         {
@@ -96,6 +88,20 @@ export default withNuxt(
         },
       ],
     },
+  },
+  {
+    // ADR 0002: a string that reads like text for people (any language)
+    // in the app's scripts, template expressions and attributes, and in
+    // the server's text for people (llms.txt), is a text outside the
+    // locale files. Keys, identifiers, paths, classes and codes are not.
+    name: "shopbite/literal-text",
+    files: [
+      "app/**/*.{ts,vue}",
+      "server/routes/llms.txt.ts",
+      "server/utils/llmsTxt.ts",
+    ],
+    plugins: { shopbite },
+    rules: { "shopbite/no-literal-text": "error" },
   },
   eslintConfigPrettier,
 );

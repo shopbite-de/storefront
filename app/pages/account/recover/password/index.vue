@@ -23,6 +23,7 @@ const router = useRouter();
 
 // Schemas
 const routeValidationSchema = z.object({
+  // eslint-disable-next-line shopbite/no-literal-text -- for the log, never shown
   hash: z.string().min(1, "Hash parameter is required and cannot be empty"),
 });
 

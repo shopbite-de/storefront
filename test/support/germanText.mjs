@@ -1,8 +1,9 @@
 // @ts-check
 /**
- * Whether a text reads as German (ADR 0002): the guard against UI texts
- * outside the locale files (eslint rule `shopbite/no-german-text`) and the
- * check that the English messages and the English build show none.
+ * Whether a text reads as German (ADR 0002): the tests' check that the
+ * English messages, the English demo setup and the English build show none.
+ * (The lint guard against texts in code, `shopbite/no-literal-text`, uses
+ * no word list: it refuses any string that reads like text.)
  *
  * A heuristic: umlauts and ß, or one of the words below, which German UI
  * texts use all the time and English ones never.
