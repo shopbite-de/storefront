@@ -395,6 +395,8 @@ export default defineNuxtConfig({
   },
 
   devtools: { enabled: true },
+  // Off as the @shopware/composables layer of 2.x had it (removed in 3.0).
+  telemetry: { enabled: false },
   future: {
     compatibilityVersion: 4,
   },
