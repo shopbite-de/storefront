@@ -17,6 +17,7 @@ import {
   languageOf,
   localizedDefault,
   localizePages,
+  mergeRouteRules,
   resolveShopLocale,
   shopRouteRules,
   type ShopLocale,
@@ -206,11 +207,11 @@ export default defineNuxtModule<ShopLocaleOptions & ShopBiteThemeOptions>({
     });
 
     const { routeRules, robotsDisallow } = shopRouteRules(locale);
-    // the shop's own rules for a path win
-    nuxt.options.routeRules = {
-      ...routeRules,
-      ...nuxt.options.routeRules,
-    };
+    // merged per path; the shop's values win
+    nuxt.options.routeRules = mergeRouteRules(
+      routeRules,
+      nuxt.options.routeRules as Record<string, Record<string, unknown>>,
+    );
     const robots = ((nuxt.options as unknown as { robots?: unknown }).robots ??
       {}) as { disallow?: string[] };
     robots.disallow = [

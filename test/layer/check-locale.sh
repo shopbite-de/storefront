@@ -31,6 +31,11 @@ case "$locale" in
     has 'Direkt zum Inhalt' # the shop's override
     has 'Hauptnavigation'   # the storefront's German messages
     [ "$(status /suche)" = 200 ] || fail "/suche is not 200"
+    # the shop's header and the storefront's ssr: false on one path
+    curl -sI "http://localhost:$port/merkliste" | grep -qi '^x-shop-rule: wishlist' ||
+      fail "/merkliste lacks the shop's header"
+    curl -s "http://localhost:$port/merkliste" | grep -q 'id="__nuxt"></div>' ||
+      fail "/merkliste is rendered on the server"
     ;;
   nl)
     has 'lang="nl"'
