@@ -5,6 +5,7 @@
 const { loadUpsellDishes, addUpsellDish, isAdding } = useCartUpsell();
 const { lines } = useCartData();
 const { getFormattedMoney } = useCommercePrice();
+const { acceptsOrders } = useShopConfig();
 
 // Browser only: the server renders without the cart, so filtering there would
 // not match the hydrated page. The row follows once the request returns.
@@ -23,7 +24,7 @@ const dishes = computed(() =>
 
 <template>
   <section
-    v-if="dishes.length > 0"
+    v-if="acceptsOrders && dishes.length > 0"
     aria-labelledby="cart-upsell-title"
     class="flex flex-col gap-1 rounded-sb-card bg-sb-muted p-4 font-body text-sb-ink"
   >

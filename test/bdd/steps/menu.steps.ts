@@ -1,14 +1,16 @@
-import { expect } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import type { DataTable } from "playwright-bdd";
 import { Given, Then, When } from "./fixtures";
 import {
   addFromSheet,
   cartWritten,
   dishCard,
+  escape,
   gotoHydrated,
   openDish,
   openMenu,
   openSection,
+  waitForHydration,
 } from "../support/storefront";
 
 const column = (table: DataTable) => table.raw().map(([cell]) => cell!);
@@ -178,12 +180,63 @@ When(
   },
 );
 
-Then("I cannot put dishes into a cart", async ({ page }) => {
-  await expect(page.getByRole("button", { name: /^Warenkorb, / })).toHaveCount(
-    0,
+const PAUSED = "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen";
+
+/** Presses an add button if the page offers one, until a cart write answers. */
+async function tryToAdd(page: Page, button: Locator) {
+  if (!(await button.count())) return;
+  await button.scrollIntoViewIfNeeded();
+  // a card that has not hydrated yet drops the click: press again
+  await expect(async () => {
+    await Promise.all([
+      cartWritten(page).then(
+        () => undefined,
+        () => undefined,
+      ),
+      button.click({ timeout: 2000 }),
+    ]);
+    await page.waitForLoadState("networkidle");
+  })
+    .toPass({ timeout: 10_000 })
+    .catch(() => {});
+}
+
+Then("I cannot add {string} to my cart", async ({ page }, name: string) => {
+  const card = dishCard(page, name);
+  await expect(card).toBeVisible();
+  // really try: from the card, then from the dish sheet
+  await tryToAdd(
+    page,
+    card.getByRole("button", { name: `${name} hinzufügen` }),
   );
-  await expect(page.getByRole("link", { name: "Zur Kasse" })).toHaveCount(0);
+  await card.getByRole("link").click();
+  const sheet = page.getByRole("dialog", {
+    name: new RegExp(`${escape(name)}$`),
+  });
+  await expect(sheet).toBeVisible();
+  await waitForHydration(page);
+  await tryToAdd(
+    page,
+    sheet.getByRole("button", { name: /^In den Warenkorb/ }),
+  );
+  // asked of the backend, not of the page
+  const cart = await (await page.request.get("/api/cart")).json();
+  expect(
+    cart.lines.map((line: { name: string }) => line.name),
+    "cart lines in the backend",
+  ).toEqual([]);
+  await expect(sheet.getByText(PAUSED)).toBeVisible();
 });
+
+Then(
+  "the dish {string} says the restaurant takes no orders right now",
+  async ({ page }, name: string) => {
+    await gotoHydrated(page, page.url().replace(/\?.*$/, ""));
+    await expect(
+      dishCard(page, name).getByText("Gerade keine Bestellungen"),
+    ).toBeVisible();
+  },
+);
 
 When("I filter the dishes by {string}", async ({ page }, group: string) => {
   await page

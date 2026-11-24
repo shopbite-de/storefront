@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
-import { computed, reactive } from "vue";
+import { computed, reactive, ref } from "vue";
 import { clearNuxtData } from "#imports";
 import CartUpsell from "~/components/Cart/Upsell.vue";
 import type { CartLine, Dish } from "../../shared/domain";
@@ -20,6 +20,10 @@ mockNuxtImport("useCartUpsell", () => () => ({
   loadUpsellDishes: mockLoadUpsellDishes,
   addUpsellDish: mockAddUpsellDish,
   isAdding: () => false,
+}));
+// the restaurant takes orders (paused: orderingPaused.test.ts)
+mockNuxtImport("useShopConfig", () => () => ({
+  acceptsOrders: ref(true),
 }));
 mockNuxtImport("useCartData", () => () => ({
   lines: computed(() => cart.lines),

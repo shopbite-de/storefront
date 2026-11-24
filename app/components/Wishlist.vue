@@ -25,6 +25,8 @@ withDefaults(defineProps<{ showMenuButton?: boolean }>(), {
 const route = useRoute();
 const { getFormattedMoney } = useCommercePrice();
 const { entries, loaded, remove, clear } = useWishlistEntries();
+// paused or switched off: rows stay, but nothing goes into the cart
+const { acceptsOrders } = useShopConfig();
 const {
   setSelectedDish,
   setSelectedExtras,
@@ -239,6 +241,13 @@ async function clearAll() {
       >
     </div>
     <template v-else>
+      <p
+        v-if="!acceptsOrders"
+        role="status"
+        class="rounded-sb-control bg-sb-muted p-4 text-sm font-semibold"
+      >
+        Es werden aktuell keine weiteren Bestellungen mehr aufgenommen.
+      </p>
       <ul
         class="flex flex-col overflow-hidden rounded-sb-card border border-sb-line bg-sb-surface"
       >
@@ -273,7 +282,7 @@ async function clearAll() {
           </SbIconButton>
           <div class="col-span-full flex flex-col gap-2 sm:flex-row">
             <SbButton
-              v-if="!row.needsChoice"
+              v-if="acceptsOrders && !row.needsChoice"
               variant="tint"
               :loading="addingId === row.entry.id"
               :disabled="addingAll"
@@ -298,7 +307,7 @@ async function clearAll() {
         versuchen Sie es erneut.
       </p>
       <div class="flex flex-col gap-3 sm:flex-row">
-        <SbButton :loading="addingAll" @click="addAll"
+        <SbButton v-if="acceptsOrders" :loading="addingAll" @click="addAll"
           >Alle in den Warenkorb</SbButton
         >
         <SbButton variant="ghost" @click="confirmClear = true"

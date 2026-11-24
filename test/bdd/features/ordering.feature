@@ -32,10 +32,11 @@ Feature: Ordering
     Then I am told the restaurant is closed now
     And I cannot place the order
 
-  Scenario: No ordering while the restaurant has paused ordering
+  Scenario: No dishes into the cart while the restaurant has paused ordering
     Given the restaurant has paused ordering
     When I open the menu section "Nudeln"
-    Then I cannot put dishes into a cart
+    Then I cannot add "Spaghetti Bolognese" to my cart
+    And the dish "Spaghetti Bolognese" says the restaurant takes no orders right now
 
   Scenario: An order placed after the restaurant paused ordering is refused
     Given the restaurant is open
