@@ -24,6 +24,14 @@ function toAddress(address: Partial<AddressSchema>): AddressInput {
 }
 
 /** The checkout form as the guest's details (ADR 0001, step 5). */
+/**
+ * The form asks for no country and sends none (`country: null`): the
+ * backend uses the shop's own (the Shopware adapter `site.countryId`). The
+ * schema checks the field as filled only, like `Address/Form.vue`, so a
+ * backend without a configured country id (memory) takes the address too.
+ */
+const SHOP_COUNTRY = "shop";
+
 export function toGuestDetails(data: RegistrationSchema): GuestDetails {
   return {
     email: data.email,
@@ -55,7 +63,6 @@ export type RegistrationResult =
  * (`/api/account/register`, step 6).
  */
 export function useRegistrationForm(options: { allowGuest: boolean }) {
-  const config = useRuntimeConfig();
   // Where to go after a successful registration is the caller's decision: the
   // registration page sends the visitor to the account, the checkout continues
   // with the order.
@@ -84,7 +91,7 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
       street: "",
       zipcode: "",
       city: "",
-      countryId: config.public.site.countryId,
+      countryId: SHOP_COUNTRY,
     },
     shippingAddress: {
       company: "",
@@ -97,7 +104,7 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
       street: "",
       zipcode: "",
       city: "",
-      countryId: config.public.site.countryId,
+      countryId: SHOP_COUNTRY,
     },
   });
 
