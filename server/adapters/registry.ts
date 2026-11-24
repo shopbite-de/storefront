@@ -1,7 +1,7 @@
 import type { Backend } from "../ports";
 import { memoryFromRuntimeConfig } from "./memory";
 import type { BackendRuntimeConfig } from "./runtimeConfig";
-import { shopwareFromRuntimeConfig } from "./shopware";
+import { checkShopwareConfig, shopwareFromRuntimeConfig } from "./shopware";
 
 export type { BackendRuntimeConfig } from "./runtimeConfig";
 
@@ -29,4 +29,36 @@ export function createBackend(config: BackendRuntimeConfig): Backend {
     );
   }
   return ADAPTERS[name](config);
+}
+
+type Env = Readonly<Record<string, string | undefined>>;
+type CheckOptions = { production: boolean; warn: (message: string) => void };
+
+/** Startup checks of the adapters that need configuration. */
+const CHECKS: Partial<
+  Record<
+    BackendName,
+    (config: BackendRuntimeConfig, env: Env, options: CheckOptions) => void
+  >
+> = {
+  shopware: checkShopwareConfig,
+};
+
+/**
+ * Checks the selected adapter's configuration once at startup: warnings
+ * through `options.warn`, a configuration it cannot run with throws in
+ * production (`server/plugins/backend-config.ts` stops the server).
+ */
+export function checkBackendConfig(
+  config: BackendRuntimeConfig,
+  env: Env,
+  options: CheckOptions,
+): void {
+  const name = config.shopBite.backend;
+  if (!isBackendName(name)) {
+    throw new Error(
+      `Unknown shopBite.backend "${name}"; use one of ${BACKEND_NAMES.join(", ")}.`,
+    );
+  }
+  CHECKS[name]?.(config, env, options);
 }

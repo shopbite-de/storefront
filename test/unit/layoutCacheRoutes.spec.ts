@@ -126,15 +126,20 @@ describe("cold caches during a Shopware outage", () => {
   });
 });
 
-describe("storeApi", () => {
+describe("the Shopware transport", () => {
   it("does not retry: a failing request reaches Shopware once", async () => {
     const fetch = vi.fn().mockResolvedValue({});
     stubNitro({ $fetch: fetch });
-    const { storeApiGet, storeApiPost } =
-      await import("../../server/utils/storeApi");
+    const { createShopwareTransport } =
+      await import("../../server/adapters/shopware/transport");
+    const { storeApi } = createShopwareTransport({
+      endpoint: "http://shopware/store-api",
+      accessToken: "k",
+    });
 
-    await storeApiGet("/shopbite/holiday");
-    await storeApiPost("/seo-url", {});
+    await storeApi.get("/shopbite/holiday");
+    await storeApi.post("/seo-url", {});
+    expect(fetch).toHaveBeenCalledTimes(2);
     for (const [, options] of fetch.mock.calls) {
       expect(options.retry).toBe(0);
     }

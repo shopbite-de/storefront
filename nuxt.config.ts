@@ -60,12 +60,17 @@ export default defineNuxtConfig({
       // channel's business time zone, else Europe/Berlin.
       timeZone: "Europe/Berlin",
     },
+    // The Shopware adapter's Store API (server/adapters/shopware/connection.ts):
+    // NUXT_SHOPWARE_ENDPOINT (e.g. "https://shop.example/store-api", or an
+    // internal address so Shopware sees the visitor's X-Forwarded-For) and
+    // NUXT_SHOPWARE_ACCESS_TOKEN (the sales channel's access key). Private:
+    // the browser never talks to Shopware. Production does not start
+    // without both while shopBite.backend is "shopware". The public names
+    // of 2.x (NUXT_PUBLIC_SHOPWARE_*) are still read on the server in 3.x.
     shopware: {
-      adminClientId: "",
-      adminClientSecret: "",
-      adminEndpoint: "",
+      endpoint: "",
+      accessToken: "",
     },
-    apiClientConfig: {},
     // Secret of POST /api/_cache/purge (#484), the backoffice empties the
     // Store API caches after menu changes. Empty = route off.
     cachePurgeSecret: "",

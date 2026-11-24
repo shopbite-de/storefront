@@ -81,8 +81,8 @@ export function stubNitro(globals: Record<string, unknown> = {}) {
     useRuntimeConfig: () => ({
       public: {
         shopBite: { cacheTtl: CACHE_TTL, menuCategoryId: "" },
-        shopware: { endpoint: "http://shopware/store-api", accessToken: "k" },
       },
+      shopware: { endpoint: "http://shopware/store-api", accessToken: "k" },
     }),
     createError: (input: {
       statusCode: number;
@@ -95,8 +95,6 @@ export function stubNitro(globals: Record<string, unknown> = {}) {
       }),
     getRouterParam: (event: TestEvent, name: string) => event.params?.[name],
     getQuery: (event: TestEvent) => event.query ?? {},
-    storeApiPost: vi.fn(),
-    storeApiGet: vi.fn(),
     ...globals,
   };
   for (const [name, value] of Object.entries(stubs)) vi.stubGlobal(name, value);
