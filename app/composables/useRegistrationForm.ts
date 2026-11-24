@@ -23,7 +23,6 @@ function toAddress(address: Partial<AddressSchema>): AddressInput {
   };
 }
 
-/** The checkout form as the guest's details (ADR 0001, step 5). */
 /**
  * The form asks for no country and sends none (`country: null`): the
  * backend uses the shop's own (the Shopware adapter `site.countryId`). The
@@ -32,6 +31,7 @@ function toAddress(address: Partial<AddressSchema>): AddressInput {
  */
 const SHOP_COUNTRY = "shop";
 
+/** The checkout form as the guest's details (ADR 0001, step 5). */
 export function toGuestDetails(data: RegistrationSchema): GuestDetails {
   return {
     email: data.email,
