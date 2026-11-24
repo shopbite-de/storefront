@@ -106,6 +106,24 @@ test("a guest orders a dish for pickup", async ({ page }) => {
   await expect(details.getByText(guest)).toBeVisible();
   await expectEnglish(page);
 
+  // a code the restaurant does not know: the shop's words, not the
+  // backend's text (the memory backend's is in its own language)
+  await page.getByRole("textbox", { name: "Voucher code" }).fill("NOPE10");
+  await Promise.all([
+    page.waitForResponse(
+      (r) =>
+        r.url().endsWith("/api/cart/vouchers") &&
+        r.request().method() === "POST",
+    ),
+    page.getByRole("button", { name: "Redeem", exact: true }).click(),
+  ]);
+  await expect(
+    page
+      .getByRole("alert")
+      .filter({ hasText: "This voucher code is invalid or has expired." }),
+  ).toBeVisible();
+  await expectEnglish(page);
+
   await page
     .getByRole("button", { name: "Order with obligation to pay", exact: true })
     .click();

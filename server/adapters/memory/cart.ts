@@ -94,9 +94,14 @@ export function createMemoryCart(
     maxCarts?: number;
     /** The checkout's methods of a session token (none without). */
     selectionOf?: (token: string) => CheckoutSelection;
+    /** The text for a code it does not know, in the shop's language. */
+    unknownVoucher?: (code: string) => string;
   } = {},
 ): MemoryCart {
   const maxCarts = options.maxCarts ?? 10_000;
+  const unknownVoucher =
+    options.unknownVoucher ??
+    ((code: string) => `Gutscheincode "${code}" existiert nicht.`);
   const carts = new Map<string, StoredCart>();
   const dishes = new Map(catalog.dishes.map((dish) => [dish.id, dish]));
   const currency =
@@ -349,7 +354,7 @@ export function createMemoryCart(
           {
             code: "voucher_invalid",
             severity: "error",
-            text: `Gutscheincode "${code.trim()}" existiert nicht.`,
+            text: unknownVoucher(code.trim()),
             subjectId: code.trim(),
           },
         ]);

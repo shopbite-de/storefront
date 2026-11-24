@@ -4,7 +4,8 @@ import type { Cart } from "../../shared/domain";
  * The checkout's voucher field (#445): vouchers through the BFF
  * (`/api/cart/vouchers`, ADR 0001 step 4). A code that does not apply
  * comes back as a `voucher_invalid` message about it; the error shows at
- * the field, no toast.
+ * the field, no toast, in the shop's words for the code (ADR 0002): the
+ * message's text is the backend's, in the backend's language.
  */
 export function useVoucherCode() {
   const { discounts, setCart } = useCartData();
@@ -35,7 +36,7 @@ export function useVoucherCode() {
           message.code === "voucher_invalid" && message.subjectId === code,
       );
       if (refused) {
-        voucherError.value = refused.text || invalid();
+        voucherError.value = invalid();
       } else {
         voucherCode.value = "";
       }
