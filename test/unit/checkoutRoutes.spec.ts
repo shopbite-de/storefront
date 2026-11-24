@@ -543,3 +543,34 @@ describe("security of the checkout routes", () => {
     }
   });
 });
+
+describe("the storefront URL of the backend's e-mail links", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  async function storefrontUrlWith(headers: Record<string, string>) {
+    vi.resetModules();
+    vi.stubGlobal("useRuntimeConfig", () => ({
+      public: {
+        storeUrl: "https://shop.example",
+        // the Shopware layer's setting of 2.x, no longer read (3.0)
+        shopware: { devStorefrontUrl: "https://dev.example" },
+      },
+    }));
+    vi.stubGlobal(
+      "getRequestHeader",
+      (_event: unknown, name: string) => headers[name],
+    );
+    const { storefrontUrl } = await import("../../server/utils/checkoutRoutes");
+    return storefrontUrl({} as never);
+  }
+
+  it("is the origin the browser sent", async () => {
+    await expect(
+      storefrontUrlWith({ origin: "https://www.shop.example" }),
+    ).resolves.toBe("https://www.shop.example");
+  });
+
+  it("is the store URL without an origin", async () => {
+    await expect(storefrontUrlWith({})).resolves.toBe("https://shop.example");
+  });
+});

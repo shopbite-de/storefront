@@ -73,7 +73,6 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
     passwordConfirm: "",
     acceptedDataProtection: false,
     isShippingAddressDifferent: false,
-    storefrontUrl: config.public.shopware.devStorefrontUrl,
     billingAddress: {
       company: "",
       department: "",
