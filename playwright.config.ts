@@ -3,8 +3,31 @@ import type { ConfigOptions } from "@nuxt/test-utils/playwright";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import path from "path";
+import { defineBddConfig } from "playwright-bdd";
 
 dotenv.config({ path: path.resolve(".env.test") });
+// the storefront's settings for the Shopware run (test/bdd/shopware-stack.sh)
+if (process.env.NUXT_SHOP_BITE_BACKEND === "shopware") {
+  dotenv.config({ path: path.resolve(".bdd-stack/storefront.env") });
+}
+
+/**
+ * Behaviour tests (test/bdd): Gherkin features in English that match the
+ * German UI, run against the backend the started storefront uses
+ * (`NUXT_SHOP_BITE_BACKEND`: `memory` needs a build with
+ * SHOPBITE_TEST_SEAMS=1, `shopware` a Shopware with the ShopBite plugin,
+ * see CLAUDE.md, Behaviour tests). `bddgen` writes the Playwright tests.
+ */
+const mutants = process.env.BDD_MUTANTS === "1";
+const bddTestDir = defineBddConfig({
+  // the mutants (test/bdd/mutants) prove each scenario can fail
+  features: mutants
+    ? "test/bdd/mutants/**/*.feature"
+    : "test/bdd/features/**/*.feature",
+  steps: ["test/bdd/steps/**/*.ts"],
+  outputDir: mutants ? ".features-gen/mutants" : ".features-gen/features",
+  featuresRoot: mutants ? "test/bdd/mutants" : "test/bdd/features",
+});
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -17,7 +40,7 @@ export default defineConfig<ConfigOptions>({
     },
     trace: "on-first-retry",
   },
-  testDir: "./test/e2e",
+  testDir: bddTestDir,
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -27,14 +50,20 @@ export default defineConfig<ConfigOptions>({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
+  reporter: [["html", { open: "never" }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
 
   /* Configure projects for major browsers */
   projects: [
+    /*
+     * Behaviour tests (#433). One worker: a scenario sets the restaurant
+     * (hours, ordering switch) of the one backend all scenarios share.
+     */
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: "bdd",
+      testDir: bddTestDir,
+      workers: 1,
+      use: { ...devices["Desktop Chrome"], trace: "retain-on-failure" },
     },
     /* Accessibility checks of the preset pages (#446), no login needed. */
     {
