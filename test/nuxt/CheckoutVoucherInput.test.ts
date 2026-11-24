@@ -105,7 +105,7 @@ describe("CheckoutVoucherInput", () => {
     expect(wrapper.find("input").element.value).toBe("");
   });
 
-  it("shows the backend's text of a voucher_invalid message at the field", async () => {
+  it("shows the shop's own message for voucher_invalid, not the backend's text", async () => {
     mockApply.mockResolvedValue(
       cart({
         messages: [
@@ -124,7 +124,9 @@ describe("CheckoutVoucherInput", () => {
     await settle();
 
     const alert = wrapper.find('[role="alert"]');
-    expect(alert.text()).toBe('Gutscheincode "INVALID" existiert nicht.');
+    // the backend's text is in its own language, the field in the shop's
+    expect(alert.text()).toBe(useI18n().t("order.voucher.invalid"));
+    expect(alert.text()).not.toContain("existiert nicht");
     expect(wrapper.find("input").attributes("aria-describedby")).toBe(
       alert.attributes("id"),
     );

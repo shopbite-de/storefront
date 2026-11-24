@@ -40,6 +40,8 @@ export type DemoLocale = {
     terms: string;
   };
   countries: { DE: string; AT: string; CH: string };
+  /** The cart's text for a voucher code it does not know. */
+  unknownVoucher: (code: string) => string;
 };
 
 const DE: DemoLocale = {
@@ -84,6 +86,7 @@ const DE: DemoLocale = {
     terms: "AGB",
   },
   countries: { DE: "Deutschland", AT: "Österreich", CH: "Schweiz" },
+  unknownVoucher: (code) => `Gutscheincode "${code}" existiert nicht.`,
 };
 
 const EN: DemoLocale = {
@@ -122,6 +125,7 @@ const EN: DemoLocale = {
     terms: "Terms",
   },
   countries: { DE: "Germany", AT: "Austria", CH: "Switzerland" },
+  unknownVoucher: (code) => `Voucher code "${code}" does not exist.`,
 };
 
 /** The demo setup of a locale; German for a locale the demo lacks. */

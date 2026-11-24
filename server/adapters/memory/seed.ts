@@ -35,8 +35,14 @@ export type MemorySeed = Readonly<{
   }>;
   catalog: MemoryCatalog;
   navigation: MemoryNavigation;
-  /** Vouchers the cart accepts; none without. */
-  cart?: Readonly<{ vouchers: readonly MemoryVoucher[] }>;
+  /**
+   * Vouchers the cart accepts (none without) and its text for a code it
+   * does not know (German without).
+   */
+  cart?: Readonly<{
+    vouchers: readonly MemoryVoucher[];
+    unknownVoucher?: (code: string) => string;
+  }>;
   /**
    * Accounts: double opt-in for new ones (off without); the countries an
    * address may have, with their names (Germany, Austria, Switzerland in
@@ -153,6 +159,7 @@ const buildDemoSeed = (locale: DemoSeedLocale): MemorySeed => {
     },
     catalog,
     navigation: demoNavigation(catalog, words, locale),
+    cart: { vouchers: [], unknownVoucher: words.unknownVoucher },
     customer: {
       countries: (["DE", "AT", "CH"] as const).map((code) => ({
         code,

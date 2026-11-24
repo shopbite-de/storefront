@@ -51,6 +51,25 @@ describe("the memory demo restaurant in English", () => {
     ]);
   });
 
+  it("refuses an unknown voucher in English", async () => {
+    const { cart } = createMemoryBackend(english());
+    let state: string | undefined;
+    const session = {
+      read: async () => state,
+      write: async (next: string | undefined) => {
+        state = next;
+      },
+    };
+    const refused = await cart.applyVoucher(session, "NOPE");
+    const [message] = refused.messages;
+    expect(message).toMatchObject({
+      code: "voucher_invalid",
+      subjectId: "NOPE",
+    });
+    expect(message?.text).toContain("NOPE");
+    expect(germanWords(message?.text ?? "")).toEqual([]);
+  });
+
   it("keeps the ids of the German setup", () => {
     const de = demoSeed();
     const en = english();

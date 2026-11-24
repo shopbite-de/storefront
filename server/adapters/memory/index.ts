@@ -67,6 +67,7 @@ export function createMemoryBackend(
   const selection: { of?: (token: string) => CheckoutSelection } = {};
   const cart = createMemoryCart(seed.catalog, seed.cart?.vouchers ?? [], {
     selectionOf: (token) => selection.of!(token),
+    unknownVoucher: seed.cart?.unknownVoucher,
   });
   const accounts: { view?: MemoryAccountsView } = {};
   const ordering = createMemoryOrdering({
