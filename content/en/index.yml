@@ -1,0 +1,146 @@
+seo:
+  title: ShopBite – Demo Store
+  description: Your own ordering system without commissions or monthly fees – 100% open source and fully customisable. Perfect for pizzerias, takeaways and delivery services.
+  image: /card.png
+title: ShopBite
+description: Cut your costs and grow your sales
+hero:
+  title: Freshly cooked, delivered fast.
+  backgroundVideo: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/97/67/24/1789985382/hero-demo-540p.mp4?ts=1789985382
+  poster: /hero-poster.webp
+  headline: SHOPBITE
+  usps:
+    - title: 4.5 ⭐
+      subtitle: 720+ reviews
+      icon: i-simple-icons-google
+      link: https://www.google.com/maps/place/?q=place_id
+    - title: 20 years
+      subtitle: in Sampletown
+      icon: i-lucide-award
+    - title: Delivery service
+      subtitle: Fast & reliable
+      icon: i-lucide-bike
+  links:
+    - label: Menu
+      icon: i-lucide-arrow-right
+      trailing: true
+      color: primary
+      to: /menu/
+      size: xl
+    - label: Book a table
+      icon: i-lucide-phone
+      size: xl
+      color: neutral
+      variant: outline
+      to: "tel:+49123456789"
+      target: _blank
+features:
+  title: All the [information]{.text-primary} at a glance
+  description: Pick up your food and drinks, have them delivered, or enjoy them at our restaurant.
+  headline: SHOPBITE
+  features:
+    - title: Opening hours
+      kind: hours
+      description: Saturdays 17:30 – 23:30, closed on Tuesdays.
+      icon: i-lucide-clock
+      link:
+        label: All opening hours
+        to: "#oeffnungszeiten"
+    - title: Delivery
+      kind: delivery
+      description: We deliver to Sampletown and Example Village. Free delivery from €15, below that a €1 delivery fee.
+      icon: i-lucide-truck
+    - title: Reservations
+      kind: reservation
+      lead: Tables by phone only
+      description: We are happy to take your order online or by phone.
+      icon: i-lucide-phone
+      link:
+        label: Call 0123 456789
+        to: "tel:+49123456789"
+menu:
+  headline: SHOPBITE
+  title: Our menu
+  description: Pizza, pasta, meat and fish, fresh from the kitchen.
+highlights:
+  headline: SHOPBITE
+  title: Popular with our guests
+  description: The dishes ordered most often.
+gallery:
+  title: Restaurant
+  description: Enjoy delicious food in a rustic, cosy setting.
+  headline: SHOPBITE
+  links:
+    - label: Book a table
+      to: tel:+49123456789
+      color: primary
+      variant: subtle
+      trailingIcon: i-lucide-phone
+  images:
+    - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/be/7b/ba/1789148625/restaurant1.webp?ts=1789148625
+      alt: Restaurant interior 1
+    - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/7c/a7/1c/1789148639/restaurant2.webp?ts=1789148639
+      alt: Restaurant interior 2
+    - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/94/27/0b/1789148651/restaurant3.webp?ts=1789148651
+      alt: Restaurant interior 3
+    - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/50/31/b1/1789148669/restaurant4.webp?ts=1789148669
+      alt: Restaurant interior 4
+    - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/41/1b/09/1789148680/restaurant5.webp?ts=1789148680
+      alt: Restaurant interior 5
+    - image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/5b/d1/f9/1789148692/restaurant6.webp?ts=1789148692
+      alt: Restaurant interior 6
+
+mittagstisch:
+  headline: SHOPBITE
+  title: Lunch menu
+  description: Now on Saturdays too!
+  reverse: true
+  orientation: horizontal
+  image: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/50/31/b1/1789148669/restaurant4.webp?ts=1789148669
+  imageAlt: Illustration
+  features:
+    - title: Monday to Saturday
+      description: 11:30 to 15:00
+      icon: i-lucide-clock
+    - title: A new menu every day
+      description: 3 different dishes from €9.90
+      icon: i-lucide-utensils-crossed
+    - title: Please note
+      description: There is no lunch menu on public holidays. Thank you for your understanding; we look forward to welcoming you at lunchtime on regular weekdays.
+      icon: i-lucide-info
+  links:
+    - label: Book
+      to: "tel:+49123456789"
+      color: neutral
+      variant: subtle
+      trailingIcon: i-lucide-phone
+faq:
+  headline: SHOPBITE
+  title: Frequently asked questions
+  items:
+    - question: Where do you deliver?
+      answer: We deliver to 12345 Sampletown (Sampletown and Nearby) and to 12346 Example Village.
+    - question: How much is delivery?
+      answer: Delivery is free for orders of €15 or more. Below that we charge a delivery fee of €2.
+    - question: How long does delivery take?
+      answer: About 30 minutes. You can also choose a later delivery time when you order.
+    - question: Can I pick up my order?
+      answer: Yes, you can also pick up your order from us at 1 Sample Street in Sampletown.
+    - question: How can I pay?
+      answer: In cash on delivery, in cash or by debit card on pickup.
+    - question: Do you have vegetarian and vegan dishes?
+      answer: Yes, vegetarian and vegan dishes are marked on the menu.
+    - question: Can I book a table?
+      answer: We take table bookings by phone only.
+cta:
+  title: Order now!
+  description: Enjoy Italian food, freshly prepared and delivered straight to you, or enjoy it with us.
+  backgroundImage: https://fsn1.your-objectstorage.com/shopbite-demo-shopware/media/60/5f/0e/1789148993/footer-cta.webp?ts=1789148993
+  links:
+    - label: To the menu
+      to: /menu/
+      color: primary
+    - label: Book a table
+      to: tel:+49123456789
+      variant: outline
+      trailingIcon: i-lucide-phone

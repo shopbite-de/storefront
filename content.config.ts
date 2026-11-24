@@ -1,6 +1,23 @@
 import { defineCollection, defineContentConfig, z } from "@nuxt/content";
 import { defineSitemapSchema } from "@nuxtjs/sitemap/content";
 
+/**
+ * The content folder of the shop's locale (ADR 0002), set by
+ * modules/locale.ts before Nuxt Content reads this file: a shop keeps its
+ * pages at the top of its content/ folder, in its one language. A folder
+ * named after the locale (the storefront's own `content/en/`) is used
+ * instead when it exists; folders of other locales are never read.
+ */
+const localeDir = process.env.NUXT_SHOPBITE_CONTENT_DIR || "";
+const otherLocaleDirs = (process.env.NUXT_SHOPBITE_CONTENT_EXCLUDE || "")
+  .split(",")
+  .filter(Boolean)
+  .map((code) => `${code}/**`);
+const source = (include: string) =>
+  localeDir
+    ? { include: `${localeDir}/${include}`, prefix: "/" }
+    : { include, exclude: otherLocaleDirs };
+
 const createEnum = (options: [string, ...string[]]) => z.enum(options);
 
 const createLinkSchema = () =>
@@ -62,7 +79,7 @@ const createFeatureSchema = () =>
 export default defineContentConfig({
   collections: {
     home: defineCollection({
-      source: "index.yml",
+      source: source("index.yml"),
       type: "page",
       schema: z.object({
         hero: z.object({
@@ -132,7 +149,7 @@ export default defineContentConfig({
       }),
     }),
     landingpages: defineCollection({
-      source: "**/*.md",
+      source: source("**/*.md"),
       type: "page",
       schema: z.object({
         title: z.string().min(1),
