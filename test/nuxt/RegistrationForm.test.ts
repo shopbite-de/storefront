@@ -124,18 +124,24 @@ describe("RegistrationForm", () => {
   // Shopware adapter from site.countryId); a backend without one, such as
   // the memory adapter, must not make every address invalid
   it("saves an address without a configured country id", async () => {
-    useRuntimeConfig().public.site.countryId = "";
-    mockRegisterGuest.mockResolvedValueOnce({});
-    const wrapper = await mountSuspended(RegistrationForm);
+    const site = useRuntimeConfig().public.site;
+    const configured = site.countryId;
+    site.countryId = "";
+    try {
+      mockRegisterGuest.mockResolvedValueOnce({});
+      const wrapper = await mountSuspended(RegistrationForm);
 
-    await fillRequiredFields(wrapper);
-    await submit(wrapper);
+      await fillRequiredFields(wrapper);
+      await submit(wrapper);
 
-    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
-    expect(mockRegisterGuest).toHaveBeenCalled();
-    expect(mockRegisterGuest.mock.calls[0]![0].billingAddress.country).toBe(
-      null,
-    );
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+      expect(mockRegisterGuest).toHaveBeenCalled();
+      expect(mockRegisterGuest.mock.calls[0]![0].billingAddress.country).toBe(
+        null,
+      );
+    } finally {
+      site.countryId = configured;
+    }
   });
 
   it("says in the storefront's words that the e-mail has an account", async () => {
