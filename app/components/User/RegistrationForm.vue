@@ -302,7 +302,7 @@ async function onSubmit() {
             : undefined
         "
       >
-        <i18n-t keypath="auth.registrationForm.privacyConsent" scope="global">
+        <i18n-t keypath="auth.registrationForm.privacyConsent">
           <template #privacy>
             <NuxtLink
               :to="shopLocale.contentPaths.privacy"

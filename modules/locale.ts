@@ -1,10 +1,20 @@
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { addTemplate, addTypeTemplate, defineNuxtModule } from "nuxt/kit";
+import {
+  addComponent,
+  addImports,
+  addPlugin,
+  addTemplate,
+  addTypeTemplate,
+  defineNuxtModule,
+  updateTemplates,
+} from "nuxt/kit";
 import type { Nuxt } from "nuxt/schema";
 import type { ShopBiteThemeOptions } from "./theme";
+import { availableLocales, messagesModule } from "../i18n/messages";
 import {
+  languageOf,
   localizedDefault,
   localizePages,
   resolveShopLocale,
@@ -18,28 +28,17 @@ export const BUILT_IN = ["de", "en"];
 
 const storefrontRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-interface LocaleEntry {
-  code: string;
-  language?: string;
-}
+/**
+ * The message engine without its compiler (the bundler drops it): the
+ * messages arrive compiled (`#shopbite-messages`).
+ */
+const INTLIFY_FLAGS = {
+  __INTLIFY_DROP_MESSAGE_COMPILER__: "true",
+  __INTLIFY_PROD_DEVTOOLS__: "false",
+};
 
-interface LayerI18n {
-  locales?: (string | LocaleEntry)[];
-  bundle?: { onlyLocales?: string | string[] };
-}
-
-/** Every locale the layers register (`i18n.locales`), by code. */
-function registeredLocales(nuxt: Nuxt): Map<string, LocaleEntry> {
-  const locales = new Map<string, LocaleEntry>();
-  for (const layer of [...nuxt.options._layers].reverse()) {
-    const i18n = layer.config.i18n as LayerI18n | undefined;
-    for (const entry of i18n?.locales ?? []) {
-      const locale = typeof entry === "string" ? { code: entry } : entry;
-      locales.set(locale.code, { ...locales.get(locale.code), ...locale });
-    }
-  }
-  return locales;
-}
+const runtimeFile = (name: string) =>
+  resolve(storefrontRoot, "i18n", "runtime", name);
 
 const CONTENT_CONFIGS = [
   "content.config.ts",
@@ -139,9 +138,9 @@ const LOCALE_TYPES = `declare module "#shopbite-locale" {
     pagePaths: Readonly<Record<string, string>>;
     /** English for a locale the shop adds, else none. */
     fallbackLocale: string | null;
-    /** The content pages the app links to. */
     /** The menu root's path (backend data; shopBite.paths.menu). */
     menuPath: string;
+    /** The content pages the app links to. */
     contentPaths: Readonly<
       Record<"imprint" | "privacy" | "terms" | "shipping", string>
     >;
@@ -150,14 +149,23 @@ const LOCALE_TYPES = `declare module "#shopbite-locale" {
 export {};
 `;
 
+const MESSAGES_TYPES = `declare module "#shopbite-messages" {
+  /** The compiled messages (vue-i18n message ASTs) by locale code. */
+  export const messages: Record<string, Record<string, unknown>>;
+}
+export {};
+`;
+
 /**
  * The shop's locale (ADR 0002): one language per shop, chosen at build time
  * by `shopBite.locale` in the shop's nuxt.config.ts (`NUXT_SHOPBITE_LOCALE`
- * takes precedence), German by default. Listed before @nuxtjs/i18n,
- * @nuxtjs/robots and @nuxt/content, whose options it sets:
+ * takes precedence), German by default. Listed before @nuxtjs/robots and
+ * @nuxt/content, whose options it sets:
  *
- * - i18n: the default locale, and only that locale in the bundle (plus
- *   English as the fallback of a locale the shop adds itself);
+ * - messages: the layers' locale files merged and compiled at build time
+ *   into `#shopbite-messages` (only the shop's locale, plus English as the
+ *   fallback of a locale the shop adds), evaluated by i18n/runtime in the
+ *   app (`$t`, `useI18n()`, `<i18n-t>`) and on the server;
  * - pages: the app's own paths per locale (`pages:extend`), route names
  *   stay; German keeps the file router's paths;
  * - route rules and robots.txt entries at those paths;
@@ -171,36 +179,25 @@ export default defineNuxtModule<ShopLocaleOptions & ShopBiteThemeOptions>({
   meta: { name: "shopbite-locale", configKey: "shopBite" },
   setup(options, nuxt) {
     const locale = resolveShopLocale(options, process.env);
-    const registered = registeredLocales(nuxt);
-    const entry = registered.get(locale.code);
-    if (!entry) {
+    const layerRoots = nuxt.options._layers.map(
+      (layer) => layer.config.rootDir,
+    );
+    const available = availableLocales(layerRoots);
+    if (!available.includes(locale.code)) {
       throw new Error(
-        `[shopbite:locale] shopBite.locale "${locale.code}" has no messages. Available: ${[...registered.keys()].join(", ")}. A shop adds a locale in its nuxt.config.ts (i18n.locales: [{ code: "${locale.code}", language: "…", file: "${locale.code}.json" }]) with i18n/locales/${locale.code}.json.`,
+        `[shopbite:locale] shopBite.locale "${locale.code}" has no messages. Available: ${available.join(", ")}. A shop adds a locale with i18n/locales/${locale.code}.json (and shopBite.language, e.g. "nl-NL").`,
       );
     }
-    const language = entry.language || locale.code;
+    const language = languageOf(locale.code, options.language);
+    // a locale the shop adds falls back to English
+    const bundled = BUILT_IN.includes(locale.code)
+      ? [locale.code]
+      : [locale.code, "en"];
     process.env.NUXT_SHOPBITE_LOCALE = locale.code;
     // content.config.ts: the content folder of the locale
-    const content = contentDirs(nuxt, locale.code, [...registered.keys()]);
+    const content = contentDirs(nuxt, locale.code, available);
     process.env.NUXT_SHOPBITE_CONTENT_DIR = content.dir;
     process.env.NUXT_SHOPBITE_CONTENT_EXCLUDE = content.exclude.join(",");
-
-    const i18n = (nuxt.options as unknown as { i18n: Record<string, unknown> })
-      .i18n;
-    i18n.defaultLocale = locale.code;
-    // @nuxtjs/i18n reads `bundle.onlyLocales` from the layers' own configs
-    const builtIn = BUILT_IN.includes(locale.code);
-    const own = nuxt.options._layers.find(
-      (layer) => resolve(layer.config.rootDir) === storefrontRoot,
-    );
-    if (own) {
-      const config = own.config as { i18n?: LayerI18n };
-      config.i18n = { ...config.i18n, bundle: { ...config.i18n?.bundle } };
-      // English is the fallback of a locale the shop adds (i18n.config.ts)
-      config.i18n.bundle!.onlyLocales = builtIn
-        ? [locale.code]
-        : [locale.code, "en"];
-    }
 
     localizeSiteDefaults(nuxt, locale.code);
 
@@ -221,13 +218,13 @@ export default defineNuxtModule<ShopLocaleOptions & ShopBiteThemeOptions>({
     ];
     (nuxt.options as unknown as { robots: unknown }).robots = robots;
 
+    nuxt.options.nitro.alias ??= {};
     const template = addTemplate({
       filename: "shopbite-locale.mjs",
       getContents: () => localeModule(locale, language),
       write: true,
     });
     nuxt.options.alias["#shopbite-locale"] = template.dst;
-    nuxt.options.nitro.alias ??= {};
     nuxt.options.nitro.alias["#shopbite-locale"] = template.dst;
     addTypeTemplate(
       {
@@ -235,6 +232,57 @@ export default defineNuxtModule<ShopLocaleOptions & ShopBiteThemeOptions>({
         getContents: () => LOCALE_TYPES,
       },
       { nitro: true, nuxt: true },
+    );
+
+    // The messages, compiled at build time and bundled (ADR 0002)
+    const messages = addTemplate({
+      filename: "shopbite-messages.mjs",
+      getContents: () => messagesModule(layerRoots, bundled),
+      write: true,
+    });
+    nuxt.options.alias["#shopbite-messages"] = messages.dst;
+    nuxt.options.nitro.alias["#shopbite-messages"] = messages.dst;
+    addTypeTemplate(
+      {
+        filename: "types/shopbite-messages.d.ts",
+        getContents: () => MESSAGES_TYPES,
+      },
+      { nitro: true, nuxt: true },
+    );
+    nuxt.hook("builder:watch", async (_event, path) => {
+      if (/(^|\/)i18n\/locales\//.test(path)) {
+        await updateTemplates({
+          filter: (template) => template.filename === messages.filename,
+        });
+      }
+    });
+
+    nuxt.options.vite.define = {
+      ...nuxt.options.vite.define,
+      ...INTLIFY_FLAGS,
+    };
+    nuxt.options.nitro.replace = {
+      ...nuxt.options.nitro.replace,
+      ...INTLIFY_FLAGS,
+    };
+    addImports({ name: "useI18n", from: runtimeFile("shop") });
+    addComponent({ name: "I18nT", filePath: runtimeFile("I18nT") });
+    addPlugin({ src: runtimeFile("plugin"), name: "shopbite:i18n" });
+    addTypeTemplate(
+      {
+        filename: "types/shopbite-i18n.d.ts",
+        getContents:
+          () => `import type { ShopTranslate } from ${JSON.stringify(runtimeFile("translator"))};
+declare module "vue" {
+  interface ComponentCustomProperties {
+    /** The shop's messages (ADR 0002, i18n/runtime). */
+    $t: ShopTranslate;
+  }
+}
+export {};
+`,
+      },
+      { nuxt: true },
     );
   },
 });

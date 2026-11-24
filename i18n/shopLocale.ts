@@ -25,6 +25,11 @@ export interface ShopLocaleOptions {
    * page (`terms`), e.g. for a locale of its own.
    */
   paths?: Record<string, string>;
+  /**
+   * BCP 47 language tag for formatting (Intl), e.g. `nl-NL` for a locale
+   * the shop adds; German and English have theirs (`LANGUAGES`).
+   */
+  language?: string;
 }
 
 export interface ShopLocale {
@@ -126,6 +131,24 @@ const LEGACY_CHECKOUT_PATHS = [
   "/bestellung/zahlung-versand",
   "/bestellung/bestaetigen",
 ];
+
+/** The language tags of the storefront's locales. */
+export const LANGUAGES: Readonly<Record<string, string>> = {
+  de: "de-DE",
+  en: "en-GB",
+};
+
+/** The language tag of a locale: the shop's, else the storefront's, else the code. */
+export function languageOf(code: string, language?: string): string {
+  const tag = language || LANGUAGES[code] || code;
+  try {
+    return Intl.getCanonicalLocales(tag)[0]!;
+  } catch {
+    throw new Error(
+      `[shopbite:locale] shopBite.language "${tag}" is no language tag, e.g. "nl-NL".`,
+    );
+  }
+}
 
 const LOCALE_CODE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
 

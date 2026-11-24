@@ -21,6 +21,9 @@ export default defineConfig({
             "#shopbite-locale": fileURLToPath(
               new URL("./test/support/shopLocale.ts", import.meta.url),
             ),
+            "#shopbite-messages": fileURLToPath(
+              new URL("./test/support/shopMessages.ts", import.meta.url),
+            ),
           },
         },
       },

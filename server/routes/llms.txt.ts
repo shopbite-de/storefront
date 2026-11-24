@@ -4,6 +4,7 @@ import { defineEventHandler } from "nuxt/server";
 import { fulfillmentLeadTime } from "../../app/utils/leadTime";
 import { splitList, toAbsoluteUrl } from "../../app/utils/seo";
 import { buildLlmsTxt, toLlmsMenu } from "../utils/llmsTxt";
+import { shopTranslate } from "../utils/shopTranslate";
 import {
   holidaysData,
   openingHoursData,
@@ -23,17 +24,8 @@ export default defineEventHandler(async (event) => {
   const { site } = useRuntimeConfig().public;
   const siteUrl = getSiteConfig(event).url;
   const { catalog } = useBackend();
-  // the shop's locale (ADR 0002): the detector always answers it
-  // useTranslation reads only `event.context.i18n`, which the i18n server
-  // plugin sets per request; the web-standard event shares that context
-  const translate = await useTranslation(
-    event as unknown as Parameters<typeof useTranslation>[0],
-  );
-  const words = {
-    t: (key: string, params?: Record<string, string | number>) =>
-      translate(key, params ?? {}),
-    language: shopLocale.language,
-  };
+  // the shop's locale (ADR 0002)
+  const words = { t: shopTranslate(), language: shopLocale.language };
 
   const [menu, dishes, hours, holidays, config, shippingMethods, pages, home] =
     await Promise.allSettled([

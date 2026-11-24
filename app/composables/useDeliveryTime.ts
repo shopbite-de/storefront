@@ -23,8 +23,7 @@ function longWeekday(weekday: number): string {
 export function useDeliveryTime(now: Ref<Date>) {
   const { leadTime, fulfillment } = useShippingLeadTime();
   const { schedule } = useServiceSchedule();
-  // also called outside a component's setup (tests, event handlers)
-  const { t } = useNuxtApp().$i18n;
+  const { t } = useI18n();
   const wording = (key: string) =>
     t(`order.fulfillment.${fulfillment.value}.${key}`);
 

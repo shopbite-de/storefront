@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import {
   FILE_PAGE_PATHS,
+  languageOf,
   localizedDefault,
   localizePages,
   SITE_TEXTS,
@@ -98,6 +99,22 @@ describe("resolveShopLocale", () => {
     expect(() =>
       resolveShopLocale({ locale: "en", paths: { konto: "account" } }, {}),
     ).toThrow(/konto/);
+  });
+});
+
+describe("languageOf", () => {
+  it("is de-DE and en-GB for the storefront's locales", () => {
+    expect(languageOf("de")).toBe("de-DE");
+    expect(languageOf("en")).toBe("en-GB");
+  });
+
+  it("takes the shop's tag for a locale of its own, else the code", () => {
+    expect(languageOf("nl", "nl-nl")).toBe("nl-NL");
+    expect(languageOf("nl")).toBe("nl");
+  });
+
+  it("refuses a tag Intl does not know", () => {
+    expect(() => languageOf("nl", "not a tag")).toThrow(/no language tag/);
   });
 });
 

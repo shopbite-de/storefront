@@ -48,7 +48,6 @@ const text = computed(() => foodLabelText(props.labels, t));
           <i18n-t
             v-else-if="site.telephone"
             keypath="menu.foodLabels.askWithPhone"
-            scope="global"
           >
             <template #phone>
               <a

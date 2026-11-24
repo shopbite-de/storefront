@@ -3,21 +3,6 @@ import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { SITE_TEXTS } from "./i18n/shopLocale";
 
-// The storefront's messages per locale, one file per area (i18n/locales/
-// <code>/<area>.json, top-level key = area); a shop overrides single
-// messages in its own i18n/locales/<code>.json.
-const MESSAGE_AREAS = [
-  "common",
-  "menu",
-  "order",
-  "auth",
-  "account",
-  "contact",
-  "server",
-];
-const messageFiles = (code: string) =>
-  MESSAGE_AREAS.map((area) => `${code}/${area}.json`);
-
 const storeName = process.env.NUXT_STORE_NAME || "ShopBite";
 // German defaults; modules/locale.ts gives another locale its own
 // (i18n/shopLocale.ts, SITE_TEXTS)
@@ -271,44 +256,12 @@ export default defineNuxtConfig({
   shopBite: {
     preset: "trattoria",
     // Language of the shop (ADR 0002, modules/locale.ts): "de" (the
-    // default) or "en", or a locale the shop adds in `i18n.locales`. A
-    // build option, since it decides the paths of the pages;
-    // NUXT_SHOPBITE_LOCALE overrides it. `paths` sets single paths.
+    // default) or "en", or a locale the shop adds with its own
+    // i18n/locales/<code>.json (and `language`, e.g. "nl-NL"). A build
+    // option, since it decides the paths of the pages and the messages in
+    // the bundle; NUXT_SHOPBITE_LOCALE overrides it. `paths` sets single
+    // paths.
     locale: "de",
-  },
-
-  // Messages per locale (merged with the shop's i18n/locales/<code>.json). One locale per shop, no prefix in
-  // the paths, no detection: modules/locale.ts sets the default locale
-  // and bundles only that one.
-  i18n: {
-    strategy: "no_prefix",
-    defaultLocale: "de",
-    detectBrowserLanguage: false,
-    locales: [
-      {
-        code: "de",
-        language: "de-DE",
-        name: "Deutsch",
-        files: messageFiles("de"),
-      },
-      {
-        code: "en",
-        language: "en-GB",
-        name: "English",
-        files: messageFiles("en"),
-      },
-    ],
-    // The browser compiles the messages it loads from /_i18n/…: keep the
-    // message compiler (runtimeOnly/dropMessageCompiler break every
-    // message with a placeholder after hydration).
-    // server routes translate with useTranslation(event)
-    experimental: {
-      localeDetector: "localeDetector.ts",
-      // /_i18n/<hash>/<code>/messages.json: the hash covers every locale
-      // file (a shop's overrides too), so browsers keep it like the
-      // public files (modules/public-cache.ts) instead of 10 seconds
-      httpCacheDuration: 2592000,
-    },
   },
 
   // Absolute: `~` would point to the app/ folder of a shop extending this
@@ -335,10 +288,9 @@ export default defineNuxtConfig({
   },
 
   modules: [
-    // The shop's locale (ADR 0002): sets the options of i18n, robots and
-    // content below, so it comes first.
+    // The shop's locale (ADR 0002): its messages, paths and the options of
+    // robots and content below, so it comes first.
     fileURLToPath(new URL("./modules/locale.ts", import.meta.url)),
-    "@nuxtjs/i18n",
     "@nuxt/image",
     // must be loaded before @nuxt/content for the content integration
     "@nuxtjs/sitemap",
