@@ -18,6 +18,8 @@ const props = withDefaults(
 
 const { order, load } = useOrder(props.orderId);
 const { site } = useRuntimeConfig().public;
+// the restaurant's clock, on the server and in the browser
+const { timeZone } = useShopConfig();
 
 const state = ref<"loading" | "ready" | "failed">("loading");
 
@@ -62,7 +64,7 @@ onMounted(async () => {
         {{ order?.number || $t("order.shared.yourOrder") }}
       </h1>
       <p v-if="order?.placedAt" class="text-sb-ink-muted">
-        {{ formatDate(order.placedAt, shopLocale.language) }}
+        {{ formatDate(order.placedAt, shopLocale.language, timeZone) }}
       </p>
     </header>
 
