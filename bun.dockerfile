@@ -18,6 +18,8 @@ RUN bun install --frozen-lockfile --production --ignore-scripts
 COPY . .
 
 RUN bun run build
+# the behaviour tests' seam (SHOPBITE_TEST_SEAMS=1) never ships in an image
+RUN if grep -rqs "/api/_test/" .output/server; then echo "test seams in a production build" >&2; exit 1; fi
 
 FROM oven/bun:1-alpine AS dev
 
