@@ -1,0 +1,60 @@
+name: Behaviour test mutants (memory)
+# test/bdd/mutants: every mutant must fail at its last step (the reporter
+# test/bdd/mutants/lastStepReporter.ts checks it), which shows that each
+# assertion of the behaviour tests can fail for its own reason. Nightly and
+# on demand; run it by hand (`pnpm test:bdd:mutants`) when steps change.
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutants:
+    name: Behaviour test mutants (memory)
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    concurrency:
+      group: bdd-mutants-${{ github.event_name }}-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      NUXT_PUBLIC_STORE_URL: 'http://localhost:3005'
+      PORT: '3005'
+      NUXT_VISITOR_SESSION_PASSWORD: 'ci-only-session-password-0123456789abcdef'
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.21.0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Build with test seams
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+          SHOPBITE_TEST_SEAMS: '1'
+        run: pnpm run build
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Mutants
+        env:
+          CI: 'true'
+        run: pnpm test:bdd:mutants
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: bdd-mutants-results
+          path: test-results/
+          retention-days: 14
