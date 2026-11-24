@@ -107,7 +107,7 @@ async function onSubmit() {
     </form>
     <template #footer>
       <NuxtLink
-        to="/anmelden"
+        :to="{ name: 'anmelden' }"
         class="font-semibold text-sb-primary-ink underline underline-offset-4"
         >Zurück zur Anmeldung</NuxtLink
       >

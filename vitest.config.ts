@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
 import { defineVitestProject } from "@nuxt/test-utils/config";
 
 export default defineConfig({
@@ -13,6 +14,14 @@ export default defineConfig({
             "test/contract/**/*.{test,spec}.ts",
           ],
           environment: "node",
+        },
+        resolve: {
+          alias: {
+            // written by modules/locale.ts in a Nuxt build (ADR 0002)
+            "#shopbite-locale": fileURLToPath(
+              new URL("./test/support/shopLocale.ts", import.meta.url),
+            ),
+          },
         },
       },
       await defineVitestProject({

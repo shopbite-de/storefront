@@ -141,7 +141,7 @@ function logoutHandler() {
         </SbIconButton>
         <span class="hidden sm:block">
           <SbIconButton
-            :to="hasAccount ? '/konto' : '/anmelden'"
+            :to="{ name: hasAccount ? 'konto' : 'anmelden' }"
             :label="hasAccount ? 'Mein Konto' : 'Anmelden'"
             variant="ghost"
           >
@@ -162,7 +162,7 @@ function logoutHandler() {
         </span>
         <span class="hidden sm:block">
           <SbIconButton
-            to="/merkliste"
+            :to="{ name: 'merkliste' }"
             :label="
               wishlistCount
                 ? `Merkliste, ${wishlistCount} gemerkt`
@@ -268,17 +268,23 @@ function logoutHandler() {
     </nav>
     <div class="mt-6 flex flex-col gap-2 font-body">
       <template v-if="hasAccount">
-        <SbButton variant="secondary" to="/konto">Mein Konto</SbButton>
-        <SbButton variant="secondary" to="/konto/bestellungen"
+        <SbButton variant="secondary" :to="{ name: 'konto' }"
+          >Mein Konto</SbButton
+        >
+        <SbButton variant="secondary" :to="{ name: 'konto-bestellungen' }"
           >Bestellungen</SbButton
         >
         <SbButton variant="ghost" @click="logoutHandler">Abmelden</SbButton>
       </template>
       <template v-else>
-        <SbButton variant="secondary" to="/anmelden">Anmelden</SbButton>
-        <SbButton variant="ghost" to="/registrierung">Registrieren</SbButton>
+        <SbButton variant="secondary" :to="{ name: 'anmelden' }"
+          >Anmelden</SbButton
+        >
+        <SbButton variant="ghost" :to="{ name: 'registrierung' }"
+          >Registrieren</SbButton
+        >
       </template>
-      <SbButton variant="ghost" to="/merkliste">Merkliste</SbButton>
+      <SbButton variant="ghost" :to="{ name: 'merkliste' }">Merkliste</SbButton>
     </div>
     <div v-if="shopBite.feature.multiChannel" class="mt-4">
       <LazyBranchSwitch />

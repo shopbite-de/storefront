@@ -3,7 +3,7 @@ import { mountSuspended, mockNuxtImport } from "@nuxt/test-utils/runtime";
 import { ref, reactive, computed } from "vue";
 import CartBar from "~/components/Cart/Bar.vue";
 
-const state = reactive({ count: 0, subtotal: 0, path: "/c/Pizza/" });
+const state = reactive({ count: 0, subtotal: 0, name: "all" });
 const showCalls = vi.hoisted(() => ({ value: 0 }));
 type Addition = {
   dish: { id: string; number: string; name: string };
@@ -26,8 +26,9 @@ mockNuxtImport("useCommercePrice", () => () => ({
     `${(price.amountMinor / 100).toFixed(2)} €`,
 }));
 mockNuxtImport("useRoute", () => () => ({
-  get path() {
-    return state.path;
+  // by route name: the checkout's path is the shop's locale's
+  get name() {
+    return state.name;
   },
   query: {},
 }));
@@ -48,7 +49,7 @@ describe("CartBar", () => {
   beforeEach(() => {
     state.count = 0;
     state.subtotal = 0;
-    state.path = "/c/Pizza/";
+    state.name = "all";
     showCalls.value = 0;
     listeners.length = 0;
   });
@@ -107,7 +108,7 @@ describe("CartBar", () => {
 
   it("is hidden on the checkout pages", async () => {
     state.count = 2;
-    state.path = "/bestellung/warenkorb";
+    state.name = "bestellung-kasse";
     const wrapper = await mountSuspended(CartBar);
     expect(wrapper.find('[data-testid="cart-bar"]').exists()).toBe(false);
   });

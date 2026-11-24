@@ -99,7 +99,7 @@ const resultLabel = computed(() =>
 function submitSearch() {
   const term = searchInput.value.trim();
   if (!term) return;
-  router.push({ path: "/suche", query: { q: term } });
+  router.push({ name: "suche", query: { q: term } });
 }
 </script>
 

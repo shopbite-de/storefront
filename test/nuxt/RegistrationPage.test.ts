@@ -32,6 +32,9 @@ describe("registrierung", () => {
       .findComponent({ name: "UserRegistrationForm" })
       .vm.$emit("registration-success", {}, false);
     await flushPromises();
-    expect(navigateToMock).toHaveBeenCalledWith("/konto");
+    // by route name, at the German path
+    expect(useRouter().resolve(navigateToMock.mock.calls[0]![0]).path).toBe(
+      "/konto",
+    );
   });
 });

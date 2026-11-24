@@ -39,8 +39,8 @@ export default defineNuxtRouteMiddleware((to) => {
   // When feature is enabled, enforce that cookie matches configured key
   if (cookie.value === definedSecureKey) return;
 
-  if (to.path === "/maintenance") return;
+  if (to.name === "maintenance") return;
 
   // Not authorized — redirect to maintenance
-  return navigateTo("/maintenance");
+  return navigateTo({ name: "maintenance" });
 });

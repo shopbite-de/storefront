@@ -1,9 +1,11 @@
+import type { RouteLocationRaw } from "vue-router";
+
 /** What the checkout says about the last press of the order button. */
 export type CheckoutOrderMessage = {
   title: string;
   description: string;
   /** A page that answers the message, e.g. the order already placed. */
-  link?: { to: string; label: string };
+  link?: { to: RouteLocationRaw; label: string };
 };
 
 /**

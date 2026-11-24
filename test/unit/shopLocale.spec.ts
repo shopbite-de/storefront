@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { existsSync } from "node:fs";
 import {
+  FILE_PAGE_PATHS,
   localizePages,
+  pathOf,
   resolveShopLocale,
   shopRouteRules,
   type PageNode,
@@ -44,7 +47,7 @@ describe("resolveShopLocale", () => {
   it("is German by default", () => {
     const locale = resolveShopLocale({}, {});
     expect(locale.code).toBe("de");
-    expect(locale.pagePaths).toEqual({});
+    expect(locale.pagePaths).toEqual(FILE_PAGE_PATHS);
     expect(locale.contentPaths.terms).toBe("/agb");
   });
 
@@ -73,7 +76,7 @@ describe("resolveShopLocale", () => {
   it("keeps the German paths for a locale of the shop's own", () => {
     const locale = resolveShopLocale({ locale: "fr" }, {});
     expect(locale.code).toBe("fr");
-    expect(locale.pagePaths).toEqual({});
+    expect(locale.pagePaths).toEqual(FILE_PAGE_PATHS);
     expect(locale.contentPaths.terms).toBe("/agb");
   });
 
@@ -87,6 +90,35 @@ describe("resolveShopLocale", () => {
     expect(() =>
       resolveShopLocale({ locale: "en", paths: { konto: "account" } }, {}),
     ).toThrow(/konto/);
+  });
+});
+
+describe("FILE_PAGE_PATHS", () => {
+  it("name every page at its file's path", () => {
+    const file = (path: string) =>
+      `app/pages${path.replace(/:(\w+)\(\)/g, "[$1]")}`;
+    const missing = Object.entries(FILE_PAGE_PATHS).filter(
+      ([, path]) =>
+        !existsSync(`${file(path)}.vue`) &&
+        !existsSync(`${file(path === "/" ? "" : path)}/index.vue`),
+    );
+    expect(missing).toEqual([]);
+  });
+});
+
+describe("pathOf", () => {
+  it("fills in and encodes the parameters", () => {
+    const { pagePaths } = resolveShopLocale({ locale: "en" }, {});
+    expect(pathOf(pagePaths, "bestellung-id-erfolg", { id: "a/b" })).toBe(
+      "/order/a%2Fb/success",
+    );
+    expect(pathOf(FILE_PAGE_PATHS, "bestellung-id-fehler", { id: "7" })).toBe(
+      "/bestellung/7/fehler",
+    );
+  });
+
+  it("refuses a missing parameter", () => {
+    expect(() => pathOf(FILE_PAGE_PATHS, "bestellung-id")).toThrow(/id/);
   });
 });
 

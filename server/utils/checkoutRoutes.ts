@@ -10,6 +10,7 @@ import {
   type WishedTime,
 } from "../../shared/domain";
 import type { Backend, BackendSession } from "../ports";
+import { shopPath } from "./shopPaths";
 
 /**
  * The checkout behind the BFF (ADR 0001, step 5): routes under
@@ -314,9 +315,8 @@ export function paymentUrls(orderId: string): {
   failure: string;
 } {
   const base = (useRuntimeConfig().public.storeUrl ?? "").replace(/\/+$/, "");
-  const id = encodeURIComponent(orderId);
   return {
-    success: `${base}/bestellung/${id}/erfolg`,
-    failure: `${base}/bestellung/${id}/fehler`,
+    success: `${base}${shopPath("bestellung-id-erfolg", { id: orderId })}`,
+    failure: `${base}${shopPath("bestellung-id-fehler", { id: orderId })}`,
   };
 }

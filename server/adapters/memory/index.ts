@@ -21,6 +21,8 @@ import { createMemoryOrdering, type MemoryAccountsView } from "./ordering";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { demoSeed, type MemorySeed } from "./seed";
 import { createMemoryWishlist } from "./wishlist";
+import { shopLocale } from "#shopbite-locale";
+import type { PathTable } from "../../../i18n/shopLocale";
 
 export { demoSeed, type MemorySeed } from "./seed";
 export type { MemoryCatalog, MemoryDish, MemoryVariant } from "./catalog";
@@ -52,6 +54,8 @@ export function createMemoryBackend(
     mail?: (mail: MemoryMail) => void;
     /** Where contact messages go (default: nowhere, the demo sends none). */
     contact?: (message: MemoryContactMessage) => void;
+    /** The storefront's page paths the mails link to (German default). */
+    pagePaths?: PathTable;
   } = {},
 ): Backend {
   const name = "memory";
@@ -79,6 +83,7 @@ export function createMemoryBackend(
     moveSession: ordering.moveSelection,
     doubleOptIn: seed.customer?.doubleOptIn,
     mail: options.mail,
+    pagePaths: options.pagePaths,
   });
   accounts.view = customer.accounts;
   const checkout: CheckoutPort = {
@@ -109,14 +114,17 @@ export function createMemoryBackend(
 /** The demo restaurant in the storefront's time zone (`shopBite.timeZone`). */
 export function memoryFromRuntimeConfig(config: BackendRuntimeConfig): Backend {
   const demo = demoSeed();
-  return createMemoryBackend({
-    ...demo,
-    shop: {
-      ...demo.shop,
-      config: {
-        ...demo.shop.config,
-        timeZone: timeZone(config.shopBite.timeZone),
+  return createMemoryBackend(
+    {
+      ...demo,
+      shop: {
+        ...demo.shop,
+        config: {
+          ...demo.shop.config,
+          timeZone: timeZone(config.shopBite.timeZone),
+        },
       },
     },
-  });
+    { pagePaths: shopLocale.pagePaths },
+  );
 }

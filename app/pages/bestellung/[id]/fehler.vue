@@ -56,7 +56,10 @@ async function retryPayment() {
     if (redirectUrl) {
       await navigateTo(redirectUrl, { external: true });
     } else {
-      await navigateTo(`/bestellung/${orderId}/erfolg`);
+      await navigateTo({
+        name: "bestellung-id-erfolg",
+        params: { id: orderId },
+      });
     }
   } catch (error) {
     console.error("[order][retryPayment]", error);

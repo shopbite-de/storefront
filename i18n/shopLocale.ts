@@ -29,36 +29,66 @@ export interface ShopLocaleOptions {
 
 export interface ShopLocale {
   code: string;
-  /** Pages whose path differs from the file router's (German) one. */
+  /** Every page's path in the locale, by route name. */
   pagePaths: PathTable;
   contentPaths: Readonly<Record<ContentPage, string>>;
 }
 
-/** The pages' files are the German paths; English moves them. */
-const PAGE_PATHS: Readonly<Record<string, PathTable>> = {
-  de: {},
-  en: {
-    anmelden: "/login",
-    bestellung: "/order",
-    "bestellung-kasse": "/order/checkout",
-    "bestellung-id": "/order/:id()",
-    "bestellung-id-erfolg": "/order/:id()/success",
-    "bestellung-id-fehler": "/order/:id()/payment-failed",
-    kontakt: "/contact",
-    konto: "/account",
-    "konto-adressen": "/account/addresses",
-    "konto-bestellungen": "/account/orders",
-    "konto-bestellung-id": "/account/orders/:id()",
-    "konto-profil": "/account/profile",
-    merkliste: "/wishlist",
-    "passwort-vergessen": "/forgot-password",
-    registrierung: "/register",
-    "registrierung-bestaetigen": "/register/confirm",
-    suche: "/search",
-    // the link of Shopware's password mail, the same in every language
-    // ("account-recover-password": "/account/recover/password")
-  },
-};
+/**
+ * The app's pages by route name at their files' paths, which are the
+ * German ones (test/unit/shopLocale.spec.ts checks them against pages/).
+ */
+export const FILE_PAGE_PATHS = {
+  index: "/",
+  anmelden: "/anmelden",
+  bestellung: "/bestellung",
+  "bestellung-kasse": "/bestellung/kasse",
+  "bestellung-id": "/bestellung/:id()",
+  "bestellung-id-erfolg": "/bestellung/:id()/erfolg",
+  "bestellung-id-fehler": "/bestellung/:id()/fehler",
+  kontakt: "/kontakt",
+  konto: "/konto",
+  "konto-adressen": "/konto/adressen",
+  "konto-bestellungen": "/konto/bestellungen",
+  "konto-bestellung-id": "/konto/bestellung/:id()",
+  "konto-profil": "/konto/profil",
+  maintenance: "/maintenance",
+  merkliste: "/merkliste",
+  "passwort-vergessen": "/passwort-vergessen",
+  "account-recover-password": "/account/recover/password",
+  registrierung: "/registrierung",
+  "registrierung-bestaetigen": "/registrierung/bestaetigen",
+  suche: "/suche",
+} as const satisfies PathTable;
+
+export type PageName = keyof typeof FILE_PAGE_PATHS;
+
+/** Pages a locale moves away from their German paths. */
+const MOVED_PAGES: Readonly<Record<string, Partial<Record<PageName, string>>>> =
+  {
+    de: {},
+    en: {
+      anmelden: "/login",
+      bestellung: "/order",
+      "bestellung-kasse": "/order/checkout",
+      "bestellung-id": "/order/:id()",
+      "bestellung-id-erfolg": "/order/:id()/success",
+      "bestellung-id-fehler": "/order/:id()/payment-failed",
+      kontakt: "/contact",
+      konto: "/account",
+      "konto-adressen": "/account/addresses",
+      "konto-bestellungen": "/account/orders",
+      "konto-bestellung-id": "/account/orders/:id()",
+      "konto-profil": "/account/profile",
+      merkliste: "/wishlist",
+      "passwort-vergessen": "/forgot-password",
+      registrierung: "/register",
+      "registrierung-bestaetigen": "/register/confirm",
+      suche: "/search",
+      // /account/recover/password is the link of Shopware's password
+      // mail, the same in every language; /maintenance stays too
+    },
+  };
 
 /** The content files of the storefront's own content folder per locale. */
 const CONTENT_PATHS: Readonly<Record<string, Record<ContentPage, string>>> = {
@@ -98,7 +128,10 @@ export function resolveShopLocale(
     );
   }
   // a locale of the shop's own keeps the German paths unless it sets them
-  const pagePaths: Record<string, string> = { ...(PAGE_PATHS[code] ?? {}) };
+  const pagePaths: Record<string, string> = {
+    ...FILE_PAGE_PATHS,
+    ...MOVED_PAGES[code],
+  };
   const contentPaths = { ...(CONTENT_PATHS[code] ?? CONTENT_PATHS.de!) };
   for (const [key, path] of Object.entries(options.paths ?? {})) {
     if (!path.startsWith("/")) {
@@ -153,9 +186,25 @@ export function localizePages(
   }
 }
 
-/** The path of a page by route name in a locale (file path if unmoved). */
-export function pagePath(locale: ShopLocale, name: string, filePath: string) {
-  return locale.pagePaths[name] ?? filePath;
+/**
+ * The path of a page in a locale with its parameters filled in, e.g.
+ * `pathOf(locale, "bestellung-id-erfolg", { id })`.
+ */
+export function pathOf(
+  table: PathTable,
+  name: PageName,
+  params: Readonly<Record<string, string>> = {},
+): string {
+  const path = table[name] ?? FILE_PAGE_PATHS[name];
+  return path.replace(/:(\w+)\(\)/g, (_, param: string) => {
+    const value = params[param];
+    if (value === undefined) {
+      throw new Error(
+        `[shopbite:locale] ${name} needs the parameter ${param}.`,
+      );
+    }
+    return encodeURIComponent(value);
+  });
 }
 
 /** Route rules and robots.txt entries that name the app's own paths. */
@@ -163,18 +212,18 @@ export function shopRouteRules(locale: ShopLocale): {
   routeRules: Record<string, Record<string, unknown>>;
   robotsDisallow: string[];
 } {
-  const path = (name: string, filePath: string) =>
-    pagePath(locale, name, filePath);
-  const checkout = path("bestellung-kasse", "/bestellung/kasse");
+  const path = (name: PageName) =>
+    locale.pagePaths[name] ?? FILE_PAGE_PATHS[name];
+  const checkout = path("bestellung-kasse");
   const toCheckout = { redirect: { to: checkout, statusCode: 301 } };
   const routeRules: Record<string, Record<string, unknown>> = {
     // the wishlist is loaded in the browser
-    [path("merkliste", "/merkliste")]: { ssr: false },
-    [path("registrierung-bestaetigen", "/registrierung/bestaetigen")]: {
+    [path("merkliste")]: { ssr: false },
+    [path("registrierung-bestaetigen")]: {
       ssr: false,
     },
     // One-page checkout (#443): the old step routes lead there.
-    [path("bestellung", "/bestellung")]: toCheckout,
+    [path("bestellung")]: toCheckout,
   };
   if (checkout === "/bestellung/kasse") {
     for (const legacy of LEGACY_CHECKOUT_PATHS) routeRules[legacy] = toCheckout;
@@ -182,9 +231,9 @@ export function shopRouteRules(locale: ShopLocale): {
   return {
     routeRules,
     robotsDisallow: [
-      path("merkliste", "/merkliste"),
-      path("passwort-vergessen", "/passwort-vergessen"),
-      path("account-recover-password", "/account/recover/password"),
+      path("merkliste"),
+      path("passwort-vergessen"),
+      path("account-recover-password"),
     ],
   };
 }

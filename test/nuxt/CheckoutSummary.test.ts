@@ -241,7 +241,10 @@ describe("Checkout Summary order button", () => {
     expect(mocks.placeOrder).toHaveBeenCalledWith({
       wishedTime: { date: "2026-11-21", time: "19:15" },
     });
-    expect(mocks.navigateTo).toHaveBeenCalledWith("/bestellung/order-1/erfolg");
+    // by route name, at the German path
+    expect(useRouter().resolve(mocks.navigateTo.mock.calls[0]![0]).path).toBe(
+      "/bestellung/order-1/erfolg",
+    );
   });
 
   it("sends the guest to the payment on another site", async () => {
@@ -277,7 +280,9 @@ describe("Checkout Summary order button", () => {
     await button.trigger("click");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(mocks.navigateTo).toHaveBeenCalledWith("/bestellung/order-1/fehler");
+    expect(useRouter().resolve(mocks.navigateTo.mock.calls[0]![0]).path).toBe(
+      "/bestellung/order-1/fehler",
+    );
   });
 
   it("tells the guest to check before ordering again when the outcome is unknown", async () => {

@@ -45,7 +45,10 @@ describe("registrierung/bestaetigen", () => {
     });
     expect(refreshCartMock).toHaveBeenCalled();
     // the wishlist moves into the account in app.vue (login watch, #467)
-    expect(navigateToMock).toHaveBeenCalledWith({ path: "/konto" });
+    // by route name, at the German path
+    expect(useRouter().resolve(navigateToMock.mock.calls[0]![0]).path).toBe(
+      "/konto",
+    );
   });
 
   it("removes the confirmation hashes from the address bar", async () => {

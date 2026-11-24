@@ -14,7 +14,7 @@ const orderId = route.params.id as string;
 <template>
   <div class="flex flex-col gap-4">
     <NuxtLink
-      to="/konto/bestellungen"
+      :to="{ name: 'konto-bestellungen' }"
       class="inline-flex min-h-11 items-center self-start font-body font-semibold text-sb-primary-ink underline underline-offset-4"
       >Alle Bestellungen</NuxtLink
     >

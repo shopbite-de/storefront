@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 import QuickView from "~/components/Cart/QuickView.vue";
 import { useIntervalFn } from "@vueuse/core";
 
@@ -143,11 +144,17 @@ async function handleCreateOrder() {
       return;
     }
     if (placed.paymentFailed) {
-      await navigateTo(`/bestellung/${placed.order.id}/fehler`);
+      await navigateTo({
+        name: "bestellung-id-fehler",
+        params: { id: placed.order.id },
+      });
       return;
     }
 
-    navigateTo(`/bestellung/${placed.order.id}/erfolg`);
+    navigateTo({
+      name: "bestellung-id-erfolg",
+      params: { id: placed.order.id },
+    });
   } catch (error) {
     console.error("[checkout][createOrder]", error);
     const code = domainErrorCode(error);
@@ -158,7 +165,7 @@ async function handleCreateOrder() {
             title: "Deine Bestellung ist bereits eingegangen.",
             description: "Du musst nicht erneut bestellen.",
             link: {
-              to: `/bestellung/${placedId}`,
+              to: { name: "bestellung-id", params: { id: placedId } },
               label: "Zur Bestellung",
             },
           }
@@ -346,12 +353,14 @@ const checkoutButtonLabel = computed<string>(() => {
       </SbButton>
       <p class="text-sm text-sb-ink-muted">
         Mit der Bestellung akzeptieren Sie unsere
-        <NuxtLink to="/agb" class="font-semibold text-sb-primary-ink underline"
+        <NuxtLink
+          :to="shopLocale.contentPaths.terms"
+          class="font-semibold text-sb-primary-ink underline"
           >AGB</NuxtLink
         >
         und die
         <NuxtLink
-          to="/datenschutz"
+          :to="shopLocale.contentPaths.privacy"
           class="font-semibold text-sb-primary-ink underline"
           >Datenschutzerklärung</NuxtLink
         >.
