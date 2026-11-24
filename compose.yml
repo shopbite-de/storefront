@@ -3,9 +3,6 @@ services:
     build:
       dockerfile: node.dockerfile
       context: .
-      args:
-        NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${NUXT_PUBLIC_SHOPWARE_ENDPOINT:-https://my.shop/store-api}
-        NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN:-TOKEN}
     user: node
     env_file:
       - .env

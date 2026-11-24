@@ -8,10 +8,10 @@ on:
 env:
   NUXT_PUBLIC_APP_ENV: 'test'
   NUXT_PUBLIC_STORE_URL: 'http://localhost:3005'
-  NUXT_PUBLIC_SHOPWARE_DEV_STORE_FRONT_URL: 'http://localhost:3005'
   PORT: '3005'
-  NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
-  NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
+  # private runtime config since 3.0 (the secrets keep their 2.x names)
+  NUXT_SHOPWARE_ENDPOINT: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
+  NUXT_SHOPWARE_ACCESS_TOKEN: ${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
   # seals the session cookie of the built storefront (a11y job); a test value
   NUXT_VISITOR_SESSION_PASSWORD: 'ci-only-session-password-0123456789abcdef'
   NUXT_PUBLIC_SITE_COUNTRY_ID: ${{ secrets.NUXT_PUBLIC_SITE_COUNTRY_ID }}

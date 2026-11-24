@@ -43,8 +43,6 @@ jobs:
           context: .
           file: ./node.dockerfile
           build-args: |
-            NUXT_PUBLIC_SHOPWARE_ENDPOINT=${{ secrets.NUXT_PUBLIC_SHOPWARE_ENDPOINT }}
-            NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN=${{ secrets.NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN }}
             NUXT_UI_PRO_LICENSE=${{ secrets.NUXT_UI_PRO_LICENSE }}
           push: true
           tags: ${{ steps.meta-app.outputs.tags }}
