@@ -108,8 +108,8 @@ pnpm typecheck        # nuxt typecheck — must stay at zero errors
 pnpm lint:fix         # Prettier + ESLint, autofix
 
 pnpm test:unit        # Vitest (unit + Nuxt environments)
-pnpm test:bdd         # behaviour tests (Gherkin, test/bdd) on the memory backend
-pnpm test:bdd:shopware # the same features against a Shopware (CLAUDE.md, Behaviour tests)
+pnpm bdd:memory       # behaviour tests (Gherkin, test/bdd) on the memory backend
+pnpm bdd:shopware     # the same features against the quickstart's Shopware (CLAUDE.md, Behaviour tests)
 pnpm test:ui          # Vitest UI
 
 pnpm generate-types   # Regenerate Store API types after plugin changes

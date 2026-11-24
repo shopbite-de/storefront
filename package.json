@@ -26,6 +26,8 @@
     "test:unit": "vitest run",
     "test:ui": "vitest --ui",
     "test:e2e": "pnpm test:bdd",
+    "bdd:memory": "SHOPBITE_TEST_SEAMS=1 pnpm build && pnpm test:bdd",
+    "bdd:shopware": "test/bdd/run-shopware.sh",
     "test:bdd": "bddgen && NUXT_SHOP_BITE_BACKEND=memory playwright test --project=bdd",
     "test:bdd:mutants": "BDD_MUTANTS=1 bddgen && BDD_MUTANTS=1 NUXT_SHOP_BITE_BACKEND=memory playwright test --project=bdd --retries=0",
     "test:bdd:shopware": "bddgen && NUXT_SHOP_BITE_BACKEND=shopware playwright test --project=bdd",
