@@ -9,7 +9,8 @@ const storefrontRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const TEST_SEAM_ROUTES = [
   { route: "/api/_test/scenario", method: "post", file: "scenario.route.ts" },
   { route: "/api/_test/scenario", method: "patch", file: "scenario.route.ts" },
-  { route: "/api/_test/mails", method: "get", file: "mails.get.ts" },
+  { route: "/api/_test/mails", method: "get", file: "records.get.ts" },
+  { route: "/api/_test/orders", method: "get", file: "records.get.ts" },
 ] as const;
 
 /** Whether a build gets the test seams: only with SHOPBITE_TEST_SEAMS=1. */
@@ -22,7 +23,8 @@ export function wantsTestSeams(
 /**
  * Test seams of the behaviour tests (test/bdd): a route that starts a
  * scenario on the memory adapter (opening hours, checkout switch, fresh
- * state) and one that lists the mails it would have sent.
+ * state) and two that list the mails it would have sent and the orders it
+ * took.
  *
  * They exist only in a build made with SHOPBITE_TEST_SEAMS=1 of the
  * storefront itself (never in a shop extending the layer). The Docker
