@@ -41,6 +41,8 @@ export interface Backend {
   change(scenario: RestaurantScenario): Promise<void>;
   /** After every scenario: leaves the backend as the next one expects it. */
   finish(): Promise<void>;
+  /** Numbers of the orders placed with this e-mail since the scenario started. */
+  ordersBy(email: string): Promise<string[]>;
   /** Mails to `to` since the scenario started (waits up to `timeoutMs`). */
   mailsTo(to: string, timeoutMs?: number): Promise<SentMail[]>;
 }
@@ -101,6 +103,15 @@ function memoryBackend(request: APIRequestContext): Backend {
     start: (scenario = {}) => send("POST", scenario),
     change: (scenario) => send("PATCH", scenario),
     finish: async () => {},
+    async ordersBy(email) {
+      const response = await request.get("/api/_test/orders");
+      const { orders } = (await response.json()) as {
+        orders: { number: string; email: string }[];
+      };
+      return orders
+        .filter((order) => order.email.toLowerCase() === email.toLowerCase())
+        .map((order) => order.number);
+    },
     mailsTo: (to, timeoutMs = 2000) =>
       poll(async () => {
         const response = await request.get("/api/_test/mails");
@@ -228,6 +239,17 @@ function shopwareBackend(request: APIRequestContext): Backend {
     },
     change: setRestaurant,
     finish: () => setRestaurant(open),
+    async ordersBy(email) {
+      const found = await admin("POST", "/search/order", {
+        filter: [
+          { type: "equals", field: "orderCustomer.email", value: email },
+        ],
+        includes: { order: ["orderNumber"] },
+      });
+      return found.data.map(
+        (order: { orderNumber: string }) => order.orderNumber,
+      );
+    },
     mailsTo: (to, timeoutMs = 30_000) =>
       poll(async () => {
         const response = await request.get(

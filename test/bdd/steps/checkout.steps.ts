@@ -159,20 +159,34 @@ When("I place the order", async ({ page, world }) => {
   await button.click();
 });
 
-Then("my order is confirmed", async ({ page }) => {
-  await page.waitForURL(/\/bestellung\/[^/]+\/erfolg/);
+Then("my order is confirmed", async ({ page, backend, world }) => {
+  // a deadline of its own: no confirmation is a failure, not a timeout
+  await page.waitForURL(/\/bestellung\/[^/]+\/erfolg/, { timeout: 15_000 });
   await waitForHydration(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Vielen Dank für Ihre Bestellung",
   );
+  expect(
+    await backend.ordersBy(world.email),
+    "orders in the backend",
+  ).toHaveLength(1);
 });
 
 Then("the confirmation shows my wished time", async ({ page, world }) => {
   expect(world.wishedTime).toMatch(/^\d\d:\d\d$/);
   await expect(
-    definitionOf(page.getByRole("main"), "Wunschzeit"),
+    await definitionOf(page.getByRole("main"), "Wunschzeit"),
   ).toContainText(world.wishedTime!);
 });
+
+Then(
+  "the confirmation shows the wished time {string}",
+  async ({ page }, time: string) => {
+    await expect(
+      await definitionOf(page.getByRole("main"), "Wunschzeit"),
+    ).toContainText(time);
+  },
+);
 
 Then("the confirmation lists {string}", async ({ page }, label: string) => {
   await expect(
@@ -194,7 +208,12 @@ Then("I am told the restaurant takes no orders right now", async ({ page }) => {
   ).toBeVisible();
 });
 
-Then("no order is placed", async ({ page }) => {
+Then("no order is placed", async ({ page, backend, world }) => {
+  await page.waitForLoadState("networkidle");
+  // asked of the backend, not of the page
+  expect(await backend.ordersBy(world.email), "orders in the backend").toEqual(
+    [],
+  );
   await expect(page).toHaveURL(/\/bestellung\/kasse$/);
   await expect(
     page

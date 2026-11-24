@@ -15,7 +15,7 @@ Then(
 
 Then("my cart total is {string}", async ({ page }, total: string) => {
   const cart = await openCart(page);
-  await expect(definitionOf(cart, "Gesamt")).toHaveText(total);
+  await expect(await definitionOf(cart, "Gesamt")).toHaveText(total);
 });
 
 When("I add one more {string} in my cart", async ({ page }, label: string) => {
