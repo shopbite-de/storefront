@@ -6,6 +6,7 @@
  *
  * Pure: used by modules/locale.ts at build time and by the unit tests.
  */
+import { defu } from "defu";
 
 /** Route names (Nuxt's file router, `pages/`) and content pages → path. */
 export type PathTable = Readonly<Record<string, string>>;
@@ -274,6 +275,25 @@ export function shopRouteRules(locale: ShopLocale): {
       path("account-recover-password"),
     ],
   };
+}
+
+type RouteRules = Record<string, Record<string, unknown>>;
+
+/**
+ * The generated rules with the shop's (`nuxt.options.routeRules`), merged
+ * per path: a shop's rule for a path the storefront has a rule for too
+ * (headers on `/merkliste`) adds to it, and the shop's value wins where
+ * both set one (`ssr`, `redirect`).
+ */
+export function mergeRouteRules(
+  generated: Readonly<RouteRules>,
+  shop: Readonly<RouteRules> | undefined,
+): RouteRules {
+  const merged: RouteRules = { ...generated, ...shop };
+  for (const [path, rule] of Object.entries(shop ?? {})) {
+    if (generated[path]) merged[path] = defu(rule, generated[path]);
+  }
+  return merged;
 }
 
 /**

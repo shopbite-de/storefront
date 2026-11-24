@@ -21,4 +21,9 @@ export default defineNuxtConfig({
         ? { suche: "/zoeken", merkliste: "/favorieten" }
         : {},
   },
+  // a shop's rule on a path the storefront has a rule for (ssr: false):
+  // both apply (modules/locale.ts merges them per path)
+  routeRules: {
+    "/merkliste": { headers: { "x-shop-rule": "wishlist" } },
+  },
 });

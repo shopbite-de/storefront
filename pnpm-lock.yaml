@@ -211,6 +211,9 @@ importers:
       '@vueuse/core':
         specifier: ^15.0.0
         version: 15.0.0(vue@3.5.45(typescript@6.0.3))
+      defu:
+        specifier: 6.1.7
+        version: 6.1.7
       dotenv:
         specifier: ^18.0.10
         version: 18.0.10

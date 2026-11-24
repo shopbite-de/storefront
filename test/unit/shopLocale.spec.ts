@@ -5,6 +5,7 @@ import {
   languageOf,
   localizedDefault,
   localizePages,
+  mergeRouteRules,
   SITE_TEXTS,
   pathOf,
   resolveShopLocale,
@@ -223,6 +224,37 @@ describe("shopRouteRules", () => {
       "/forgot-password",
       "/account/recover/password",
     ]);
+  });
+});
+
+describe("mergeRouteRules", () => {
+  const generated = shopRouteRules(resolveShopLocale({}, {})).routeRules;
+
+  it("keeps the layer's rule when a shop adds to the same path", () => {
+    const merged = mergeRouteRules(generated, {
+      "/merkliste": { headers: { "x-robots-tag": "noindex" } },
+    });
+    expect(merged["/merkliste"]).toEqual({
+      ssr: false,
+      headers: { "x-robots-tag": "noindex" },
+    });
+  });
+
+  it("lets the shop's value win where both set one", () => {
+    const merged = mergeRouteRules(generated, {
+      "/merkliste": { ssr: true },
+      "/bestellung": { redirect: { to: "/kasse", statusCode: 302 } },
+    });
+    expect(merged["/merkliste"]).toEqual({ ssr: true });
+    expect(merged["/bestellung"]).toEqual({
+      redirect: { to: "/kasse", statusCode: 302 },
+    });
+  });
+
+  it("keeps the shop's rules for other paths and the generated ones", () => {
+    const merged = mergeRouteRules(generated, { "/menu/**": { swr: 60 } });
+    expect(merged["/menu/**"]).toEqual({ swr: 60 });
+    expect(merged["/registrierung/bestaetigen"]).toEqual({ ssr: false });
   });
 });
 

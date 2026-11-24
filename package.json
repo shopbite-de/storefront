@@ -57,6 +57,7 @@
     "@unhead/vue": "^3.4.3",
     "@vite-pwa/nuxt": "^2.0.1",
     "@vueuse/core": "^15.0.0",
+    "defu": "6.1.7",
     "dotenv": "^18.0.10",
     "fflate": "^0.8.3",
     "nuxt": "^4.6.4",
