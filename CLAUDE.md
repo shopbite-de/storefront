@@ -222,10 +222,11 @@ Gherkin features run by [playwright-bdd](https://vitalets.github.io/playwright-b
 
 ### Route rendering strategy
 
-Most pages are SSR. Exceptions defined in `nuxt.config.ts` route rules:
+Most pages are SSR. The exceptions are route rules that `modules/locale.ts` generates at the locale's paths (`shopRouteRules()` in `i18n/shopLocale.ts`, ADR 0002), merged per path with a shop's own rules (`mergeRouteRules()`):
 
-- `/wishlist` – client-side rendered (wishlist fetching deferred to client)
-- `/registrierung/bestaetigen/**` – client-side rendered
+- the wishlist (route `merkliste`: `/merkliste`, English `/favourites`) – client-side rendered (wishlist fetching deferred to client)
+- the registration confirmation (route `registrierung-bestaetigen`: `/registrierung/bestaetigen`, English `/register/confirm`) – client-side rendered
+- the checkout's old step routes (`/bestellung`, and in German `/bestellung/warenkorb`, `/bestellung/zahlung-versand`, `/bestellung/bestaetigen`) – 301 to the checkout
 
 ### CI
 
