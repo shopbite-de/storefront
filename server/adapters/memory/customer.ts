@@ -55,6 +55,7 @@ type Account = {
   confirmHash: string | null;
 };
 
+/** The countries of an address without a seed (the demo's, in German). */
 const COUNTRIES: readonly Country[] = deepFreeze([
   { code: "DE", name: "Deutschland" },
   { code: "AT", name: "Österreich" },
@@ -94,6 +95,8 @@ export function createMemoryCustomer(options: {
   /** Moves the checkout's state of a token to the new one. */
   moveSession: (from: string, to: string) => void;
   doubleOptIn?: boolean;
+  /** The countries an address may have (`listCountries`). */
+  countries?: readonly Country[];
   country?: string;
   mail?: (mail: MemoryMail) => void;
   /**
@@ -106,6 +109,9 @@ export function createMemoryCustomer(options: {
   const now = options.now ?? Date.now;
   const country = options.country ?? "DE";
   const pagePaths = options.pagePaths ?? FILE_PAGE_PATHS;
+  const countries = options.countries
+    ? deepFreeze(structuredClone(options.countries))
+    : COUNTRIES;
   const accounts = new Map<Id, Account>();
   /** Logged-in session tokens. */
   const sessions = new Map<string, Id>();
@@ -434,7 +440,7 @@ export function createMemoryCustomer(options: {
       await rotate(session, null);
     },
 
-    listCountries: async () => COUNTRIES,
+    listCountries: async () => countries,
   };
 
   const view: MemoryAccountsView = {

@@ -55,7 +55,7 @@ export function startScenario(
   scenario: RestaurantScenario,
   now = new Date(),
 ): Running {
-  const demo = demoSeed();
+  const demo = demoSeed(shopLocale);
   const shop: Shop = {
     ...scenarioShop(demo.shop, scenario, middayTimeZone(now)),
   };

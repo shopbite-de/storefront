@@ -8,6 +8,7 @@ import {
 } from "../../../shared/domain";
 import type { MemoryCatalog, MemoryDish, MemoryVariant } from "./catalog";
 import menu from "./demo-menu.json";
+import { demoLocale, type DemoLocale } from "./demoLocale";
 
 /**
  * The quickstart's demo menu (`demo-menu.json` is its `setup/menu.json`)
@@ -97,7 +98,7 @@ function photo(number: string): Media | null {
   };
 }
 
-export function demoMenu(): MemoryCatalog {
+export function demoMenu(words: DemoLocale = demoLocale("de")): MemoryCatalog {
   const { categories, products } = menu as unknown as MenuJson;
   const sectionId = (key: string) => id(`category:${key}`);
   const sections: MenuSection[] = categories.map((category) => ({
@@ -106,7 +107,7 @@ export function demoMenu(): MemoryCatalog {
     description: null,
     icon: category.icon,
     media: null,
-    path: `/Speisekarte/${slug(category.name)}/`,
+    path: `${words.menuRoot.path}${slug(category.name)}/`,
     seo: { title: null, description: null, indexable: true },
     children: [],
   }));
@@ -183,28 +184,25 @@ export function demoMenu(): MemoryCatalog {
         variants,
         extraGroups:
           product.crossSelling === "extras"
-            ? [{ id: id(`xs:${nr}:extras`), name: "Extras", extras }]
+            ? [{ id: id(`xs:${nr}:extras`), name: words.extraGroup, extras }]
             : [],
       },
     ];
   });
 
-  const sortings = [
-    { key: "name-asc", label: "Name A-Z" },
-    { key: "name-desc", label: "Name Z-A" },
-    { key: "price-asc", label: "Preis aufsteigend" },
-    { key: "price-desc", label: "Preis absteigend" },
-  ];
-  const topseller = { key: "topseller", label: "Topseller" };
+  const sortings = (
+    ["name-asc", "name-desc", "price-asc", "price-desc"] as const
+  ).map((key) => ({ key, label: words.sortings[key] }));
+  const topseller = { key: "topseller", label: words.sortings.topseller };
   return {
     // the quickstart's "Speisekarte" below the navigation root
     menuRoot: {
       id: id("category:speisekarte"),
-      name: "Speisekarte",
+      name: words.menuRoot.name,
       description: null,
       icon: "i-lucide-utensils",
       media: null,
-      path: "/Speisekarte/",
+      path: words.menuRoot.path,
       seo: { title: null, description: null, indexable: true },
     },
     sections,
@@ -213,12 +211,12 @@ export function demoMenu(): MemoryCatalog {
     dietFilters: {
       vegetarian: {
         id: id("pg:Vegetarisch"),
-        name: "Vegetarisch",
+        name: words.diets.vegetarian,
         optionId: option("Vegetarisch", "Ja"),
       },
       vegan: {
         id: id("pg:Vegan"),
-        name: "Vegan",
+        name: words.diets.vegan,
         optionId: option("Vegan", "Ja"),
       },
     },
@@ -226,7 +224,7 @@ export function demoMenu(): MemoryCatalog {
     defaultSorting: "name-asc",
     searchSortings: [
       ...sortings,
-      { key: "score", label: "Beste Ergebnisse" },
+      { key: "score", label: words.sortings.score },
       topseller,
     ],
     defaultSearchSorting: "score",

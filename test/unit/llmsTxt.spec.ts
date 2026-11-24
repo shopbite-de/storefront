@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildLlmsTxt, toLlmsMenu } from "../../server/utils/llmsTxt";
+import {
+  buildLlmsTxt as buildInLocale,
+  toLlmsMenu as toMenuInLocale,
+  type LlmsTxtInput,
+} from "../../server/utils/llmsTxt";
+import { messages } from "../support/messages";
 import {
   holiday,
   openingInterval,
@@ -8,6 +13,17 @@ import {
   type Weekday,
 } from "../../shared/domain";
 import { dish } from "../support/dishes";
+
+// the German shop's words (ADR 0002: the builder takes the locale's)
+const DE = { t: messages("de").t, language: "de-DE" };
+const EN = { t: messages("en").t, language: "en-GB" };
+const buildLlmsTxt = (input: LlmsTxtInput) => buildInLocale(input, DE);
+type MenuArgs = Parameters<typeof toMenuInLocale>;
+const toLlmsMenu = (
+  sections: MenuArgs[0],
+  dishes: MenuArgs[1],
+  siteUrl: MenuArgs[2],
+) => toMenuInLocale(sections, dishes, siteUrl, "de-DE");
 
 const now = new Date("2026-10-05T12:00:00Z");
 
@@ -278,5 +294,49 @@ describe("toLlmsMenu", () => {
         ],
       },
     ]);
+  });
+});
+
+describe("buildLlmsTxt in English", () => {
+  it("writes the shop's language", () => {
+    const text = buildInLocale(
+      {
+        name: "ShopBite",
+        url: "https://example.com",
+        address: { street: "1 Sample Street", city: "Sampletown" },
+        openingHours: { intervals: [] },
+        holidays: [
+          holiday({ id: "h", firstDay: "2026-12-24", lastDay: "2026-12-26" }),
+        ],
+        acceptsOrders: true,
+        deliveryTime: 30,
+        pickupTime: 15,
+        menu: [
+          {
+            name: "Pizza",
+            items: [
+              {
+                name: "Margherita",
+                price: 7,
+                fromPrice: true,
+                diets: ["vegetarian"],
+              },
+            ],
+          },
+        ],
+        now: new Date("2026-12-01T12:00:00+01:00"),
+        timeZone: "Europe/Berlin",
+      },
+      EN,
+    );
+    expect(text).toContain("## Contact");
+    expect(text).toContain("- Address: 1 Sample Street, Sampletown");
+    expect(text).toContain("- Closed: 24/12/2026 – 26/12/2026");
+    expect(text).toContain("- Delivery time: about 30 minutes");
+    expect(text).toContain(
+      "- Pickup at the restaurant, ready in about 15 minutes",
+    );
+    expect(text).toContain("- Margherita: from €7.00 (vegetarian)");
+    expect(text).not.toMatch(/Kontakt|Geschlossen|Lieferzeit|ab /);
   });
 });

@@ -1,1 +1,38 @@
-{ "server": {} }
+{
+  "server": {
+    "llms": {
+      "summaryCuisine": "{name}: {cuisine} in {city}.",
+      "summaryCity": "{name} in {city}.",
+      "summaryOrders": "Online bestellen zur Lieferung oder Abholung unter {url}.",
+      "alsoKnownAs": "Auch bekannt als",
+      "address": "Adresse",
+      "telephone": "Telefon",
+      "website": "Website",
+      "days": {
+        "mon": "Mo",
+        "tue": "Di",
+        "wed": "Mi",
+        "thu": "Do",
+        "fri": "Fr",
+        "sat": "Sa",
+        "sun": "So"
+      },
+      "closedDay": "Ruhetag",
+      "closed": "Geschlossen",
+      "orderOnline": "Online bestellen",
+      "deliveryArea": "Liefergebiet",
+      "deliveryTime": "Lieferzeit: ca. {minutes} Minuten",
+      "pickup": "Abholung im Restaurant möglich",
+      "pickupWithTime": "Abholung im Restaurant möglich, abholbereit in ca. {minutes} Minuten",
+      "fromPrice": "ab {price}",
+      "vegetarian": "vegetarisch",
+      "vegan": "vegan",
+      "contact": "Kontakt",
+      "openingHours": "Öffnungszeiten",
+      "ordering": "Bestellen",
+      "faq": "Häufige Fragen",
+      "menu": "Speisekarte",
+      "morePages": "Weitere Informationen"
+    }
+  }
+}

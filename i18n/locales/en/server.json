@@ -1,1 +1,38 @@
-{ "server": {} }
+{
+  "server": {
+    "llms": {
+      "summaryCuisine": "{name}: {cuisine} in {city}.",
+      "summaryCity": "{name} in {city}.",
+      "summaryOrders": "Order online for delivery or pickup at {url}.",
+      "alsoKnownAs": "Also known as",
+      "address": "Address",
+      "telephone": "Phone",
+      "website": "Website",
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      },
+      "closedDay": "Closed",
+      "closed": "Closed",
+      "orderOnline": "Order online",
+      "deliveryArea": "Delivery area",
+      "deliveryTime": "Delivery time: about {minutes} minutes",
+      "pickup": "Pickup at the restaurant",
+      "pickupWithTime": "Pickup at the restaurant, ready in about {minutes} minutes",
+      "fromPrice": "from {price}",
+      "vegetarian": "vegetarian",
+      "vegan": "vegan",
+      "contact": "Contact",
+      "openingHours": "Opening hours",
+      "ordering": "Ordering",
+      "faq": "Frequently asked questions",
+      "menu": "Menu",
+      "morePages": "More information"
+    }
+  }
+}
