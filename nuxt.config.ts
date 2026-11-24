@@ -2,6 +2,13 @@
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 
+// The storefront's messages per locale, one file per area (i18n/locales/
+// <code>/<area>.json, top-level key = area); a shop overrides single
+// messages in its own i18n/locales/<code>.json.
+const MESSAGE_AREAS = ["common", "menu", "order", "account", "server"];
+const messageFiles = (code: string) =>
+  MESSAGE_AREAS.map((area) => `${code}/${area}.json`);
+
 const storeName = process.env.NUXT_STORE_NAME || "ShopBite";
 const storeDescription =
   process.env.NUXT_STORE_DESCRIPTION ||
@@ -33,13 +40,9 @@ export default defineNuxtConfig({
       link: [{ rel: "icon", href: "/favicon.ico", type: "image/png" }],
     },
   },
-  robots: {
-    disallow: [
-      "/merkliste",
-      "/passwort-vergessen",
-      "/account/recover/password",
-    ],
-  },
+  // robots.txt: the wishlist and the password pages are added at the
+  // locale's paths by modules/locale.ts
+  robots: {},
   sitemap: {
     // File-based pages and route rules (ssr/swr/redirect) are checkout and
     // account flows; indexable URLs come from the home page, content pages
@@ -247,23 +250,9 @@ export default defineNuxtConfig({
     "/llms.txt": {
       swr: 3600,
     },
-    "/merkliste": {
-      ssr: false,
-    },
-    "/registrierung/bestaetigen": {
-      ssr: false,
-    },
-    // One-page checkout (#443): the old step routes lead there.
-    "/bestellung": { redirect: { to: "/bestellung/kasse", statusCode: 301 } },
-    "/bestellung/warenkorb": {
-      redirect: { to: "/bestellung/kasse", statusCode: 301 },
-    },
-    "/bestellung/zahlung-versand": {
-      redirect: { to: "/bestellung/kasse", statusCode: 301 },
-    },
-    "/bestellung/bestaetigen": {
-      redirect: { to: "/bestellung/kasse", statusCode: 301 },
-    },
+    // The wishlist and the registration confirmation render in the
+    // browser, the checkout's old step routes redirect: at the locale's
+    // paths, modules/locale.ts (i18n/shopLocale.ts).
   },
 
   // Style preset of the shop (#439, modules/theme.ts): "trattoria" (the
@@ -271,6 +260,36 @@ export default defineNuxtConfig({
   // (`colors: { primary: … }`). NUXT_SHOPBITE_PRESET overrides it.
   shopBite: {
     preset: "trattoria",
+    // Language of the shop (ADR 0002, modules/locale.ts): "de" (the
+    // default) or "en", or a locale the shop adds in `i18n.locales`. A
+    // build option, since it decides the paths of the pages;
+    // NUXT_SHOPBITE_LOCALE overrides it. `paths` sets single paths.
+    locale: "de",
+  },
+
+  // Messages per locale (merged with the shop's i18n/locales/<code>.json). One locale per shop, no prefix in
+  // the paths, no detection: modules/locale.ts sets the default locale
+  // and bundles only that one.
+  i18n: {
+    strategy: "no_prefix",
+    defaultLocale: "de",
+    detectBrowserLanguage: false,
+    locales: [
+      {
+        code: "de",
+        language: "de-DE",
+        name: "Deutsch",
+        files: messageFiles("de"),
+      },
+      {
+        code: "en",
+        language: "en-GB",
+        name: "English",
+        files: messageFiles("en"),
+      },
+    ],
+    // server routes translate with useTranslation(event)
+    experimental: { localeDetector: "localeDetector.ts" },
   },
 
   // Absolute: `~` would point to the app/ folder of a shop extending this
@@ -297,6 +316,10 @@ export default defineNuxtConfig({
   },
 
   modules: [
+    // The shop's locale (ADR 0002): sets the options of i18n, robots and
+    // content below, so it comes first.
+    fileURLToPath(new URL("./modules/locale.ts", import.meta.url)),
+    "@nuxtjs/i18n",
     "@nuxt/image",
     // must be loaded before @nuxt/content for the content integration
     "@nuxtjs/sitemap",

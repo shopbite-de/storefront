@@ -77,9 +77,12 @@ const { site, shopBite } = useRuntimeConfig().public;
 // Pages with a backend SEO URL (categories) override the canonical link.
 const canonicalUrl = computed(() => toAbsoluteUrl(siteConfig.url, route.path));
 
+// One language per shop (ADR 0002): the shop's locale code.
+const { locale } = useI18n();
+
 useHead({
   htmlAttrs: {
-    lang: "de",
+    lang: locale,
   },
   titleTemplate: (title) =>
     formatPageTitle(title, site.name, site.titleTemplate),
@@ -118,7 +121,7 @@ useSeoMeta({
     <a
       href="#inhalt"
       class="sr-only z-[60] rounded-md bg-neutral-950 px-4 py-3 font-semibold text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-      >Zum Inhalt springen</a
+      >{{ $t("common.skipToContent") }}</a
     >
     <LazyDemoBanner v-if="shopBite.feature.demoBanner" />
     <Header />
