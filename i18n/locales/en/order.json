@@ -1,1 +1,195 @@
-{ "order": {} }
+{
+  "order": {
+    "shared": {
+      "yourOrder": "Your order",
+      "total": "Total",
+      "toMenu": "Go to the menu",
+      "deliveryOrPickup": "Delivery or pickup",
+      "payment": "Payment",
+      "loadingOrder": "Loading your order …",
+      "hoursFailed": "Opening hours could not be loaded"
+    },
+    "fulfillment": {
+      "delivery": {
+        "wishedTime": "Requested delivery time",
+        "leadTimeHint": "Delivery takes about {minutes} minutes, a little longer at busy times.",
+        "noneLeftToday": "No more delivery times are available today.",
+        "noneAvailableNow": "No delivery time available at the moment. Please try again later.",
+        "noTimeWithoutHours": "Without opening hours we cannot offer a delivery time."
+      },
+      "pickup": {
+        "wishedTime": "Requested pickup time",
+        "leadTimeHint": "Ready for pickup in about {minutes} minutes, a little longer at busy times.",
+        "noneLeftToday": "No more pickup times are available today.",
+        "noneAvailableNow": "No pickup time available at the moment. Please try again later.",
+        "noTimeWithoutHours": "Without opening hours we cannot offer a pickup time."
+      }
+    },
+    "deliveryTime": {
+      "loading": "Loading information...",
+      "holiday": "Closed for holidays.",
+      "closingDay": "Today ({weekday}) is our day off. Please order on another day.",
+      "nextPeriod": "Next available period: {range}",
+      "earliest": "Earliest from {time}, possible: {range}",
+      "earliestToday": "Earliest from {time} (today), possible: {range}",
+      "invalidFormat": "Please enter a valid time in the format HH:MM.",
+      "invalidTime": "Please choose a valid time.",
+      "tooEarly": "This time is before the earliest possible time. From {time} at the earliest.",
+      "tooLate": "This time is after the latest possible time. Until {time} at the latest.",
+      "notOnGrid": "Please choose a time in 5-minute steps.",
+      "retry": "Try again",
+      "holidayNotice": "We are closed for holidays and are not taking orders at the moment.",
+      "hoursLoading": "Loading opening hours …"
+    },
+    "cartBar": {
+      "title": "Basket",
+      "items": "{count} item | {count} items",
+      "added": "added"
+    },
+    "cartItem": {
+      "fallbackName": "Item",
+      "remove": "Remove {name}",
+      "empty": "Your basket is empty."
+    },
+    "quickView": {
+      "empty": "Your basket is still empty.",
+      "shipping": "Delivery",
+      "free": "free",
+      "toCheckout": "Go to checkout"
+    },
+    "upsell": {
+      "title": "Goes well with it",
+      "add": "Add {name} to basket"
+    },
+    "orderMode": {
+      "label": "Order type"
+    },
+    "loginOrRegister": {
+      "label": "Customer details",
+      "newOrGuest": "New here or as a guest",
+      "existing": "Already a customer"
+    },
+    "ordererAddress": {
+      "edit": "Edit address"
+    },
+    "paymentAndDelivery": {
+      "shippingLegend": "Shipping methods",
+      "paymentLegend": "Payment methods",
+      "shippingLink": "Delivery area and delivery costs",
+      "paymentLink": "More about the payment methods",
+      "shippingExplained": "Shipping methods explained",
+      "paymentExplained": "Payment methods explained"
+    },
+    "voucher": {
+      "label": "Voucher code",
+      "redeem": "Redeem",
+      "applied": "Voucher: {name}",
+      "remove": "Remove voucher {name}",
+      "invalid": "This voucher code is invalid or has expired."
+    },
+    "summary": {
+      "sections": {
+        "time": "When?",
+        "details": "Your details"
+      },
+      "fallbackShippingMethod": "The shipping method",
+      "shippingBlocked": {
+        "title": "{method} is not available",
+        "description": "{method} is not available for your address or basket. Please choose another order type above or change your address.",
+        "alert": "Sorry, {method} is not available for your address or basket. Please choose another order type or change your address.",
+        "hint": "Once you have saved your details, you will see whether {method} is available for your address."
+      },
+      "noPaymentMethod": {
+        "title": "No payment method available",
+        "description": "No payment method is available for your order at the moment. Please check your address and your basket."
+      },
+      "checkFailed": {
+        "title": "Shipping and payment method could not be checked",
+        "description": "Please try again in a moment."
+      },
+      "notPossible": "Ordering is not possible",
+      "notAccepting": "We are not taking any more orders at the moment.",
+      "acceptingUnknown": "We could not check whether orders are being taken right now. Please try again in a moment.",
+      "alreadyPlaced": {
+        "title": "We have already received your order.",
+        "description": "You do not need to order again.",
+        "link": "View your order"
+      },
+      "statusUnknown": {
+        "title": "Order not confirmed",
+        "description": "We could not tell whether your order came through. Please check your email inbox or call us before you order again."
+      },
+      "failed": {
+        "title": "Order failed",
+        "description": "Your order could not be placed. Please check your details and try again."
+      },
+      "button": {
+        "saveDetailsFirst": "Please save your details first",
+        "loadingHours": "Loading opening hours …",
+        "closed": "Sorry, we are closed at the moment",
+        "notAccepting": "We are not taking any more orders at the moment",
+        "shippingBlocked": "{method} is not available here",
+        "noPaymentMethod": "No payment method is available at the moment",
+        "placeOrder": "Order with obligation to pay"
+      },
+      "legal": {
+        "text": "By placing your order you accept our {terms} and the {privacy}.",
+        "terms": "terms and conditions",
+        "privacy": "privacy policy"
+      }
+    },
+    "confirmation": {
+      "thanks": "Thank you for your order",
+      "received": "We have received it and are preparing it now.",
+      "number": "Your order number is {number}.",
+      "kicker": "Order",
+      "loadFailed": "The order could not be loaded.",
+      "receivedAnyway": "We have received your order all the same.",
+      "reload": "Please reload the page or call us.",
+      "somethingWrong": "Something not right?",
+      "callUs": "Call us straight away and we can still change your order.",
+      "call": "Call:",
+      "toHome": "Back to the home page"
+    },
+    "detail": {
+      "status": "Status",
+      "wishedTime": "Requested time",
+      "taxIncluded": "incl. VAT {rate}%",
+      "taxExcluded": "plus VAT {rate}%",
+      "dishNumber": "No. {number}",
+      "shippingCosts": "Delivery costs"
+    },
+    "orderStatus": {
+      "open": "Open",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "paymentStatus": {
+      "open": "Open",
+      "paid": "Paid",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "refunded": "Refunded"
+    },
+    "checkoutPage": {
+      "title": "Checkout",
+      "empty": "Your basket is still empty.",
+      "loading": "Loading checkout"
+    },
+    "orderPage": {
+      "title": "Order"
+    },
+    "paymentSuccess": {
+      "title": "Payment successful"
+    },
+    "paymentFailed": {
+      "title": "Payment failed",
+      "intro": "Your order has been saved, but the payment did not go through. Choose a payment method and try again.",
+      "method": "Payment method",
+      "startFailed": "The payment could not be started. Please try again or call us.",
+      "payNow": "Pay now",
+      "orderHeading": "Order {number}"
+    }
+  }
+}

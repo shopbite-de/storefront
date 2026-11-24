@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 import { formatDate } from "~/utils/formatDate";
 
 definePageMeta({
   layout: "account",
 });
 
+const { t } = useI18n();
+
 useSeoMeta({
-  title: "Meine Bestellungen",
+  title: t("account.orders.pageTitle"),
 });
 
 // the customer's orders through the BFF (ADR 0001, step 6)
@@ -28,16 +31,18 @@ const { getFormattedMoney } = useCommercePrice();
 
 <template>
   <div class="font-body text-sb-ink">
-    <UserAccountHeader title="Bestellungen" />
+    <UserAccountHeader :title="$t('account.orders.title')" />
     <p v-if="!loaded" role="status" class="text-sb-ink-muted">
-      Bestellungen werden geladen …
+      {{ $t("account.orders.loading") }}
     </p>
     <div
       v-else-if="!orders?.length"
       class="flex flex-col items-start gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6"
     >
-      <p>Sie haben noch nichts bestellt.</p>
-      <SbButton to="/">Zur Startseite</SbButton>
+      <p>{{ $t("account.orders.empty") }}</p>
+      <SbButton :to="{ name: 'index' }">{{
+        $t("account.orders.toHome")
+      }}</SbButton>
     </div>
     <ul
       v-else
@@ -52,19 +57,27 @@ const { getFormattedMoney } = useCommercePrice();
           :to="{ name: 'konto-bestellung-id', params: { id: order.id } }"
           class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 p-4 hover:bg-sb-muted focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-sb-focus sm:p-5"
         >
-          <span class="font-bold">
-            Bestellung <span class="tabular-nums">{{ order.number }}</span>
-          </span>
+          <i18n-t
+            keypath="account.orders.order"
+            tag="span"
+            scope="global"
+            class="font-bold"
+          >
+            <template #number>
+              <span class="tabular-nums">{{ order.number }}</span>
+            </template>
+          </i18n-t>
           <span class="font-bold tabular-nums">{{
             getFormattedMoney(order.total)
           }}</span>
           <span class="text-sm text-sb-ink-muted">
-            {{ formatDate(order.placedAt) }}
-            · {{ ORDER_STATUS_LABEL[order.status] }}
+            {{ formatDate(order.placedAt, shopLocale.language) }}
+            · {{ $t(ORDER_STATUS_MESSAGE[order.status]) }}
           </span>
           <span
             class="flex items-center gap-1 text-sm font-semibold text-sb-primary-ink"
-            >Details <SbIcon name="chevron-right" :size="16"
+            >{{ $t("account.orders.details") }}
+            <SbIcon name="chevron-right" :size="16"
           /></span>
         </NuxtLink>
       </li>

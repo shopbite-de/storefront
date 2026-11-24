@@ -29,7 +29,7 @@ function isCurrent(to: string) {
 </script>
 
 <template>
-  <nav aria-label="Kategorien" class="sticky top-6">
+  <nav :aria-label="$t('menu.categoryIndex.label')" class="sticky top-6">
     <ul class="flex flex-col border-t-[1.5px] border-sb-ink">
       <li v-for="entry in entries" :key="entry.to">
         <NuxtLink

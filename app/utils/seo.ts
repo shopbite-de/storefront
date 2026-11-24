@@ -31,27 +31,38 @@ export function toAbsoluteUrl(siteUrl: string, pathOrUrl: string): string {
   return pathOrUrl.endsWith("/") ? withTrailingSlash(url) : url;
 }
 
-/** Default home page title: `<Shopname> <Ort> | Online bestellen & liefern lassen`. */
-export function buildHomeTitle({ name, city }: SiteInfo): string {
+/**
+ * The words of the default home page title and description in the shop's
+ * language (messages `common.homeSeo.*`); this file is imported by the
+ * server, so the caller translates.
+ */
+export type HomeSeoWords = {
+  /** After the shop name and city: "Online bestellen & liefern lassen". */
+  titleSuffix: string;
+  description: (
+    kind: "cuisineAndCity" | "city" | "cuisine",
+    params: { name: string; city: string; cuisine: string },
+  ) => string;
+};
+
+/** Default home page title: `<shop name> <city> | <title suffix>`. */
+export function buildHomeTitle(
+  { name, city }: SiteInfo,
+  words: HomeSeoWords,
+): string {
   const place = city && !name.includes(city) ? `${name} ${city}` : name;
-  return `${place} | Online bestellen & liefern lassen`;
+  return `${place} | ${words.titleSuffix}`;
 }
 
 /** Default home page description from city and cuisine, if any is configured. */
-export function buildHomeDescription({
-  name,
-  city,
-  cuisine,
-}: SiteInfo): string | undefined {
-  if (cuisine && city) {
-    return `${cuisine} in ${city}: Bei ${name} online bestellen und liefern lassen oder abholen.`;
-  }
-  if (city) {
-    return `${name} in ${city}: Online bestellen und liefern lassen oder abholen.`;
-  }
-  if (cuisine) {
-    return `${cuisine}: Bei ${name} online bestellen und liefern lassen oder abholen.`;
-  }
+export function buildHomeDescription(
+  { name, city = "", cuisine = "" }: SiteInfo,
+  words: HomeSeoWords,
+): string | undefined {
+  const params = { name, city, cuisine };
+  if (cuisine && city) return words.description("cuisineAndCity", params);
+  if (city) return words.description("city", params);
+  if (cuisine) return words.description("cuisine", params);
   return undefined;
 }
 

@@ -14,18 +14,18 @@ function submit() {
 
 <template>
   <form role="search" class="flex gap-2 font-body" @submit.prevent="submit">
-    <label :for="id" class="sr-only">Speisekarte durchsuchen</label>
+    <label :for="id" class="sr-only">{{ $t("menu.searchInput.label") }}</label>
     <SbInput
       :id="id"
       v-model="query"
       name="search"
       type="search"
       enterkeyhint="search"
-      placeholder="Gericht oder Zutat suchen"
+      :placeholder="$t('menu.searchInput.placeholder')"
       class="flex-1"
     />
     <SbIconButton
-      label="Suchen"
+      :label="$t('menu.searchInput.submit')"
       type="submit"
       variant="tint"
       class="size-[50px]"

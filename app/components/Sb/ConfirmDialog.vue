@@ -20,10 +20,11 @@ withDefaults(
     title: string;
     description: string;
     confirmLabel: string;
+    /** defaults to `common.confirmDialog.cancel` */
     cancelLabel?: string;
     loading?: boolean;
   }>(),
-  { cancelLabel: "Abbrechen", loading: false },
+  { cancelLabel: undefined, loading: false },
 );
 
 const emit = defineEmits<{ confirm: [] }>();
@@ -48,7 +49,9 @@ const open = defineModel<boolean>("open", { default: false });
         <slot />
         <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <AlertDialogCancel as-child>
-            <SbButton variant="secondary">{{ cancelLabel }}</SbButton>
+            <SbButton variant="secondary">{{
+              cancelLabel ?? $t("common.confirmDialog.cancel")
+            }}</SbButton>
           </AlertDialogCancel>
           <SbButton :loading="loading" @click="emit('confirm')">{{
             confirmLabel

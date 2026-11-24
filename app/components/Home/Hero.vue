@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
+
 /**
  * Hero of the presets, variant "editorial" (#444): kicker, headline with
  * the highlighted part in the accent colour, text, buttons and the store
@@ -31,26 +33,38 @@ const titleParts = computed(() => splitHighlight(props.title));
 const rating = computed(() => {
   const usp = props.usps?.find((item) => item.icon?.includes("google"));
   if (!usp) return null;
-  const value = (usp.title ?? "").replace(/[^\d.,]/g, "").replace(".", ",");
-  if (!value) return null;
+  const raw = (usp.title ?? "").replace(/[^\d.,]/g, "").replace(",", ".");
+  if (!raw) return null;
+  const stars = Number(raw);
+  // in the shop's language with the decimals the content gives ("4,5")
+  const decimals = raw.split(".")[1]?.length ?? 0;
+  const value = Number.isNaN(stars)
+    ? raw
+    : new Intl.NumberFormat(shopLocale.language, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+        useGrouping: false,
+      }).format(stars);
   return {
     value,
-    stars: Number(value.replace(",", ".")),
+    stars,
     label: usp.subtitle ?? "",
     link: usp.link,
   };
 });
 
 const { status } = useStoreStatus();
+const { t } = useI18n();
 // lead times of the delivery and pickup methods (shopbite#6)
 const { deliveryTime, pickupTime } = useShippingMethods();
 
 const statusLabel = computed(() => {
   if (!status.value) return "";
-  if (status.value.open) return `Jetzt geöffnet bis ${status.value.closesAt}`;
+  if (status.value.open)
+    return t("common.storeStatus.hero.open", { time: status.value.closesAt });
   return status.value.nextOpening
-    ? `Geschlossen, öffnet ${status.value.nextOpening}`
-    : "Geschlossen";
+    ? t("common.storeStatus.hero.opens", { when: status.value.nextOpening })
+    : t("common.storeStatus.closed");
 });
 
 // 1×1 transparent GIF: phones keep the <img> but load nothing (#444).
@@ -121,12 +135,12 @@ const BLANK =
             />
             {{ statusLabel }}
           </span>
-          <span v-if="deliveryTime !== null"
-            >Lieferung ca. {{ deliveryTime }} Min</span
-          >
-          <span v-if="pickupTime !== null"
-            >Abholung ca. {{ pickupTime }} Min</span
-          >
+          <span v-if="deliveryTime !== null">{{
+            $t("common.hero.deliveryTime", { minutes: deliveryTime })
+          }}</span>
+          <span v-if="pickupTime !== null">{{
+            $t("common.hero.pickupTime", { minutes: pickupTime })
+          }}</span>
         </p>
         <template #fallback>
           <span class="h-6" aria-hidden="true" />
@@ -137,12 +151,12 @@ const BLANK =
         class="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-sb-line pt-3 text-sm sm:hidden"
       >
         <SbStars :value="rating.stars" />
-        <span class="font-bold whitespace-nowrap"
-          >{{ rating.value }} von 5</span
-        >
-        <span class="whitespace-nowrap text-sb-ink-muted"
-          >{{ rating.label }} bei Google</span
-        >
+        <span class="font-bold whitespace-nowrap">{{
+          $t("common.hero.ratingOutOf", { rating: rating.value })
+        }}</span>
+        <span class="whitespace-nowrap text-sb-ink-muted">{{
+          $t("common.hero.ratingSource", { reviews: rating.label })
+        }}</span>
       </p>
     </div>
 
@@ -172,7 +186,7 @@ const BLANK =
         }}</span>
         <span class="flex flex-col gap-1 text-[13px]">
           <SbStars :value="rating.stars" />
-          <span class="font-bold">von 5 bei Google</span>
+          <span class="font-bold">{{ $t("common.hero.ratingCard") }}</span>
           <span class="text-sb-ink-muted">{{ rating.label }}</span>
         </span>
       </component>

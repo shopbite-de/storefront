@@ -45,9 +45,9 @@ const describedBy = computed(
       :class="hideLabel ? 'sr-only' : 'text-sm font-bold text-sb-ink'"
     >
       {{ label }}
-      <span v-if="optional" class="font-medium text-sb-ink-muted"
-        >(optional)</span
-      >
+      <span v-if="optional" class="font-medium text-sb-ink-muted">{{
+        $t("common.field.optional")
+      }}</span>
     </label>
     <slot :id="id" :described-by="describedBy" :invalid="!!error" />
     <p

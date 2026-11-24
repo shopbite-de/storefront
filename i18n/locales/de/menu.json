@@ -1,1 +1,106 @@
-{ "menu": {} }
+{
+  "menu": {
+    "breadcrumb": {
+      "label": "Brotkrumen"
+    },
+    "searchInput": {
+      "label": "Speisekarte durchsuchen",
+      "placeholder": "Gericht oder Zutat suchen",
+      "submit": "Suchen"
+    },
+    "listing": {
+      "filter": "Filter",
+      "filterActive": "aktiv",
+      "resetFilters": "Zurücksetzen",
+      "showDishes": "{count} Gerichte zeigen | {count} Gerichte zeigen",
+      "loading": "Gerichte werden geladen"
+    },
+    "diets": {
+      "vegetarian": "Vegetarisch",
+      "vegan": "Vegan"
+    },
+    "foodLabels": {
+      "allergensText": "Enthält: {names}.",
+      "additivesText": "Zusatzstoffe: {names}.",
+      "title": "Allergene und Zusatzstoffe",
+      "none": "Ohne kennzeichnungspflichtige Allergene und Zusatzstoffe.",
+      "askWithPhone": "Angaben erhalten Sie im Restaurant: {phone}.",
+      "ask": "Angaben erhalten Sie im Restaurant."
+    },
+    "shared": {
+      "number": "Nr. {number}",
+      "priceFrom": "ab {price}",
+      "soldOut": "Ausverkauft",
+      "wishlistFull": "Ihre Merkliste ist voll ({limit} Gerichte). Bitte entfernen Sie zuerst ein Gericht.",
+      "sorting": "Sortierung",
+      "sortingPlaceholder": "Bitte wählen"
+    },
+    "bonCard": {
+      "choose": "{name} auswählen",
+      "addAnother": "{name}, {quantity} im Warenkorb, noch eine hinzufügen",
+      "add": "{name} hinzufügen",
+      "notOrdering": "Gerade keine Bestellungen"
+    },
+    "sectionHeader": {
+      "dishes": "{count} Gericht | {count} Gerichte"
+    },
+    "cartPanel": {
+      "title": "Ihre Bestellung"
+    },
+    "categoryIndex": {
+      "label": "Kategorien"
+    },
+    "crossSelling": {
+      "optional": "optional",
+      "selected": "{count} gewählt · +{price}",
+      "searchLabel": "{group} durchsuchen",
+      "searchPlaceholder": "{count} {group} durchsuchen",
+      "noMatches": "Keine Treffer",
+      "showAll": "Alle {count} anzeigen"
+    },
+    "deselectIngredient": {
+      "title": "Zutaten",
+      "hint": "Antippen zum Weglassen"
+    },
+    "detail": {
+      "notOrdering": "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen.",
+      "addToCart": "In den Warenkorb",
+      "dishFallback": "Gericht"
+    },
+    "quickView": {
+      "share": "Teilen",
+      "copyLink": "Link kopieren"
+    },
+    "wishlistSave": {
+      "label": "{name} merken",
+      "failed": "Merken hat nicht geklappt. Bitte versuchen Sie es erneut."
+    },
+    "wishlist": {
+      "without": "ohne {name}",
+      "rowLabel": "{name} ({configuration})",
+      "loading": "Merkliste wird geladen …",
+      "empty": "Ihre Merkliste ist leer.",
+      "emptyHint": "Im Gericht merken Sie es mit dem Herz, so wie Sie es zusammengestellt haben.",
+      "toMenu": "Zur Speisekarte",
+      "remove": "{name} von der Merkliste entfernen",
+      "choose": "Auswählen",
+      "customize": "Anpassen",
+      "addFailed": "{name} konnte nicht in den Warenkorb gelegt werden. Bitte versuchen Sie es erneut.",
+      "addAll": "Alle in den Warenkorb",
+      "clear": "Merkliste leeren",
+      "clearTitle": "Merkliste leeren?",
+      "clearDescription": "Alle gemerkten Gerichte werden entfernt."
+    },
+    "wishlistPage": {
+      "title": "Merkliste"
+    },
+    "search": {
+      "title": "Suche",
+      "result": "1 Gericht gefunden für „{query}“ | {count} Gerichte gefunden für „{query}“",
+      "fieldLabel": "Gericht oder Zutat",
+      "searching": "Suche läuft …",
+      "fallbackTitle": "Vielleicht schmeckt Ihnen das",
+      "toHome": "Zur Startseite"
+    }
+  }
+}

@@ -23,9 +23,9 @@ const description = computed(() => props.section.description);
       <span class="font-display text-4xl leading-none md:text-5xl">{{
         name
       }}</span>
-      <span class="font-body text-sm font-medium text-sb-ink-muted"
-        >{{ count }} {{ count === 1 ? "Gericht" : "Gerichte" }}</span
-      >
+      <span class="font-body text-sm font-medium text-sb-ink-muted">{{
+        $t("menu.sectionHeader.dishes", { count }, count)
+      }}</span>
     </h1>
     <p v-if="description" class="font-body text-[15px] text-sb-ink">
       {{ description }}

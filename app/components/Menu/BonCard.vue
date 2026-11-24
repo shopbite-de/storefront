@@ -18,11 +18,12 @@ const emit = defineEmits<{
   select: [dish: Dish];
 }>();
 
+const { t } = useI18n();
 const name = computed(() => props.dish.name);
 const ingredients = computed(() =>
   props.dish.ingredients.map((ingredient) => ingredient.name).join(", "),
 );
-const diets = computed(() => dietLabels(props.dish.diets));
+const diets = computed(() => dietLabels(props.dish.diets, t));
 // Read before the name; the strip with the number is aria-hidden. Built in
 // script: a trailing space in the template would be condensed away.
 // The strip has a fixed width so the cards line up (#441); menu numbers
@@ -37,7 +38,9 @@ const numberSize = computed(() => {
   // Variant numbers like "LF-35-normal": two lines, broken anywhere.
   return "text-xs sm:text-[13px] leading-tight [overflow-wrap:anywhere]";
 });
-const numberLabel = computed(() => `Nr. ${props.dish.number} `);
+const numberLabel = computed(
+  () => `${t("menu.shared.number", { number: props.dish.number })} `,
+);
 const cover = computed(() => (props.photo ? props.dish.media : null));
 
 const needsChoice = computed(() => props.dish.needsChoice);
@@ -46,7 +49,9 @@ const available = computed(() => props.dish.available);
 const { getFormattedMoney } = useCommercePrice();
 const price = computed(() => {
   const formatted = getFormattedMoney(props.dish.price);
-  return props.dish.priceFrom ? `ab ${formatted}` : formatted;
+  return props.dish.priceFrom
+    ? t("menu.shared.priceFrom", { price: formatted })
+    : formatted;
 });
 
 const { quantity } = useProductCartQuantity(() => props.dish.id);
@@ -56,10 +61,13 @@ const { setSelectedDish, addToCart, isLoading } = useAddToCart();
 const { acceptsOrders } = useShopConfig();
 
 const buttonLabel = computed(() => {
-  if (needsChoice.value) return `${name.value} auswählen`;
+  if (needsChoice.value) return t("menu.bonCard.choose", { name: name.value });
   if (quantity.value > 0)
-    return `${name.value}, ${quantity.value} im Warenkorb, noch eine hinzufügen`;
-  return `${name.value} hinzufügen`;
+    return t("menu.bonCard.addAnother", {
+      name: name.value,
+      quantity: quantity.value,
+    });
+  return t("menu.bonCard.add", { name: name.value });
 });
 
 function select() {
@@ -142,12 +150,12 @@ function onLinkClick(event: MouseEvent) {
           <span
             v-if="!available"
             class="text-sm font-semibold text-sb-ink-muted"
-            >Ausverkauft</span
+            >{{ $t("menu.shared.soldOut") }}</span
           >
           <span
             v-else-if="!acceptsOrders && !needsChoice"
             class="text-sm font-semibold text-sb-ink-muted"
-            >Gerade keine Bestellungen</span
+            >{{ $t("menu.bonCard.notOrdering") }}</span
           >
           <!-- above the stretched link, so it adds instead of opening -->
           <SbIconButton

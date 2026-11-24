@@ -1,1 +1,133 @@
-{ "account": {} }
+{
+  "account": {
+    "shared": {
+      "customerAccount": "Kundenkonto",
+      "deliveryAddress": "Lieferadresse",
+      "billingAddress": "Rechnungsadresse",
+      "deliveryAndBillingAddress": "Liefer- und Rechnungsadresse"
+    },
+    "nav": {
+      "overview": "Übersicht",
+      "orders": "Bestellungen",
+      "profile": "Profil",
+      "addresses": "Adressen",
+      "logout": "Abmelden"
+    },
+    "overview": {
+      "title": "Mein Konto",
+      "greeting": "Hallo {name}",
+      "description": "Ihre Daten, Adressen und Bestellungen.",
+      "profileHeading": "Profil",
+      "editProfile": "Profil bearbeiten",
+      "ordersHeading": "Bestellungen",
+      "ordersText": "Alle Bestellungen mit Status und Beleg.",
+      "viewOrders": "Bestellungen ansehen",
+      "manageAddresses": "Adressen verwalten"
+    },
+    "orders": {
+      "pageTitle": "Meine Bestellungen",
+      "title": "Bestellungen",
+      "loading": "Bestellungen werden geladen …",
+      "empty": "Sie haben noch nichts bestellt.",
+      "toHome": "Zur Startseite",
+      "order": "Bestellung {number}",
+      "details": "Details"
+    },
+    "order": {
+      "pageTitle": "Bestellung",
+      "allOrders": "Alle Bestellungen"
+    },
+    "addresses": {
+      "title": "Adressen",
+      "saved": "Die Adresse ist gespeichert.",
+      "created": "Die Adresse ist angelegt.",
+      "deliveryChanged": "Die Lieferadresse ist geändert.",
+      "billingChanged": "Die Rechnungsadresse ist geändert.",
+      "changeFailed": "Die Adresse konnte nicht geändert werden.",
+      "deleted": "Die Adresse ist gelöscht.",
+      "add": "Neue Adresse",
+      "usage": "Verwendung",
+      "edit": "Bearbeiten",
+      "useForDelivery": "Als Lieferadresse",
+      "useForBilling": "Als Rechnungsadresse",
+      "delete": "Löschen",
+      "which": ": {street}, {city}",
+      "editTitle": "Adresse bearbeiten",
+      "addTitle": "Neue Adresse",
+      "deleteTitle": "Adresse löschen?",
+      "deleteConfirm": "Adresse löschen",
+      "deleteFailed": "Die Adresse konnte nicht gelöscht werden. Bitte versuchen Sie es später noch einmal."
+    },
+    "profile": {
+      "title": "Profil",
+      "loading": "Profil wird geladen …",
+      "personalData": "Persönliche Daten",
+      "saved": "Ihre Änderungen sind gespeichert.",
+      "saveFailed": "Speichern fehlgeschlagen.",
+      "tryLater": "Bitte versuchen Sie es später noch einmal.",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail",
+      "emailPassword": "Passwort zur Bestätigung",
+      "emailPasswordHint": "Für eine neue E-Mail-Adresse brauchen wir Ihr Passwort.",
+      "save": "Speichern",
+      "changePassword": "Passwort ändern",
+      "passwordChanged": "Ihr Passwort ist geändert.",
+      "passwordChangedLoggedOut": "Ihr Passwort ist geändert. Bitte melden Sie sich mit dem neuen Passwort wieder an.",
+      "passwordNotChanged": "Das Passwort ist nicht geändert.",
+      "currentPassword": "Aktuelles Passwort",
+      "newPassword": "Neues Passwort",
+      "newPasswordHint": "Mindestens 8 Zeichen",
+      "newPasswordConfirm": "Neues Passwort wiederholen",
+      "deleteHeading": "Kundenkonto löschen",
+      "deleteText": "Löscht Ihr Kundenkonto mit Adressen und Merkliste. Bestellungen bleiben für die gesetzliche Aufbewahrung gespeichert.",
+      "deleteButton": "Konto löschen",
+      "deleteTitle": "Kundenkonto löschen?",
+      "deleteDescription": "Das lässt sich nicht rückgängig machen. Sie werden danach abgemeldet.",
+      "deleteConfirm": "Endgültig löschen",
+      "deleteFailed": "Das Konto konnte nicht gelöscht werden. Bitte versuchen Sie es später noch einmal.",
+      "validation": {
+        "firstNameRequired": "Bitte geben Sie Ihren Vornamen an.",
+        "lastNameRequired": "Bitte geben Sie Ihren Nachnamen an.",
+        "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        "emailPasswordRequired": "Bitte geben Sie Ihr Passwort zur Bestätigung an.",
+        "currentPasswordRequired": "Bitte geben Sie Ihr Passwort an.",
+        "newPasswordTooShort": "Das Passwort braucht mindestens 8 Zeichen.",
+        "passwordsDiffer": "Die Passwörter stimmen nicht überein."
+      }
+    },
+    "addressDetail": {
+      "phone": "Tel. {phone}"
+    },
+    "addressFields": {
+      "company": "Unternehmen",
+      "department": "Abteilung",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "street": "Straße und Hausnummer",
+      "postalCode": "PLZ",
+      "city": "Ort",
+      "didYouMean": "Meinten Sie: {suggestion}?",
+      "applyCorrection": "Übernehmen",
+      "additionalLine": "Adresszusatz",
+      "additionalLineHint": "z. B. Hinterhaus, 2. Stock, Name am Klingelschild",
+      "phone": "Telefon",
+      "phoneHint": "Nur für Rückfragen zur Bestellung"
+    },
+    "addressForm": {
+      "saveFailed": "Die Adresse konnte nicht gespeichert werden.",
+      "tryAgain": "Bitte versuchen Sie es noch einmal.",
+      "business": "Firmenadresse",
+      "save": "Adresse speichern",
+      "validation": {
+        "firstNameRequired": "Bitte geben Sie den Vornamen an.",
+        "lastNameRequired": "Bitte geben Sie den Nachnamen an.",
+        "postalCodeRequired": "Bitte geben Sie die Postleitzahl an.",
+        "companyRequired": "Bitte geben Sie den Firmennamen an."
+      }
+    },
+    "validation": {
+      "businessFieldRequired": "Als Geschäftskunde ist dieses Feld pflicht."
+    }
+  }
+}

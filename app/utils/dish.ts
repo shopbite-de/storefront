@@ -13,27 +13,28 @@ import type {
  * shared/ (a value import broke the server bundle of shops in 2.0.1).
  */
 
-const DIET_LABELS: Readonly<Record<Diet, string>> = {
-  vegetarian: "Vegetarisch",
-  vegan: "Vegan",
-};
+import type { Translate } from "./translate";
 
-/** The diet badges of a dish ("Vegetarisch", "Vegan"). */
-export function dietLabels(diets: readonly Diet[]): string[] {
-  return diets.map((diet) => DIET_LABELS[diet]);
+/** The diet badges of a dish ("Vegetarisch", "Vegan"; `menu.diets.*`). */
+export function dietLabels(diets: readonly Diet[], t: Translate): string[] {
+  return diets.map((diet) => t(`menu.diets.${diet}`));
 }
 
 /** Plain text for the info popover of the dish sheet (#500). */
-export function foodLabelText(labels: FoodLabels): string {
+export function foodLabelText(labels: FoodLabels, t: Translate): string {
   const parts: string[] = [];
   if (labels.allergens.length) {
     parts.push(
-      `Enthält: ${labels.allergens.map((label) => label.name).join(", ")}.`,
+      t("menu.foodLabels.allergensText", {
+        names: labels.allergens.map((label) => label.name).join(", "),
+      }),
     );
   }
   if (labels.additives.length) {
     parts.push(
-      `Zusatzstoffe: ${labels.additives.map((label) => label.name).join(", ")}.`,
+      t("menu.foodLabels.additivesText", {
+        names: labels.additives.map((label) => label.name).join(", "),
+      }),
     );
   }
   return parts.join(" ");

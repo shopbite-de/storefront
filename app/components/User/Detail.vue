@@ -35,8 +35,8 @@ const areAddressesDifferent = computed(() => {
       <h3 class="text-sm font-bold">
         {{
           areAddressesDifferent
-            ? "Lieferadresse"
-            : "Liefer- und Rechnungsadresse"
+            ? $t("account.shared.deliveryAddress")
+            : $t("account.shared.deliveryAndBillingAddress")
         }}
       </h3>
       <CheckoutOrdererAddress
@@ -49,7 +49,9 @@ const areAddressesDifferent = computed(() => {
       v-if="areAddressesDifferent"
       class="flex flex-col gap-2 border-t border-sb-line pt-4"
     >
-      <h3 class="text-sm font-bold">Rechnungsadresse</h3>
+      <h3 class="text-sm font-bold">
+        {{ $t("account.shared.billingAddress") }}
+      </h3>
       <CheckoutOrdererAddress
         :key="orderer.billingAddress.id ?? 'billing'"
         :address="orderer.billingAddress"

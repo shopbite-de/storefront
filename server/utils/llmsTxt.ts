@@ -193,7 +193,9 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
       : undefined,
   ].filter((line): line is string => Boolean(line));
 
-  const hours = groupOpeningHours(input.openingHours ?? { intervals: [] }).map(
+  const hours = groupOpeningHours(input.openingHours ?? { intervals: [] }, {
+    days: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+  }).map(
     (row) =>
       `- ${row.days}: ${row.intervals.length ? row.intervals.join(", ") : "Ruhetag"}`,
   );

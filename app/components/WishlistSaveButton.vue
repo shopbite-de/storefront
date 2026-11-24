@@ -47,7 +47,7 @@ async function toggle() {
 
 <template>
   <SbIconButton
-    :label="`${name} merken`"
+    :label="$t('menu.wishlistSave.label', { name })"
     :pressed="!!saved"
     :disabled="!selection"
     :aria-busy="busy || undefined"
@@ -57,9 +57,9 @@ async function toggle() {
   </SbIconButton>
   <span class="sr-only" role="status">{{
     failed === "full"
-      ? `Ihre Merkliste ist voll (${WISHLIST_LIMIT} Gerichte). Bitte entfernen Sie zuerst ein Gericht.`
+      ? $t("menu.shared.wishlistFull", { limit: WISHLIST_LIMIT })
       : failed
-        ? "Merken hat nicht geklappt. Bitte versuchen Sie es erneut."
+        ? $t("menu.wishlistSave.failed")
         : ""
   }}</span>
 </template>

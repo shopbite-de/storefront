@@ -10,6 +10,10 @@ import {
   sortOpeningHours,
   type Weekday,
 } from "../../shared/domain";
+import { openingHoursWords } from "../support/messages";
+
+// the German words (ADR 0002: the helpers take the locale's words)
+const DE = openingHoursWords("de");
 
 type Row = [Weekday, string, string];
 const hours = (rows: Row[]) =>
@@ -32,7 +36,7 @@ describe("groupOpeningHours", () => {
     ]);
     rows.push(dinner(6));
 
-    expect(groupOpeningHours(hours(rows))).toEqual([
+    expect(groupOpeningHours(hours(rows), DE)).toEqual([
       { days: "Mo", intervals: ["11:30–14:30", "17:30–23:00"] },
       { days: "Di", intervals: [] },
       { days: "Mi–Fr", intervals: ["11:30–14:30", "17:30–23:00"] },
@@ -45,13 +49,14 @@ describe("groupOpeningHours", () => {
     expect(
       groupOpeningHours(
         hours(([1, 2, 3, 4, 5, 6, 7] as Weekday[]).map(dinner)),
+        DE,
       ),
     ).toEqual([{ days: "Mo–So", intervals: ["17:30–23:00"] }]);
   });
 
   it("groups trailing closed days", () => {
     expect(
-      groupOpeningHours(hours(([1, 2, 3, 4, 5] as Weekday[]).map(lunch))),
+      groupOpeningHours(hours(([1, 2, 3, 4, 5] as Weekday[]).map(lunch)), DE),
     ).toEqual([
       { days: "Mo–Fr", intervals: ["11:30–14:30"] },
       { days: "Sa–So", intervals: [] },
@@ -59,7 +64,7 @@ describe("groupOpeningHours", () => {
   });
 
   it("returns no rows without opening hours", () => {
-    expect(groupOpeningHours(hours([]))).toEqual([]);
+    expect(groupOpeningHours(hours([]), DE)).toEqual([]);
   });
 
   it("shows a late-night opening on the day it starts", () => {
@@ -88,26 +93,26 @@ describe("formatTodayHours", () => {
   it("joins the intervals of the weekday in order", () => {
     // 2026-09-14 is a Monday
     expect(
-      formatTodayHours(week, new Date("2026-09-14T10:00:00+02:00"), BERLIN),
+      formatTodayHours(week, new Date("2026-09-14T10:00:00+02:00"), BERLIN, DE),
     ).toBe("Heute 11:30–14:30 und 17:30–23:00");
   });
 
   it("maps Sunday to day 7", () => {
     expect(
-      formatTodayHours(week, new Date("2026-09-13T10:00:00+02:00"), BERLIN),
+      formatTodayHours(week, new Date("2026-09-13T10:00:00+02:00"), BERLIN, DE),
     ).toBe("Heute 11:30–23:00");
   });
 
   it("names a closed day", () => {
     expect(
-      formatTodayHours(week, new Date("2026-09-15T10:00:00+02:00"), BERLIN),
+      formatTodayHours(week, new Date("2026-09-15T10:00:00+02:00"), BERLIN, DE),
     ).toBe("Heute Ruhetag");
   });
 
   it("takes today in the restaurant's time zone", () => {
     // Monday 23:30 UTC is Tuesday in Berlin
     expect(
-      formatTodayHours(week, new Date("2026-09-14T23:30:00Z"), BERLIN),
+      formatTodayHours(week, new Date("2026-09-14T23:30:00Z"), BERLIN, DE),
     ).toBe("Heute Ruhetag");
   });
 });

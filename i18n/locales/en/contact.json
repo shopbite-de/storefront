@@ -1,0 +1,33 @@
+{
+  "contact": {
+    "page": {
+      "title": "Contact",
+      "intro": "Do you have a question or a suggestion? We look forward to hearing from you.",
+      "reservations": "Please book or cancel a table by phone.",
+      "call": "Call:"
+    },
+    "form": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "emailHint": "For our reply",
+      "phone": "Phone",
+      "subject": "Subject",
+      "message": "Message",
+      "honeypot": "Address",
+      "send": "Send message",
+      "writeAnother": "Write another message",
+      "received": "Thank you, we have received your message.",
+      "checkFields": "Please check the highlighted fields.",
+      "sendFailed": "The message could not be sent. Please try again later.",
+      "errors": {
+        "firstName": "Please enter your first name.",
+        "lastName": "Please enter your last name.",
+        "phone": "Please enter your phone number.",
+        "email": "Please enter a valid email address.",
+        "subject": "Please enter a subject.",
+        "comment": "The message needs at least 10 characters."
+      }
+    }
+  }
+}

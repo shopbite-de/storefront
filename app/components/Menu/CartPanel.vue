@@ -14,7 +14,7 @@ const { acceptsOrders } = useShopConfig();
     class="sticky top-6 flex flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6 font-body text-sb-ink"
   >
     <h2 id="cart-panel-title" class="font-display text-[28px] leading-none">
-      Ihre Bestellung
+      {{ $t("menu.cartPanel.title") }}
     </h2>
     <MenuOrderMode />
     <ClientOnly>

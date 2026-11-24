@@ -1,5 +1,15 @@
 import { computed, type Ref } from "vue";
+import { shopLocale } from "#shopbite-locale";
 import type { WishedTimeWindow } from "../utils/restaurantTime";
+
+/** A weekday (1 = Monday … 7 = Sunday) written out in the shop's locale. */
+function longWeekday(weekday: number): string {
+  // 1 January 2024 was a Monday
+  return new Intl.DateTimeFormat(shopLocale.language, {
+    weekday: "long",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(2024, 0, weekday)));
+}
 
 /**
  * The wished time choice of the checkout ("Wann?"): the window in which
@@ -13,8 +23,10 @@ import type { WishedTimeWindow } from "../utils/restaurantTime";
 export function useDeliveryTime(now: Ref<Date>) {
   const { leadTime, fulfillment } = useShippingLeadTime();
   const { schedule } = useServiceSchedule();
-
-  const wording = computed(() => FULFILLMENT_WORDING[fulfillment.value]);
+  // also called outside a component's setup (tests, event handlers)
+  const { t } = useNuxtApp().$i18n;
+  const wording = (key: string) =>
+    t(`order.fulfillment.${fulfillment.value}.${key}`);
 
   const choice = computed<WishedTimeWindow | null>(() =>
     schedule.value
@@ -47,24 +59,31 @@ export function useDeliveryTime(now: Ref<Date>) {
 
   const helperText = computed<string>(() => {
     const current = choice.value;
-    if (!current) return "Lade Informationen...";
+    if (!current) return t("order.deliveryTime.loading");
     switch (current.kind) {
       case "holiday":
-        return "Wegen Betriebsferien geschlossen.";
+        return t("order.deliveryTime.holiday");
       case "closing_day":
-        return `Heute (${weekdayName(current.weekday)}) ist Ruhetag. Bitte an einem anderen Tag bestellen.`;
+        return t("order.deliveryTime.closingDay", {
+          weekday: longWeekday(current.weekday),
+        });
       case "none_left":
-        return `Heute sind keine ${wording.value.times} mehr verfügbar.`;
+        return wording("noneLeftToday");
     }
     if (!open.value) {
-      return `Aktuell keine ${wording.value.time} verfügbar. Bitte später erneut versuchen.`;
+      return wording("noneAvailableNow");
     }
     const { ready, span } = current;
     // today's part: a span carried over from last night starts at 00:00
     const range = `${formatClock(Math.max(span.opens, 0))} – ${formatClosing(span.closes)}`;
-    if (ready <= span.opens) return `Nächster möglicher Zeitraum: ${range}`;
-    const today = ready < MINUTES_PER_DAY ? " (heute)" : "";
-    return `Frühestmöglich ab ${formatClock(ready)}${today}, erlaubt: ${range}`;
+    if (ready <= span.opens)
+      return t("order.deliveryTime.nextPeriod", { range });
+    return t(
+      ready < MINUTES_PER_DAY
+        ? "order.deliveryTime.earliestToday"
+        : "order.deliveryTime.earliest",
+      { time: formatClock(ready), range },
+    );
   });
 
   /** The chosen time as minutes of the window, `null` outside `HH:MM`. */
@@ -109,19 +128,21 @@ export function useDeliveryTime(now: Ref<Date>) {
   function validate(selectedTime: string | null | undefined): string | null {
     if (!selectedTime) return null;
     if (!/^\d{2}:\d{2}$/.test(selectedTime)) {
-      return "Bitte eine gültige Uhrzeit im Format HH:MM eingeben.";
+      return t("order.deliveryTime.invalidFormat");
     }
     if (!open.value) return helperText.value;
     const minutes = minutesOf(selectedTime);
-    if (minutes === null) return "Bitte eine gültige Uhrzeit auswählen.";
+    if (minutes === null) return t("order.deliveryTime.invalidTime");
     if (minutes < open.value.earliest) {
-      return `Die Zeit liegt vor dem frühestmöglichen Zeitpunkt. Frühestens ab ${minTime.value}.`;
+      return t("order.deliveryTime.tooEarly", { time: minTime.value ?? "" });
     }
     if (minutes > open.value.latest) {
-      return `Die Zeit liegt nach dem spätestmöglichen Zeitpunkt. Spätestens bis ${formatClosing(open.value.latest)}.`;
+      return t("order.deliveryTime.tooLate", {
+        time: formatClosing(open.value.latest),
+      });
     }
     if (minutes % WISHED_TIME_STEP !== 0) {
-      return "Bitte eine Zeit in 5-Minuten-Schritten auswählen.";
+      return t("order.deliveryTime.notOnGrid");
     }
     return null;
   }

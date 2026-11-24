@@ -12,7 +12,8 @@ export function useVoucherCode() {
   const voucherCode = ref("");
   const voucherLoading = ref(false);
   const voucherError = ref<string | null>(null);
-  const INVALID = "Der Gutscheincode ist ungültig oder abgelaufen.";
+  const { t } = useNuxtApp().$i18n;
+  const invalid = () => t("order.voucher.invalid");
 
   async function applyVoucher() {
     const code = voucherCode.value.trim();
@@ -34,12 +35,12 @@ export function useVoucherCode() {
           message.code === "voucher_invalid" && message.subjectId === code,
       );
       if (refused) {
-        voucherError.value = refused.text || INVALID;
+        voucherError.value = refused.text || invalid();
       } else {
         voucherCode.value = "";
       }
     } catch {
-      voucherError.value = INVALID;
+      voucherError.value = invalid();
     } finally {
       voucherLoading.value = false;
     }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
+const { t } = useI18n();
 useSeoMeta({
-  title: "Zahlung fehlgeschlagen",
+  title: t("order.paymentFailed.title"),
   robots: "noindex, nofollow",
 });
 
@@ -76,15 +77,14 @@ async function retryPayment() {
   >
     <header class="flex flex-col gap-3">
       <h1 class="font-display text-4xl leading-tight sm:text-5xl">
-        Zahlung fehlgeschlagen
+        {{ $t("order.paymentFailed.title") }}
       </h1>
       <p class="text-lg">
-        Ihre Bestellung ist gespeichert, aber die Zahlung hat nicht geklappt.
-        Wählen Sie eine Zahlungsart und versuchen Sie es noch einmal.
+        {{ $t("order.paymentFailed.intro") }}
       </p>
     </header>
     <p v-if="!order" role="status" class="text-sb-ink-muted">
-      Bestellung wird geladen …
+      {{ $t("order.shared.loadingOrder") }}
     </p>
     <template v-else>
       <section
@@ -92,11 +92,11 @@ async function retryPayment() {
         class="flex flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6"
       >
         <h2 id="zahlung-wiederholen" class="font-display text-2xl">
-          Zahlungsart
+          {{ $t("order.paymentFailed.method") }}
         </h2>
         <SbChoiceGroup
           v-model="selectedPaymentMethodId"
-          legend="Zahlungsart"
+          :legend="$t('order.paymentFailed.method')"
           hide-legend
           variant="cards"
           :options="selectablePaymentMethods ?? []"
@@ -106,8 +106,7 @@ async function retryPayment() {
           role="alert"
           class="rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
         >
-          Die Zahlung konnte nicht gestartet werden. Bitte versuchen Sie es noch
-          einmal oder rufen Sie uns an.
+          {{ $t("order.paymentFailed.startFailed") }}
         </p>
         <SbButton
           block
@@ -115,7 +114,7 @@ async function retryPayment() {
           :loading="isRetrying"
           :disabled="!selectedPaymentMethodId || isRetrying"
           @click="retryPayment"
-          >Jetzt bezahlen</SbButton
+          >{{ $t("order.paymentFailed.payNow") }}</SbButton
         >
       </section>
       <section
@@ -123,7 +122,11 @@ async function retryPayment() {
         class="rounded-sb-card border border-sb-line bg-sb-surface p-6"
       >
         <h2 id="bestellung-details" class="mb-4 font-display text-2xl">
-          Bestellung <span class="tabular-nums">{{ order.number }}</span>
+          <i18n-t keypath="order.paymentFailed.orderHeading" scope="global">
+            <template #number>
+              <span class="tabular-nums">{{ order.number }}</span>
+            </template>
+          </i18n-t>
         </h2>
         <OrderDetail :order="order" />
       </section>

@@ -37,7 +37,7 @@ function increase() {
 <template>
   <div
     role="group"
-    :aria-label="`Menge ${itemName}`"
+    :aria-label="$t('common.stepper.quantity', { item: itemName })"
     :class="[
       'inline-flex items-center rounded-sb-control bg-sb-muted font-body text-sb-ink',
       size === 'lg' ? 'h-14' : 'h-10',
@@ -47,7 +47,9 @@ function increase() {
       type="button"
       class="inline-flex h-full w-11 items-center justify-center rounded-sb-control focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-sb-focus disabled:opacity-40"
       :aria-label="
-        showRemove ? `${itemName} entfernen` : `${itemName}, eine weniger`
+        showRemove
+          ? $t('common.stepper.remove', { item: itemName })
+          : $t('common.stepper.decrease', { item: itemName })
       "
       :disabled="atMin && !removable"
       @click="decrease"
@@ -62,7 +64,7 @@ function increase() {
     <button
       type="button"
       class="inline-flex h-full w-11 items-center justify-center rounded-sb-control focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-sb-focus disabled:opacity-40"
-      :aria-label="`${itemName}, eine mehr`"
+      :aria-label="$t('common.stepper.increase', { item: itemName })"
       :disabled="model >= max"
       @click="increase"
     >

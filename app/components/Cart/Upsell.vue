@@ -32,7 +32,7 @@ const dishes = computed(() =>
       id="cart-upsell-title"
       class="text-xs font-bold tracking-[0.14em] text-sb-accent uppercase"
     >
-      Dazu passt
+      {{ $t("order.upsell.title") }}
     </h3>
     <ul class="flex flex-col">
       <li
@@ -48,7 +48,7 @@ const dishes = computed(() =>
         </span>
         <SbIconButton
           variant="tint"
-          :label="`${dish.name} in den Warenkorb`"
+          :label="$t('order.upsell.add', { name: dish.name })"
           :disabled="!dish.available || isAdding(dish.id)"
           @click="addUpsellDish(dish)"
         >

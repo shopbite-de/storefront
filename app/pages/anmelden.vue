@@ -1,6 +1,8 @@
 <script setup lang="ts">
+const { t } = useI18n();
+
 useSeoMeta({
-  title: "Anmelden",
+  title: t("auth.loginPage.title"),
 });
 
 const { isLoggedIn } = useCustomer();
@@ -24,14 +26,14 @@ function handleLoginSuccess() {
 </script>
 
 <template>
-  <UserAuthPanel title="Anmelden">
+  <UserAuthPanel :title="$t('auth.loginPage.title')">
     <UserLoginForm @login-success="handleLoginSuccess" />
     <template #footer>
-      Noch kein Kundenkonto?
+      {{ $t("auth.loginPage.noAccount") }}
       <NuxtLink
         :to="{ name: 'registrierung' }"
         class="font-semibold text-sb-primary-ink underline underline-offset-4"
-        >Jetzt registrieren</NuxtLink
+        >{{ $t("auth.loginPage.registerLink") }}</NuxtLink
       >
     </template>
   </UserAuthPanel>

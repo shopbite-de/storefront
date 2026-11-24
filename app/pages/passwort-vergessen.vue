@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import * as z from "zod";
 
+const { t } = useI18n();
+
 useHead({
-  title: "Passwort vergessen",
+  title: t("auth.passwordForgottenPage.title"),
   meta: [
     { name: "robots", content: "noindex, nofollow" },
     { name: "googlebot", content: "noindex, nofollow" },
@@ -14,7 +16,7 @@ useHead({
 const { requestPasswordReset } = useCustomer();
 
 const schema = z.object({
-  email: z.string().email("Ungültige E-Mail-Adresse"),
+  email: z.string().email(),
 });
 
 const sendRecoveryMail = (email: string) => requestPasswordReset(email);
@@ -30,7 +32,7 @@ async function onSubmit() {
   result.value = null;
   const parsed = schema.safeParse({ email: email.value });
   if (!parsed.success) {
-    emailError.value = "Bitte geben Sie eine gültige E-Mail-Adresse ein.";
+    emailError.value = t("auth.shared.emailInvalid");
     return;
   }
   emailError.value = undefined;
@@ -49,13 +51,9 @@ async function onSubmit() {
 }
 </script>
 <template>
-  <UserAuthPanel title="Passwort vergessen">
+  <UserAuthPanel :title="$t('auth.passwordForgottenPage.title')">
     <template #intro>
-      <p>
-        Geben Sie die E-Mail-Adresse Ihres Kundenkontos ein. Gibt es dazu ein
-        Konto, bekommen Sie in den nächsten Minuten eine E-Mail mit einem Link
-        für ein neues Passwort.
-      </p>
+      <p>{{ $t("auth.passwordForgottenPage.intro") }}</p>
     </template>
     <div
       v-if="result === 'sent'"
@@ -64,11 +62,8 @@ async function onSubmit() {
       tabindex="-1"
       class="flex flex-col gap-2"
     >
-      <strong>E-Mail ist unterwegs</strong>
-      <p>
-        Bitte schauen Sie in Ihr Postfach, auch in den Spam-Ordner. Der Link ist
-        nur begrenzt gültig.
-      </p>
+      <strong>{{ $t("auth.passwordForgottenPage.sentTitle") }}</strong>
+      <p>{{ $t("auth.passwordForgottenPage.sentText") }}</p>
     </div>
     <form
       v-else
@@ -83,12 +78,14 @@ async function onSubmit() {
         tabindex="-1"
         class="rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
       >
-        <strong class="block">Die E-Mail konnte nicht gesendet werden.</strong>
-        Bitte versuchen Sie es später noch einmal.
+        <strong class="block">{{
+          $t("auth.passwordForgottenPage.failedTitle")
+        }}</strong>
+        {{ $t("auth.passwordForgottenPage.failedText") }}
       </div>
       <SbField
         v-slot="{ id, describedBy, invalid }"
-        label="E-Mail"
+        :label="$t('auth.shared.emailLabel')"
         :error="emailError"
       >
         <SbInput
@@ -101,15 +98,15 @@ async function onSubmit() {
           :invalid="invalid"
         />
       </SbField>
-      <SbButton type="submit" size="lg" block :loading="sending"
-        >Link senden</SbButton
-      >
+      <SbButton type="submit" size="lg" block :loading="sending">{{
+        $t("auth.passwordForgottenPage.submit")
+      }}</SbButton>
     </form>
     <template #footer>
       <NuxtLink
         :to="{ name: 'anmelden' }"
         class="font-semibold text-sb-primary-ink underline underline-offset-4"
-        >Zurück zur Anmeldung</NuxtLink
+        >{{ $t("auth.passwordForgottenPage.backToLogin") }}</NuxtLink
       >
     </template>
   </UserAuthPanel>

@@ -5,8 +5,10 @@ definePageMeta({
   layout: "account",
 });
 
+const { t } = useI18n();
+
 useSeoMeta({
-  title: "Adressen",
+  title: t("account.addresses.title"),
 });
 
 // The account's address book through the BFF (ADR 0001, step 6).
@@ -40,8 +42,8 @@ function openSheet(address?: Address) {
 function onSaved() {
   sheetOpen.value = false;
   notice.value = editedAddress.value
-    ? "Die Adresse ist gespeichert."
-    : "Die Adresse ist angelegt.";
+    ? t("account.addresses.saved")
+    : t("account.addresses.created");
 }
 
 async function setDefault(kind: "shipping" | "billing", addressId: string) {
@@ -52,16 +54,23 @@ async function setDefault(kind: "shipping" | "billing", addressId: string) {
     );
     notice.value =
       kind === "shipping"
-        ? "Die Lieferadresse ist geändert."
-        : "Die Rechnungsadresse ist geändert.";
+        ? t("account.addresses.deliveryChanged")
+        : t("account.addresses.billingChanged");
   } catch (error) {
     console.error(
       "[account] default address",
       domainErrorCode(error) ?? "no answer",
     );
-    notice.value = "Die Adresse konnte nicht geändert werden.";
+    notice.value = t("account.addresses.changeFailed");
   }
 }
+
+// the address a button acts on, for screen readers
+const which = (address: Address) =>
+  t("account.addresses.which", {
+    street: address.street,
+    city: address.city,
+  });
 
 const isDefault = (address: Address) =>
   address.id === userDefaultShippingAddress.value?.id ||
@@ -86,7 +95,7 @@ async function onDelete() {
   try {
     await remove(deleting.value.id);
     deleteOpen.value = false;
-    notice.value = "Die Adresse ist gelöscht.";
+    notice.value = t("account.addresses.deleted");
   } catch (error) {
     console.error(
       "[account] delete address",
@@ -101,7 +110,7 @@ async function onDelete() {
 
 <template>
   <div class="font-body text-sb-ink">
-    <UserAccountHeader title="Adressen" />
+    <UserAccountHeader :title="$t('account.addresses.title')" />
     <p
       role="status"
       :class="
@@ -114,7 +123,7 @@ async function onDelete() {
     </p>
     <SbButton class="mb-6" @click="openSheet()">
       <SbIcon name="plus" />
-      Neue Adresse
+      {{ $t("account.addresses.add") }}
     </SbButton>
     <ul class="grid gap-4 md:grid-cols-2">
       <li
@@ -125,55 +134,47 @@ async function onDelete() {
         <ul
           v-if="isDefault(address)"
           class="flex flex-wrap gap-2"
-          aria-label="Verwendung"
+          :aria-label="$t('account.addresses.usage')"
         >
           <li
             v-if="address.id === userDefaultShippingAddress?.id"
             class="rounded-sb-control bg-sb-primary-tint px-3 py-1 text-sm font-bold text-sb-primary-ink"
           >
-            Lieferadresse
+            {{ $t("account.shared.deliveryAddress") }}
           </li>
           <li
             v-if="address.id === userDefaultBillingAddress?.id"
             class="rounded-sb-control bg-sb-muted px-3 py-1 text-sm font-bold"
           >
-            Rechnungsadresse
+            {{ $t("account.shared.billingAddress") }}
           </li>
         </ul>
         <AddressDetail :address="address" />
         <div class="mt-auto flex flex-wrap gap-2">
           <SbButton variant="secondary" @click="openSheet(address)">
-            Bearbeiten
-            <span class="sr-only"
-              >: {{ address.street }}, {{ address.city }}</span
-            >
+            {{ $t("account.addresses.edit") }}
+            <span class="sr-only">{{ which(address) }}</span>
           </SbButton>
           <SbButton
             v-if="address.id !== userDefaultShippingAddress?.id"
             variant="ghost"
             @click="setDefault('shipping', address.id!)"
-            >Als Lieferadresse
-            <span class="sr-only"
-              >: {{ address.street }}, {{ address.city }}</span
-            ></SbButton
+            >{{ $t("account.addresses.useForDelivery") }}
+            <span class="sr-only">{{ which(address) }}</span></SbButton
           >
           <SbButton
             v-if="address.id !== userDefaultBillingAddress?.id"
             variant="ghost"
             @click="setDefault('billing', address.id!)"
-            >Als Rechnungsadresse
-            <span class="sr-only"
-              >: {{ address.street }}, {{ address.city }}</span
-            ></SbButton
+            >{{ $t("account.addresses.useForBilling") }}
+            <span class="sr-only">{{ which(address) }}</span></SbButton
           >
           <SbButton
             v-if="!isDefault(address)"
             variant="ghost"
             @click="askDelete(address)"
-            >Löschen
-            <span class="sr-only"
-              >: {{ address.street }}, {{ address.city }}</span
-            ></SbButton
+            >{{ $t("account.addresses.delete") }}
+            <span class="sr-only">{{ which(address) }}</span></SbButton
           >
         </div>
       </li>
@@ -181,7 +182,11 @@ async function onDelete() {
     <SbSheet
       v-if="sheetOpen"
       v-model:open="sheetOpen"
-      :title="editedAddress ? 'Adresse bearbeiten' : 'Neue Adresse'"
+      :title="
+        editedAddress
+          ? $t('account.addresses.editTitle')
+          : $t('account.addresses.addTitle')
+      "
     >
       <AddressForm
         :key="editedAddress?.id ?? 'neu'"
@@ -193,15 +198,14 @@ async function onDelete() {
     <SbConfirmDialog
       v-if="deleteOpen"
       v-model:open="deleteOpen"
-      title="Adresse löschen?"
+      :title="$t('account.addresses.deleteTitle')"
       :description="`${deleting?.street}, ${deleting?.postalCode} ${deleting?.city}`"
-      confirm-label="Adresse löschen"
+      :confirm-label="$t('account.addresses.deleteConfirm')"
       :loading="deleteBusy"
       @confirm="onDelete"
     >
       <p v-if="deleteFailed" role="alert" class="text-sm font-semibold">
-        Die Adresse konnte nicht gelöscht werden. Bitte versuchen Sie es später
-        noch einmal.
+        {{ $t("account.addresses.deleteFailed") }}
       </p>
     </SbConfirmDialog>
   </div>

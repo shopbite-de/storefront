@@ -6,10 +6,11 @@
 withDefaults(
   defineProps<{
     title: string;
+    /** Default: "Kundenkonto" (`auth.authPanel.kicker`). */
     kicker?: string;
     wide?: boolean;
   }>(),
-  { kicker: "Kundenkonto", wide: false },
+  { kicker: undefined, wide: false },
 );
 </script>
 
@@ -22,7 +23,7 @@ withDefaults(
   >
     <header class="flex flex-col gap-2">
       <p class="text-sm font-bold tracking-wide text-sb-accent uppercase">
-        {{ kicker }}
+        {{ kicker ?? $t("auth.authPanel.kicker") }}
       </p>
       <h1 class="font-display text-4xl leading-tight sm:text-5xl">
         {{ title }}

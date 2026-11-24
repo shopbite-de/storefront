@@ -4,7 +4,8 @@ import type { AddressSchema } from "~/validation/registrationSchema";
 /**
  * Address fields of the presets (#443): the same model, autocomplete
  * check and correction as Address/Fields.vue, with the base components.
- * `errors` maps "<prefix>.<field>" to the message of the failed check;
+ * `errors` maps "<prefix>.<field>" to the translated message of the failed
+ * check;
  * every input carries its `autocomplete` token, so browsers can fill it.
  */
 const model = defineModel<AddressSchema>({ required: true });
@@ -41,7 +42,7 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
       <SbField
         :id="fieldId('company')"
         v-slot="{ id, describedBy, invalid }"
-        label="Unternehmen"
+        :label="$t('account.addressFields.company')"
         :error="error('company')"
         class="sm:col-span-3"
       >
@@ -57,7 +58,7 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
       <SbField
         :id="fieldId('department')"
         v-slot="{ id, describedBy, invalid }"
-        label="Abteilung"
+        :label="$t('account.addressFields.department')"
         optional
         :error="error('department')"
         class="sm:col-span-3"
@@ -76,7 +77,7 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
       <SbField
         :id="fieldId('firstName')"
         v-slot="{ id, describedBy, invalid }"
-        label="Vorname"
+        :label="$t('account.addressFields.firstName')"
         :error="error('firstName')"
         class="sm:col-span-3"
       >
@@ -92,7 +93,7 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
       <SbField
         :id="fieldId('lastName')"
         v-slot="{ id, describedBy, invalid }"
-        label="Nachname"
+        :label="$t('account.addressFields.lastName')"
         :error="error('lastName')"
         class="sm:col-span-3"
       >
@@ -110,7 +111,7 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
     <SbField
       :id="fieldId('street')"
       v-slot="{ id, describedBy, invalid }"
-      label="Straße und Hausnummer"
+      :label="$t('account.addressFields.street')"
       :error="error('street')"
       class="sm:col-span-6"
     >
@@ -127,7 +128,7 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
     <SbField
       :id="fieldId('zipcode')"
       v-slot="{ id, describedBy, invalid }"
-      label="PLZ"
+      :label="$t('account.addressFields.postalCode')"
       :error="error('zipcode')"
       class="sm:col-span-2"
     >
@@ -144,7 +145,7 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
     <SbField
       :id="fieldId('city')"
       v-slot="{ id, describedBy, invalid }"
-      label="Ort"
+      :label="$t('account.addressFields.city')"
       :error="error('city')"
       class="sm:col-span-4"
     >
@@ -163,19 +164,25 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
       role="status"
       class="flex flex-col gap-3 rounded-sb-control bg-sb-primary-tint p-4 font-body text-sb-ink sm:col-span-6 sm:flex-row sm:items-center sm:justify-between"
     >
-      <span>
-        Meinten Sie: <strong>{{ correction?.label }}</strong>?
-      </span>
-      <SbButton variant="secondary" @click="applyCorrection"
-        >Übernehmen</SbButton
+      <i18n-t
+        keypath="account.addressFields.didYouMean"
+        tag="span"
+        scope="global"
       >
+        <template #suggestion>
+          <strong>{{ correction?.label }}</strong>
+        </template>
+      </i18n-t>
+      <SbButton variant="secondary" @click="applyCorrection">{{
+        $t("account.addressFields.applyCorrection")
+      }}</SbButton>
     </div>
 
     <SbField
       :id="fieldId('additionalAddressLine1')"
       v-slot="{ id, describedBy, invalid }"
-      label="Adresszusatz"
-      hint="z. B. Hinterhaus, 2. Stock, Name am Klingelschild"
+      :label="$t('account.addressFields.additionalLine')"
+      :hint="$t('account.addressFields.additionalLineHint')"
       optional
       :error="error('additionalAddressLine1')"
       class="sm:col-span-6"
@@ -193,8 +200,8 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
     <SbField
       :id="fieldId('phoneNumber')"
       v-slot="{ id, describedBy, invalid }"
-      label="Telefon"
-      hint="Nur für Rückfragen zur Bestellung"
+      :label="$t('account.addressFields.phone')"
+      :hint="$t('account.addressFields.phoneHint')"
       :error="error('phoneNumber')"
       class="sm:col-span-6"
     >

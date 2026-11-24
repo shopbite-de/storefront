@@ -1,3 +1,5 @@
+import { shopLocale } from "#shopbite-locale";
+
 export interface AddressSuggestion {
   street: string;
   city: string;
@@ -32,8 +34,10 @@ export function useAddressAutocomplete() {
 
     try {
       // The server route applies the configured area
-      // (`addressAutocomplete.boundingBox`) itself.
-      const query = { text, lang: "de", limit: 5 };
+      // (`addressAutocomplete.boundingBox`) itself. Suggestions in the
+      // shop's language (ADR 0002), e.g. "de" of "de-DE".
+      const lang = shopLocale.language.split("-")[0]!.toLowerCase();
+      const query = { text, lang, limit: 5 };
 
       const { data } = await useFetch<GeoapifyResponse>(
         "/api/address/autocomplete",

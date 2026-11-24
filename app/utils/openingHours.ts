@@ -8,13 +8,26 @@ import {
 
 /** A run of consecutive weekdays with identical opening hours. */
 export type OpeningHoursRow = {
-  /** e.g. `Mo` or `Mi–Fr` */
+  /** e.g. `Mo` or `Mi–Fr` (the locale's day labels) */
   days: string;
   /** e.g. `["11:30–14:30", "17:30–23:00"]`; empty on closed days */
   intervals: string[];
 };
 
-const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
+/**
+ * The words of the opening hours in the shop's locale (ADR 0002), from the
+ * messages `common.hours.*`; the server's llms.txt passes its own.
+ */
+export interface OpeningHoursWords {
+  /** Short labels of Monday … Sunday, e.g. `Mo` … `So`. */
+  days: readonly string[];
+  /** Today's intervals as a sentence, e.g. `Heute 11:30–14:30`. */
+  today: (intervals: string) => string;
+  /** A closed day, e.g. `Heute Ruhetag`. */
+  closedToday: string;
+  /** The word between two intervals, e.g. `und`. */
+  and: string;
+}
 
 /**
  * Intervals of one weekday (1 = Monday … 7 = Sunday), e.g.
@@ -39,14 +52,15 @@ export function formatTodayHours(
   hours: OpeningHours,
   instant: Date,
   timeZone: string,
+  words: Pick<OpeningHoursWords, "today" | "closedToday" | "and">,
 ): string {
   const intervals = intervalsForDay(
     hours,
     restaurantNow(instant, timeZone).weekday,
   );
   return intervals.length === 0
-    ? "Heute Ruhetag"
-    : `Heute ${intervals.join(" und ")}`;
+    ? words.closedToday
+    : words.today(intervals.join(` ${words.and} `));
 }
 
 /**
@@ -54,7 +68,11 @@ export function formatTodayHours(
  * Sunday) with the same intervals share a row. Returns an empty list if no
  * day has opening hours.
  */
-export function groupOpeningHours(hours: OpeningHours): OpeningHoursRow[] {
+export function groupOpeningHours(
+  hours: OpeningHours,
+  words: Pick<OpeningHoursWords, "days">,
+): OpeningHoursRow[] {
+  const DAY_LABELS = words.days;
   const intervalsByDay = DAY_LABELS.map((_, index) =>
     intervalsForDay(hours, (index + 1) as Weekday),
   );

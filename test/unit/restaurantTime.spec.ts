@@ -9,7 +9,9 @@ import {
   serviceSpans,
   storeStatusAt,
   wishedTimeWindow,
+  type NextOpeningWords,
 } from "../../app/utils/restaurantTime";
+import { messages } from "../support/messages";
 import {
   holiday,
   openingInterval,
@@ -116,44 +118,73 @@ describe("servicePeriodsOn", () => {
   });
 });
 
+function nextOpeningWords(code: string): NextOpeningWords {
+  const { t } = messages(code);
+  return {
+    weekdays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((day) =>
+      t(`common.weekdays.${day}`),
+    ),
+    today: (time) => t("common.storeStatus.nextOpening.today", { time }),
+    tomorrow: (time) => t("common.storeStatus.nextOpening.tomorrow", { time }),
+    later: (parts) => t("common.storeStatus.nextOpening.later", parts),
+  };
+}
+const DE = nextOpeningWords("de");
+
 describe("storeStatusAt", () => {
   it("is open until the end of the current span", () => {
-    expect(storeStatusAt(berlin(18, "12:30"), SCHEDULE)).toEqual({
+    expect(storeStatusAt(berlin(18, "12:30"), SCHEDULE, DE)).toEqual({
       open: true,
       closesAt: "14:30",
     });
   });
 
   it("closes a late-night span after midnight", () => {
-    expect(storeStatusAt(berlin(20, "23:00"), SCHEDULE)).toEqual({
+    expect(storeStatusAt(berlin(20, "23:00"), SCHEDULE, DE)).toEqual({
       open: true,
       closesAt: "01:30",
     });
-    expect(storeStatusAt(berlin(21, "00:45"), SCHEDULE)).toEqual({
+    expect(storeStatusAt(berlin(21, "00:45"), SCHEDULE, DE)).toEqual({
       open: true,
       closesAt: "01:30",
     });
   });
 
   it("says 24:00 for a span up to the end of the day", () => {
-    expect(storeStatusAt(berlin(22, "20:00"), SCHEDULE)).toEqual({
+    expect(storeStatusAt(berlin(22, "20:00"), SCHEDULE, DE)).toEqual({
       open: true,
       closesAt: "24:00",
     });
   });
 
   it("names the next opening today, tomorrow or later", () => {
-    expect(storeStatusAt(berlin(18, "15:00"), SCHEDULE)).toEqual({
+    expect(storeStatusAt(berlin(18, "15:00"), SCHEDULE, DE)).toEqual({
       open: false,
       nextOpening: "17:30 Uhr",
     });
-    expect(storeStatusAt(berlin(18, "23:30"), SCHEDULE)).toEqual({
+    expect(storeStatusAt(berlin(18, "23:30"), SCHEDULE, DE)).toEqual({
       open: false,
       nextOpening: "morgen um 11:30 Uhr",
     });
-    expect(storeStatusAt(berlin(23, "10:00"), SCHEDULE)).toEqual({
+    expect(storeStatusAt(berlin(23, "10:00"), SCHEDULE, DE)).toEqual({
       open: false,
       nextOpening: "Mittwoch, 25.11. um 11:30 Uhr",
+    });
+  });
+
+  it("names the next opening in English", () => {
+    const EN = nextOpeningWords("en");
+    expect(storeStatusAt(berlin(18, "15:00"), SCHEDULE, EN)).toEqual({
+      open: false,
+      nextOpening: "at 17:30",
+    });
+    expect(storeStatusAt(berlin(18, "23:30"), SCHEDULE, EN)).toEqual({
+      open: false,
+      nextOpening: "tomorrow at 11:30",
+    });
+    expect(storeStatusAt(berlin(23, "10:00"), SCHEDULE, EN)).toEqual({
+      open: false,
+      nextOpening: "Wednesday 25/11 at 11:30",
     });
   });
 
@@ -164,7 +195,7 @@ describe("storeStatusAt", () => {
         holiday({ id: "h", firstDay: "2026-11-18", lastDay: "2026-11-19" }),
       ],
     };
-    expect(storeStatusAt(berlin(18, "12:30"), schedule)).toEqual({
+    expect(storeStatusAt(berlin(18, "12:30"), schedule, DE)).toEqual({
       open: false,
       nextOpening: "Freitag, 20.11. um 11:30 Uhr",
     });
@@ -173,9 +204,9 @@ describe("storeStatusAt", () => {
   it("decides by the restaurant's clock, not the visitor's", () => {
     // 12:30 in Berlin is 06:30 in New York: open in Berlin
     const instant = berlin(18, "12:30");
-    expect(storeStatusAt(instant, SCHEDULE).open).toBe(true);
+    expect(storeStatusAt(instant, SCHEDULE, DE).open).toBe(true);
     expect(
-      storeStatusAt(instant, { ...SCHEDULE, timeZone: "America/New_York" })
+      storeStatusAt(instant, { ...SCHEDULE, timeZone: "America/New_York" }, DE)
         .open,
     ).toBe(false);
   });

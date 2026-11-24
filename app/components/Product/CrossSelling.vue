@@ -68,15 +68,20 @@ function hiddenCount(group: ExtraGroup) {
   return group.extras.length - visibleExtras(group).length;
 }
 
+const { t } = useI18n();
+
 function summary(group: ExtraGroup) {
   const selected = group.extras.filter(isSelected);
   const [first] = selected;
-  if (!first) return "optional";
+  if (!first) return t("menu.crossSelling.optional");
   const price = sumMoney(
     selected.map((extra) => extra.price),
     first.price.currency,
   );
-  return `${selected.length} gewählt · +${getFormattedMoney(price)}`;
+  return t("menu.crossSelling.selected", {
+    count: selected.length,
+    price: getFormattedMoney(price),
+  });
 }
 
 const baseId = useId();
@@ -125,7 +130,7 @@ watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
         <SbField
           v-if="group.extras.length > SEARCH_THRESHOLD"
           v-slot="{ id }"
-          :label="`${group.name} durchsuchen`"
+          :label="$t('menu.crossSelling.searchLabel', { group: group.name })"
           hide-label
           class="mb-1"
         >
@@ -133,7 +138,12 @@ watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
             :id="id"
             v-model="queries[group.name]"
             type="search"
-            :placeholder="`${group.extras.length} ${group.name} durchsuchen`"
+            :placeholder="
+              $t('menu.crossSelling.searchPlaceholder', {
+                count: group.extras.length,
+                group: group.name,
+              })
+            "
           />
         </SbField>
         <div role="group" :aria-label="group.name">
@@ -153,7 +163,7 @@ watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
           class="py-2 text-sm text-sb-ink-muted"
           role="status"
         >
-          Keine Treffer
+          {{ $t("menu.crossSelling.noMatches") }}
         </p>
         <SbButton
           v-if="hiddenCount(group) > 0"
@@ -161,7 +171,7 @@ watch(selectedExtras, () => emit("extras-selected", selectedExtras.value), {
           class="self-start"
           @click="expandedGroups = [...expandedGroups, group.name]"
         >
-          Alle {{ group.extras.length }} anzeigen
+          {{ $t("menu.crossSelling.showAll", { count: group.extras.length }) }}
           <template #trailing><SbIcon name="chevron-down" /></template>
         </SbButton>
       </div>

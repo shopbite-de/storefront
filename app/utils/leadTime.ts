@@ -48,23 +48,16 @@ export function fulfillmentLeadTime(
   );
 }
 
-/** German wording of the time choice per fulfillment. */
-export const FULFILLMENT_WORDING = {
-  delivery: {
-    wishedTime: "Wunschlieferzeit",
-    time: "Lieferzeit",
-    times: "Lieferzeiten",
-    leadTimeHint: (minutes: number) =>
-      `Lieferzeit ca. ${minutes} Minuten, zu Stoßzeiten kann es etwas länger dauern.`,
-  },
-  pickup: {
-    wishedTime: "Wunschabholzeit",
-    time: "Abholzeit",
-    times: "Abholzeiten",
-    leadTimeHint: (minutes: number) =>
-      `Abholbereit in ca. ${minutes} Minuten, zu Stoßzeiten kann es etwas länger dauern.`,
-  },
-} as const satisfies Record<Fulfillment, unknown>;
+/**
+ * The prefixes of the wished time in the order's customer comment. They
+ * are a protocol, not wording: the receipt printer and the backoffice read
+ * them, so they stay German in every locale (ADR 0002). The checkout's
+ * words for the time choice are the messages `order.fulfillment.*`.
+ */
+const WISHED_TIME_PREFIX = {
+  delivery: "Wunschlieferzeit",
+  pickup: "Wunschabholzeit",
+} as const satisfies Record<Fulfillment, string>;
 
 /**
  * The order's customer comment carries the wished time, e.g.
@@ -74,7 +67,7 @@ export function wishedTimeComment(
   fulfillment: Fulfillment,
   time: string,
 ): string {
-  return `${FULFILLMENT_WORDING[fulfillment].wishedTime}: ${time}`;
+  return `${WISHED_TIME_PREFIX[fulfillment]}: ${time}`;
 }
 
 /**

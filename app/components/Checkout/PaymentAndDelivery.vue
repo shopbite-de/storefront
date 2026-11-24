@@ -108,7 +108,7 @@ watch(selectedShippingMethodId, async (newValue: string | undefined) => {
     <SbChoiceGroup
       v-if="props.part === 'shipping'"
       v-model="shippingModel"
-      legend="Versandarten"
+      :legend="$t('order.paymentAndDelivery.shippingLegend')"
       hide-legend
       variant="cards"
       :options="shippingOptions"
@@ -116,7 +116,7 @@ watch(selectedShippingMethodId, async (newValue: string | undefined) => {
     <SbChoiceGroup
       v-else
       v-model="paymentModel"
-      legend="Zahlungsarten"
+      :legend="$t('order.paymentAndDelivery.paymentLegend')"
       hide-legend
       variant="cards"
       :options="paymentOptions"
@@ -127,8 +127,8 @@ watch(selectedShippingMethodId, async (newValue: string | undefined) => {
     >
       {{
         props.part === "shipping"
-          ? "Liefergebiet und Versandkosten"
-          : "Mehr zu den Zahlungsarten"
+          ? $t("order.paymentAndDelivery.shippingLink")
+          : $t("order.paymentAndDelivery.paymentLink")
       }}
     </NuxtLink>
   </div>
@@ -136,15 +136,15 @@ watch(selectedShippingMethodId, async (newValue: string | undefined) => {
     <section class="flex flex-col gap-3" aria-labelledby="checkout-shipping">
       <div class="flex items-center justify-between gap-3">
         <h2 id="checkout-shipping" class="font-display text-[28px]">
-          Lieferung oder Abholung
+          {{ $t("order.shared.deliveryOrPickup") }}
         </h2>
         <SbButton variant="ghost" :to="shopLocale.contentPaths.shipping">
-          Versandarten erklärt
+          {{ $t("order.paymentAndDelivery.shippingExplained") }}
         </SbButton>
       </div>
       <SbChoiceGroup
         v-model="shippingModel"
-        legend="Versandarten"
+        :legend="$t('order.paymentAndDelivery.shippingLegend')"
         hide-legend
         variant="cards"
         :options="shippingOptions"
@@ -153,15 +153,15 @@ watch(selectedShippingMethodId, async (newValue: string | undefined) => {
     <section class="flex flex-col gap-3" aria-labelledby="checkout-payment">
       <div class="flex items-center justify-between gap-3">
         <h2 id="checkout-payment" class="font-display text-[28px]">
-          Bezahlung
+          {{ $t("order.shared.payment") }}
         </h2>
         <SbButton variant="ghost" :to="shopLocale.contentPaths.shipping">
-          Zahlungsarten erklärt
+          {{ $t("order.paymentAndDelivery.paymentExplained") }}
         </SbButton>
       </div>
       <SbChoiceGroup
         v-model="paymentModel"
-        legend="Zahlungsarten"
+        :legend="$t('order.paymentAndDelivery.paymentLegend')"
         hide-legend
         variant="cards"
         :options="paymentOptions"

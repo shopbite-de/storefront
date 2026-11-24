@@ -10,30 +10,57 @@ import {
 } from "../../app/utils/dish";
 import { dish, eur, pizzaWithSizes, variant } from "../support/dishes";
 import { cartLine } from "../support/cart";
+import { messages } from "../support/messages";
+
+const { t } = messages("de");
+const { t: tEn } = messages("en");
 
 describe("dietLabels", () => {
   it("names the diets as the menu card shows them", () => {
-    expect(dietLabels(["vegetarian"])).toEqual(["Vegetarisch"]);
-    expect(dietLabels(["vegan"])).toEqual(["Vegan"]);
-    expect(dietLabels([])).toEqual([]);
+    expect(dietLabels(["vegetarian"], t)).toEqual(["Vegetarisch"]);
+    expect(dietLabels(["vegan"], t)).toEqual(["Vegan"]);
+    expect(dietLabels([], t)).toEqual([]);
+  });
+
+  it("names them in English", () => {
+    expect(dietLabels(["vegetarian", "vegan"], tEn)).toEqual([
+      "Vegetarian",
+      "Vegan",
+    ]);
   });
 });
 
 describe("foodLabelText", () => {
   it("writes plain text", () => {
     expect(
-      foodLabelText({
-        allergens: [
-          { code: "A", name: "Weizen" },
-          { code: "G", name: "Milch" },
-        ],
-        additives: [{ code: "1", name: "mit Farbstoff" }],
-        checked: true,
-      }),
+      foodLabelText(
+        {
+          allergens: [
+            { code: "A", name: "Weizen" },
+            { code: "G", name: "Milch" },
+          ],
+          additives: [{ code: "1", name: "mit Farbstoff" }],
+          checked: true,
+        },
+        t,
+      ),
     ).toBe("Enthält: Weizen, Milch. Zusatzstoffe: mit Farbstoff.");
-    expect(foodLabelText({ allergens: [], additives: [], checked: true })).toBe(
-      "",
-    );
+    expect(
+      foodLabelText({ allergens: [], additives: [], checked: true }, t),
+    ).toBe("");
+  });
+
+  it("writes it in English", () => {
+    expect(
+      foodLabelText(
+        {
+          allergens: [{ code: "A", name: "Wheat" }],
+          additives: [{ code: "1", name: "with colouring" }],
+          checked: true,
+        },
+        tEn,
+      ),
+    ).toBe("Contains: Wheat. Additives: with colouring.");
   });
 });
 

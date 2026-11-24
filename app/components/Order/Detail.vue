@@ -10,6 +10,7 @@ import type { Order } from "../../../shared/domain";
 const props = defineProps<{ order: Order }>();
 
 const { getFormattedMoney } = useCommercePrice();
+const { t } = useI18n();
 
 // The checkout's wished time ("Wunschlieferzeit"/"Wunschabholzeit" in the
 // order); another note of the guest where there is none.
@@ -19,23 +20,28 @@ const wishedTime = computed(() => {
 });
 
 // Restaurants sell gross prices; net orders (B2B) list the tax on top.
-const taxLabel = computed(() =>
-  props.order.taxIncluded ? "enthaltene MwSt." : "zzgl. MwSt.",
+const taxMessage = computed(() =>
+  props.order.taxIncluded
+    ? "order.detail.taxIncluded"
+    : "order.detail.taxExcluded",
 );
 
 const facts = computed(() =>
   [
-    { label: "Status", value: ORDER_STATUS_LABEL[props.order.status] },
     {
-      label: "Lieferung oder Abholung",
+      label: t("order.detail.status"),
+      value: t(ORDER_STATUS_MESSAGE[props.order.status]),
+    },
+    {
+      label: t("order.shared.deliveryOrPickup"),
       value: props.order.shippingMethod.name,
     },
-    { label: "Wunschzeit", value: wishedTime.value },
+    { label: t("order.detail.wishedTime"), value: wishedTime.value },
     {
-      label: "Bezahlung",
+      label: t("order.shared.payment"),
       value: [
         props.order.paymentMethod.name,
-        PAYMENT_STATUS_LABEL[props.order.paymentStatus],
+        t(PAYMENT_STATUS_MESSAGE[props.order.paymentStatus]),
       ]
         .filter(Boolean)
         .join(", "),
@@ -66,9 +72,9 @@ const facts = computed(() =>
         <span class="font-semibold tabular-nums">{{
           getFormattedMoney(line.totalPrice)
         }}</span>
-        <span v-if="line.dishNumber" class="text-sm text-sb-ink-muted"
-          >Nr. {{ line.dishNumber }}</span
-        >
+        <span v-if="line.dishNumber" class="text-sm text-sb-ink-muted">{{
+          $t("order.detail.dishNumber", { number: line.dishNumber })
+        }}</span>
       </li>
       <li
         v-for="discount in order.discounts"
@@ -87,7 +93,7 @@ const facts = computed(() =>
 
     <dl class="flex flex-col gap-1.5">
       <div class="flex justify-between gap-4 text-sb-ink-muted">
-        <dt>Lieferkosten</dt>
+        <dt>{{ $t("order.detail.shippingCosts") }}</dt>
         <dd class="tabular-nums">
           {{ getFormattedMoney(order.shippingCosts) }}
         </dd>
@@ -97,13 +103,13 @@ const facts = computed(() =>
         :key="tax.rate"
         class="flex justify-between gap-4 text-sb-ink-muted"
       >
-        <dt>{{ taxLabel }} {{ tax.rate }} %</dt>
+        <dt>{{ $t(taxMessage, { rate: tax.rate }) }}</dt>
         <dd class="tabular-nums">{{ getFormattedMoney(tax.amount) }}</dd>
       </div>
       <div
         class="mt-1 flex justify-between gap-4 border-t-[1.5px] border-sb-ink pt-2 text-lg font-bold"
       >
-        <dt>Gesamt</dt>
+        <dt>{{ $t("order.shared.total") }}</dt>
         <dd class="tabular-nums">{{ getFormattedMoney(order.total) }}</dd>
       </div>
     </dl>

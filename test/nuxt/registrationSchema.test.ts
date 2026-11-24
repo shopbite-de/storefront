@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { createRegistrationSchema } from "~/validation/registrationSchema";
 
+// the schema carries message keys; the form shows them in the shop's words
+const t = (key: string) => useNuxtApp().$i18n.t(key);
+
 describe("registrationSchema", () => {
   const baseState = {
     accountType: "private",
@@ -46,7 +49,7 @@ describe("registrationSchema", () => {
     const result = schema.safeParse(businessData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0]!.message).toBe(
+      expect(t(result.error.issues[0]!.message)).toBe(
         "Als Geschäftskunde ist der Firmenname ein Pflichtfeld.",
       );
       expect(result.error.issues[0]!.path).toContain("billingAddress");
@@ -84,7 +87,7 @@ describe("registrationSchema", () => {
     const result = schema.safeParse(shippingData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      const messages = result.error.issues.map((i) => i.message);
+      const messages = result.error.issues.map((i) => t(i.message));
       expect(messages).toContain(
         "Bitte geben Sie den Vornamen für die Lieferadresse an.",
       );
@@ -124,7 +127,7 @@ describe("registrationSchema", () => {
     const result = schema.safeParse(shippingData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      const messages = result.error.issues.map((i) => i.message);
+      const messages = result.error.issues.map((i) => t(i.message));
       expect(messages).toContain(
         "Bitte geben Sie den Firmennamen für die Lieferadresse an.",
       );
@@ -189,7 +192,7 @@ describe("registrationSchema", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0]!.message).toBe(
+      expect(t(result.error.issues[0]!.message)).toBe(
         "Bitte akzeptieren Sie die Datenschutzbestimmungen.",
       );
       expect(result.error.issues[0]!.path).toContain("acceptedDataProtection");
@@ -207,7 +210,7 @@ describe("registrationSchema", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0]!.message).toBe(
+      expect(t(result.error.issues[0]!.message)).toBe(
         "Bitte geben Sie Ihre Straße und Hausnummer an.",
       );
       expect(result.error.issues[0]!.path).toContain("billingAddress");
@@ -229,7 +232,7 @@ describe("registrationSchema", () => {
     const result = schema.safeParse(shippingData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      const messages = result.error.issues.map((i) => i.message);
+      const messages = result.error.issues.map((i) => t(i.message));
       expect(messages).toContain(
         "Bitte geben Sie Ihre Straße und Hausnummer an.",
       );

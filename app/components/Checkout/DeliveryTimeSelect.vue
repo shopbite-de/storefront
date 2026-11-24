@@ -13,7 +13,9 @@ const emit = defineEmits<{
 
 // Lead time and wording follow the selected shipping method (shopbite#6).
 const { fulfillment, leadTime } = useShippingLeadTime();
-const wording = computed(() => FULFILLMENT_WORDING[fulfillment.value]);
+const { t } = useI18n();
+const wording = (key: string, params: Record<string, number> = {}) =>
+  t(`order.fulfillment.${fulfillment.value}.${key}`, params);
 
 const selected = ref<string>(props.modelValue ?? "");
 const now = ref<Date>(new Date());
@@ -139,27 +141,25 @@ function handleTimeInput(event: Event): void {
       class="flex flex-col items-start gap-3 rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
     >
       <span>
-        <strong class="block"
-          >Öffnungszeiten konnten nicht geladen werden</strong
-        >
-        Ohne Öffnungszeiten können wir keine {{ wording.time }} anbieten.
+        <strong class="block">{{ $t("order.shared.hoursFailed") }}</strong>
+        {{ wording("noTimeWithoutHours") }}
       </span>
-      <SbButton variant="secondary" @click="retryOpeningHours"
-        >Erneut versuchen</SbButton
-      >
+      <SbButton variant="secondary" @click="retryOpeningHours">{{
+        $t("order.deliveryTime.retry")
+      }}</SbButton>
     </div>
     <p
       v-else-if="isOpeningHoursLoaded && isHoliday === true"
       role="status"
       class="rounded-sb-control bg-sb-muted p-4 font-semibold"
     >
-      Wir haben Betriebsferien und nehmen gerade keine Bestellungen an.
+      {{ $t("order.deliveryTime.holidayNotice") }}
     </p>
     <template v-else-if="isOpeningHoursLoaded">
       <SbField
         id="delivery-time"
         v-slot="{ id, describedBy, invalid }"
-        :label="wording.wishedTime"
+        :label="wording('wishedTime')"
         :hint="validationError ? undefined : helperText"
         :error="validationError ?? undefined"
       >
@@ -180,11 +180,11 @@ function handleTimeInput(event: Event): void {
         </ClientOnly>
       </SbField>
       <p v-if="leadTime !== null" class="text-sm text-sb-ink-muted">
-        {{ wording.leadTimeHint(leadTime) }}
+        {{ wording("leadTimeHint", { minutes: leadTime }) }}
       </p>
     </template>
     <p v-else class="text-sm text-sb-ink-muted" aria-busy="true">
-      Öffnungszeiten werden geladen …
+      {{ $t("order.deliveryTime.hoursLoading") }}
     </p>
   </div>
 </template>

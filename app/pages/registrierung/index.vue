@@ -1,6 +1,8 @@
 <script setup lang="ts">
+const { t } = useI18n();
+
 useSeoMeta({
-  title: "Registrieren",
+  title: t("auth.registrationPage.title"),
 });
 
 const { isLoggedIn } = useCustomer();
@@ -31,21 +33,19 @@ function onRegistrationSuccess(_data: unknown, needsConfirmation: boolean) {
 </script>
 
 <template>
-  <UserAuthPanel title="Registrieren" wide>
+  <UserAuthPanel :title="$t('auth.registrationPage.title')" wide>
     <template #intro>
-      <p>
-        Mit einem Kundenkonto bestellen Sie schneller, Ihre Adressen sind
-        gespeichert.
-      </p>
+      <p>{{ $t("auth.registrationPage.intro") }}</p>
     </template>
     <div
       v-if="confirmationSent"
       role="status"
       class="rounded-sb-control bg-sb-primary-tint p-4 text-sb-primary-ink"
     >
-      <strong class="block">Fast geschafft</strong>
-      Wir haben Ihnen eine E-Mail geschickt. Bitte bestätigen Sie den Link
-      darin, um Ihr Konto zu aktivieren.
+      <strong class="block">{{
+        $t("auth.registrationPage.confirmationTitle")
+      }}</strong>
+      {{ $t("auth.registrationPage.confirmationText") }}
     </div>
     <UserRegistrationForm
       v-else
@@ -53,11 +53,11 @@ function onRegistrationSuccess(_data: unknown, needsConfirmation: boolean) {
       @registration-success="onRegistrationSuccess"
     />
     <template #footer>
-      Schon registriert?
+      {{ $t("auth.registrationPage.alreadyRegistered") }}
       <NuxtLink
         :to="{ name: 'anmelden' }"
         class="font-semibold text-sb-primary-ink underline underline-offset-4"
-        >Anmelden</NuxtLink
+        >{{ $t("auth.shared.login") }}</NuxtLink
       >
     </template>
   </UserAuthPanel>

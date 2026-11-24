@@ -20,8 +20,9 @@ const { site } = useRuntimeConfig().public;
 const { openingHours: hours, refresh } = useOpeningHours();
 onServerPrefetch(() => refresh());
 
+const hoursWords = useOpeningHoursWords();
 const openingHours = computed(() =>
-  hours.value ? groupOpeningHours(hours.value) : [],
+  hours.value ? groupOpeningHours(hours.value, hoursWords.value) : [],
 );
 
 const address = [
@@ -76,7 +77,11 @@ const address = [
           <template v-for="row in openingHours" :key="row.days">
             <dt class="border-b border-current/15 py-2.5">{{ row.days }}</dt>
             <dd class="border-b border-current/15 py-2.5 text-right">
-              {{ row.intervals.length ? row.intervals.join(" · ") : "Ruhetag" }}
+              {{
+                row.intervals.length
+                  ? row.intervals.join(" · ")
+                  : $t("common.shared.closingDay")
+              }}
             </dd>
           </template>
         </dl>

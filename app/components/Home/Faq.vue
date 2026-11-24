@@ -4,19 +4,15 @@ import { buildFaqPageSchema } from "~/utils/schema";
 // Frequently asked questions (#404). Native <details> instead of UAccordion:
 // the answers are part of the SSR HTML for search engines and AI crawlers
 // (Reka unmounts closed panels), and the section needs no JavaScript (#314).
-const props = withDefaults(
-  defineProps<{
-    items: { question: string; answer: string }[];
-    title?: string;
-    description?: string;
-    headline?: string;
-  }>(),
-  {
-    title: "Häufige Fragen",
-    description: undefined,
-    headline: undefined,
-  },
-);
+const props = defineProps<{
+  items: { question: string; answer: string }[];
+  title?: string;
+  description?: string;
+  headline?: string;
+}>();
+const { t } = useI18n();
+// the content's title, else the default heading (#388)
+const heading = computed(() => props.title ?? t("common.homeFaq.title"));
 
 // Presets: two columns, questions in the display font (#444).
 
@@ -47,7 +43,7 @@ useHead(() => ({
         id="home-faq-title"
         class="font-display text-[32px] leading-tight sm:text-5xl"
       >
-        {{ title }}
+        {{ heading }}
       </h2>
       <p v-if="description" class="text-sb-ink-muted">{{ description }}</p>
     </div>

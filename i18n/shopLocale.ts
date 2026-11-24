@@ -32,6 +32,12 @@ export interface ShopLocale {
   /** Every page's path in the locale, by route name. */
   pagePaths: PathTable;
   contentPaths: Readonly<Record<ContentPage, string>>;
+  /**
+   * The menu root's path, which the backend gives it (the quickstart's
+   * Shopware: `/speisekarte/`); the app links to it from pages without a
+   * navigation (empty cart, error page). `shopBite.paths.menu` sets it.
+   */
+  menuPath: string;
 }
 
 /**
@@ -80,7 +86,7 @@ const MOVED_PAGES: Readonly<Record<string, Partial<Record<PageName, string>>>> =
       "konto-bestellungen": "/account/orders",
       "konto-bestellung-id": "/account/orders/:id()",
       "konto-profil": "/account/profile",
-      merkliste: "/wishlist",
+      merkliste: "/favourites",
       "passwort-vergessen": "/forgot-password",
       registrierung: "/register",
       "registrierung-bestaetigen": "/register/confirm",
@@ -104,6 +110,12 @@ const CONTENT_PATHS: Readonly<Record<string, Record<ContentPage, string>>> = {
     terms: "/terms",
     shipping: "/delivery-and-payment",
   },
+};
+
+/** The menu root's path per locale (backend data, see ShopLocale). */
+const MENU_PATHS: Readonly<Record<string, string>> = {
+  de: "/speisekarte/",
+  en: "/menu/",
 };
 
 const CONTENT_PAGES = Object.keys(CONTENT_PATHS.de!) as ContentPage[];
@@ -133,19 +145,22 @@ export function resolveShopLocale(
     ...MOVED_PAGES[code],
   };
   const contentPaths = { ...(CONTENT_PATHS[code] ?? CONTENT_PATHS.de!) };
+  let menuPath = MENU_PATHS[code] ?? MENU_PATHS.de!;
   for (const [key, path] of Object.entries(options.paths ?? {})) {
     if (!path.startsWith("/")) {
       throw new Error(
         `[shopbite:locale] shopBite.paths.${key} must start with "/": "${path}".`,
       );
     }
-    if ((CONTENT_PAGES as string[]).includes(key)) {
+    if (key === "menu") {
+      menuPath = path;
+    } else if ((CONTENT_PAGES as string[]).includes(key)) {
       contentPaths[key as ContentPage] = path;
     } else {
       pagePaths[key] = path;
     }
   }
-  return { code, pagePaths, contentPaths };
+  return { code, pagePaths, contentPaths, menuPath };
 }
 
 /** A page of Nuxt's `pages:extend` hook, as far as the paths go. */
@@ -236,4 +251,33 @@ export function shopRouteRules(locale: ShopLocale): {
       path("account-recover-password"),
     ],
   };
+}
+
+/**
+ * Texts of nuxt.config.ts defaults that a shop usually sets itself (its
+ * description, the title template of `runtimeConfig.public.site`), per
+ * locale. The config holds the German ones; modules/locale.ts replaces a
+ * value that is still the German default.
+ */
+export const SITE_TEXTS: Readonly<
+  Record<string, { description: string; titleTemplate: string }>
+> = {
+  de: {
+    description: "Reduziere deine Kosten und steigere deinen Umsatz",
+    titleTemplate: "%s | %siteName – Online bestellen",
+  },
+  en: {
+    description: "Cut your costs and grow your sales",
+    titleTemplate: "%s | %siteName – Order online",
+  },
+};
+
+/** A config value in the locale: the German default replaced, else kept. */
+export function localizedDefault(
+  value: string,
+  key: "description" | "titleTemplate",
+  code: string,
+): string {
+  const texts = SITE_TEXTS[code];
+  return texts && value === SITE_TEXTS.de![key] ? texts[key] : value;
 }

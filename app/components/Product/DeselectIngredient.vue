@@ -43,8 +43,12 @@ watch(deselected, () => emit("ingredients-deselected", deselected.value), {
 <template>
   <div v-if="names.length > 0" class="flex flex-col gap-2.5">
     <div class="flex items-baseline justify-between gap-3">
-      <span :id="labelId" class="font-body font-bold text-sb-ink">Zutaten</span>
-      <span class="text-[13px] text-sb-ink-muted">Antippen zum Weglassen</span>
+      <span :id="labelId" class="font-body font-bold text-sb-ink">{{
+        $t("menu.deselectIngredient.title")
+      }}</span>
+      <span class="text-[13px] text-sb-ink-muted">{{
+        $t("menu.deselectIngredient.hint")
+      }}</span>
     </div>
     <div class="flex flex-wrap gap-2" role="group" :aria-labelledby="labelId">
       <SbChip

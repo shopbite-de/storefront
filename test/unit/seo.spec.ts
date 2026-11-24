@@ -5,7 +5,20 @@ import {
   formatPageTitle,
   splitList,
   toAbsoluteUrl,
+  type HomeSeoWords,
 } from "../../app/utils/seo";
+import { messages } from "../support/messages";
+
+function homeSeoWords(code: string): HomeSeoWords {
+  const { t } = messages(code);
+  return {
+    titleSuffix: t("common.homeSeo.titleSuffix"),
+    description: (kind, params) =>
+      t(`common.homeSeo.description.${kind}`, params),
+  };
+}
+const DE = homeSeoWords("de");
+const EN = homeSeoWords("en");
 
 const TEMPLATE = "%s | %siteName – Online bestellen";
 
@@ -52,43 +65,67 @@ describe("toAbsoluteUrl", () => {
 
 describe("buildHomeTitle", () => {
   it("adds the city to the shop name", () => {
-    expect(buildHomeTitle({ name: "Esempio", city: "Musterstadt" })).toBe(
+    expect(buildHomeTitle({ name: "Esempio", city: "Musterstadt" }, DE)).toBe(
       "Esempio Musterstadt | Online bestellen & liefern lassen",
     );
   });
 
   it("does not repeat a city that is already part of the name", () => {
     expect(
-      buildHomeTitle({ name: "Pizzeria Musterstadt", city: "Musterstadt" }),
+      buildHomeTitle({ name: "Pizzeria Musterstadt", city: "Musterstadt" }, DE),
     ).toBe("Pizzeria Musterstadt | Online bestellen & liefern lassen");
   });
 
   it("works without a city", () => {
-    expect(buildHomeTitle({ name: "Esempio", city: "" })).toBe(
+    expect(buildHomeTitle({ name: "Esempio", city: "" }, DE)).toBe(
       "Esempio | Online bestellen & liefern lassen",
     );
+  });
+});
+
+describe("buildHomeTitle and buildHomeDescription in English", () => {
+  it("use the English words", () => {
+    expect(buildHomeTitle({ name: "Esempio", city: "Musterstadt" }, EN)).toBe(
+      "Esempio Musterstadt | Order online for delivery",
+    );
+    expect(
+      buildHomeDescription(
+        { name: "Esempio", city: "Musterstadt", cuisine: "Pizza" },
+        EN,
+      ),
+    ).toBe(
+      "Pizza in Musterstadt: order online from Esempio for delivery or pickup.",
+    );
+    expect(
+      buildHomeDescription({ name: "Esempio", city: "Musterstadt" }, EN),
+    ).toBe("Esempio in Musterstadt: order online for delivery or pickup.");
   });
 });
 
 describe("buildHomeDescription", () => {
   it("combines cuisine, city and name", () => {
     expect(
-      buildHomeDescription({
-        name: "Esempio",
-        city: "Musterstadt",
-        cuisine: "Italienische Küche",
-      }),
+      buildHomeDescription(
+        {
+          name: "Esempio",
+          city: "Musterstadt",
+          cuisine: "Italienische Küche",
+        },
+        DE,
+      ),
     ).toBe(
       "Italienische Küche in Musterstadt: Bei Esempio online bestellen und liefern lassen oder abholen.",
     );
   });
 
   it("uses city or cuisine alone", () => {
-    expect(buildHomeDescription({ name: "Esempio", city: "Musterstadt" })).toBe(
+    expect(
+      buildHomeDescription({ name: "Esempio", city: "Musterstadt" }, DE),
+    ).toBe(
       "Esempio in Musterstadt: Online bestellen und liefern lassen oder abholen.",
     );
     expect(
-      buildHomeDescription({ name: "Esempio", cuisine: "Pizza & Pasta" }),
+      buildHomeDescription({ name: "Esempio", cuisine: "Pizza & Pasta" }, DE),
     ).toBe(
       "Pizza & Pasta: Bei Esempio online bestellen und liefern lassen oder abholen.",
     );
@@ -96,7 +133,7 @@ describe("buildHomeDescription", () => {
 
   it("returns undefined without city and cuisine", () => {
     expect(
-      buildHomeDescription({ name: "Esempio", city: "", cuisine: "" }),
+      buildHomeDescription({ name: "Esempio", city: "", cuisine: "" }, DE),
     ).toBeUndefined();
   });
 });

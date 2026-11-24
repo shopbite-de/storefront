@@ -12,6 +12,7 @@ import { useNavigation } from "~/composables/useNavigation";
  */
 const { menuCardNavigation } = useNavigation(true);
 const route = useRoute();
+const { t } = useI18n();
 
 type Chip = { label: string; to: string };
 
@@ -45,7 +46,10 @@ const subChips = computed<Chip[]>(() => {
   if (!section) return [];
   const children = descendants(section).map(toChip);
   if (!children.length) return [];
-  return [{ label: "Alle", to: section.path ?? "" }, ...children];
+  return [
+    { label: t("common.mobileTop.all"), to: section.path ?? "" },
+    ...children,
+  ];
 });
 
 const nav = ref<HTMLElement | null>(null);
@@ -73,7 +77,7 @@ const chipClass =
   <nav
     v-if="sections.length"
     ref="nav"
-    aria-label="Kategorien der Speisekarte"
+    :aria-label="$t('common.mobileTop.label')"
     class="border-b border-sb-line bg-sb-bg/95 font-body backdrop-blur-sm"
   >
     <ul class="flex gap-1 overflow-x-auto px-4 py-2 sm:px-6">
@@ -94,7 +98,11 @@ const chipClass =
     </ul>
     <ul
       v-if="subChips.length"
-      :aria-label="`Unterkategorien von ${toChip(activeSection!).label}`"
+      :aria-label="
+        $t('common.mobileTop.subsections', {
+          section: toChip(activeSection!).label,
+        })
+      "
       class="flex gap-1 overflow-x-auto border-t border-sb-line px-4 py-2 text-[15px] sm:px-6"
     >
       <li v-for="chip in subChips" :key="chip.to">

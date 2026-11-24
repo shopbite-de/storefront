@@ -1,1 +1,151 @@
-{ "common": { "skipToContent": "Skip to content" } }
+{
+  "common": {
+    "skipToContent": "Skip to content",
+    "hours": {
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      },
+      "today": "Today {intervals}",
+      "closedToday": "Closed today",
+      "and": "and"
+    },
+    "error": {
+      "kicker": "Error {status}",
+      "notFoundTitle": "This page does not exist",
+      "failedTitle": "Something went wrong",
+      "notFoundText": "The address may have changed. You can find our menu here:",
+      "failedText": "Please reload the page or try again in a moment."
+    },
+    "shared": {
+      "toMenu": "To the menu",
+      "toHome": "To the home page",
+      "closingDay": "Closed"
+    },
+    "storeStatus": {
+      "closed": "Closed",
+      "header": {
+        "open": "Open until {time}",
+        "opens": "Opens {when}"
+      },
+      "footer": {
+        "open": "Open until {time}",
+        "opens": "Closed, we open again {when}"
+      },
+      "hero": {
+        "open": "Open now until {time}",
+        "opens": "Closed, opens {when}"
+      },
+      "nextOpening": {
+        "today": "at {time}",
+        "tomorrow": "tomorrow at {time}",
+        "later": "{weekday} {day}/{month} at {time}"
+      }
+    },
+    "header": {
+      "cartLabel": "Basket, 1 item | Basket, {count} items",
+      "homeLink": "{name}, to the home page",
+      "mainNavigation": "Main navigation",
+      "mainNavigationMobile": "Main navigation, mobile",
+      "call": "Call: {phone}",
+      "account": "My account",
+      "login": "Log in",
+      "logout": "Log out",
+      "register": "Register",
+      "orders": "Orders",
+      "wishlist": "Favourites",
+      "wishlistCount": "Favourites, {count} saved",
+      "cart": "Basket",
+      "openMenu": "Open menu",
+      "menu": "Menu",
+      "cartTitle": "Your order"
+    },
+    "footer": {
+      "google": "View on Google",
+      "openingHours": "Opening hours",
+      "legal": "© {year} {name} · All prices include VAT, plus delivery fee unless stated otherwise",
+      "poweredBy": "Online ordering with ShopBite"
+    },
+    "hero": {
+      "deliveryTime": "Delivery approx. {minutes} min",
+      "pickupTime": "Pickup approx. {minutes} min",
+      "ratingOutOf": "{rating} out of 5",
+      "ratingSource": "{reviews} on Google",
+      "ratingCard": "out of 5 on Google"
+    },
+    "homeCategories": {
+      "title": "Menu",
+      "openMenu": "Open the full menu"
+    },
+    "homeHighlights": {
+      "title": "Popular dishes"
+    },
+    "homeFaq": {
+      "title": "Frequently asked questions"
+    },
+    "homeFacts": {
+      "label": "At a glance",
+      "deliveryLead": "With you in approx. {minutes} minutes",
+      "pickupLead": "Ready for pickup in approx. {minutes} minutes"
+    },
+    "homeSeo": {
+      "titleSuffix": "Order online for delivery",
+      "description": {
+        "cuisineAndCity": "{cuisine} in {city}: order online from {name} for delivery or pickup.",
+        "city": "{name} in {city}: order online for delivery or pickup.",
+        "cuisine": "{cuisine}: order online from {name} for delivery or pickup."
+      }
+    },
+    "maintenance": {
+      "title": "Maintenance",
+      "heading": "Back shortly",
+      "text": "The shop is temporarily unavailable. Please try again in a few minutes."
+    },
+    "weekdays": {
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
+    },
+    "schema": {
+      "menuName": "Menu"
+    },
+    "branchSwitch": {
+      "label": "Branch"
+    },
+    "demoBanner": {
+      "text": "Demo shop: orders are not processed or delivered."
+    },
+    "mobileTop": {
+      "all": "All",
+      "label": "Menu categories",
+      "subsections": "Subcategories of {section}"
+    },
+    "stepper": {
+      "quantity": "Quantity {item}",
+      "remove": "Remove {item}",
+      "decrease": "{item}, one less",
+      "increase": "{item}, one more"
+    },
+    "confirmDialog": {
+      "cancel": "Cancel"
+    },
+    "choiceGroup": {
+      "required": "Required"
+    },
+    "field": {
+      "optional": "(optional)"
+    },
+    "sheet": {
+      "close": "Close"
+    }
+  }
+}

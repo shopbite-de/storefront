@@ -16,6 +16,7 @@ const logoSrc = computed(
     (colorMode === "dark" ? "/dark/Logo.png" : "/light/Logo.png"),
 );
 const route = useRoute();
+const { t } = useI18n();
 
 const {
   open: cartOpen,
@@ -55,16 +56,19 @@ const hasAccount = computed(() => isLoggedIn.value || isGuestSession.value);
 
 const statusLabel = computed(() => {
   if (!status.value) return "";
-  if (status.value.open) return `Geöffnet bis ${status.value.closesAt}`;
+  if (status.value.open)
+    return t("common.storeStatus.header.open", {
+      time: status.value.closesAt,
+    });
   return status.value.nextOpening
-    ? `Öffnet ${status.value.nextOpening}`
-    : "Geschlossen";
+    ? t("common.storeStatus.header.opens", {
+        when: status.value.nextOpening,
+      })
+    : t("common.storeStatus.closed");
 });
 
 const cartLabel = computed(() =>
-  cartCount.value === 1
-    ? "Warenkorb, 1 Artikel"
-    : `Warenkorb, ${cartCount.value} Artikel`,
+  t("common.header.cartLabel", { count: cartCount.value }, cartCount.value),
 );
 
 function isCurrent(to: unknown) {
@@ -91,7 +95,7 @@ function logoutHandler() {
       <NuxtLink
         to="/"
         class="flex shrink-0 items-center focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-sb-focus"
-        :aria-label="`${site.name}, zur Startseite`"
+        :aria-label="$t('common.header.homeLink', { name: site.name })"
       >
         <img
           :src="logoSrc"
@@ -103,7 +107,7 @@ function logoutHandler() {
       </NuxtLink>
 
       <nav
-        aria-label="Hauptnavigation"
+        :aria-label="$t('common.header.mainNavigation')"
         class="hidden items-center gap-8 lg:flex"
       >
         <NuxtLink
@@ -134,7 +138,7 @@ function logoutHandler() {
         <SbIconButton
           v-if="site.telephone"
           :to="toTelHref(site.telephone)"
-          :label="`Anrufen: ${site.telephone}`"
+          :label="$t('common.header.call', { phone: site.telephone })"
           variant="ghost"
         >
           <SbIcon name="phone" />
@@ -142,7 +146,11 @@ function logoutHandler() {
         <span class="hidden sm:block">
           <SbIconButton
             :to="{ name: hasAccount ? 'konto' : 'anmelden' }"
-            :label="hasAccount ? 'Mein Konto' : 'Anmelden'"
+            :label="
+              hasAccount
+                ? $t('common.header.account')
+                : $t('common.header.login')
+            "
             variant="ghost"
           >
             <svg
@@ -165,8 +173,8 @@ function logoutHandler() {
             :to="{ name: 'merkliste' }"
             :label="
               wishlistCount
-                ? `Merkliste, ${wishlistCount} gemerkt`
-                : 'Merkliste'
+                ? $t('common.header.wishlistCount', { count: wishlistCount })
+                : $t('common.header.wishlist')
             "
             variant="ghost"
           >
@@ -216,7 +224,9 @@ function logoutHandler() {
             <path d="M3 6h18" />
             <path d="M16 10a4 4 0 0 1-8 0" />
           </svg>
-          <span class="hidden sm:inline" aria-hidden="true">Warenkorb</span>
+          <span class="hidden sm:inline" aria-hidden="true">{{
+            $t("common.header.cart")
+          }}</span>
           <!-- the space keeps the visible text "Warenkorb 2" (not
           "Warenkorb2") part of the button name (WCAG 2.5.3); a flex
           container does not render it -->
@@ -230,7 +240,7 @@ function logoutHandler() {
         </SbButton>
         <span class="lg:hidden">
           <SbIconButton
-            label="Menü öffnen"
+            :label="$t('common.header.openMenu')"
             variant="ghost"
             aria-haspopup="dialog"
             @click="openMenu"
@@ -253,8 +263,15 @@ function logoutHandler() {
     </div>
   </header>
 
-  <SbSheet v-if="menuMounted" v-model:open="menuOpen" title="Menü">
-    <nav aria-label="Hauptnavigation mobil" class="flex flex-col font-body">
+  <SbSheet
+    v-if="menuMounted"
+    v-model:open="menuOpen"
+    :title="$t('common.header.menu')"
+  >
+    <nav
+      :aria-label="$t('common.header.mainNavigationMobile')"
+      class="flex flex-col font-body"
+    >
       <NuxtLink
         v-for="item in mainMenu"
         :key="String(item.to)"
@@ -268,30 +285,38 @@ function logoutHandler() {
     </nav>
     <div class="mt-6 flex flex-col gap-2 font-body">
       <template v-if="hasAccount">
-        <SbButton variant="secondary" :to="{ name: 'konto' }"
-          >Mein Konto</SbButton
-        >
-        <SbButton variant="secondary" :to="{ name: 'konto-bestellungen' }"
-          >Bestellungen</SbButton
-        >
-        <SbButton variant="ghost" @click="logoutHandler">Abmelden</SbButton>
+        <SbButton variant="secondary" :to="{ name: 'konto' }">{{
+          $t("common.header.account")
+        }}</SbButton>
+        <SbButton variant="secondary" :to="{ name: 'konto-bestellungen' }">{{
+          $t("common.header.orders")
+        }}</SbButton>
+        <SbButton variant="ghost" @click="logoutHandler">{{
+          $t("common.header.logout")
+        }}</SbButton>
       </template>
       <template v-else>
-        <SbButton variant="secondary" :to="{ name: 'anmelden' }"
-          >Anmelden</SbButton
-        >
-        <SbButton variant="ghost" :to="{ name: 'registrierung' }"
-          >Registrieren</SbButton
-        >
+        <SbButton variant="secondary" :to="{ name: 'anmelden' }">{{
+          $t("common.header.login")
+        }}</SbButton>
+        <SbButton variant="ghost" :to="{ name: 'registrierung' }">{{
+          $t("common.header.register")
+        }}</SbButton>
       </template>
-      <SbButton variant="ghost" :to="{ name: 'merkliste' }">Merkliste</SbButton>
+      <SbButton variant="ghost" :to="{ name: 'merkliste' }">{{
+        $t("common.header.wishlist")
+      }}</SbButton>
     </div>
     <div v-if="shopBite.feature.multiChannel" class="mt-4">
       <LazyBranchSwitch />
     </div>
   </SbSheet>
 
-  <SbSheet v-if="cartMounted" v-model:open="cartOpen" title="Ihre Bestellung">
+  <SbSheet
+    v-if="cartMounted"
+    v-model:open="cartOpen"
+    :title="$t('common.header.cartTitle')"
+  >
     <LazyCartQuickView
       :with-to-cart-button="true"
       @go-to-cart="cartOpen = false"

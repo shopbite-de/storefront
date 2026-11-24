@@ -20,7 +20,10 @@ const productNumber = ref(props.dish?.number);
 // The dish as configured right now, for the save button (#467).
 const selection = ref<WishlistSelection>();
 // Built in script: a trailing space in the template would be condensed away.
-const numberLabel = computed(() => `Nr. ${productNumber.value} `);
+const { t } = useI18n();
+const numberLabel = computed(
+  () => `${t("menu.shared.number", { number: String(productNumber.value) })} `,
+);
 
 watch(
   () => props.dish,
@@ -34,7 +37,7 @@ watch(
 );
 
 // The base sheet with a bon header (#442).
-const diets = computed(() => dietLabels(props.dish?.diets ?? []));
+const diets = computed(() => dietLabels(props.dish?.diets ?? [], t));
 
 function onVariantSelected(variant: Variant) {
   label.value = variant.name;
@@ -87,7 +90,9 @@ function onVariantSelected(variant: Variant) {
       <ProductFoodLabels v-if="dish" :labels="dish.foodLabels" />
       <WishlistSaveButton :selection="selection" :name="label" />
       <SbIconButton
-        :label="canShare ? 'Teilen' : 'Link kopieren'"
+        :label="
+          canShare ? $t('menu.quickView.share') : $t('menu.quickView.copyLink')
+        "
         @click="share({ title: label, productNumber })"
       >
         <svg

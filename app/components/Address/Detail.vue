@@ -16,8 +16,8 @@ defineProps<{ address: Address | null | undefined }>();
     <span>{{ address.street }}</span>
     <span v-if="address.additionalLine">{{ address.additionalLine }}</span>
     <span>{{ address.postalCode }} {{ address.city }}</span>
-    <span v-if="address.phone" class="text-sb-ink-muted"
-      >Tel. {{ address.phone }}</span
-    >
+    <span v-if="address.phone" class="text-sb-ink-muted">{{
+      $t("account.addressDetail.phone", { phone: address.phone })
+    }}</span>
   </address>
 </template>

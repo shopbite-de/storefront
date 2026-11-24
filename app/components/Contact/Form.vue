@@ -7,6 +7,7 @@ import type { ContactForm } from "../../../shared/domain";
  * (useContactForm), checked on submit with errors at the fields; the
  * first invalid field gets focus, the result shows in the page.
  */
+const { t } = useI18n();
 const { send } = useContactForm();
 
 // the fields the restaurant requires beside e-mail, subject and message
@@ -28,30 +29,22 @@ const required = computed(
     },
 );
 
-const MESSAGES = {
-  firstName: "Bitte geben Sie Ihren Vornamen an.",
-  lastName: "Bitte geben Sie Ihren Nachnamen an.",
-  phone: "Bitte geben Sie Ihre Telefonnummer an.",
-  email: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
-  subject: "Bitte geben Sie einen Betreff an.",
-  comment: "Die Nachricht braucht mindestens 10 Zeichen.",
-} as const;
+// The message of a field's failed check, as a key (ADR 0002); e-mail,
+// subject and message use the same keys in contactFormSchema.
+const messageKey = (field: Exclude<Field, "hp">) =>
+  `contact.form.errors.${field}`;
 
-const requiredText = (field: keyof typeof MESSAGES, needed: boolean) =>
-  needed ? z.string().trim().min(1, MESSAGES[field]) : z.string().optional();
+const requiredText = (
+  field: "firstName" | "lastName" | "phone",
+  needed: boolean,
+) =>
+  needed ? z.string().trim().min(1, messageKey(field)) : z.string().optional();
 
 const schema = computed(() =>
   contactFormSchema.extend({
     firstName: requiredText("firstName", required.value.firstName),
     lastName: requiredText("lastName", required.value.lastName),
     phone: requiredText("phone", required.value.phone),
-    email: z.string().email(MESSAGES.email),
-    subject: z
-      .string()
-      .refine((value) => value.trim().length >= 3, MESSAGES.subject),
-    comment: z
-      .string()
-      .refine((value) => value.trim().length >= 10, MESSAGES.comment),
   }),
 );
 type Field = keyof z.output<typeof contactFormSchema>;
@@ -88,7 +81,7 @@ async function onSubmit() {
   if (!parsed.success) {
     const next: typeof errors.value = {};
     for (const issue of parsed.error.issues) {
-      next[issue.path[0] as Field] ??= issue.message;
+      next[issue.path[0] as Field] ??= t(issue.message);
     }
     errors.value = next;
     await nextTick();
@@ -98,10 +91,7 @@ async function onSubmit() {
   errors.value = {};
   sending.value = true;
   try {
-    const message = await send(
-      parsed.data,
-      "Vielen Dank, Ihre Nachricht ist bei uns angekommen.",
-    );
+    const message = await send(parsed.data, t("contact.form.received"));
     result.value = { ok: true, message };
     Object.assign(state, empty());
   } catch (error) {
@@ -116,15 +106,15 @@ async function onSubmit() {
     if (named.length) {
       const next: typeof errors.value = {};
       for (const field of named) {
-        if (field !== "hp") next[field] = MESSAGES[field];
+        if (field !== "hp") next[field] = t(messageKey(field));
       }
       errors.value = next;
     }
     result.value = {
       ok: false,
       message: named.length
-        ? "Bitte prüfen Sie die markierten Angaben."
-        : "Die Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es später noch einmal.",
+        ? t("contact.form.checkFields")
+        : t("contact.form.sendFailed"),
     };
   } finally {
     sending.value = false;
@@ -144,9 +134,9 @@ async function onSubmit() {
       class="flex flex-col items-start gap-4 rounded-sb-card bg-sb-primary-tint p-6 text-sb-primary-ink"
     >
       <p class="font-semibold">{{ result.message }}</p>
-      <SbButton variant="secondary" @click="result = null"
-        >Weitere Nachricht schreiben</SbButton
-      >
+      <SbButton variant="secondary" @click="result = null">{{
+        $t("contact.form.writeAnother")
+      }}</SbButton>
     </div>
     <form
       v-else
@@ -167,7 +157,7 @@ async function onSubmit() {
       <div class="grid gap-4 sm:grid-cols-2">
         <SbField
           v-slot="{ id, describedBy, invalid }"
-          label="Vorname"
+          :label="$t('contact.form.firstName')"
           :optional="!required.firstName"
           :error="errors.firstName"
         >
@@ -182,7 +172,7 @@ async function onSubmit() {
         </SbField>
         <SbField
           v-slot="{ id, describedBy, invalid }"
-          label="Nachname"
+          :label="$t('contact.form.lastName')"
           :optional="!required.lastName"
           :error="errors.lastName"
         >
@@ -198,8 +188,8 @@ async function onSubmit() {
       </div>
       <SbField
         v-slot="{ id, describedBy, invalid }"
-        label="E-Mail"
-        hint="Für unsere Antwort"
+        :label="$t('contact.form.email')"
+        :hint="$t('contact.form.emailHint')"
         :error="errors.email"
       >
         <SbInput
@@ -214,7 +204,7 @@ async function onSubmit() {
       </SbField>
       <SbField
         v-slot="{ id, describedBy, invalid }"
-        label="Telefon"
+        :label="$t('contact.form.phone')"
         :optional="!required.phone"
         :error="errors.phone"
       >
@@ -230,7 +220,7 @@ async function onSubmit() {
       </SbField>
       <SbField
         v-slot="{ id, describedBy, invalid }"
-        label="Betreff"
+        :label="$t('contact.form.subject')"
         :error="errors.subject"
       >
         <SbInput
@@ -243,7 +233,7 @@ async function onSubmit() {
       </SbField>
       <SbField
         v-slot="{ id, describedBy, invalid }"
-        label="Nachricht"
+        :label="$t('contact.form.message')"
         :error="errors.comment"
       >
         <textarea
@@ -259,7 +249,7 @@ async function onSubmit() {
       <!-- honeypot: hidden from people and assistive technology -->
       <div class="absolute size-0 overflow-hidden opacity-0" aria-hidden="true">
         <label>
-          Adresse
+          {{ $t("contact.form.honeypot") }}
           <input
             v-model="state.hp"
             name="hp"
@@ -269,9 +259,9 @@ async function onSubmit() {
           />
         </label>
       </div>
-      <SbButton type="submit" size="lg" :loading="sending" class="self-start"
-        >Nachricht senden</SbButton
-      >
+      <SbButton type="submit" size="lg" :loading="sending" class="self-start">{{
+        $t("contact.form.send")
+      }}</SbButton>
     </form>
   </div>
 </template>

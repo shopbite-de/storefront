@@ -20,20 +20,29 @@ const props = defineProps<{ features: FeatureCardProps[] }>();
 const { openingHours } = useOpeningHours();
 const { timeZone } = useShopConfig();
 const { deliveryTime, pickupTime } = useShippingMethods();
+const hoursWords = useOpeningHoursWords();
+const { t } = useI18n();
 
 const items = computed(() =>
   props.features.map((feature) => {
     let lead = feature.lead ?? "";
     // today in the restaurant's time zone; rendered in the browser only
     if (feature.kind === "hours" && openingHours.value) {
-      lead = formatTodayHours(openingHours.value, new Date(), timeZone.value);
+      lead = formatTodayHours(
+        openingHours.value,
+        new Date(),
+        timeZone.value,
+        hoursWords.value,
+      );
     }
     // lead times of the delivery and pickup methods (shopbite#6)
     if (feature.kind === "delivery" && deliveryTime.value !== null) {
-      lead = `In ca. ${deliveryTime.value} Minuten bei Ihnen`;
+      lead = t("common.homeFacts.deliveryLead", {
+        minutes: deliveryTime.value,
+      });
     }
     if (feature.kind === "pickup" && pickupTime.value !== null) {
-      lead = `Abholbereit in ca. ${pickupTime.value} Minuten`;
+      lead = t("common.homeFacts.pickupLead", { minutes: pickupTime.value });
     }
     return { ...feature, lead };
   }),
@@ -42,7 +51,7 @@ const items = computed(() =>
 
 <template>
   <section
-    aria-label="Auf einen Blick"
+    :aria-label="$t('common.homeFacts.label')"
     class="mx-auto w-full max-w-(--sb-container) px-4 pb-16 sm:px-6 lg:px-8 sm:pb-24"
   >
     <ul

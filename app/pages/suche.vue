@@ -10,8 +10,9 @@ definePageMeta({
   layout: "listing",
 });
 
+const { t } = useI18n();
 useSeoMeta({
-  title: "Suche",
+  title: t("menu.search.title"),
 });
 
 const route = useRoute();
@@ -91,9 +92,11 @@ const searchInput = ref(searchQuery.value);
 const { menuView } = useThemePreset();
 const sortingOptions = computed(() => toSortingOptions(sortings.value));
 const resultLabel = computed(() =>
-  dishes.value.length === 1
-    ? "1 Gericht gefunden"
-    : `${dishes.value.length} Gerichte gefunden`,
+  t(
+    "menu.search.result",
+    { count: dishes.value.length, query: searchQuery.value },
+    dishes.value.length,
+  ),
 );
 
 function submitSearch() {
@@ -112,7 +115,9 @@ function submitSearch() {
       v-model:open="quickView.open.value"
       :dish="quickView.dish.value"
     />
-    <h1 class="font-display text-4xl leading-tight sm:text-5xl">Suche</h1>
+    <h1 class="font-display text-4xl leading-tight sm:text-5xl">
+      {{ $t("menu.search.title") }}
+    </h1>
     <form
       role="search"
       class="flex max-w-2xl flex-col gap-3 sm:flex-row sm:items-end"
@@ -120,7 +125,7 @@ function submitSearch() {
     >
       <SbField
         v-slot="{ id, describedBy }"
-        label="Gericht oder Zutat"
+        :label="$t('menu.search.fieldLabel')"
         class="flex-1"
       >
         <SbInput
@@ -134,7 +139,7 @@ function submitSearch() {
       </SbField>
       <SbButton type="submit" size="lg">
         <SbIcon name="search" />
-        Suchen
+        {{ $t("menu.searchInput.submit") }}
       </SbButton>
     </form>
 
@@ -143,14 +148,16 @@ function submitSearch() {
       class="flex max-w-2xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <p role="status" class="text-sb-ink-muted">
-        <template v-if="showSkeleton || loading">Suche läuft …</template>
-        <template v-else>{{ resultLabel }} für „{{ searchQuery }}“</template>
+        <template v-if="showSkeleton || loading">{{
+          $t("menu.search.searching")
+        }}</template>
+        <template v-else>{{ resultLabel }}</template>
       </p>
       <SbSelect
         v-if="sortingOptions.length > 1 && dishes.length > 1"
         v-model="currentSorting"
-        label="Sortierung"
-        placeholder="Bitte wählen"
+        :label="$t('menu.shared.sorting')"
+        :placeholder="$t('menu.shared.sortingPlaceholder')"
         :options="sortingOptions"
         class="sm:w-72"
       />
@@ -172,7 +179,9 @@ function submitSearch() {
     </div>
     <template v-else-if="searchQuery && !showSkeleton && !loading">
       <template v-if="showFallback && fallbackDishes?.length">
-        <h2 class="font-display text-2xl">Vielleicht schmeckt Ihnen das</h2>
+        <h2 class="font-display text-2xl">
+          {{ $t("menu.search.fallbackTitle") }}
+        </h2>
         <div class="grid max-w-3xl grid-cols-1 gap-3">
           <MenuBonCardWhenVisible
             v-for="dish in fallbackDishes"
@@ -184,9 +193,9 @@ function submitSearch() {
           />
         </div>
       </template>
-      <SbButton v-else variant="secondary" to="/" class="self-start"
-        >Zur Startseite</SbButton
-      >
+      <SbButton v-else variant="secondary" to="/" class="self-start">{{
+        $t("menu.search.toHome")
+      }}</SbButton>
     </template>
   </div>
 </template>

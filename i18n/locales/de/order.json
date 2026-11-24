@@ -1,1 +1,195 @@
-{ "order": {} }
+{
+  "order": {
+    "shared": {
+      "yourOrder": "Ihre Bestellung",
+      "total": "Gesamt",
+      "toMenu": "Zur Speisekarte",
+      "deliveryOrPickup": "Lieferung oder Abholung",
+      "payment": "Bezahlung",
+      "loadingOrder": "Bestellung wird geladen …",
+      "hoursFailed": "Öffnungszeiten konnten nicht geladen werden"
+    },
+    "fulfillment": {
+      "delivery": {
+        "wishedTime": "Wunschlieferzeit",
+        "leadTimeHint": "Lieferzeit ca. {minutes} Minuten, zu Stoßzeiten kann es etwas länger dauern.",
+        "noneLeftToday": "Heute sind keine Lieferzeiten mehr verfügbar.",
+        "noneAvailableNow": "Aktuell keine Lieferzeit verfügbar. Bitte später erneut versuchen.",
+        "noTimeWithoutHours": "Ohne Öffnungszeiten können wir keine Lieferzeit anbieten."
+      },
+      "pickup": {
+        "wishedTime": "Wunschabholzeit",
+        "leadTimeHint": "Abholbereit in ca. {minutes} Minuten, zu Stoßzeiten kann es etwas länger dauern.",
+        "noneLeftToday": "Heute sind keine Abholzeiten mehr verfügbar.",
+        "noneAvailableNow": "Aktuell keine Abholzeit verfügbar. Bitte später erneut versuchen.",
+        "noTimeWithoutHours": "Ohne Öffnungszeiten können wir keine Abholzeit anbieten."
+      }
+    },
+    "deliveryTime": {
+      "loading": "Lade Informationen...",
+      "holiday": "Wegen Betriebsferien geschlossen.",
+      "closingDay": "Heute ({weekday}) ist Ruhetag. Bitte an einem anderen Tag bestellen.",
+      "nextPeriod": "Nächster möglicher Zeitraum: {range}",
+      "earliest": "Frühestmöglich ab {time}, erlaubt: {range}",
+      "earliestToday": "Frühestmöglich ab {time} (heute), erlaubt: {range}",
+      "invalidFormat": "Bitte eine gültige Uhrzeit im Format HH:MM eingeben.",
+      "invalidTime": "Bitte eine gültige Uhrzeit auswählen.",
+      "tooEarly": "Die Zeit liegt vor dem frühestmöglichen Zeitpunkt. Frühestens ab {time}.",
+      "tooLate": "Die Zeit liegt nach dem spätestmöglichen Zeitpunkt. Spätestens bis {time}.",
+      "notOnGrid": "Bitte eine Zeit in 5-Minuten-Schritten auswählen.",
+      "retry": "Erneut versuchen",
+      "holidayNotice": "Wir haben Betriebsferien und nehmen gerade keine Bestellungen an.",
+      "hoursLoading": "Öffnungszeiten werden geladen …"
+    },
+    "cartBar": {
+      "title": "Warenkorb",
+      "items": "{count} Artikel | {count} Artikel",
+      "added": "hinzugefügt"
+    },
+    "cartItem": {
+      "fallbackName": "Artikel",
+      "remove": "{name} entfernen",
+      "empty": "Der Warenkorb ist leer."
+    },
+    "quickView": {
+      "empty": "Der Warenkorb ist noch leer.",
+      "shipping": "Lieferung",
+      "free": "kostenlos",
+      "toCheckout": "Zur Kasse"
+    },
+    "upsell": {
+      "title": "Dazu passt",
+      "add": "{name} in den Warenkorb"
+    },
+    "orderMode": {
+      "label": "Bestellart"
+    },
+    "loginOrRegister": {
+      "label": "Kundendaten",
+      "newOrGuest": "Neu hier oder als Gast",
+      "existing": "Schon Kunde"
+    },
+    "ordererAddress": {
+      "edit": "Adresse bearbeiten"
+    },
+    "paymentAndDelivery": {
+      "shippingLegend": "Versandarten",
+      "paymentLegend": "Zahlungsarten",
+      "shippingLink": "Liefergebiet und Versandkosten",
+      "paymentLink": "Mehr zu den Zahlungsarten",
+      "shippingExplained": "Versandarten erklärt",
+      "paymentExplained": "Zahlungsarten erklärt"
+    },
+    "voucher": {
+      "label": "Gutscheincode",
+      "redeem": "Einlösen",
+      "applied": "Gutschein: {name}",
+      "remove": "Gutschein {name} entfernen",
+      "invalid": "Der Gutscheincode ist ungültig oder abgelaufen."
+    },
+    "summary": {
+      "sections": {
+        "time": "Wann?",
+        "details": "Ihre Angaben"
+      },
+      "fallbackShippingMethod": "Die Versandart",
+      "shippingBlocked": {
+        "title": "{method} ist nicht möglich",
+        "description": "{method} ist für Ihre Adresse oder Ihren Warenkorb nicht möglich. Bitte wählen Sie oben eine andere Bestellart oder ändern Sie Ihre Adresse.",
+        "alert": "{method} ist für Ihre Adresse oder Ihren Warenkorb leider nicht möglich. Bitte wählen Sie eine andere Bestellart oder ändern Sie Ihre Adresse.",
+        "hint": "Ob {method} an Ihre Adresse möglich ist, sehen Sie, sobald Sie Ihre Angaben gespeichert haben."
+      },
+      "noPaymentMethod": {
+        "title": "Keine Zahlart verfügbar",
+        "description": "Für deine Bestellung ist aktuell keine Zahlart verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb."
+      },
+      "checkFailed": {
+        "title": "Versand- und Zahlart konnten nicht geprüft werden",
+        "description": "Bitte versuche es in einem Moment erneut."
+      },
+      "notPossible": "Bestellung nicht möglich",
+      "notAccepting": "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen.",
+      "acceptingUnknown": "Ob gerade Bestellungen angenommen werden, konnte nicht geprüft werden. Bitte versuche es in einem Moment erneut.",
+      "alreadyPlaced": {
+        "title": "Deine Bestellung ist bereits eingegangen.",
+        "description": "Du musst nicht erneut bestellen.",
+        "link": "Zur Bestellung"
+      },
+      "statusUnknown": {
+        "title": "Bestellung nicht bestätigt",
+        "description": "Wir konnten nicht feststellen, ob deine Bestellung eingegangen ist. Bitte prüfe dein E-Mail-Postfach oder ruf uns an, bevor du erneut bestellst."
+      },
+      "failed": {
+        "title": "Bestellung fehlgeschlagen",
+        "description": "Deine Bestellung konnte nicht aufgegeben werden. Bitte prüfe deine Angaben und versuche es erneut."
+      },
+      "button": {
+        "saveDetailsFirst": "Bitte zuerst Ihre Angaben speichern",
+        "loadingHours": "Lade Öffnungszeiten …",
+        "closed": "Wir haben aktuell leider geschlossen",
+        "notAccepting": "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen",
+        "shippingBlocked": "{method} ist hier nicht möglich",
+        "noPaymentMethod": "Aktuell ist keine Zahlart verfügbar",
+        "placeOrder": "Zahlungspflichtig bestellen"
+      },
+      "legal": {
+        "text": "Mit der Bestellung akzeptieren Sie unsere {terms} und die {privacy}.",
+        "terms": "AGB",
+        "privacy": "Datenschutzerklärung"
+      }
+    },
+    "confirmation": {
+      "thanks": "Vielen Dank für Ihre Bestellung",
+      "received": "Wir haben sie erhalten und bereiten sie jetzt vor.",
+      "number": "Ihre Bestellnummer ist {number}.",
+      "kicker": "Bestellung",
+      "loadFailed": "Die Bestellung konnte nicht geladen werden.",
+      "receivedAnyway": "Ihre Bestellung ist trotzdem bei uns eingegangen.",
+      "reload": "Bitte laden Sie die Seite neu oder rufen Sie uns an.",
+      "somethingWrong": "Stimmt etwas nicht?",
+      "callUs": "Rufen Sie uns gleich an, dann können wir Ihre Bestellung noch ändern.",
+      "call": "Anrufen:",
+      "toHome": "Zur Startseite"
+    },
+    "detail": {
+      "status": "Status",
+      "wishedTime": "Wunschzeit",
+      "taxIncluded": "enthaltene MwSt. {rate} %",
+      "taxExcluded": "zzgl. MwSt. {rate} %",
+      "dishNumber": "Nr. {number}",
+      "shippingCosts": "Lieferkosten"
+    },
+    "orderStatus": {
+      "open": "Offen",
+      "inProgress": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "cancelled": "Abgebrochen"
+    },
+    "paymentStatus": {
+      "open": "Offen",
+      "paid": "Bezahlt",
+      "failed": "Fehlgeschlagen",
+      "cancelled": "Abgebrochen",
+      "refunded": "Erstattet"
+    },
+    "checkoutPage": {
+      "title": "Kasse",
+      "empty": "Ihr Warenkorb ist noch leer.",
+      "loading": "Kasse wird geladen"
+    },
+    "orderPage": {
+      "title": "Bestellung"
+    },
+    "paymentSuccess": {
+      "title": "Zahlung erfolgreich"
+    },
+    "paymentFailed": {
+      "title": "Zahlung fehlgeschlagen",
+      "intro": "Ihre Bestellung ist gespeichert, aber die Zahlung hat nicht geklappt. Wählen Sie eine Zahlungsart und versuchen Sie es noch einmal.",
+      "method": "Zahlungsart",
+      "startFailed": "Die Zahlung konnte nicht gestartet werden. Bitte versuchen Sie es noch einmal oder rufen Sie uns an.",
+      "payNow": "Jetzt bezahlen",
+      "orderHeading": "Bestellung {number}"
+    }
+  }
+}

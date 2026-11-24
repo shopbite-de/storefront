@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { HomeSeoWords } from "~/utils/seo";
+
 // Server route instead of queryCollection(): keeps the SQLite WASM client
 // out of client-side navigations (#314).
 const { data: page } = await useAsyncData("index", () =>
@@ -9,6 +11,12 @@ if (!page.value) {
 }
 
 const { site } = useRuntimeConfig().public;
+const { t } = useI18n();
+const homeSeoWords: HomeSeoWords = {
+  titleSuffix: t("common.homeSeo.titleSuffix"),
+  description: (kind, params) =>
+    t(`common.homeSeo.description.${kind}`, params),
+};
 const homeSite = {
   name: site.name,
   city: site.address.city,
@@ -23,9 +31,11 @@ const customDescription =
   seo?.description !== description ? seo?.description : undefined;
 
 usePageSeo({
-  title: customTitle || buildHomeTitle(homeSite),
+  title: customTitle || buildHomeTitle(homeSite, homeSeoWords),
   description:
-    customDescription || buildHomeDescription(homeSite) || description,
+    customDescription ||
+    buildHomeDescription(homeSite, homeSeoWords) ||
+    description,
   image: seo?.image as string | undefined,
   standalone: true,
 });

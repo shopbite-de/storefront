@@ -1,5 +1,6 @@
 import type { Money, ShopConfig } from "../../shared/domain";
 import { moneyAmount } from "../utils/money";
+import { shopLocale } from "#shopbite-locale";
 import { SHOP_CONFIG_KEY } from "./useShopConfig";
 
 export interface CommercePriceConfig {
@@ -9,14 +10,15 @@ export interface CommercePriceConfig {
 
 const DEFAULT_CONFIG: CommercePriceConfig = {
   currencyCode: "EUR",
-  localeCode: "de-DE",
+  // the shop's language (ADR 0002), never the visitor's browser
+  localeCode: shopLocale.language,
 };
 
 /**
  * Platform-agnostic price formatting.
  *
- * The shop-wide currency and locale are the shop's (`ShopConfig.currency`
- * and `locale`, ADR 0001 step 7), which the server renders from its cache
+ * The currency is the shop's (`ShopConfig.currency`, ADR 0001 step 7), the
+ * number format the shop's locale (ADR 0002), which the server renders from its cache
  * and hands over in the payload (`useShopConfig`, app.vue), so server render
  * and client hydration always format identically, never by the visitor's
  * browser locale. `setPriceConfig` overrides them for the whole app
@@ -47,7 +49,6 @@ export function useCommercePrice(params?: Partial<CommercePriceConfig>) {
     () =>
       params?.localeCode ??
       config.value.localeCode ??
-      shop.value?.locale ??
       DEFAULT_CONFIG.localeCode,
   );
 

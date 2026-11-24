@@ -1,15 +1,16 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 /**
  * "Oft bestellt" of the presets (#444): the top sellers as bon cards with
  * quick add, a tap on the name opens the quick view. Renders nothing
  * without top sellers.
  */
-withDefaults(
-  defineProps<{
-    title?: string;
-  }>(),
-  { title: "Oft bestellt" },
-);
+const props = defineProps<{
+  title?: string;
+}>();
+const { t } = useI18n();
+// the content's title, else the default heading (#388)
+const heading = computed(() => props.title ?? t("common.homeHighlights.title"));
 
 const { loadTopSellers } = useTopSellers();
 const { data: topSellers } = await useAsyncData("top-sellers", () =>
@@ -33,13 +34,13 @@ const { menuView } = useThemePreset();
         id="home-highlights-title"
         class="font-display text-[32px] leading-tight text-sb-ink sm:text-5xl"
       >
-        {{ title }}
+        {{ heading }}
       </h2>
       <NuxtLink
-        to="/speisekarte/"
+        :to="shopLocale.menuPath"
         class="inline-flex min-h-11 items-center font-body font-bold text-sb-primary-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-sb-focus"
       >
-        Zur Speisekarte
+        {{ $t("common.shared.toMenu") }}
       </NuxtLink>
     </div>
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">

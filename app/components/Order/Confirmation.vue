@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 import { formatDate } from "~/utils/formatDate";
 
 /**
@@ -42,30 +43,35 @@ onMounted(async () => {
         <SbIcon name="check" :size="28" />
       </span>
       <h1 class="font-display text-4xl leading-tight sm:text-5xl">
-        Vielen Dank für Ihre Bestellung
+        {{ $t("order.confirmation.thanks") }}
       </h1>
       <p class="text-lg">
-        Wir haben sie erhalten und bereiten sie jetzt vor.
-        <template v-if="order?.number">
-          Ihre Bestellnummer ist
-          <strong class="tabular-nums">{{ order.number }}</strong>.
-        </template>
+        {{ $t("order.confirmation.received") }}
+        <i18n-t
+          v-if="order?.number"
+          keypath="order.confirmation.number"
+          scope="global"
+        >
+          <template #number>
+            <strong class="tabular-nums">{{ order.number }}</strong>
+          </template>
+        </i18n-t>
       </p>
     </header>
     <header v-else class="flex flex-col gap-1">
       <p class="text-sm font-bold tracking-wide text-sb-accent uppercase">
-        Bestellung
+        {{ $t("order.confirmation.kicker") }}
       </p>
       <h1 class="font-display text-4xl leading-tight tabular-nums sm:text-5xl">
-        {{ order?.number || "Ihre Bestellung" }}
+        {{ order?.number || $t("order.shared.yourOrder") }}
       </h1>
       <p v-if="order?.placedAt" class="text-sb-ink-muted">
-        {{ formatDate(order.placedAt) }}
+        {{ formatDate(order.placedAt, shopLocale.language) }}
       </p>
     </header>
 
     <p v-if="state === 'loading'" role="status" class="text-sb-ink-muted">
-      Bestellung wird geladen …
+      {{ $t("order.shared.loadingOrder") }}
     </p>
     <div
       v-else-if="state === 'failed'"
@@ -73,13 +79,11 @@ onMounted(async () => {
       class="flex flex-col items-start gap-4 rounded-sb-card border-[1.5px] border-sb-danger bg-sb-surface p-6"
     >
       <p>
-        <strong class="block"
-          >Die Bestellung konnte nicht geladen werden.</strong
-        >
+        <strong class="block">{{ $t("order.confirmation.loadFailed") }}</strong>
         <template v-if="kind === 'success'">
-          Ihre Bestellung ist trotzdem bei uns eingegangen.
+          {{ $t("order.confirmation.receivedAnyway") }}
         </template>
-        Bitte laden Sie die Seite neu oder rufen Sie uns an.
+        {{ $t("order.confirmation.reload") }}
       </p>
     </div>
     <section
@@ -88,7 +92,7 @@ onMounted(async () => {
       class="rounded-sb-card border border-sb-line bg-sb-surface p-6"
     >
       <h2 id="bestellung-details" class="mb-4 font-display text-2xl">
-        Ihre Bestellung
+        {{ $t("order.shared.yourOrder") }}
       </h2>
       <OrderDetail :order="order" />
     </section>
@@ -99,20 +103,22 @@ onMounted(async () => {
       class="flex flex-col items-start gap-3 rounded-sb-card bg-sb-muted p-6 sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
-        <h2 id="bestellung-anrufen" class="font-bold">Stimmt etwas nicht?</h2>
+        <h2 id="bestellung-anrufen" class="font-bold">
+          {{ $t("order.confirmation.somethingWrong") }}
+        </h2>
         <p class="text-sb-ink-muted">
-          Rufen Sie uns gleich an, dann können wir Ihre Bestellung noch ändern.
+          {{ $t("order.confirmation.callUs") }}
         </p>
       </div>
       <SbButton variant="secondary" :to="toTelHref(site.telephone)">
         <SbIcon name="phone" />
-        <span class="sr-only">Anrufen:</span>
+        <span class="sr-only">{{ $t("order.confirmation.call") }}</span>
         {{ site.telephone }}
       </SbButton>
     </section>
 
-    <SbButton variant="ghost" to="/" class="self-start"
-      >Zur Startseite</SbButton
-    >
+    <SbButton variant="ghost" to="/" class="self-start">{{
+      $t("order.confirmation.toHome")
+    }}</SbButton>
   </div>
 </template>

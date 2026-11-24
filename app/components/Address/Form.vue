@@ -23,6 +23,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ "submit-success": [] }>();
 
+const { t } = useI18n();
 const isBusiness = ref(Boolean(props.address?.company));
 // the form's own field names; the country is not asked
 const model = ref<AddressSchema>({
@@ -42,18 +43,18 @@ const model = ref<AddressSchema>({
 const schema = computed(() =>
   baseAddressSchema
     .extend({
-      firstName: z
-        .string()
-        .min(1, { message: "Bitte geben Sie den Vornamen an." }),
+      firstName: z.string().min(1, {
+        message: "account.addressForm.validation.firstNameRequired",
+      }),
       lastName: z
         .string()
-        .min(1, { message: "Bitte geben Sie den Nachnamen an." }),
-      zipcode: z
-        .string()
-        .min(1, { message: "Bitte geben Sie die Postleitzahl an." }),
+        .min(1, { message: "account.addressForm.validation.lastNameRequired" }),
+      zipcode: z.string().min(1, {
+        message: "account.addressForm.validation.postalCodeRequired",
+      }),
     })
     .refine((data) => !isBusiness.value || Boolean(data.company), {
-      message: "Bitte geben Sie den Firmennamen an.",
+      message: "account.addressForm.validation.companyRequired",
       path: ["company"],
     }),
 );
@@ -71,7 +72,8 @@ async function onSubmit() {
     const next: Record<string, string> = {};
     for (const issue of result.error.issues) {
       const key = `${PREFIX}.${issue.path.join(".")}`;
-      next[key] ??= issue.message;
+      // the schemas' messages are keys (ADR 0002)
+      next[key] ??= t(issue.message);
     }
     errors.value = next;
     await nextTick();
@@ -121,12 +123,14 @@ async function onSubmit() {
       role="alert"
       class="rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
     >
-      <strong class="block"
-        >Die Adresse konnte nicht gespeichert werden.</strong
-      >
-      Bitte versuchen Sie es noch einmal.
+      <strong class="block">{{ $t("account.addressForm.saveFailed") }}</strong>
+      {{ $t("account.addressForm.tryAgain") }}
     </div>
-    <SbCheckbox v-model="isBusiness" label="Firmenadresse" plain />
+    <SbCheckbox
+      v-model="isBusiness"
+      :label="$t('account.addressForm.business')"
+      plain
+    />
     <AddressFields
       v-model="model"
       :prefix="PREFIX"
@@ -134,8 +138,8 @@ async function onSubmit() {
       show-names
       :errors="errors"
     />
-    <SbButton type="submit" size="lg" block :loading="saving"
-      >Adresse speichern</SbButton
-    >
+    <SbButton type="submit" size="lg" block :loading="saving">{{
+      $t("account.addressForm.save")
+    }}</SbButton>
   </form>
 </template>
