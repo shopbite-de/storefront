@@ -11,6 +11,7 @@
  */
 import { createError, defineEventHandler, getMethod, readBody } from "h3";
 import { useRuntimeConfig, useStorage } from "nitropack/runtime";
+import { useBackend } from "../../../server/utils/backend";
 import { parseScenario } from "./scenario";
 import { changeScenario, startScenario } from "./state";
 
@@ -27,10 +28,11 @@ export default defineEventHandler(async (event) => {
       statusMessage: (error as Error).message,
     });
   }
+  const backend = useBackend(event);
   const running =
     getMethod(event) === "PATCH"
-      ? changeScenario(scenario)
-      : startScenario(scenario);
+      ? changeScenario(backend, scenario)
+      : startScenario(backend, scenario);
   const storage = useStorage();
   const keys = await storage.getKeys("cache:nitro");
   await Promise.all(keys.map((key) => storage.removeItem(key)));

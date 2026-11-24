@@ -19,13 +19,3 @@ export function useBackend(event?: H3Event): Backend {
   }
   return current.backend;
 }
-
-/**
- * Replaces the process's adapter set. Only the behaviour tests' scenario
- * route calls it (`test/bdd/seam/`, built in with SHOPBITE_TEST_SEAMS=1
- * only, `modules/test-seams.ts`), to start each scenario on a fresh memory
- * backend; no production route reaches it.
- */
-export function replaceBackend(backend: Backend): void {
-  current = { name: backend.name, backend };
-}
