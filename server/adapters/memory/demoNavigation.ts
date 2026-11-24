@@ -1,6 +1,13 @@
 import type { NavigationNode } from "../../../shared/domain";
 import type { MemoryCatalog } from "./catalog";
 import { id } from "./demoMenu";
+import {
+  pathOf,
+  resolveShopLocale,
+  type PageName,
+  type ShopLocale,
+} from "../../../i18n/shopLocale";
+import { demoLocale, type DemoLocale } from "./demoLocale";
 import { toNode, type MemoryNavigation } from "./navigation";
 
 const link = (key: string, label: string, path: string): NavigationNode => ({
@@ -17,9 +24,10 @@ const link = (key: string, label: string, path: string): NavigationNode => ({
 const group = (
   name: string,
   children: readonly NavigationNode[],
+  label: string = name,
 ): NavigationNode => ({
   id: id(`category:footer:${name}`),
-  label: name,
+  label,
   kind: "group",
   path: null,
   external: false,
@@ -33,18 +41,33 @@ const group = (
  * its sections and a contact link in the header; the footer columns
  * "Beliebt" (the first four sections), "Service" and "Rechtliches".
  */
-export function demoNavigation(catalog: MemoryCatalog): MemoryNavigation {
+export function demoNavigation(
+  catalog: MemoryCatalog,
+  words: DemoLocale = demoLocale("de"),
+  locale: Pick<ShopLocale, "pagePaths" | "contentPaths"> = resolveShopLocale(
+    {},
+    {},
+  ),
+): MemoryNavigation {
   const sections = catalog.sections;
-  const footerLink = (column: string, label: string, path: string) =>
-    link(`category:footer:${column}:${label}`, label, path);
+  const nav = words.navigation;
+  const page = (name: PageName) => pathOf(locale.pagePaths, name);
+  const content = locale.contentPaths;
+  const footerLink = (
+    column: string,
+    key: string,
+    path: string,
+    label: string = key,
+  ) => link(`category:footer:${column}:${key}`, label, path);
   return {
     main: [
       ...(catalog.menuRoot
         ? [toNode({ ...catalog.menuRoot, children: sections })]
         : []),
-      link("category:kontakt", "Kontakt", "/kontakt"),
+      link("category:kontakt", nav.contact, page("kontakt")),
     ],
     footer: [
+      // ids by the German names, the same in every language
       group(
         "Beliebt",
         sections
@@ -52,18 +75,37 @@ export function demoNavigation(catalog: MemoryCatalog): MemoryNavigation {
           .map((section) =>
             footerLink("Beliebt", section.name, section.path ?? ""),
           ),
+        nav.popular,
       ),
-      group("Service", [
-        footerLink("Service", "Kontakt", "/kontakt"),
-        footerLink("Service", "Zahlung und Versand", "/zahlung-und-versand"),
-        footerLink("Service", "Mein Konto", "/konto"),
-        footerLink("Service", "Merkliste", "/merkliste"),
-      ]),
-      group("Rechtliches", [
-        footerLink("Rechtliches", "Impressum", "/impressum"),
-        footerLink("Rechtliches", "Datenschutz", "/datenschutz"),
-        footerLink("Rechtliches", "AGB", "/agb"),
-      ]),
+      group(
+        "Service",
+        [
+          footerLink("Service", "Kontakt", page("kontakt"), nav.contact),
+          footerLink(
+            "Service",
+            "Zahlung und Versand",
+            content.shipping,
+            nav.shipping,
+          ),
+          footerLink("Service", "Mein Konto", page("konto"), nav.account),
+          footerLink("Service", "Merkliste", page("merkliste"), nav.wishlist),
+        ],
+        nav.service,
+      ),
+      group(
+        "Rechtliches",
+        [
+          footerLink("Rechtliches", "Impressum", content.imprint, nav.imprint),
+          footerLink(
+            "Rechtliches",
+            "Datenschutz",
+            content.privacy,
+            nav.privacy,
+          ),
+          footerLink("Rechtliches", "AGB", content.terms, nav.terms),
+        ],
+        nav.legal,
+      ),
     ],
     formerPaths: {},
     lastModified: {},

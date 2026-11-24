@@ -82,6 +82,7 @@ export function createMemoryBackend(
     guestOf: ordering.guestOf,
     moveSession: ordering.moveSelection,
     doubleOptIn: seed.customer?.doubleOptIn,
+    countries: seed.customer?.countries,
     mail: options.mail,
     pagePaths: options.pagePaths,
   });
@@ -113,7 +114,7 @@ export function createMemoryBackend(
 
 /** The demo restaurant in the storefront's time zone (`shopBite.timeZone`). */
 export function memoryFromRuntimeConfig(config: BackendRuntimeConfig): Backend {
-  const demo = demoSeed();
+  const demo = demoSeed(shopLocale);
   return createMemoryBackend(
     {
       ...demo,

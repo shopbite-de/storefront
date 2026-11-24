@@ -12,7 +12,18 @@ import type {
 
 // Builder for /llms.txt (#402, https://llmstxt.org): a Markdown summary of
 // the shop for language models. Pure, so it is unit-testable; the route
-// gathers the data and hands it in. The text is German like the shop.
+// gathers the data and hands it in. The text is in the shop's language
+// (ADR 0002): the route passes the messages `server.llms.*` and the
+// locale's language tag.
+
+/** Messages and language of the shop's locale. */
+export type LlmsWords = {
+  t: (key: string, params?: Record<string, string | number>) => string;
+  /** BCP 47 tag for prices, dates and sorting, e.g. `de-DE`. */
+  language: string;
+};
+
+const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 export type LlmsMenuItem = {
   name: string;
@@ -63,8 +74,6 @@ export type LlmsTxtInput = {
   timeZone: string;
 };
 
-const DIET_LABELS = { vegetarian: "vegetarisch", vegan: "vegan" } as const;
-
 /**
  * The menu part from the catalog: each section lists the dishes assigned
  * to it directly, alphabetically (numbers in natural order, "Pizza 9"
@@ -74,6 +83,7 @@ export function toLlmsMenu(
   sections: readonly MenuSection[],
   dishes: readonly Dish[],
   siteUrl: string,
+  language: string,
 ): LlmsMenuSection[] {
   const bySection = new Map<string, Dish[]>();
   for (const dish of dishes) {
@@ -85,7 +95,7 @@ export function toLlmsMenu(
     name: section.name,
     url: section.path ? toAbsoluteUrl(siteUrl, section.path) : undefined,
     items: [...(bySection.get(section.id) ?? [])]
-      .sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }))
+      .sort((a, b) => a.name.localeCompare(b.name, language, { numeric: true }))
       .map((dish) => {
         const link = dishLink(dish, section.path ?? undefined);
         return {
@@ -102,28 +112,37 @@ export function toLlmsMenu(
   return sections.map(toSection);
 }
 
-function formatPrice(price: number, currency: string) {
-  return new Intl.NumberFormat("de-DE", { style: "currency", currency })
+function formatPrice(price: number, currency: string, language: string) {
+  return new Intl.NumberFormat(language, { style: "currency", currency })
     .format(price)
     .replace(/\u00a0/g, " ");
 }
 
-/** `2026-07-12` → `12.07.2026`. */
-function formatDay(date: string) {
-  const [year, month, day] = date.split("-");
-  return `${day}.${month}.${year}`;
+/** `2026-07-12` → `12.07.2026` (de-DE), `12/07/2026` (en-GB). */
+function formatDay(date: string, language: string) {
+  return new Intl.DateTimeFormat(language, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
 }
 
-function menuItemLine(item: LlmsMenuItem, currency: string) {
+function menuItemLine(item: LlmsMenuItem, currency: string, words: LlmsWords) {
+  const { t, language } = words;
   const price =
     item.price !== undefined
-      ? `${item.fromPrice ? "ab " : ""}${formatPrice(item.price, currency)}`
+      ? item.fromPrice
+        ? t("server.llms.fromPrice", {
+            price: formatPrice(item.price, currency, language),
+          })
+        : formatPrice(item.price, currency, language)
       : undefined;
   // Vegan dishes are vegetarian too; naming "vegan" is enough.
   const diet = item.diets?.includes("vegan")
-    ? DIET_LABELS.vegan
+    ? t("server.llms.vegan")
     : item.diets?.includes("vegetarian")
-      ? DIET_LABELS.vegetarian
+      ? t("server.llms.vegetarian")
       : undefined;
   const details = [
     item.ingredients?.length ? item.ingredients.join(", ") : undefined,
@@ -140,13 +159,14 @@ function menuSectionLines(
   section: LlmsMenuSection,
   currency: string,
   level: number,
+  words: LlmsWords,
 ): string[] {
   const heading = "#".repeat(Math.min(level, 6));
   const title = section.url
     ? `[${section.name}](${section.url})`
     : section.name;
   const subsections = (section.sections ?? []).flatMap((child) =>
-    menuSectionLines(child, currency, level + 1),
+    menuSectionLines(child, currency, level + 1, words),
   );
   if (section.items.length === 0 && subsections.length === 0) return [];
 
@@ -154,21 +174,28 @@ function menuSectionLines(
     "",
     `${heading} ${title}`,
     ...(section.items.length ? [""] : []),
-    ...section.items.map((item) => menuItemLine(item, currency)),
+    ...section.items.map((item) => menuItemLine(item, currency, words)),
     ...subsections,
   ];
 }
 
-export function buildLlmsTxt(input: LlmsTxtInput): string {
+export function buildLlmsTxt(input: LlmsTxtInput, words: LlmsWords): string {
+  const { t, language } = words;
   const currency = input.currency || "EUR";
   const city = input.address?.city;
 
   const summary = [
     input.cuisine && city
-      ? `${input.name}: ${input.cuisine} in ${city}.`
-      : `${input.name}${city ? ` in ${city}` : ""}.`,
+      ? t("server.llms.summaryCuisine", {
+          name: input.name,
+          cuisine: input.cuisine,
+          city,
+        })
+      : city
+        ? t("server.llms.summaryCity", { name: input.name, city })
+        : `${input.name}.`,
     input.acceptsOrders
-      ? `Online bestellen zur Lieferung oder Abholung unter ${input.url}.`
+      ? t("server.llms.summaryOrders", { url: input.url })
       : undefined,
   ]
     .filter(Boolean)
@@ -176,56 +203,62 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
 
   const contact = [
     input.alternateNames?.length
-      ? `- Auch bekannt als: ${input.alternateNames.join(", ")}`
+      ? `- ${t("server.llms.alsoKnownAs")}: ${input.alternateNames.join(", ")}`
       : undefined,
     input.address?.street || input.address?.postalCode || city
-      ? `- Adresse: ${[
+      ? `- ${t("server.llms.address")}: ${[
           input.address?.street,
           [input.address?.postalCode, city].filter(Boolean).join(" "),
         ]
           .filter(Boolean)
           .join(", ")}`
       : undefined,
-    input.telephone ? `- Telefon: ${input.telephone}` : undefined,
-    `- Website: ${input.url}`,
+    input.telephone
+      ? `- ${t("server.llms.telephone")}: ${input.telephone}`
+      : undefined,
+    `- ${t("server.llms.website")}: ${input.url}`,
     input.googleBusinessProfileUrl
       ? `- Google: ${input.googleBusinessProfileUrl}`
       : undefined,
   ].filter((line): line is string => Boolean(line));
 
   const hours = groupOpeningHours(input.openingHours ?? { intervals: [] }, {
-    days: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+    days: WEEKDAYS.map((day) => t(`server.llms.days.${day}`)),
   }).map(
     (row) =>
-      `- ${row.days}: ${row.intervals.length ? row.intervals.join(", ") : "Ruhetag"}`,
+      `- ${row.days}: ${row.intervals.length ? row.intervals.join(", ") : t("server.llms.closedDay")}`,
   );
 
   const today = restaurantNow(input.now, input.timeZone).date;
   const closingDays = (input.holidays ?? [])
     .filter((holiday) => holiday.lastDay >= today)
     .map((holiday) => {
-      const start = formatDay(holiday.firstDay);
-      const end = formatDay(holiday.lastDay);
-      return `- Geschlossen: ${start === end ? start : `${start} – ${end}`}`;
+      const start = formatDay(holiday.firstDay, language);
+      const end = formatDay(holiday.lastDay, language);
+      return `- ${t("server.llms.closed")}: ${start === end ? start : `${start} – ${end}`}`;
     });
 
   const ordering = input.acceptsOrders
     ? [
-        `- Online bestellen: ${input.menuUrl ?? input.url}`,
+        `- ${t("server.llms.orderOnline")}: ${input.menuUrl ?? input.url}`,
         input.deliveryAreas?.length
-          ? `- Liefergebiet: ${input.deliveryAreas.join(", ")}`
+          ? `- ${t("server.llms.deliveryArea")}: ${input.deliveryAreas.join(", ")}`
           : undefined,
         input.deliveryTime
-          ? `- Lieferzeit: ca. ${input.deliveryTime} Minuten`
+          ? `- ${t("server.llms.deliveryTime", { minutes: input.deliveryTime })}`
           : undefined,
         input.address?.street
-          ? `- Abholung im Restaurant möglich${input.pickupTime ? `, abholbereit in ca. ${input.pickupTime} Minuten` : ""}`
+          ? `- ${
+              input.pickupTime
+                ? t("server.llms.pickupWithTime", { minutes: input.pickupTime })
+                : t("server.llms.pickup")
+            }`
           : undefined,
       ].filter((line): line is string => Boolean(line))
     : [];
 
   const menu = (input.menu ?? []).flatMap((section) =>
-    menuSectionLines(section, currency, 3),
+    menuSectionLines(section, currency, 3, words),
   );
 
   const pages = (input.pages ?? []).map(
@@ -236,14 +269,14 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
   const sections: string[][] = [
     [`# ${input.name}`, "", `> ${summary}`],
     input.description ? [input.description] : [],
-    ["## Kontakt", "", ...contact],
+    [`## ${t("server.llms.contact")}`, "", ...contact],
     hours.length || closingDays.length
-      ? ["## Öffnungszeiten", "", ...hours, ...closingDays]
+      ? [`## ${t("server.llms.openingHours")}`, "", ...hours, ...closingDays]
       : [],
-    ordering.length ? ["## Bestellen", "", ...ordering] : [],
+    ordering.length ? [`## ${t("server.llms.ordering")}`, "", ...ordering] : [],
     input.faq?.length
       ? [
-          "## Häufige Fragen",
+          `## ${t("server.llms.faq")}`,
           ...input.faq.flatMap((item) => [
             "",
             `### ${item.question}`,
@@ -252,8 +285,8 @@ export function buildLlmsTxt(input: LlmsTxtInput): string {
           ]),
         ]
       : [],
-    menu.length ? ["## Speisekarte", ...menu] : [],
-    pages.length ? ["## Weitere Informationen", "", ...pages] : [],
+    menu.length ? [`## ${t("server.llms.menu")}`, ...menu] : [],
+    pages.length ? [`## ${t("server.llms.morePages")}`, "", ...pages] : [],
   ];
 
   return `${sections
