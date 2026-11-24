@@ -2,9 +2,9 @@ name: Behaviour tests (Shopware)
 # The Gherkin features of test/bdd against a real Shopware with the
 # ShopBite plugin: the public quickstart's images and seed
 # (github.com/shopbite-de/shopbite), the storefront built from the branch.
-# Nightly, on demand (Actions → Run workflow, any branch) and before a
-# release: `gh workflow run bdd-shopware.yaml --ref <branch>`; for a PR, add
-# the label `bdd-shopware` (each time it is added).
+# Nightly, on demand on any branch (`gh workflow run bdd-shopware.yaml
+# --ref <branch>`) and for a PR with the label `bdd-shopware` (each time it
+# is added). It does not block releases (build.yaml does not wait for it).
 on:
   pull_request:
     types: [labeled]
@@ -24,14 +24,15 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: bdd-shopware-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   bdd-shopware:
     name: Behaviour tests (Shopware)
     if: github.event_name != 'pull_request' || github.event.label.name == 'bdd-shopware'
+    # in the job, after the `if`: another label skips the job and cancels
+    # nothing; nightly, dispatch and label runs do not cancel each other
+    concurrency:
+      group: bdd-shopware-${{ github.event_name }}-${{ github.ref }}
+      cancel-in-progress: true
     timeout-minutes: 45
     runs-on: ubuntu-latest
     env:
