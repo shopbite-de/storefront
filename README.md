@@ -108,7 +108,8 @@ pnpm typecheck        # nuxt typecheck — must stay at zero errors
 pnpm lint:fix         # Prettier + ESLint, autofix
 
 pnpm test:unit        # Vitest (unit + Nuxt environments)
-pnpm test:e2e         # Playwright, Chromium — needs a running server
+pnpm test:bdd         # behaviour tests (Gherkin, test/bdd) on the memory backend
+pnpm test:bdd:shopware # the same features against a Shopware (CLAUDE.md, Behaviour tests)
 pnpm test:ui          # Vitest UI
 
 pnpm generate-types   # Regenerate Store API types after plugin changes
@@ -118,7 +119,7 @@ Run a single test:
 
 ```bash
 pnpm vitest run test/nuxt/useDeliveryTime.test.ts
-pnpm playwright test test/e2e/simple-checkout-as-recurring-customer.test.ts
+pnpm test:bdd cart.feature
 ```
 
 ## Architecture
@@ -133,7 +134,7 @@ app/
 server/api/         BFF routes (domain types from the ports), cached Store API proxies, the Geoapify key guard
 api-types/          Auto-generated Store API types (pnpm generate-types)
 content/            Legal pages as Markdown (@nuxt/content)
-test/               unit · nuxt · e2e
+test/               unit · nuxt · contract · bdd (Gherkin behaviour tests) · a11y
 ```
 
 **Composables carry the domain.** `@shopware/composables` is extended as a Nuxt layer,
@@ -156,7 +157,7 @@ docker compose up --build     # → http://localhost:3000
 
 ## Contributing
 
-CI runs **setup → lint → unit → e2e** on every push. Before opening a PR:
+CI runs **setup → lint → unit → behaviour tests (memory backend)** on every push; the same features run against Shopware nightly (`bdd-shopware.yaml`). Before opening a PR:
 
 ```bash
 pnpm lint:fix && pnpm typecheck && pnpm test:unit
