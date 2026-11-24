@@ -21,6 +21,8 @@ RUN pnpm install --frozen-lockfile --prefer-offline
 COPY . .
 
 RUN pnpm build
+# the behaviour tests' seam (SHOPBITE_TEST_SEAMS=1) never ships in an image
+RUN if grep -rqs "/api/_test/" .output/server; then echo "test seams in a production build" >&2; exit 1; fi
 
 FROM node:26-alpine AS production
 
