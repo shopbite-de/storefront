@@ -32,6 +32,8 @@ const {
 } = useProductDetail(() => props.dishId);
 
 const { getFormattedMoney } = useCommercePrice();
+// paused or switched off: no cart line the backend would refuse to order
+const { acceptsOrders } = useShopConfig();
 
 const selectedExtras = ref<Extra[]>([]);
 const deselectedIngredients = ref<string[]>([]);
@@ -171,24 +173,33 @@ const dishName = computed(() => selectedDish.value?.name || "Gericht");
     <div
       class="sticky -bottom-5 -mx-5 -mb-5 mt-auto flex items-center gap-2.5 border-t border-sb-line bg-sb-surface px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
     >
-      <SbStepper
-        v-model="selectedQuantity"
-        :item-name="dishName"
-        :max="100"
-        size="lg"
-      />
-      <SbButton
-        size="lg"
-        class="min-h-14 min-w-0 flex-1 justify-between px-5"
-        :disabled="pending || !isAvailable"
-        :loading="isLoading"
-        @click="addToCart(onAddToCart)"
+      <p
+        v-if="!acceptsOrders"
+        role="status"
+        class="min-h-14 flex-1 py-2 text-sm font-semibold text-sb-ink-muted"
       >
-        <span>{{ isAvailable ? "In den Warenkorb" : "Ausverkauft" }}</span>
-        <span v-if="isAvailable && !pending" class="tabular-nums">
-          {{ getFormattedMoney(total) }}
-        </span>
-      </SbButton>
+        Es werden aktuell keine weiteren Bestellungen mehr aufgenommen.
+      </p>
+      <template v-else>
+        <SbStepper
+          v-model="selectedQuantity"
+          :item-name="dishName"
+          :max="100"
+          size="lg"
+        />
+        <SbButton
+          size="lg"
+          class="min-h-14 min-w-0 flex-1 justify-between px-5"
+          :disabled="pending || !isAvailable"
+          :loading="isLoading"
+          @click="addToCart(onAddToCart)"
+        >
+          <span>{{ isAvailable ? "In den Warenkorb" : "Ausverkauft" }}</span>
+          <span v-if="isAvailable && !pending" class="tabular-nums">
+            {{ getFormattedMoney(total) }}
+          </span>
+        </SbButton>
+      </template>
     </div>
   </div>
 </template>

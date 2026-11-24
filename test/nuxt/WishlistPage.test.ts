@@ -18,6 +18,8 @@ const { addLine, dishes } = vi.hoisted(() => ({
 registerEndpoint("/api/menu/dishes/p1", () => dishes("p1"));
 registerEndpoint("/api/menu/dishes/v21-gross", () => dishes("v21-gross"));
 registerEndpoint("/api/menu/dishes/d21", () => dishes("d21"));
+// the restaurant takes orders (paused: orderingPaused.test.ts)
+mockNuxtImport("useShopConfig", () => () => ({ acceptsOrders: ref(true) }));
 mockNuxtImport("useCustomer", () => () => ({ isLoggedIn: ref(false) }));
 mockNuxtImport("useCartMutations", () => () => ({
   addLine,

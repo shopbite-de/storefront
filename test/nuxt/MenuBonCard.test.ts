@@ -17,6 +17,8 @@ mockNuxtImport("useAddToCart", () => () => ({
   addToCart: mocks.addToCart,
   isLoading: ref(false),
 }));
+// the restaurant takes orders (paused: orderingPaused.test.ts)
+mockNuxtImport("useShopConfig", () => () => ({ acceptsOrders: ref(true) }));
 mockNuxtImport("useProductCartQuantity", () => () => ({
   quantity: computed(() => mocks.quantity.value),
 }));

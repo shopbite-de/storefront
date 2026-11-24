@@ -51,6 +51,9 @@ const price = computed(() => {
 
 const { quantity } = useProductCartQuantity(() => props.dish.id);
 const { setSelectedDish, addToCart, isLoading } = useAddToCart();
+// paused or switched off: the backend would take the cart line but refuse
+// the order, so nothing goes into the cart (a dish with choices still opens)
+const { acceptsOrders } = useShopConfig();
 
 const buttonLabel = computed(() => {
   if (needsChoice.value) return `${name.value} auswählen`;
@@ -140,6 +143,11 @@ function onLinkClick(event: MouseEvent) {
             v-if="!available"
             class="text-sm font-semibold text-sb-ink-muted"
             >Ausverkauft</span
+          >
+          <span
+            v-else-if="!acceptsOrders && !needsChoice"
+            class="text-sm font-semibold text-sb-ink-muted"
+            >Gerade keine Bestellungen</span
           >
           <!-- above the stretched link, so it adds instead of opening -->
           <SbIconButton
