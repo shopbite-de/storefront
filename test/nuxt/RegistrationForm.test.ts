@@ -120,6 +120,24 @@ describe("RegistrationForm", () => {
     expect(wrapper.emitted("registration-success")).toHaveLength(1);
   });
 
+  // the form sends no country: the backend fills in the shop's own (the
+  // Shopware adapter from site.countryId); a backend without one, such as
+  // the memory adapter, must not make every address invalid
+  it("saves an address without a configured country id", async () => {
+    useRuntimeConfig().public.site.countryId = "";
+    mockRegisterGuest.mockResolvedValueOnce({});
+    const wrapper = await mountSuspended(RegistrationForm);
+
+    await fillRequiredFields(wrapper);
+    await submit(wrapper);
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    expect(mockRegisterGuest).toHaveBeenCalled();
+    expect(mockRegisterGuest.mock.calls[0]![0].billingAddress.country).toBe(
+      null,
+    );
+  });
+
   it("says in the storefront's words that the e-mail has an account", async () => {
     mockRegister.mockRejectedValueOnce(
       createError({ statusCode: 409, data: { code: "email_taken" } }),
