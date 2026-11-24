@@ -8,8 +8,7 @@ beforeEach(() => {
     shopBite: { backend, timeZone: "Europe/Berlin" },
     public: { storeUrl: "https://shop.example.com" },
   }));
-  vi.stubGlobal("storeApiGet", vi.fn());
-  vi.stubGlobal("storeApiPost", vi.fn());
+  vi.stubGlobal("$fetch", Object.assign(vi.fn(), { raw: vi.fn() }));
 });
 
 afterEach(() => {

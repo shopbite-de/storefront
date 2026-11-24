@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { notImplemented } from "../../../server/adapters/notImplemented";
 import {
   BACKEND_NAMES,
+  checkBackendConfig,
   createBackend,
   isBackendName,
   type BackendRuntimeConfig,
@@ -11,14 +12,14 @@ import { DomainError, isDomainError } from "../../../shared/domain";
 const config = (backend: string): BackendRuntimeConfig => ({
   shopBite: { backend, timeZone: "Europe/Berlin" },
   public: { storeUrl: "https://shop.example.com" },
+  shopware: { endpoint: "http://shopware/store-api", accessToken: "SWSC" },
 });
 
+const offline = vi.fn().mockRejectedValue(new Error("offline"));
+
 beforeEach(() => {
-  vi.stubGlobal("storeApiGet", vi.fn().mockRejectedValue(new Error("offline")));
-  vi.stubGlobal(
-    "storeApiPost",
-    vi.fn().mockRejectedValue(new Error("offline")),
-  );
+  offline.mockClear();
+  vi.stubGlobal("$fetch", Object.assign(offline, { raw: offline }));
 });
 
 afterEach(() => {
@@ -55,7 +56,10 @@ describe("adapter registry", () => {
   it("lets each adapter read its own configuration", async () => {
     const shopware = createBackend(config("shopware"));
     await shopware.shop.getConfig().catch(() => undefined);
-    expect(storeApiGet).toHaveBeenCalledWith("/shopbite/config", undefined);
+    expect(offline).toHaveBeenCalledWith(
+      "http://shopware/store-api/shopbite/config",
+      expect.anything(),
+    );
 
     const memory = createBackend({
       ...config("memory"),
@@ -68,6 +72,39 @@ describe("adapter registry", () => {
     expect(() => createBackend(config("sylius"))).toThrowError(
       /shopBite\.backend.*"sylius".*shopware, memory/,
     );
+  });
+});
+
+describe("the startup check of the backend's configuration", () => {
+  const production = { production: true, warn: vi.fn() };
+
+  it("stops a Shopware storefront without its connection in production", () => {
+    expect(() =>
+      checkBackendConfig(
+        { ...config("shopware"), shopware: undefined },
+        {},
+        production,
+      ),
+    ).toThrowError(/NUXT_SHOPWARE_ENDPOINT/);
+    expect(() =>
+      checkBackendConfig(config("shopware"), {}, production),
+    ).not.toThrow();
+  });
+
+  it("needs no Shopware connection for the memory backend", () => {
+    expect(() =>
+      checkBackendConfig(
+        { ...config("memory"), shopware: undefined },
+        {},
+        production,
+      ),
+    ).not.toThrow();
+  });
+
+  it("stops an unknown backend", () => {
+    expect(() =>
+      checkBackendConfig(config("sylius"), {}, production),
+    ).toThrowError(/"sylius".*shopware, memory/);
   });
 });
 

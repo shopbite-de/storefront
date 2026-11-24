@@ -13,6 +13,7 @@ import type { Backend } from "../../ports";
 import { notImplemented } from "../notImplemented";
 import type { BackendRuntimeConfig } from "../runtimeConfig";
 import { createShopwareCart } from "./cart";
+import { resolveShopwareConnection, shopwareConnection } from "./connection";
 import {
   createShopwareCatalog,
   currencyOf,
@@ -34,6 +35,7 @@ import {
   type StoreApi,
   type VisitorStoreApi,
 } from "./storeApi";
+import { createShopwareTransport } from "./transport";
 
 export type { StoreApi, VisitorStoreApi } from "./storeApi";
 export type { AdapterLog } from "./shop";
@@ -145,21 +147,41 @@ export function createShopwareBackend(
 }
 
 /**
- * The Shopware adapter of the running storefront: the Store API through
- * the Nitro utils `storeApiGet`/`storeApiPost` (storefront access key).
+ * The Shopware adapter of the running storefront: the Store API at the
+ * private endpoint with the private access key (`shopware.endpoint`,
+ * `shopware.accessToken`; the public names of 2.x from `env` as a
+ * fallback, `connection.ts`). The startup check is `checkShopwareConfig`.
  */
 export function shopwareFromRuntimeConfig(
   config: BackendRuntimeConfig,
+  env: Readonly<Record<string, string | undefined>> = process.env,
 ): Backend {
+  const { endpoint, accessToken } = resolveShopwareConnection(
+    config.shopware,
+    env,
+  );
+  const { storeApi, visitorApi } = createShopwareTransport({
+    endpoint,
+    accessToken,
+  });
   return createShopwareBackend({
-    storeApi: {
-      get: (path, options) => storeApiGet(path, options),
-      post: (path, body, options) => storeApiPost(path, body, options),
-    },
-    visitorApi: { send: (request) => storeApiForVisitor(request) },
+    storeApi,
+    visitorApi,
     storeUrl: config.public.storeUrl,
     timeZone: config.shopBite.timeZone,
     menuCategoryId: config.public.shopBite?.menuCategoryId || undefined,
     countryId: config.public.site?.countryId || undefined,
   });
+}
+
+/**
+ * Checked once at startup (`server/plugins/backend-config.ts`): warns
+ * about the names of 2.x, throws in production without a connection.
+ */
+export function checkShopwareConfig(
+  config: BackendRuntimeConfig,
+  env: Readonly<Record<string, string | undefined>>,
+  options: { production: boolean; warn: (message: string) => void },
+): void {
+  shopwareConnection(config.shopware, env, options);
 }

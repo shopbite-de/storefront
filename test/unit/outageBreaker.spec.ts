@@ -182,7 +182,7 @@ describe("outage breaker", () => {
   });
 });
 
-describe("Store API utils behind the breaker", () => {
+describe("the Shopware transport behind the breaker", () => {
   it("fail fast while it is open and ask again after it", async () => {
     let down = true;
     const plain = vi.fn(async () => {
@@ -191,23 +191,21 @@ describe("Store API utils behind the breaker", () => {
     });
     const raw = vi.fn(async () => ({ _data: {}, headers: new Headers() }));
     vi.stubGlobal("$fetch", Object.assign(plain, { raw }));
-    vi.stubGlobal("useRuntimeConfig", () => ({
-      shopware: { endpoint: "" },
-      public: {
-        shopware: { endpoint: "http://shopware/store-api", accessToken: "k" },
-      },
-    }));
-    const { storeApiGet, storeApiPost, storeApiForVisitor } =
-      await import("../../server/utils/storeApi");
-    await expect(storeApiGet("/context")).rejects.toThrow();
-    await expect(storeApiPost("/product", {})).rejects.toThrow();
+    const { createShopwareTransport } =
+      await import("../../server/adapters/shopware/transport");
+    const { storeApi, visitorApi } = createShopwareTransport({
+      endpoint: "http://shopware/store-api",
+      accessToken: "k",
+    });
+    await expect(storeApi.get("/context")).rejects.toThrow();
+    await expect(storeApi.post("/product", {})).rejects.toThrow();
     expect(plain).toHaveBeenCalledTimes(2);
     await expect(
-      storeApiForVisitor({ method: "POST", path: "/account/customer" }),
+      visitorApi.send({ method: "POST", path: "/account/customer" }),
     ).rejects.toMatchObject({ statusCode: 503 });
     expect(raw).not.toHaveBeenCalled();
     down = false;
     vi.setSystemTime(new Date("2026-11-22T12:00:31Z"));
-    await expect(storeApiGet("/context")).resolves.toEqual({});
+    await expect(storeApi.get("/context")).resolves.toEqual({});
   });
 });
