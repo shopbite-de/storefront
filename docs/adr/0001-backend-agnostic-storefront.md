@@ -400,7 +400,7 @@ Open points after step 8:
 
 ### Lint guard
 
-`@typescript-eslint/no-restricted-imports` forbids `#shopware`, `@shopware/*` and the `api-types` (`~~/api-types/*`, relative paths) outside `server/adapters/shopware/**`, the generated types and `shopware.d.ts`. It warned during steps 1 to 7 (111 warnings in 103 files at step 0, the number to bring down; 22 after step 5, 5 after step 6, 0 after step 7) and is an error since step 8. `#shopware/*` subpaths are covered too. It sees static `import` and `export … from` only: not type queries (`typeof import("#shopware")`, `import("…").Type` in a type position) and not dynamic `import()`. The composables auto-imported from the Shopware layer, which it could not see either, went with the layer in step 8 (the typecheck found none left).
+`@typescript-eslint/no-restricted-imports` forbids `#shopware`, `@shopware/*` and the `api-types` (`~~/api-types/*`, relative paths) outside `server/adapters/shopware/**` and the generated types (until 3.0 also outside `shopware.d.ts`); `#shopware` stays on the list after the module went in step 8, so a leftover import fails with a pointer to this ADR. It warned during steps 1 to 7 (111 warnings in 103 files at step 0, the number to bring down; 22 after step 5, 5 after step 6, 0 after step 7) and is an error since step 8. `#shopware/*` subpaths are covered too. It sees static `import` and `export … from` only: not type queries (`typeof import("#shopware")`, `import("…").Type` in a type position) and not dynamic `import()`. The composables auto-imported from the Shopware layer, which it could not see either, went with the layer in step 8 (the typecheck found none left).
 
 ## Consequences
 

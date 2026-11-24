@@ -1,9 +1,10 @@
 /**
  * The Shopware adapter (ADR 0001): the anti-corruption layer between the
  * storefront's domain and the Shopware Store API with the ShopBite plugin.
- * The only place outside the generated types that may import `#shopware`,
- * `@shopware/*` or `api-types`. Without a visitor transport
- * (`visitorApi`) the visitor's ports answer `not_implemented`.
+ * The only place outside the generated types that may import `@shopware/*`
+ * or `api-types` (there is no `#shopware` module since 3.0). Without a
+ * visitor transport (`visitorApi`) the visitor's ports answer
+ * `not_implemented`.
  */
 import {
   timeZone as checkTimeZone,
