@@ -65,8 +65,8 @@ The shop is now running on **http://localhost:3000**.
 
 | Variable                                | What it does                                                  |
 | --------------------------------------- | ------------------------------------------------------------- |
-| `NUXT_PUBLIC_SHOPWARE_ENDPOINT`         | Store API base URL, e.g. `https://shop.example.com/store-api` |
-| `NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN`     | Sales channel access key                                      |
+| `NUXT_SHOPWARE_ENDPOINT`                | Store API base URL, e.g. `https://shop.example.com/store-api` |
+| `NUXT_SHOPWARE_ACCESS_TOKEN`            | Sales channel access key                                      |
 | `NUXT_PUBLIC_STORE_URL`                 | Public shop URL, base for canonical URLs and the sitemap      |
 | `NUXT_STORE_NAME` / `STORE_DESCRIPTION` | Branding for `<head>`, PWA manifest and OG tags               |
 | `NUXT_GEOAPIFY_API_KEY`                 | Server-side key for address autocomplete (optional)           |
