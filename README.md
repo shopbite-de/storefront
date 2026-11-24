@@ -126,12 +126,7 @@ Menu sections keep the paths the backend gives them. Texts, dates, times and pri
 shopBite: { locale: "en", paths: { merkliste: "/saved-dishes", terms: "/terms-of-sale" } },
 ```
 
-**Override single messages** in the shop's own locale file; it is merged over the storefront's ([`i18n/locales/`](./i18n/locales/), one file per area, top-level key = area):
-
-```ts
-// nuxt.config.ts
-i18n: { locales: [{ code: "de", file: "de.json" }] },
-```
+**Override single messages** in the shop's own `i18n/locales/<code>.json` (or `i18n/locales/<code>/*.json`); the build merges it over the storefront's ([`i18n/locales/`](./i18n/locales/), one file per area, top-level key = area) and compiles the result into the app bundle, so the browser loads no messages and runs no message compiler:
 
 ```json
 // i18n/locales/de.json
@@ -144,13 +139,18 @@ i18n: { locales: [{ code: "de", file: "de.json" }] },
 }
 ```
 
-**Add a language** the same way and select it; messages it does not translate fall back to English, its pages keep the German paths unless `shopBite.paths` moves them:
+**Add a language** the same way (`i18n/locales/nl.json`) and select it, with its language tag for dates and prices; messages it does not translate fall back to English, its pages keep the German paths unless `shopBite.paths` moves them:
 
 ```ts
 // nuxt.config.ts
-shopBite: { locale: "nl", paths: { "bestellung-kasse": "/bestelling/kassa" } },
-i18n: { locales: [{ code: "nl", language: "nl-NL", file: "nl.json" }] },
+shopBite: {
+  locale: "nl",
+  language: "nl-NL",
+  paths: { "bestellung-kasse": "/bestelling/kassa" },
+},
 ```
+
+Templates use `$t("area.key")` and `<i18n-t keypath="…">` with a slot per placeholder, scripts `const { t } = useI18n()`.
 
 [`test/layer/`](./test/layer/) is such a shop: it overrides a German message and adds Dutch, and CI builds and checks it in both languages.
 
@@ -168,7 +168,7 @@ pnpm lint:fix         # Prettier + ESLint, autofix
 pnpm test:unit        # Vitest (unit + Nuxt environments)
 pnpm bdd:memory       # behaviour tests (Gherkin, test/bdd) on the memory backend
 pnpm bdd:shopware     # the same features against the quickstart's Shopware (CLAUDE.md, Behaviour tests)
-pnpm i18n:en          # an English build: main flows in English, no German left (test/i18n)
+pnpm i18n:en          # an English build: main flows in English, no German left, no message key (test/i18n)
 pnpm test:ui          # Vitest UI
 
 pnpm generate-types   # Regenerate Store API types after plugin changes

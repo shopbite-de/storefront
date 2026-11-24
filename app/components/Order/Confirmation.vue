@@ -47,11 +47,7 @@ onMounted(async () => {
       </h1>
       <p class="text-lg">
         {{ $t("order.confirmation.received") }}
-        <i18n-t
-          v-if="order?.number"
-          keypath="order.confirmation.number"
-          scope="global"
-        >
+        <i18n-t v-if="order?.number" keypath="order.confirmation.number">
           <template #number>
             <strong class="tabular-nums">{{ order.number }}</strong>
           </template>

@@ -164,11 +164,7 @@ const error = (name: string) => props.errors?.[`${props.prefix}.${name}`];
       role="status"
       class="flex flex-col gap-3 rounded-sb-control bg-sb-primary-tint p-4 font-body text-sb-ink sm:col-span-6 sm:flex-row sm:items-center sm:justify-between"
     >
-      <i18n-t
-        keypath="account.addressFields.didYouMean"
-        tag="span"
-        scope="global"
-      >
+      <i18n-t keypath="account.addressFields.didYouMean" tag="span">
         <template #suggestion>
           <strong>{{ correction?.label }}</strong>
         </template>

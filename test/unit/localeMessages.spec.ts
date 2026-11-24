@@ -55,17 +55,6 @@ describe("locale messages", () => {
     }
   });
 
-  it("are all registered in nuxt.config.ts", () => {
-    const config = readFileSync(
-      new URL("../../nuxt.config.ts", import.meta.url),
-      "utf8",
-    );
-    const listed = /MESSAGE_AREAS = \[([^\]]*)\]/.exec(config)?.[1] ?? "";
-    expect([...listed.matchAll(/"(\w+)"/g)].map((m) => m[1]).sort()).toEqual(
-      areas("de"),
-    );
-  });
-
   it("English has every German message", () => {
     expect([...de.keys()].filter((key) => !en.has(key))).toEqual([]);
   });

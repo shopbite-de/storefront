@@ -12,7 +12,7 @@ export function useVoucherCode() {
   const voucherCode = ref("");
   const voucherLoading = ref(false);
   const voucherError = ref<string | null>(null);
-  const { t } = useNuxtApp().$i18n;
+  const { t } = useI18n();
   const invalid = () => t("order.voucher.invalid");
 
   async function applyVoucher() {

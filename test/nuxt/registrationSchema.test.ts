@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createRegistrationSchema } from "~/validation/registrationSchema";
 
 // the schema carries message keys; the form shows them in the shop's words
-const t = (key: string) => useNuxtApp().$i18n.t(key);
+const { t } = useI18n();
 
 describe("registrationSchema", () => {
   const baseState = {

@@ -57,12 +57,7 @@ const { getFormattedMoney } = useCommercePrice();
           :to="{ name: 'konto-bestellung-id', params: { id: order.id } }"
           class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 p-4 hover:bg-sb-muted focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-sb-focus sm:p-5"
         >
-          <i18n-t
-            keypath="account.orders.order"
-            tag="span"
-            scope="global"
-            class="font-bold"
-          >
+          <i18n-t keypath="account.orders.order" tag="span" class="font-bold">
             <template #number>
               <span class="tabular-nums">{{ order.number }}</span>
             </template>

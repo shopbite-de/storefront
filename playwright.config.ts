@@ -78,6 +78,17 @@ export default defineConfig<ConfigOptions>({
       workers: 1,
       use: { ...devices["Desktop Chrome"], trace: "retain-on-failure" },
     },
+    /*
+     * The messages of the German default build (ADR 0002, the build of
+     * the behaviour tests): no message key, no unfilled placeholder.
+     */
+    {
+      name: "i18n-de",
+      testDir: "./test/i18n",
+      testMatch: "messages.spec.ts",
+      workers: 1,
+      use: { ...devices["Desktop Chrome"], trace: "retain-on-failure" },
+    },
     /* Accessibility checks of the preset pages (#446), no login needed. */
     {
       name: "a11y",

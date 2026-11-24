@@ -285,6 +285,11 @@ jobs:
       - name: Behaviour tests
         run: pnpm test:bdd --reporter=list,html
 
+      # the same German build: no message key, no unfilled placeholder,
+      # messages without request or compiler (ADR 0002, test/i18n)
+      - name: German messages
+        run: pnpm test:i18n:de --reporter=list
+
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:

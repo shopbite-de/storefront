@@ -122,7 +122,7 @@ async function retryPayment() {
         class="rounded-sb-card border border-sb-line bg-sb-surface p-6"
       >
         <h2 id="bestellung-details" class="mb-4 font-display text-2xl">
-          <i18n-t keypath="order.paymentFailed.orderHeading" scope="global">
+          <i18n-t keypath="order.paymentFailed.orderHeading">
             <template #number>
               <span class="tabular-nums">{{ order.number }}</span>
             </template>

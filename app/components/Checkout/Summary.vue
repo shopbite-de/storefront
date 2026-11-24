@@ -358,7 +358,6 @@ const checkoutButtonLabel = computed<string>(() => {
       <i18n-t
         keypath="order.summary.legal.text"
         tag="p"
-        scope="global"
         class="text-sm text-sb-ink-muted"
       >
         <template #terms>
