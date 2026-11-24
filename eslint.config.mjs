@@ -11,18 +11,17 @@ export default withNuxt(
     },
   },
   {
-    // ADR 0001: only the Shopware adapter talks Shopware. A warning while
-    // the code moves to the ports (steps 1–7), an error from 3.0 (step 8).
+    // ADR 0001: only the Shopware adapter talks Shopware (an error since
+    // 3.0, step 8; a warning during steps 1–7).
     name: "shopbite/backend-agnostic",
     ignores: [
       "server/adapters/shopware/**",
-      // generated Store API types and their module augmentation
+      // generated Store API types
       "api-types/**",
-      "shopware.d.ts",
     ],
     rules: {
       "@typescript-eslint/no-restricted-imports": [
-        "warn",
+        "error",
         {
           // `#shopware` as a path: in the gitignore syntax of `patterns` a
           // leading # starts a comment
