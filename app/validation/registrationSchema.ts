@@ -41,7 +41,6 @@ export const createRegistrationSchema = (state: any) =>
     acceptedDataProtection: z.boolean().refine((val) => val, {
       message: "Bitte akzeptieren Sie die Datenschutzbestimmungen.",
     }),
-    storefrontUrl: z.string().optional(),
     password: z
       .string()
       .optional()

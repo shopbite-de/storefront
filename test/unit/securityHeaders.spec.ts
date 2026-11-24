@@ -84,7 +84,7 @@ describe("contentSecurityPolicyReportOnly", () => {
       }),
     );
 
-  it("allows self, Shopware, Matomo, the configured hosts and the hashes", () => {
+  it("allows self, Matomo, the configured hosts and the hashes", () => {
     const policy = directives(
       contentSecurityPolicyReportOnly({
         config: {
@@ -94,7 +94,6 @@ describe("contentSecurityPolicyReportOnly", () => {
           reportUri: "https://rum.example.com/csp",
         },
         scriptHashes: ["'sha256-abc'"],
-        shopwareEndpoint: "https://api.example.com/store-api",
         matomoUrl: "https://stats.example.com/",
       }),
     );
@@ -108,7 +107,6 @@ describe("contentSecurityPolicyReportOnly", () => {
     ]);
     expect(policy["connect-src"]).toEqual([
       "'self'",
-      "https://api.example.com",
       "https://stats.example.com",
       "https://rum.example.com",
     ]);
@@ -145,9 +143,11 @@ describe("security headers plugin", () => {
     vi.stubGlobal("setResponseHeaders", setResponseHeaders);
     vi.stubGlobal("useRuntimeConfig", () => ({
       securityHeaders: config,
+      // the browser never talks to Shopware (3.0): its endpoint, maybe an
+      // internal address, is no source of the policy
+      shopware: { endpoint: "http://shopware.internal:8000/store-api" },
       public: {
         storeUrl: "https://shop.example.com",
-        shopware: { endpoint: "https://api.example.com/store-api" },
         scripts: { matomoAnalytics: { matomoUrl: "", siteId: "" } },
       },
     }));
@@ -220,7 +220,8 @@ describe("security headers plugin", () => {
 
     const policy = response.headers["content-security-policy-report-only"];
     expect(policy).toContain(`script-src 'self' ${sha(script)}`);
-    expect(policy).toContain("connect-src 'self' https://api.example.com");
+    expect(policy).toContain("connect-src 'self';");
+    expect(policy).not.toContain("shopware.internal");
   });
 
   it("sends no report-only policy when it is disabled", async () => {

@@ -136,10 +136,10 @@ export default defineNuxtConfig({
       // typed, not located); Web Share and the clipboard stay allowed.
       permissionsPolicy:
         "camera=(), microphone=(), geolocation=(), usb=(), browsing-topics=()",
-      // Server-rendered HTML may contain the visitor's cart or login
-      // (useUserContextInSSR), so no shared or browser cache keeps it.
+      // Server-rendered HTML may contain the visitor's cart or login, so
+      // no shared or browser cache keeps it.
       htmlCacheControl: "private, no-store",
-      // Report-only policy for pages: self, the Shopware endpoint, Matomo
+      // Report-only policy for pages: self, Matomo
       // and inline scripts by hash. Extra hosts (e.g. a RUM collector) are
       // space-separated lists.
       contentSecurityPolicyReportOnly: {

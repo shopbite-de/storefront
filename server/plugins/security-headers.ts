@@ -2,7 +2,7 @@
  * Security headers on every response (`runtimeConfig.securityHeaders`,
  * `server/utils/securityHeaders.ts`). Server-rendered HTML additionally gets
  * `Cache-Control: private, no-store` (it may contain the visitor's cart or
- * login, `useUserContextInSSR`) unless a route rule sets one, an optional
+ * login) unless a route rule sets one, an optional
  * Content-Security-Policy-Report-Only with hashes of its inline scripts,
  * and no `x-powered-by`.
  */
@@ -45,7 +45,6 @@ export default defineNitroPlugin((nitroApp) => {
           contentSecurityPolicyReportOnly({
             config: csp,
             scriptHashes: inlineScriptHashes(response.body),
-            shopwareEndpoint: runtimeConfig.public.shopware?.endpoint,
             matomoUrl: runtimeConfig.public.scripts?.matomoAnalytics?.matomoUrl,
           });
       }

@@ -295,19 +295,15 @@ export function paymentBody(body: unknown): { paymentMethodId: string | null } {
 }
 
 /**
- * Where the guest orders, for the backend's e-mail links: the configured
- * storefront URL of the Shopware layer, else the origin the browser sent
- * (checked by `assertSameOriginWrite`), else `public.storeUrl`.
+ * Where the guest orders, for the backend's e-mail links: the origin the
+ * browser sent (checked by `assertSameOriginWrite`), else
+ * `public.storeUrl`. The Shopware adapter matches it against the sales
+ * channel's domains (the layer's `devStorefrontUrl` is gone since 3.0).
  */
 export function storefrontUrl(event: H3Event): string {
-  const config = useRuntimeConfig().public as {
-    storeUrl?: string;
-    shopware?: { devStorefrontUrl?: string };
-  };
   return (
-    config.shopware?.devStorefrontUrl ||
     getRequestHeader(event, "origin") ||
-    config.storeUrl ||
+    useRuntimeConfig().public.storeUrl ||
     ""
   );
 }

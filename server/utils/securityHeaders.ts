@@ -115,19 +115,19 @@ function unique(list: (string | undefined)[]): string[] {
 }
 
 /**
- * Report-only policy for a rendered page: own origin, the Shopware endpoint
- * (Store API calls from the browser), the Matomo host and the configured
- * extra sources. Inline scripts are allowed by hash; inline styles stay
+ * Report-only policy for a rendered page: own origin, the Matomo host and
+ * the configured extra sources. No shop backend: the browser talks to the
+ * storefront's own routes only (since 3.0); dish photos on https hosts are
+ * allowed by `https:`, others (e.g. http media in development) go into
+ * `imgSrc`. Inline scripts are allowed by hash; inline styles stay
  * allowed (Vue style bindings, inlined component CSS).
  */
 export function contentSecurityPolicyReportOnly(options: {
   config: CspReportOnlyConfig;
   scriptHashes: string[];
-  shopwareEndpoint?: string;
   matomoUrl?: string;
 }): string {
   const { config, scriptHashes } = options;
-  const shopware = originOf(options.shopwareEndpoint);
   const matomo = originOf(options.matomoUrl);
 
   const directives: [string, string[]][] = [
@@ -139,15 +139,12 @@ export function contentSecurityPolicyReportOnly(options: {
     ["style-src", ["'self'", "'unsafe-inline'"]],
     [
       "img-src",
-      unique(["'self'", "data:", "blob:", "https:", shopware, matomo]).concat(
+      unique(["'self'", "data:", "blob:", "https:", matomo]).concat(
         sources(config.imgSrc),
       ),
     ],
     ["font-src", ["'self'", "data:"]],
-    [
-      "connect-src",
-      unique(["'self'", shopware, matomo, ...sources(config.connectSrc)]),
-    ],
+    ["connect-src", unique(["'self'", matomo, ...sources(config.connectSrc)])],
     ["worker-src", ["'self'"]],
     ["manifest-src", ["'self'"]],
     ["frame-src", ["'self'"]],
