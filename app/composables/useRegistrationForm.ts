@@ -66,6 +66,7 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
   // Where to go after a successful registration is the caller's decision: the
   // registration page sends the visitor to the account, the checkout continues
   // with the order.
+  const { t } = useI18n();
   const { register } = useCustomer();
   const { registerGuest } = useCheckoutOrderer();
 
@@ -173,8 +174,8 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
           ok: false,
           message:
             code === "invalid_value" || code === "validation_failed"
-              ? "Bitte prüfen Sie Ihre Angaben."
-              : "Bitte versuchen Sie es erneut.",
+              ? t("auth.errors.checkDetails")
+              : t("auth.errors.retry"),
         };
       }
     }
@@ -196,14 +197,20 @@ export function useRegistrationForm(options: { allowGuest: boolean }) {
       console.error("Registration failed:", code ?? "no answer");
       return {
         ok: false,
-        message: registrationMessage(code, domainErrorDetails(error)),
+        message: registrationMessage(t, code, domainErrorDetails(error)),
       };
     }
   }
 
   const accountTypes = [
-    { label: "Privatkunde", value: "private" as const },
-    { label: "Geschäftskunde", value: "business" as const },
+    {
+      label: t("auth.registrationForm.privateCustomer"),
+      value: "private" as const,
+    },
+    {
+      label: t("auth.registrationForm.businessCustomer"),
+      value: "business" as const,
+    },
   ];
 
   return {

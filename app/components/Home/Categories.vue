@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 import type { Media, NavigationNode } from "../../../shared/domain";
 
 /**
@@ -9,12 +10,12 @@ import type { Media, NavigationNode } from "../../../shared/domain";
  * some shops use) do not fit the 4:5 column: then the photo spans the width
  * below the words in the banner's own aspect ratio.
  */
-withDefaults(
-  defineProps<{
-    title?: string;
-  }>(),
-  { title: "Speisekarte" },
-);
+const props = defineProps<{
+  title?: string;
+}>();
+const { t } = useI18n();
+// the content's title, else the default heading (#388)
+const heading = computed(() => props.title ?? t("common.homeCategories.title"));
 
 const { categories } = await useHomeMenuCategories();
 
@@ -76,7 +77,7 @@ function name(section: NavigationNode) {
             id="home-menu-title"
             class="font-body text-xs font-bold tracking-[0.14em] text-sb-accent uppercase"
           >
-            {{ title }}
+            {{ heading }}
           </h2>
           <span class="h-[1.5px] w-16 bg-sb-control" aria-hidden="true" />
         </div>
@@ -109,10 +110,10 @@ function name(section: NavigationNode) {
           </li>
         </ul>
         <NuxtLink
-          to="/speisekarte/"
+          :to="shopLocale.menuPath"
           class="inline-flex min-h-11 items-center gap-2 self-start font-bold text-sb-primary-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-sb-focus"
         >
-          Ganze Speisekarte öffnen
+          {{ $t("common.homeCategories.openMenu") }}
           <SbIcon name="chevron-right" />
         </NuxtLink>
       </div>

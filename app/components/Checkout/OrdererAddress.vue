@@ -27,7 +27,7 @@ const save = (address: AccountAddressInput) =>
         v-if="withEditButton"
         variant="secondary"
         @click="editMode = true"
-        >Adresse bearbeiten</SbButton
+        >{{ $t("order.ordererAddress.edit") }}</SbButton
       >
     </div>
     <AddressForm

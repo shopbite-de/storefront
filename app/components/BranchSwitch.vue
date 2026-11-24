@@ -34,7 +34,7 @@ const selectedUrl = computed({
   <SbSelect
     v-if="isMultiChannel && options.length"
     v-model="selectedUrl"
-    label="Filiale"
+    :label="$t('common.branchSwitch.label')"
     :options="options"
   />
 </template>

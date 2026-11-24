@@ -14,7 +14,7 @@ onMounted(load);
   <SbSegmentedControl
     v-if="acceptsOrders && selectable && selectedId"
     v-model="selectedId"
-    label="Bestellart"
+    :label="$t('order.orderMode.label')"
     :options="options"
   />
 </template>

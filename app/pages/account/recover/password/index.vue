@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import * as z from "zod";
 
+const { t } = useI18n();
+
 useHead({
-  title: "Passwort zurücksetzen",
+  title: t("auth.passwordResetPage.headTitle"),
   meta: [
     { name: "robots", content: "noindex, nofollow" },
     { name: "googlebot", content: "noindex, nofollow" },
@@ -11,8 +13,9 @@ useHead({
 
 // Constants
 const MIN_PASSWORD_LENGTH = 8;
-const PASSWORD_MIN_LENGTH_ERROR = "Das Passwort braucht mindestens 8 Zeichen.";
-const PASSWORD_MISMATCH_ERROR = "Die Passwörter stimmen nicht überein.";
+// message keys, translated at the field
+const PASSWORD_MIN_LENGTH_ERROR = "auth.passwordResetPage.passwordTooShort";
+const PASSWORD_MISMATCH_ERROR = "auth.shared.passwordMismatch";
 
 const { resetPassword: setNewPassword } = useCustomer();
 const route = useRoute();
@@ -81,7 +84,7 @@ async function onSubmit() {
     const next: typeof errors.value = {};
     for (const issue of parsed.error.issues) {
       const key = issue.path[0] as keyof PasswordResetSchema;
-      next[key] ??= issue.message;
+      next[key] ??= t(issue.message);
     }
     errors.value = next;
     return;
@@ -103,7 +106,7 @@ async function onSubmit() {
 }
 </script>
 <template>
-  <UserAuthPanel title="Neues Passwort">
+  <UserAuthPanel :title="$t('auth.passwordResetPage.title')">
     <div
       v-if="result === 'done'"
       ref="resultBox"
@@ -112,10 +115,14 @@ async function onSubmit() {
       class="flex flex-col items-start gap-4"
     >
       <p>
-        <strong class="block">Ihr Passwort ist geändert.</strong>
-        Sie können sich jetzt mit dem neuen Passwort anmelden.
+        <strong class="block">{{
+          $t("auth.passwordResetPage.doneTitle")
+        }}</strong>
+        {{ $t("auth.passwordResetPage.doneText") }}
       </p>
-      <SbButton :to="{ name: 'anmelden' }">Zur Anmeldung</SbButton>
+      <SbButton :to="{ name: 'anmelden' }">{{
+        $t("auth.shared.toLogin")
+      }}</SbButton>
     </div>
     <form
       v-else
@@ -130,20 +137,20 @@ async function onSubmit() {
         tabindex="-1"
         class="rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
       >
-        <strong class="block"
-          >Das Passwort konnte nicht geändert werden.</strong
-        >
-        Der Link ist vielleicht abgelaufen.
+        <strong class="block">{{
+          $t("auth.passwordResetPage.failedTitle")
+        }}</strong>
+        {{ $t("auth.passwordResetPage.failedText") }}
         <NuxtLink
           :to="{ name: 'passwort-vergessen' }"
           class="font-semibold text-sb-primary-ink underline underline-offset-4"
-          >Neuen Link anfordern</NuxtLink
+          >{{ $t("auth.passwordResetPage.requestNewLink") }}</NuxtLink
         >
       </div>
       <SbField
         v-slot="{ id, describedBy, invalid }"
-        label="Neues Passwort"
-        hint="Mindestens 8 Zeichen"
+        :label="$t('auth.passwordResetPage.newPasswordLabel')"
+        :hint="$t('auth.shared.passwordHint')"
         :error="errors.newPassword"
       >
         <SbInput
@@ -158,7 +165,7 @@ async function onSubmit() {
       </SbField>
       <SbField
         v-slot="{ id, describedBy, invalid }"
-        label="Neues Passwort wiederholen"
+        :label="$t('auth.passwordResetPage.newPasswordConfirmLabel')"
         :error="errors.newPasswordConfirm"
       >
         <SbInput
@@ -171,9 +178,9 @@ async function onSubmit() {
           :invalid="invalid"
         />
       </SbField>
-      <SbButton type="submit" size="lg" block :loading="saving"
-        >Passwort speichern</SbButton
-      >
+      <SbButton type="submit" size="lg" block :loading="saving">{{
+        $t("auth.passwordResetPage.submit")
+      }}</SbButton>
     </form>
   </UserAuthPanel>
 </template>

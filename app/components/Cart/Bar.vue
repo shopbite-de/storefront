@@ -7,6 +7,7 @@
 const ADDED_LABEL_MS = 1800;
 
 const route = useRoute();
+const { t } = useI18n();
 const { count, subtotal } = useCartData();
 const { acceptsOrders } = useShopConfig();
 const { getFormattedMoney } = useCommercePrice();
@@ -21,7 +22,7 @@ const visible = computed(
 );
 
 const itemsLabel = computed(() =>
-  count.value === 1 ? "1 Artikel" : `${count.value} Artikel`,
+  t("order.cartBar.items", { count: count.value }, count.value),
 );
 
 const addedLabel = ref<string | null>(null);
@@ -81,10 +82,12 @@ onBeforeUnmount(() => clearTimeout(addedTimer));
             >
               <SbIcon name="check" :size="16" class="self-center" />
               <span class="truncate font-semibold">{{ addedLabel }}</span>
-              <span class="shrink-0 text-sm">hinzugefügt</span>
+              <span class="shrink-0 text-sm">{{
+                $t("order.cartBar.added")
+              }}</span>
             </span>
             <span v-else key="cart" class="flex min-w-0 items-baseline gap-2">
-              <span class="font-semibold">Warenkorb</span>
+              <span class="font-semibold">{{ $t("order.cartBar.title") }}</span>
               <span class="truncate text-sm">
                 {{ itemsLabel }} · {{ getFormattedMoney(subtotal) }}
               </span>

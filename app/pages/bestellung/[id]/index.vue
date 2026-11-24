@@ -1,6 +1,7 @@
 <script setup lang="ts">
+const { t } = useI18n();
 useSeoMeta({
-  title: "Bestellung",
+  title: t("order.orderPage.title"),
   robots: "noindex, nofollow",
 });
 

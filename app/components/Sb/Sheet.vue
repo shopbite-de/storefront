@@ -50,7 +50,7 @@ const open = defineModel<boolean>("open", { default: false });
           <div class="flex items-center justify-end gap-2">
             <slot name="actions" />
             <DialogClose as-child>
-              <SbIconButton label="Schließen">
+              <SbIconButton :label="$t('common.sheet.close')">
                 <SbIcon name="close" />
               </SbIconButton>
             </DialogClose>
@@ -79,7 +79,7 @@ const open = defineModel<boolean>("open", { default: false });
           </div>
           <slot name="actions" />
           <DialogClose as-child>
-            <SbIconButton label="Schließen">
+            <SbIconButton :label="$t('common.sheet.close')">
               <SbIcon name="close" />
             </SbIconButton>
           </DialogClose>

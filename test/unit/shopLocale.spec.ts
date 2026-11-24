@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import {
   FILE_PAGE_PATHS,
+  localizedDefault,
   localizePages,
+  SITE_TEXTS,
   pathOf,
   resolveShopLocale,
   shopRouteRules,
@@ -49,6 +51,7 @@ describe("resolveShopLocale", () => {
     expect(locale.code).toBe("de");
     expect(locale.pagePaths).toEqual(FILE_PAGE_PATHS);
     expect(locale.contentPaths.terms).toBe("/agb");
+    expect(locale.menuPath).toBe("/speisekarte/");
   });
 
   it("takes the build environment before the option", () => {
@@ -61,16 +64,21 @@ describe("resolveShopLocale", () => {
     const locale = resolveShopLocale({ locale: "en" }, {});
     expect(locale.pagePaths["bestellung-kasse"]).toBe("/order/checkout");
     expect(locale.contentPaths.privacy).toBe("/privacy");
+    expect(locale.menuPath).toBe("/menu/");
   });
 
   it("lets a shop override single paths", () => {
     const locale = resolveShopLocale(
-      { locale: "en", paths: { merkliste: "/favourites", terms: "/tos" } },
+      { locale: "en", paths: { merkliste: "/saved", terms: "/tos" } },
       {},
     );
-    expect(locale.pagePaths.merkliste).toBe("/favourites");
+    expect(locale.pagePaths.merkliste).toBe("/saved");
     expect(locale.pagePaths.konto).toBe("/account");
     expect(locale.contentPaths.terms).toBe("/tos");
+    expect(
+      resolveShopLocale({ locale: "en", paths: { menu: "/food/" } }, {})
+        .menuPath,
+    ).toBe("/food/");
   });
 
   it("keeps the German paths for a locale of the shop's own", () => {
@@ -144,7 +152,7 @@ describe("localizePages", () => {
       konto: "/account",
       "konto-bestellung-id": "/account/orders/:id()",
       "account-recover-password": "/account/recover/password",
-      merkliste: "/wishlist",
+      merkliste: "/favourites",
     });
   });
 
@@ -189,14 +197,38 @@ describe("shopRouteRules", () => {
       resolveShopLocale({ locale: "en" }, {}),
     );
     expect(routeRules).toEqual({
-      "/wishlist": { ssr: false },
+      "/favourites": { ssr: false },
       "/register/confirm": { ssr: false },
       "/order": { redirect: { to: "/order/checkout", statusCode: 301 } },
     });
     expect(robotsDisallow).toEqual([
-      "/wishlist",
+      "/favourites",
       "/forgot-password",
       "/account/recover/password",
     ]);
+  });
+});
+
+describe("localizedDefault", () => {
+  it("replaces the German default of a config text", () => {
+    expect(
+      localizedDefault(
+        "%s | %siteName – Online bestellen",
+        "titleTemplate",
+        "en",
+      ),
+    ).toBe("%s | %siteName – Order online");
+  });
+
+  it("keeps what the shop set and the German default for German", () => {
+    expect(localizedDefault("Pizza in Musterstadt", "description", "en")).toBe(
+      "Pizza in Musterstadt",
+    );
+    expect(
+      localizedDefault(SITE_TEXTS.de!.description, "description", "de"),
+    ).toBe(SITE_TEXTS.de!.description);
+    expect(
+      localizedDefault(SITE_TEXTS.de!.description, "description", "fr"),
+    ).toBe(SITE_TEXTS.de!.description);
   });
 });

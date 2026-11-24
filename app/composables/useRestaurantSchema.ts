@@ -1,3 +1,4 @@
+import { shopLocale } from "#shopbite-locale";
 import type { NavigationMenuItem } from "./useNavigation";
 import { buildRestaurantSchema, type MenuSectionInfo } from "../utils/schema";
 import { splitList, toAbsoluteUrl } from "../utils/seo";
@@ -18,6 +19,7 @@ export function useRestaurantSchema() {
   const { menuCardMenu } = useNavigation(true);
   const { acceptsOrders } = useShopConfig();
   const { currencyCode } = useCommercePrice();
+  const { t } = useI18n();
 
   // Cached on the server (server/api/payment-methods).
   const { data: paymentMethods } = useAsyncData(
@@ -46,7 +48,12 @@ export function useRestaurantSchema() {
     sections: item.children?.map(toSection),
   });
 
-  const menuUrl = toAbsoluteUrl(siteConfig.url, "/speisekarte");
+  // the menu root's path (backend data, a locale default, ADR 0002),
+  // without its trailing slash as before
+  const menuUrl = toAbsoluteUrl(
+    siteConfig.url,
+    shopLocale.menuPath.replace(/\/+$/, ""),
+  );
 
   const schema = computed(() =>
     buildRestaurantSchema({
@@ -70,6 +77,7 @@ export function useRestaurantSchema() {
       openingHours: openingHours.value ?? undefined,
       holidays: holidays.value ?? [],
       menuUrl,
+      menuName: t("common.schema.menuName"),
       menuSections: menuCardMenu.value.map(toSection),
       orderUrl: acceptsOrders.value ? menuUrl : undefined,
       paymentMethods: paymentMethods.value,

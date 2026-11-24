@@ -24,10 +24,10 @@ const emit = defineEmits(["go-to-cart"]);
 <template>
   <div class="flex h-full flex-col justify-between gap-5 font-body text-sb-ink">
     <div v-if="isEmpty" class="flex flex-col items-start gap-3 py-2">
-      <p class="text-sb-ink-muted">Der Warenkorb ist noch leer.</p>
-      <SbButton variant="secondary" to="/" @click="emit('go-to-cart')"
-        >Zur Speisekarte</SbButton
-      >
+      <p class="text-sb-ink-muted">{{ $t("order.quickView.empty") }}</p>
+      <SbButton variant="secondary" to="/" @click="emit('go-to-cart')">{{
+        $t("order.shared.toMenu")
+      }}</SbButton>
     </div>
     <div v-else class="flex flex-col">
       <CartItem
@@ -50,15 +50,19 @@ const emit = defineEmits(["go-to-cart"]);
           <dd>{{ getFormattedMoney(discount.amount) }}</dd>
         </div>
         <div class="flex justify-between text-sb-ink-muted">
-          <dt>Lieferung</dt>
+          <dt>{{ $t("order.quickView.shipping") }}</dt>
           <dd :class="freeShipping ? 'font-semibold text-sb-primary-ink' : ''">
-            {{ freeShipping ? "kostenlos" : getFormattedMoney(shippingCosts) }}
+            {{
+              freeShipping
+                ? $t("order.quickView.free")
+                : getFormattedMoney(shippingCosts)
+            }}
           </dd>
         </div>
         <div
           class="flex justify-between border-t border-sb-line pt-2.5 text-lg font-bold"
         >
-          <dt>Gesamt</dt>
+          <dt>{{ $t("order.shared.total") }}</dt>
           <dd>{{ getFormattedMoney(total) }}</dd>
         </div>
       </dl>
@@ -69,7 +73,7 @@ const emit = defineEmits(["go-to-cart"]);
         :to="{ name: 'bestellung-kasse' }"
         @click="emit('go-to-cart')"
       >
-        Zur Kasse
+        {{ $t("order.quickView.toCheckout") }}
         <template #trailing><SbIcon name="chevron-right" /></template>
       </SbButton>
     </div>

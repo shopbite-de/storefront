@@ -3,8 +3,10 @@ definePageMeta({
   layout: "account",
 });
 
+const { t } = useI18n();
+
 useSeoMeta({
-  title: "Bestellung",
+  title: t("account.order.pageTitle"),
 });
 
 const route = useRoute();
@@ -16,7 +18,7 @@ const orderId = route.params.id as string;
     <NuxtLink
       :to="{ name: 'konto-bestellungen' }"
       class="inline-flex min-h-11 items-center self-start font-body font-semibold text-sb-primary-ink underline underline-offset-4"
-      >Alle Bestellungen</NuxtLink
+      >{{ $t("account.order.allOrders") }}</NuxtLink
     >
     <OrderConfirmation :order-id="orderId" />
   </div>

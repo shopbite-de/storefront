@@ -1,6 +1,7 @@
 <script setup lang="ts">
+const { t } = useI18n();
 useSeoMeta({
-  title: "Zahlung erfolgreich",
+  title: t("order.paymentSuccess.title"),
   robots: "noindex, nofollow",
 });
 

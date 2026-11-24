@@ -1,1 +1,106 @@
-{ "menu": {} }
+{
+  "menu": {
+    "breadcrumb": {
+      "label": "Breadcrumb"
+    },
+    "searchInput": {
+      "label": "Search the menu",
+      "placeholder": "Search for a dish or ingredient",
+      "submit": "Search"
+    },
+    "listing": {
+      "filter": "Filter",
+      "filterActive": "active",
+      "resetFilters": "Reset",
+      "showDishes": "Show {count} dish | Show {count} dishes",
+      "loading": "Loading dishes"
+    },
+    "diets": {
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan"
+    },
+    "foodLabels": {
+      "allergensText": "Contains: {names}.",
+      "additivesText": "Additives: {names}.",
+      "title": "Allergens and additives",
+      "none": "No allergens or additives that must be declared.",
+      "askWithPhone": "Please ask the restaurant for details: {phone}.",
+      "ask": "Please ask the restaurant for details."
+    },
+    "shared": {
+      "number": "No. {number}",
+      "priceFrom": "from {price}",
+      "soldOut": "Sold out",
+      "wishlistFull": "Your favourites are full ({limit} dishes). Please remove a dish first.",
+      "sorting": "Sort by",
+      "sortingPlaceholder": "Please choose"
+    },
+    "bonCard": {
+      "choose": "Choose {name}",
+      "addAnother": "{name}, {quantity} in your basket, add one more",
+      "add": "Add {name}",
+      "notOrdering": "Not taking orders right now"
+    },
+    "sectionHeader": {
+      "dishes": "{count} dish | {count} dishes"
+    },
+    "cartPanel": {
+      "title": "Your order"
+    },
+    "categoryIndex": {
+      "label": "Categories"
+    },
+    "crossSelling": {
+      "optional": "optional",
+      "selected": "{count} selected · +{price}",
+      "searchLabel": "Search {group}",
+      "searchPlaceholder": "Search {count} {group}",
+      "noMatches": "No matches",
+      "showAll": "Show all {count}"
+    },
+    "deselectIngredient": {
+      "title": "Ingredients",
+      "hint": "Tap to leave out"
+    },
+    "detail": {
+      "notOrdering": "We are not taking any more orders at the moment.",
+      "addToCart": "Add to basket",
+      "dishFallback": "Dish"
+    },
+    "quickView": {
+      "share": "Share",
+      "copyLink": "Copy link"
+    },
+    "wishlistSave": {
+      "label": "Save {name} to favourites",
+      "failed": "Saving did not work. Please try again."
+    },
+    "wishlist": {
+      "without": "without {name}",
+      "rowLabel": "{name} ({configuration})",
+      "loading": "Loading favourites …",
+      "empty": "Your favourites list is empty.",
+      "emptyHint": "Save a dish with the heart in its details, just as you put it together.",
+      "toMenu": "To the menu",
+      "remove": "Remove {name} from favourites",
+      "choose": "Choose",
+      "customize": "Customise",
+      "addFailed": "{name} could not be added to your basket. Please try again.",
+      "addAll": "Add all to basket",
+      "clear": "Clear favourites",
+      "clearTitle": "Clear favourites?",
+      "clearDescription": "All saved dishes will be removed."
+    },
+    "wishlistPage": {
+      "title": "Favourites"
+    },
+    "search": {
+      "title": "Search",
+      "result": "1 dish found for “{query}” | {count} dishes found for “{query}”",
+      "fieldLabel": "Dish or ingredient",
+      "searching": "Searching …",
+      "fallbackTitle": "You might like these",
+      "toHome": "To the home page"
+    }
+  }
+}

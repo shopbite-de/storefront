@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 import Footer from "~/components/Footer.vue";
 
 // The footer is below the fold on every page; its hydration waits until it
@@ -24,7 +25,7 @@ await useAsyncData("customer", () =>
 // hydration the browser loads their live values (useLiveShopData).
 useOpeningHours();
 useHolidays();
-const { config: shopConfig } = useShopConfig();
+useShopConfig();
 useShippingMethods();
 useLiveShopData();
 
@@ -104,7 +105,7 @@ useSeoMeta({
   ogUrl: canonicalUrl,
   ogType: "website",
   ogSiteName: site.name,
-  ogLocale: () => (shopConfig.value?.locale ?? "de-DE").replace("-", "_"),
+  ogLocale: shopLocale.language.replace("-", "_"),
   ogImage: site.ogImage
     ? toAbsoluteUrl(siteConfig.url, site.ogImage)
     : undefined,

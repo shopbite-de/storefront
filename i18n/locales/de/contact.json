@@ -1,0 +1,33 @@
+{
+  "contact": {
+    "page": {
+      "title": "Kontakt",
+      "intro": "Sie haben eine Frage oder Anregung? Wir freuen uns auf Ihre Nachricht.",
+      "reservations": "Tische reservieren oder stornieren Sie bitte telefonisch.",
+      "call": "Anrufen:"
+    },
+    "form": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail",
+      "emailHint": "Für unsere Antwort",
+      "phone": "Telefon",
+      "subject": "Betreff",
+      "message": "Nachricht",
+      "honeypot": "Adresse",
+      "send": "Nachricht senden",
+      "writeAnother": "Weitere Nachricht schreiben",
+      "received": "Vielen Dank, Ihre Nachricht ist bei uns angekommen.",
+      "checkFields": "Bitte prüfen Sie die markierten Angaben.",
+      "sendFailed": "Die Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es später noch einmal.",
+      "errors": {
+        "firstName": "Bitte geben Sie Ihren Vornamen an.",
+        "lastName": "Bitte geben Sie Ihren Nachnamen an.",
+        "phone": "Bitte geben Sie Ihre Telefonnummer an.",
+        "email": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        "subject": "Bitte geben Sie einen Betreff an.",
+        "comment": "Die Nachricht braucht mindestens 10 Zeichen."
+      }
+    }
+  }
+}

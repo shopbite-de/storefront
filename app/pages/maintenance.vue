@@ -1,6 +1,7 @@
 <script setup lang="ts">
+const { t } = useI18n();
 useSeoMeta({
-  title: "Wartungsmodus",
+  title: t("common.maintenance.title"),
 });
 </script>
 
@@ -9,10 +10,11 @@ useSeoMeta({
     class="flex min-h-[60vh] items-center justify-center p-6 font-body text-sb-ink"
   >
     <div class="flex max-w-xl flex-col gap-3 text-center">
-      <h1 class="font-display text-4xl leading-tight">Gleich wieder da</h1>
+      <h1 class="font-display text-4xl leading-tight">
+        {{ $t("common.maintenance.heading") }}
+      </h1>
       <p class="text-lg text-sb-ink-muted">
-        Der Shop ist vorübergehend nicht erreichbar. Bitte versuchen Sie es in
-        ein paar Minuten noch einmal.
+        {{ $t("common.maintenance.text") }}
       </p>
     </div>
   </div>

@@ -1,18 +1,28 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
+import { SITE_TEXTS } from "./i18n/shopLocale";
 
 // The storefront's messages per locale, one file per area (i18n/locales/
 // <code>/<area>.json, top-level key = area); a shop overrides single
 // messages in its own i18n/locales/<code>.json.
-const MESSAGE_AREAS = ["common", "menu", "order", "account", "server"];
+const MESSAGE_AREAS = [
+  "common",
+  "menu",
+  "order",
+  "auth",
+  "account",
+  "contact",
+  "server",
+];
 const messageFiles = (code: string) =>
   MESSAGE_AREAS.map((area) => `${code}/${area}.json`);
 
 const storeName = process.env.NUXT_STORE_NAME || "ShopBite";
+// German defaults; modules/locale.ts gives another locale its own
+// (i18n/shopLocale.ts, SITE_TEXTS)
 const storeDescription =
-  process.env.NUXT_STORE_DESCRIPTION ||
-  "Reduziere deine Kosten und steigere deinen Umsatz";
+  process.env.NUXT_STORE_DESCRIPTION || SITE_TEXTS.de!.description;
 
 export default defineNuxtConfig({
   app: {
@@ -198,7 +208,7 @@ export default defineNuxtConfig({
         countryId: "",
         // `%s` = page title, `%siteName` = site.name; the home page renders
         // its title without the template.
-        titleTemplate: "%s | %siteName – Online bestellen",
+        titleTemplate: SITE_TEXTS.de!.titleTemplate,
         // Share preview for pages without their own image (path or URL).
         ogImage: "/card.png",
         // Used in the default home page title and description.
@@ -288,8 +298,17 @@ export default defineNuxtConfig({
         files: messageFiles("en"),
       },
     ],
+    // The browser compiles the messages it loads from /_i18n/…: keep the
+    // message compiler (runtimeOnly/dropMessageCompiler break every
+    // message with a placeholder after hydration).
     // server routes translate with useTranslation(event)
-    experimental: { localeDetector: "localeDetector.ts" },
+    experimental: {
+      localeDetector: "localeDetector.ts",
+      // /_i18n/<hash>/<code>/messages.json: the hash covers every locale
+      // file (a shop's overrides too), so browsers keep it like the
+      // public files (modules/public-cache.ts) instead of 10 seconds
+      httpCacheDuration: 2592000,
+    },
   },
 
   // Absolute: `~` would point to the app/ folder of a shop extending this

@@ -9,11 +9,13 @@ import * as z from "zod";
  */
 const emit = defineEmits<{ "login-success": [email: string] }>();
 
+const { t } = useI18n();
 const { login } = useCustomer();
 
+// messages are message keys, translated at the field
 const schema = z.object({
-  email: z.string().email("Bitte geben Sie eine gültige E-Mail-Adresse ein."),
-  password: z.string().min(8, "Das Passwort hat mindestens 8 Zeichen."),
+  email: z.string().email("auth.shared.emailInvalid"),
+  password: z.string().min(8, "auth.loginForm.passwordTooShort"),
 });
 
 const state = reactive({ email: "", password: "" });
@@ -29,7 +31,7 @@ async function onSubmit() {
     const next: typeof errors.value = {};
     for (const issue of result.error.issues) {
       const key = issue.path[0] as "email" | "password";
-      next[key] ??= issue.message;
+      next[key] ??= t(issue.message);
     }
     errors.value = next;
     return;
@@ -44,7 +46,7 @@ async function onSubmit() {
     const code = domainErrorCode(error);
     // the code only: the error of a request carries its body
     console.error("Login failed:", code ?? "no answer");
-    loginError.value = loginMessage(code, domainErrorDetails(error));
+    loginError.value = loginMessage(t, code, domainErrorDetails(error));
     await nextTick();
     alertBox.value?.focus();
   } finally {
@@ -66,12 +68,14 @@ async function onSubmit() {
       tabindex="-1"
       class="rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm whitespace-pre-line"
     >
-      <strong class="block text-base">Anmeldung fehlgeschlagen</strong>
+      <strong class="block text-base">{{
+        $t("auth.loginForm.failedTitle")
+      }}</strong>
       {{ loginError }}
     </div>
     <SbField
       v-slot="{ id, describedBy, invalid }"
-      label="E-Mail"
+      :label="$t('auth.shared.emailLabel')"
       :error="errors.email"
     >
       <SbInput
@@ -86,7 +90,7 @@ async function onSubmit() {
     </SbField>
     <SbField
       v-slot="{ id, describedBy, invalid }"
-      label="Passwort"
+      :label="$t('auth.shared.passwordLabel')"
       :error="errors.password"
     >
       <SbInput
@@ -102,10 +106,10 @@ async function onSubmit() {
     <NuxtLink
       :to="{ name: 'passwort-vergessen' }"
       class="inline-flex min-h-11 items-center self-start text-sm font-semibold text-sb-primary-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-sb-focus"
-      >Passwort vergessen?</NuxtLink
+      >{{ $t("auth.loginForm.forgotPassword") }}</NuxtLink
     >
-    <SbButton type="submit" size="lg" block :loading="submitting"
-      >Anmelden</SbButton
-    >
+    <SbButton type="submit" size="lg" block :loading="submitting">{{
+      $t("auth.shared.login")
+    }}</SbButton>
   </form>
 </template>

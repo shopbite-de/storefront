@@ -6,8 +6,10 @@ if (config.public.shopBite.feature.contactForm !== true) {
   throw createNotFoundError();
 }
 
+const { t } = useI18n();
+
 useSeoMeta({
-  title: "Kontakt",
+  title: t("contact.page.title"),
 });
 
 const { site } = config.public;
@@ -18,12 +20,14 @@ const { site } = config.public;
     class="mx-auto grid w-full max-w-(--sb-container) gap-8 px-4 pt-8 pb-16 font-body text-sb-ink sm:px-6 sm:pt-12 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-16 lg:px-8"
   >
     <header class="flex flex-col gap-4">
-      <h1 class="font-display text-4xl leading-tight sm:text-5xl">Kontakt</h1>
+      <h1 class="font-display text-4xl leading-tight sm:text-5xl">
+        {{ $t("contact.page.title") }}
+      </h1>
       <p class="text-lg">
-        Sie haben eine Frage oder Anregung? Wir freuen uns auf Ihre Nachricht.
+        {{ $t("contact.page.intro") }}
       </p>
       <p class="text-sb-ink-muted">
-        Tische reservieren oder stornieren Sie bitte telefonisch.
+        {{ $t("contact.page.reservations") }}
       </p>
       <SbButton
         v-if="site.telephone"
@@ -32,7 +36,7 @@ const { site } = config.public;
         class="self-start"
       >
         <SbIcon name="phone" />
-        <span class="sr-only">Anrufen:</span>
+        <span class="sr-only">{{ $t("contact.page.call") }}</span>
         {{ site.telephone }}
       </SbButton>
     </header>

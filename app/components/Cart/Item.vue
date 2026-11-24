@@ -76,7 +76,7 @@ const handleRemoveItem = () => {
         v-if="withQuantityInput"
         v-model="quantity"
         class="col-span-full justify-self-start"
-        :item-name="label || 'Artikel'"
+        :item-name="label || $t('order.cartItem.fallbackName')"
         :max="100"
         :removable="withDeleteButton"
         @remove="handleRemoveItem"
@@ -84,7 +84,7 @@ const handleRemoveItem = () => {
       <SbIconButton
         v-else-if="withDeleteButton"
         class="col-span-full justify-self-start"
-        :label="`${label} entfernen`"
+        :label="$t('order.cartItem.remove', { name: label })"
         :disabled="isMutating"
         @click="handleRemoveItem"
       >
@@ -92,7 +92,7 @@ const handleRemoveItem = () => {
       </SbIconButton>
     </div>
     <p v-else class="py-4 text-center text-sb-ink-muted">
-      Der Warenkorb ist leer.
+      {{ $t("order.cartItem.empty") }}
     </p>
   </div>
 </template>

@@ -178,6 +178,8 @@ export function buildRestaurantSchema(input: {
   openingHours?: OpeningHours;
   holidays?: readonly Holiday[];
   menuUrl?: string;
+  /** The menu's name in the shop's language ("Speisekarte"). */
+  menuName?: string;
   menuSections?: MenuSectionInfo[];
   /** Set only when online ordering is enabled. */
   orderUrl?: string;
@@ -226,7 +228,7 @@ export function buildRestaurantSchema(input: {
         ? compact({
             "@type": "Menu",
             "@id": `${site.url}#menu`,
-            name: "Speisekarte",
+            name: input.menuName,
             url: input.menuUrl,
             hasMenuSection: sections.length ? sections : undefined,
           })

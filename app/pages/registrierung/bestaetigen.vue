@@ -1,6 +1,8 @@
 <script setup lang="ts">
+const { t } = useI18n();
+
 useSeoMeta({
-  title: "Registrierung bestätigen",
+  title: t("auth.registrationConfirmPage.title"),
 });
 
 const route = useRoute();
@@ -15,13 +17,12 @@ const error = ref<ConfirmError | null>(null);
 
 const messages: Record<ConfirmError, { title: string; description: string }> = {
   invalid: {
-    title: "Bestätigung fehlgeschlagen",
-    description:
-      "Der Bestätigungslink ist ungültig oder unvollständig. Bitte öffnen Sie den Link aus der E-Mail noch einmal oder schreiben Sie uns.",
+    title: t("auth.registrationConfirmPage.invalidTitle"),
+    description: t("auth.registrationConfirmPage.invalidDescription"),
   },
   "already-confirmed": {
-    title: "Konto bereits bestätigt",
-    description: "Ihr Konto ist schon bestätigt. Sie können sich anmelden.",
+    title: t("auth.registrationConfirmPage.alreadyConfirmedTitle"),
+    description: t("auth.registrationConfirmPage.alreadyConfirmedDescription"),
   },
 };
 
@@ -59,8 +60,10 @@ confirmRegistration();
 </script>
 
 <template>
-  <UserAuthPanel title="Registrierung bestätigen">
-    <p v-if="!error" role="status">Registrierung wird bestätigt …</p>
+  <UserAuthPanel :title="$t('auth.registrationConfirmPage.title')">
+    <p v-if="!error" role="status">
+      {{ $t("auth.registrationConfirmPage.confirming") }}
+    </p>
     <div
       v-else
       :role="error === 'invalid' ? 'alert' : 'status'"
@@ -71,12 +74,14 @@ confirmRegistration();
         {{ messages[error].description }}
       </p>
       <div class="flex flex-wrap gap-3">
-        <SbButton :to="{ name: 'anmelden' }">Zur Anmeldung</SbButton>
+        <SbButton :to="{ name: 'anmelden' }">{{
+          $t("auth.shared.toLogin")
+        }}</SbButton>
         <SbButton
           v-if="error === 'invalid'"
           variant="secondary"
           :to="{ name: 'kontakt' }"
-          >Kontakt</SbButton
+          >{{ $t("auth.registrationConfirmPage.contact") }}</SbButton
         >
       </div>
     </div>

@@ -1,1 +1,133 @@
-{ "account": {} }
+{
+  "account": {
+    "shared": {
+      "customerAccount": "Your account",
+      "deliveryAddress": "Delivery address",
+      "billingAddress": "Billing address",
+      "deliveryAndBillingAddress": "Delivery and billing address"
+    },
+    "nav": {
+      "overview": "Overview",
+      "orders": "Orders",
+      "profile": "Profile",
+      "addresses": "Addresses",
+      "logout": "Log out"
+    },
+    "overview": {
+      "title": "My account",
+      "greeting": "Hello {name}",
+      "description": "Your details, addresses and orders.",
+      "profileHeading": "Profile",
+      "editProfile": "Edit profile",
+      "ordersHeading": "Orders",
+      "ordersText": "All orders with their status and receipt.",
+      "viewOrders": "View orders",
+      "manageAddresses": "Manage addresses"
+    },
+    "orders": {
+      "pageTitle": "My orders",
+      "title": "Orders",
+      "loading": "Loading orders …",
+      "empty": "You have not ordered anything yet.",
+      "toHome": "Go to the home page",
+      "order": "Order {number}",
+      "details": "Details"
+    },
+    "order": {
+      "pageTitle": "Order",
+      "allOrders": "All orders"
+    },
+    "addresses": {
+      "title": "Addresses",
+      "saved": "The address has been saved.",
+      "created": "The address has been added.",
+      "deliveryChanged": "Your delivery address has been changed.",
+      "billingChanged": "Your billing address has been changed.",
+      "changeFailed": "The address could not be changed.",
+      "deleted": "The address has been deleted.",
+      "add": "New address",
+      "usage": "Used as",
+      "edit": "Edit",
+      "useForDelivery": "Use as delivery address",
+      "useForBilling": "Use as billing address",
+      "delete": "Delete",
+      "which": ": {street}, {city}",
+      "editTitle": "Edit address",
+      "addTitle": "New address",
+      "deleteTitle": "Delete address?",
+      "deleteConfirm": "Delete address",
+      "deleteFailed": "The address could not be deleted. Please try again later."
+    },
+    "profile": {
+      "title": "Profile",
+      "loading": "Loading profile …",
+      "personalData": "Personal details",
+      "saved": "Your changes have been saved.",
+      "saveFailed": "Saving failed.",
+      "tryLater": "Please try again later.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "emailPassword": "Password to confirm",
+      "emailPasswordHint": "We need your password to change your email address.",
+      "save": "Save",
+      "changePassword": "Change password",
+      "passwordChanged": "Your password has been changed.",
+      "passwordChangedLoggedOut": "Your password has been changed. Please log in again with your new password.",
+      "passwordNotChanged": "Your password has not been changed.",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "newPasswordHint": "At least 8 characters",
+      "newPasswordConfirm": "Repeat new password",
+      "deleteHeading": "Delete account",
+      "deleteText": "Deletes your account with its addresses and favourites. Orders are kept as the law requires.",
+      "deleteButton": "Delete account",
+      "deleteTitle": "Delete your account?",
+      "deleteDescription": "This cannot be undone. You will be logged out afterwards.",
+      "deleteConfirm": "Delete permanently",
+      "deleteFailed": "The account could not be deleted. Please try again later.",
+      "validation": {
+        "firstNameRequired": "Please enter your first name.",
+        "lastNameRequired": "Please enter your last name.",
+        "emailInvalid": "Please enter a valid email address.",
+        "emailPasswordRequired": "Please enter your password to confirm.",
+        "currentPasswordRequired": "Please enter your password.",
+        "newPasswordTooShort": "The password needs at least 8 characters.",
+        "passwordsDiffer": "The passwords do not match."
+      }
+    },
+    "addressDetail": {
+      "phone": "Tel. {phone}"
+    },
+    "addressFields": {
+      "company": "Company",
+      "department": "Department",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "street": "Street and house number",
+      "postalCode": "Postcode",
+      "city": "Town or city",
+      "didYouMean": "Did you mean: {suggestion}?",
+      "applyCorrection": "Use this",
+      "additionalLine": "Additional address line",
+      "additionalLineHint": "e.g. rear building, 2nd floor, name on the doorbell",
+      "phone": "Phone",
+      "phoneHint": "Only for questions about your order"
+    },
+    "addressForm": {
+      "saveFailed": "The address could not be saved.",
+      "tryAgain": "Please try again.",
+      "business": "Business address",
+      "save": "Save address",
+      "validation": {
+        "firstNameRequired": "Please enter the first name.",
+        "lastNameRequired": "Please enter the last name.",
+        "postalCodeRequired": "Please enter the postcode.",
+        "companyRequired": "Please enter the company name."
+      }
+    },
+    "validation": {
+      "businessFieldRequired": "This field is required for business customers."
+    }
+  }
+}

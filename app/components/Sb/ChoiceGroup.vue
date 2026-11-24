@@ -50,7 +50,7 @@ const legendId = useId();
       <span
         v-if="required"
         class="rounded-full bg-sb-primary px-2.5 py-0.5 text-xs font-bold text-sb-on-primary"
-        >Pflicht</span
+        >{{ $t("common.choiceGroup.required") }}</span
       >
     </span>
     <RadioGroupItem

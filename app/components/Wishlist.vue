@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 import type { LocationQueryRaw } from "vue-router";
 import type {
   Dish,
@@ -23,6 +24,7 @@ withDefaults(defineProps<{ showMenuButton?: boolean }>(), {
 });
 
 const route = useRoute();
+const { t } = useI18n();
 const { getFormattedMoney } = useCommercePrice();
 const { entries, loaded, remove, clear } = useWishlistEntries();
 // paused or switched off: rows stay, but nothing goes into the cart
@@ -110,7 +112,7 @@ const rows = computed<Row[]>(() =>
     });
     const label = [
       ...chosenExtras.map((extra) => `+${extra.name}`),
-      ...without.map((name) => `ohne ${name}`),
+      ...without.map((name) => t("menu.wishlist.without", { name })),
     ].join(", ");
     return [
       {
@@ -146,7 +148,10 @@ function customizeLink(row: Row) {
 
 function rowLabel(row: Row) {
   return row.configuration
-    ? `${row.dish.name} (${row.configuration})`
+    ? t("menu.wishlist.rowLabel", {
+        name: row.dish.name,
+        configuration: row.configuration,
+      })
     : row.dish.name;
 }
 
@@ -225,20 +230,19 @@ async function clearAll() {
       role="status"
       class="text-sb-ink-muted"
     >
-      Merkliste wird geladen …
+      {{ $t("menu.wishlist.loading") }}
     </p>
     <div
       v-else-if="!rows.length"
       class="flex flex-col items-start gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6"
     >
-      <p>Ihre Merkliste ist leer.</p>
+      <p>{{ $t("menu.wishlist.empty") }}</p>
       <p class="text-sm text-sb-ink-muted">
-        Im Gericht merken Sie es mit dem Herz, so wie Sie es zusammengestellt
-        haben.
+        {{ $t("menu.wishlist.emptyHint") }}
       </p>
-      <SbButton v-if="showMenuButton" to="/speisekarte/"
-        >Zur Speisekarte</SbButton
-      >
+      <SbButton v-if="showMenuButton" :to="shopLocale.menuPath">{{
+        $t("menu.wishlist.toMenu")
+      }}</SbButton>
     </div>
     <template v-else>
       <p
@@ -246,7 +250,7 @@ async function clearAll() {
         role="status"
         class="rounded-sb-control bg-sb-muted p-4 text-sm font-semibold"
       >
-        Es werden aktuell keine weiteren Bestellungen mehr aufgenommen.
+        {{ $t("menu.detail.notOrdering") }}
       </p>
       <ul
         class="flex flex-col overflow-hidden rounded-sb-card border border-sb-line bg-sb-surface"
@@ -268,12 +272,12 @@ async function clearAll() {
               >{{ row.configuration }}</span
             >
             <span class="text-sm text-sb-ink-muted tabular-nums"
-              >Nr. {{ row.dish.number }} ·
+              >{{ $t("menu.shared.number", { number: row.dish.number }) }} ·
               {{ getFormattedMoney(row.price) }}</span
             >
           </p>
           <SbIconButton
-            :label="`${rowLabel(row)} von der Merkliste entfernen`"
+            :label="$t('menu.wishlist.remove', { name: rowLabel(row) })"
             variant="ghost"
             :disabled="removingId === row.entry.id"
             @click="removeRow(row)"
@@ -288,11 +292,15 @@ async function clearAll() {
               :disabled="addingAll"
               @click="addOne(row)"
             >
-              In den Warenkorb
+              {{ $t("menu.detail.addToCart") }}
               <span class="sr-only">: {{ rowLabel(row) }}</span>
             </SbButton>
             <SbButton variant="secondary" :to="customizeLink(row)">
-              {{ row.needsChoice ? "Auswählen" : "Anpassen" }}
+              {{
+                row.needsChoice
+                  ? $t("menu.wishlist.choose")
+                  : $t("menu.wishlist.customize")
+              }}
               <span class="sr-only">: {{ rowLabel(row) }}</span>
             </SbButton>
           </div>
@@ -303,22 +311,21 @@ async function clearAll() {
         role="alert"
         class="rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
       >
-        {{ failed }} konnte nicht in den Warenkorb gelegt werden. Bitte
-        versuchen Sie es erneut.
+        {{ $t("menu.wishlist.addFailed", { name: failed }) }}
       </p>
       <div class="flex flex-col gap-3 sm:flex-row">
-        <SbButton v-if="acceptsOrders" :loading="addingAll" @click="addAll"
-          >Alle in den Warenkorb</SbButton
-        >
-        <SbButton variant="ghost" @click="confirmClear = true"
-          >Merkliste leeren</SbButton
-        >
+        <SbButton v-if="acceptsOrders" :loading="addingAll" @click="addAll">{{
+          $t("menu.wishlist.addAll")
+        }}</SbButton>
+        <SbButton variant="ghost" @click="confirmClear = true">{{
+          $t("menu.wishlist.clear")
+        }}</SbButton>
       </div>
       <SbConfirmDialog
         v-model:open="confirmClear"
-        title="Merkliste leeren?"
-        description="Alle gemerkten Gerichte werden entfernt."
-        confirm-label="Merkliste leeren"
+        :title="$t('menu.wishlist.clearTitle')"
+        :description="$t('menu.wishlist.clearDescription')"
+        :confirm-label="$t('menu.wishlist.clear')"
         :loading="clearing"
         @confirm="clearAll"
       />

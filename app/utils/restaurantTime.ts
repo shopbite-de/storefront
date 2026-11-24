@@ -180,19 +180,23 @@ export function servicePeriodsOn(
   );
 }
 
-const DAY_NAMES = [
-  "Montag",
-  "Dienstag",
-  "Mittwoch",
-  "Donnerstag",
-  "Freitag",
-  "Samstag",
-  "Sonntag",
-] as const;
-
-export function weekdayName(weekday: Weekday): string {
-  return DAY_NAMES[weekday - 1]!;
-}
+/**
+ * The words of the next opening in the shop's language (messages
+ * `common.storeStatus.nextOpening.*`); this file is imported by the server,
+ * so the caller translates.
+ */
+export type NextOpeningWords = {
+  /** Full weekday names, Monday first. */
+  weekdays: readonly string[];
+  today: (time: string) => string;
+  tomorrow: (time: string) => string;
+  later: (parts: {
+    weekday: string;
+    day: string;
+    month: string;
+    time: string;
+  }) => string;
+};
 
 /** Whether the restaurant is open now, as the status pill says it. */
 export type StoreStatusText =
@@ -205,6 +209,7 @@ const NEXT_OPENING_DAYS = 60;
 function nextOpening(
   schedule: ServiceSchedule,
   now: RestaurantNow,
+  words: NextOpeningWords,
 ): string | null {
   for (let offset = 0; offset < NEXT_OPENING_DAYS; offset++) {
     const date = shiftDate(now.date, offset);
@@ -214,10 +219,11 @@ function nextOpening(
       offset === 0 ? spans.find((span) => span.opens > now.minutes) : spans[0];
     if (!next) continue;
     const time = formatClock(next.opens);
-    if (offset === 0) return `${time} Uhr`;
-    if (offset === 1) return `morgen um ${time} Uhr`;
-    const [, month, day] = date.split("-");
-    return `${weekdayName(weekdayOfDate(date))}, ${day}.${month}. um ${time} Uhr`;
+    if (offset === 0) return words.today(time);
+    if (offset === 1) return words.tomorrow(time);
+    const [, month = "", day = ""] = date.split("-");
+    const weekday = words.weekdays[weekdayOfDate(date) - 1] ?? "";
+    return words.later({ weekday, day, month, time });
   }
   return null;
 }
@@ -229,13 +235,14 @@ function nextOpening(
 export function storeStatusAt(
   instant: Date,
   schedule: ServiceSchedule,
+  words: NextOpeningWords,
 ): StoreStatusText {
   const now = restaurantNow(instant, schedule.timeZone);
   const current = servicePeriodsOn(schedule, now.date).find(
     (span) => span.opens <= now.minutes && now.minutes <= span.closes,
   );
   if (current) return { open: true, closesAt: formatClosing(current.closes) };
-  return { open: false, nextOpening: nextOpening(schedule, now) };
+  return { open: false, nextOpening: nextOpening(schedule, now, words) };
 }
 
 /**

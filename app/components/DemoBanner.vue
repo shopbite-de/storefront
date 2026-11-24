@@ -8,6 +8,6 @@
   <div
     class="bg-sb-ink px-4 py-2.5 text-center font-body text-sm font-semibold text-sb-bg"
   >
-    Demo-Shop: Bestellungen werden nicht bearbeitet und nicht ausgeliefert.
+    {{ $t("common.demoBanner.text") }}
   </div>
 </template>

@@ -29,6 +29,7 @@ const {
   accountTypes,
   submit,
 } = useRegistrationForm({ allowGuest: props.allowGuest });
+const { t } = useI18n();
 
 const errors = ref<Record<string, string>>({});
 const submitError = ref<string | null>(null);
@@ -80,7 +81,8 @@ async function onSubmit() {
     const next: Record<string, string> = {};
     for (const issue of result.error.issues) {
       const path = issue.path.join(".");
-      if (!next[path]) next[path] = issue.message;
+      // the schema carries message keys (AddressFields gets the texts)
+      if (!next[path]) next[path] = t(issue.message);
     }
     errors.value = next;
     await nextTick();
@@ -98,8 +100,7 @@ async function onSubmit() {
       return;
     }
     if (outcome.needsConfirmation) {
-      notice.value =
-        "Fast geschafft: Wir haben Ihnen eine E-Mail geschickt. Bitte bestätigen Sie den Link darin, um Ihr Konto zu aktivieren.";
+      notice.value = t("auth.registrationForm.confirmationNotice");
     }
     emit("registration-success", outcome.data, outcome.needsConfirmation);
   } finally {
@@ -124,10 +125,8 @@ async function onSubmit() {
       <strong class="text-base">
         {{
           submitError
-            ? "Das hat nicht geklappt"
-            : errorList.length === 1
-              ? "Ein Feld braucht noch Ihre Angabe"
-              : `${errorList.length} Felder brauchen noch Ihre Angabe`
+            ? $t("auth.registrationForm.failedTitle")
+            : $t("auth.registrationForm.fieldsMissing", errorList.length)
         }}
       </strong>
       <p v-if="submitError" class="whitespace-pre-line">{{ submitError }}</p>
@@ -151,7 +150,7 @@ async function onSubmit() {
 
     <SbSegmentedControl
       v-model="state.accountType"
-      label="Kundenart"
+      :label="$t('auth.registrationForm.customerTypeLabel')"
       :options="accountTypes"
     />
 
@@ -159,7 +158,7 @@ async function onSubmit() {
       <SbField
         id="firstName"
         v-slot="{ id, describedBy, invalid }"
-        label="Vorname"
+        :label="$t('auth.registrationForm.firstNameLabel')"
         :error="errors.firstName"
       >
         <SbInput
@@ -174,7 +173,7 @@ async function onSubmit() {
       <SbField
         id="lastName"
         v-slot="{ id, describedBy, invalid }"
-        label="Nachname"
+        :label="$t('auth.registrationForm.lastNameLabel')"
         :error="errors.lastName"
       >
         <SbInput
@@ -191,8 +190,8 @@ async function onSubmit() {
     <SbField
       id="email"
       v-slot="{ id, describedBy, invalid }"
-      label="E-Mail"
-      hint="Für die Bestellbestätigung"
+      :label="$t('auth.shared.emailLabel')"
+      :hint="$t('auth.registrationForm.emailHint')"
       :error="errors.email"
     >
       <SbInput
@@ -209,8 +208,8 @@ async function onSubmit() {
     <SbCheckbox
       v-if="allowGuest"
       v-model="createAccount"
-      label="Kundenkonto anlegen"
-      description="Für schnellere Bestellungen mit gespeicherten Adressen"
+      :label="$t('auth.registrationForm.createAccountLabel')"
+      :description="$t('auth.registrationForm.createAccountDescription')"
       plain
     />
 
@@ -218,8 +217,8 @@ async function onSubmit() {
       <SbField
         id="password"
         v-slot="{ id, describedBy, invalid }"
-        label="Passwort"
-        hint="Mindestens 8 Zeichen"
+        :label="$t('auth.shared.passwordLabel')"
+        :hint="$t('auth.shared.passwordHint')"
         :error="errors.password"
       >
         <SbInput
@@ -235,7 +234,7 @@ async function onSubmit() {
       <SbField
         id="passwordConfirm"
         v-slot="{ id, describedBy, invalid }"
-        label="Passwort wiederholen"
+        :label="$t('auth.registrationForm.passwordConfirmLabel')"
         :error="errors.passwordConfirm"
       >
         <SbInput
@@ -254,8 +253,8 @@ async function onSubmit() {
       <legend class="mb-1 font-bold">
         {{
           state.isShippingAddressDifferent
-            ? "Rechnungsadresse"
-            : "Rechnungs- und Lieferadresse"
+            ? $t("auth.registrationForm.billingAddress")
+            : $t("auth.registrationForm.billingAndDeliveryAddress")
         }}
       </legend>
       <AddressFields
@@ -269,7 +268,7 @@ async function onSubmit() {
 
     <SbCheckbox
       v-model="state.isShippingAddressDifferent"
-      label="Lieferadresse weicht von der Rechnungsadresse ab"
+      :label="$t('auth.registrationForm.differentDeliveryAddress')"
       plain
     />
 
@@ -277,7 +276,9 @@ async function onSubmit() {
       v-if="state.isShippingAddressDifferent"
       class="flex flex-col gap-4 border-t border-sb-line pt-5"
     >
-      <legend class="mb-1 font-bold">Lieferadresse</legend>
+      <legend class="mb-1 font-bold">
+        {{ $t("auth.registrationForm.deliveryAddress") }}
+      </legend>
       <AddressFields
         ref="shippingAddressFields"
         v-model="state.shippingAddress"
@@ -292,7 +293,7 @@ async function onSubmit() {
       <SbCheckbox
         id="acceptedDataProtection"
         v-model="state.acceptedDataProtection"
-        label="Datenschutzerklärung"
+        :label="$t('auth.registrationForm.privacyLabel')"
         plain
         :invalid="!!errors.acceptedDataProtection"
         :described-by="
@@ -301,13 +302,15 @@ async function onSubmit() {
             : undefined
         "
       >
-        Ich habe die
-        <NuxtLink
-          :to="shopLocale.contentPaths.privacy"
-          class="font-semibold text-sb-primary-ink underline underline-offset-2"
-          >Datenschutzerklärung</NuxtLink
-        >
-        gelesen und akzeptiere sie.
+        <i18n-t keypath="auth.registrationForm.privacyConsent" scope="global">
+          <template #privacy>
+            <NuxtLink
+              :to="shopLocale.contentPaths.privacy"
+              class="font-semibold text-sb-primary-ink underline underline-offset-2"
+              >{{ $t("auth.registrationForm.privacyLink") }}</NuxtLink
+            >
+          </template>
+        </i18n-t>
       </SbCheckbox>
       <p
         v-if="errors.acceptedDataProtection"
@@ -319,7 +322,7 @@ async function onSubmit() {
     </div>
 
     <SbButton type="submit" size="lg" block :loading="submitting">
-      Angaben speichern
+      {{ $t("auth.registrationForm.submit") }}
     </SbButton>
   </form>
 </template>

@@ -16,8 +16,9 @@ const { site } = useRuntimeConfig().public;
 const { openingHours: hours, refresh } = useOpeningHours();
 onServerPrefetch(() => refresh());
 
+const hoursWords = useOpeningHoursWords();
 const openingHours = computed(() =>
-  hours.value ? groupOpeningHours(hours.value) : [],
+  hours.value ? groupOpeningHours(hours.value, hoursWords.value) : [],
 );
 const locality = [site.address.postalCode, site.address.city]
   .filter(Boolean)
@@ -72,7 +73,7 @@ const columns = computed(() =>
             rel="noopener"
             class="inline-flex min-h-11 items-center self-start text-[15px] text-sb-ink-muted underline underline-offset-4 hover:text-sb-ink focus-visible:outline-3 focus-visible:outline-sb-focus"
           >
-            Auf Google ansehen
+            {{ $t("common.footer.google") }}
           </a>
         </address>
 
@@ -82,14 +83,18 @@ const columns = computed(() =>
           class="flex scroll-mt-24 flex-col gap-3"
           aria-labelledby="footer-hours"
         >
-          <h2 id="footer-hours" class="text-sm font-bold">Öffnungszeiten</h2>
+          <h2 id="footer-hours" class="text-sm font-bold">
+            {{ $t("common.footer.openingHours") }}
+          </h2>
           <FooterStoreStatus />
           <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-[15px]">
             <template v-for="row in openingHours" :key="row.days">
               <dt class="font-semibold">{{ row.days }}</dt>
               <dd class="text-sb-ink-muted tabular-nums">
                 {{
-                  row.intervals.length ? row.intervals.join(", ") : "Ruhetag"
+                  row.intervals.length
+                    ? row.intervals.join(", ")
+                    : $t("common.shared.closingDay")
                 }}
               </dd>
             </template>
@@ -124,15 +129,14 @@ const columns = computed(() =>
         class="flex flex-col gap-3 border-t border-sb-line pt-6 text-[13px] text-sb-ink-muted sm:flex-row sm:items-center sm:justify-between"
       >
         <p>
-          © {{ year }} {{ site.name }} · Alle Preise inkl. MwSt., zzgl.
-          Liefergebühr, wenn nicht anders angegeben
+          {{ $t("common.footer.legal", { year, name: site.name }) }}
         </p>
         <a
           href="https://shopbite.de"
           target="_blank"
           rel="noopener"
           class="inline-flex min-h-11 items-center hover:text-sb-ink focus-visible:outline-3 focus-visible:outline-sb-focus"
-          >Online bestellen mit ShopBite</a
+          >{{ $t("common.footer.poweredBy") }}</a
         >
       </div>
     </div>

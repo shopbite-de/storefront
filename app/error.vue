@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shopLocale } from "#shopbite-locale";
 import type { NuxtError } from "#app";
 
 const props = defineProps<{
@@ -36,25 +37,29 @@ useSeoMeta({
         class="mx-auto flex w-full max-w-2xl flex-col items-start gap-4 px-4 pt-12 pb-20 font-body text-sb-ink sm:px-6"
       >
         <p class="text-sm font-bold tracking-wide text-sb-accent uppercase">
-          Fehler {{ statusCode }}
+          {{ $t("common.error.kicker", { status: statusCode }) }}
         </p>
         <h1 class="font-display text-4xl leading-tight sm:text-5xl">
           {{
             statusCode === 404
-              ? "Diese Seite gibt es nicht"
-              : "Da ist etwas schiefgelaufen"
+              ? $t("common.error.notFoundTitle")
+              : $t("common.error.failedTitle")
           }}
         </h1>
         <p class="text-lg">
           {{
             statusCode === 404
-              ? "Vielleicht hat sich die Adresse geändert. Unsere Speisekarte finden Sie hier:"
-              : "Bitte laden Sie die Seite neu oder versuchen Sie es gleich noch einmal."
+              ? $t("common.error.notFoundText")
+              : $t("common.error.failedText")
           }}
         </p>
         <div class="flex flex-wrap gap-3">
-          <SbButton to="/speisekarte/">Zur Speisekarte</SbButton>
-          <SbButton variant="secondary" to="/">Zur Startseite</SbButton>
+          <SbButton :to="shopLocale.menuPath">{{
+            $t("common.shared.toMenu")
+          }}</SbButton>
+          <SbButton variant="secondary" to="/">{{
+            $t("common.shared.toHome")
+          }}</SbButton>
         </div>
       </main>
       <Footer />

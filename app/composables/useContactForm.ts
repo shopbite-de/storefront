@@ -10,17 +10,18 @@ import { z } from "zod";
 export const contactFormSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  email: z.string().email("Ungültige E-Mail-Adresse"),
+  // the messages are keys (ADR 0002), translated by the form
+  email: z.string().email("contact.form.errors.email"),
   phone: z.string().optional(),
   // the shortest subject and message count without the spaces around them
   subject: z
     .string()
-    .refine((value) => value.trim().length >= 3, "Bitte gib einen Betreff an"),
+    .refine((value) => value.trim().length >= 3, "contact.form.errors.subject"),
   comment: z
     .string()
     .refine(
       (value) => value.trim().length >= 10,
-      "Die Nachricht muss mindestens 10 Zeichen lang sein",
+      "contact.form.errors.comment",
     ),
   hp: z.string().optional(),
 });

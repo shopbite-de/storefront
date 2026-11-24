@@ -3,6 +3,8 @@ import { shopLocale } from "#shopbite-locale";
 import QuickView from "~/components/Cart/QuickView.vue";
 import { useIntervalFn } from "@vueuse/core";
 
+const { t } = useI18n();
+
 const { selectedShippingMethod, selection, refreshSelection } =
   useCheckoutMethods();
 const { refresh: refreshCart } = useCartData();
@@ -60,7 +62,9 @@ watch(isLoggedIn, () => {
 useIntervalFn(refresh, 10000);
 
 const shippingMethodName = computed(
-  () => selectedShippingMethod.value?.name || "Die Versandart",
+  () =>
+    selectedShippingMethod.value?.name ||
+    t("order.summary.fallbackShippingMethod"),
 );
 
 // the wished time with its service date, as the order carries it
@@ -78,21 +82,25 @@ async function hasAvailableCheckoutMethods(): Promise<boolean> {
   try {
     if (await ensureAvailableCheckoutMethods()) return true;
     if (isShippingMethodBlocked.value) {
+      const method = shippingMethodName.value;
       reportError({
-        title: `${shippingMethodName.value} ist nicht möglich`,
-        description: `${shippingMethodName.value} ist für Ihre Adresse oder Ihren Warenkorb nicht möglich. Bitte wählen Sie oben eine andere Bestellart oder ändern Sie Ihre Adresse.`,
+        title: t("order.summary.shippingBlocked.title", { method }),
+        description: t("order.summary.shippingBlocked.description", {
+          method,
+        }),
       });
       return false;
     }
+    // the shipping method is fine here: the payment method is not
     reportError({
-      title: `Keine ${blockedMethodLabel.value} verfügbar`,
-      description: `Für deine Bestellung ist aktuell keine ${blockedMethodLabel.value} verfügbar. Bitte prüfe deine Adresse und deinen Warenkorb.`,
+      title: t("order.summary.noPaymentMethod.title"),
+      description: t("order.summary.noPaymentMethod.description"),
     });
   } catch (error) {
     console.error("[checkout][ensureAvailableCheckoutMethods]", error);
     reportError({
-      title: "Versand- und Zahlart konnten nicht geprüft werden",
-      description: "Bitte versuche es in einem Moment erneut.",
+      title: t("order.summary.checkFailed.title"),
+      description: t("order.summary.checkFailed.description"),
     });
   }
   return false;
@@ -107,19 +115,14 @@ async function hasAvailableCheckoutMethods(): Promise<boolean> {
 async function isCheckoutStillEnabled(): Promise<boolean> {
   const enabled = await checkAcceptsOrders();
   if (enabled) return true;
-  reportError(
-    enabled === false
-      ? {
-          title: "Bestellung nicht möglich",
-          description:
-            "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen.",
-        }
-      : {
-          title: "Bestellung nicht möglich",
-          description:
-            "Ob gerade Bestellungen angenommen werden, konnte nicht geprüft werden. Bitte versuche es in einem Moment erneut.",
-        },
-  );
+  reportError({
+    title: t("order.summary.notPossible"),
+    description: t(
+      enabled === false
+        ? "order.summary.notAccepting"
+        : "order.summary.acceptingUnknown",
+    ),
+  });
   return false;
 }
 
@@ -162,23 +165,21 @@ async function handleCreateOrder() {
     reportError(
       code === "order_already_placed" && typeof placedId === "string"
         ? {
-            title: "Deine Bestellung ist bereits eingegangen.",
-            description: "Du musst nicht erneut bestellen.",
+            title: t("order.summary.alreadyPlaced.title"),
+            description: t("order.summary.alreadyPlaced.description"),
             link: {
               to: { name: "bestellung-id", params: { id: placedId } },
-              label: "Zur Bestellung",
+              label: t("order.summary.alreadyPlaced.link"),
             },
           }
         : code === "order_status_unknown"
           ? {
-              title: "Bestellung nicht bestätigt",
-              description:
-                "Wir konnten nicht feststellen, ob deine Bestellung eingegangen ist. Bitte prüfe dein E-Mail-Postfach oder ruf uns an, bevor du erneut bestellst.",
+              title: t("order.summary.statusUnknown.title"),
+              description: t("order.summary.statusUnknown.description"),
             }
           : {
-              title: "Bestellung fehlgeschlagen",
-              description:
-                "Deine Bestellung konnte nicht aufgegeben werden. Bitte prüfe deine Angaben und versuche es erneut.",
+              title: t("order.summary.failed.title"),
+              description: t("order.summary.failed.description"),
             },
     );
     // an empty cart would replace this page (and the message) with the
@@ -218,10 +219,6 @@ const isValidToProceed = computed(
     !isPaymentMethodBlocked.value,
 );
 
-const blockedMethodLabel = computed(() =>
-  isShippingMethodBlocked.value ? "Versandart" : "Zahlart",
-);
-
 const isPlacingOrder = ref(false);
 const selectedDeliveryTime = ref("");
 // DeliveryTimeSelect reports `false` during its setup (no time selected before
@@ -230,45 +227,47 @@ const selectedDeliveryTime = ref("");
 const isValidTime = ref(false);
 
 const checkoutSections = [
-  { id: "versand", number: 1, title: "Lieferung oder Abholung" },
-  { id: "zeit", number: 2, title: "Wann?" },
-  { id: "angaben", number: 3, title: "Ihre Angaben" },
-  { id: "bezahlung", number: 4, title: "Bezahlung" },
+  { id: "versand", number: 1, title: "order.shared.deliveryOrPickup" },
+  { id: "zeit", number: 2, title: "order.summary.sections.time" },
+  { id: "angaben", number: 3, title: "order.summary.sections.details" },
+  { id: "bezahlung", number: 4, title: "order.shared.payment" },
 ] as const;
 
 const checkoutButtonLabel = computed<string>(() => {
   if (!customerDataAvailable.value) {
-    return "Bitte zuerst Ihre Angaben speichern";
+    return t("order.summary.button.saveDetailsFirst");
   }
 
   // app.vue loads business hours and holidays after hydration. Until then (or
   // when that fails) an invalid time says nothing about the shop being closed
   // (#349, #355).
   if (isLoadingOpeningHours.value) {
-    return "Lade Öffnungszeiten …";
+    return t("order.summary.button.loadingHours");
   }
 
   if (hasOpeningHoursFailed.value) {
-    return "Öffnungszeiten konnten nicht geladen werden";
+    return t("order.shared.hoursFailed");
   }
 
   if (!isValidTime.value) {
-    return "Wir haben aktuell leider geschlossen";
+    return t("order.summary.button.closed");
   }
 
   if (!acceptsOrders.value) {
-    return "Es werden aktuell keine weiteren Bestellungen mehr aufgenommen";
+    return t("order.summary.button.notAccepting");
   }
 
   if (isShippingMethodBlocked.value) {
-    return `${shippingMethodName.value} ist hier nicht möglich`;
+    return t("order.summary.button.shippingBlocked", {
+      method: shippingMethodName.value,
+    });
   }
 
   if (isPaymentMethodBlocked.value) {
-    return `Aktuell ist keine ${blockedMethodLabel.value} verfügbar`;
+    return t("order.summary.button.noPaymentMethod");
   }
 
-  return "Zahlungspflichtig bestellen";
+  return t("order.summary.button.placeOrder");
 });
 </script>
 
@@ -288,7 +287,7 @@ const checkoutButtonLabel = computed<string>(() => {
           class="mb-4 flex items-baseline gap-3 font-display text-2xl leading-tight sm:text-[28px]"
         >
           <span class="text-sb-accent">{{ section.number }}</span>
-          {{ section.title }}
+          {{ $t(section.title) }}
         </h2>
         <template v-if="section.id === 'versand'">
           <CheckoutPaymentAndDelivery part="shipping" />
@@ -298,18 +297,21 @@ const checkoutButtonLabel = computed<string>(() => {
             class="mt-3 flex gap-3 rounded-sb-control border-[1.5px] border-sb-danger p-4 text-sm"
           >
             <span class="font-bold text-sb-danger" aria-hidden="true">!</span>
-            <span
-              >{{ shippingMethodName }} ist für Ihre Adresse oder Ihren
-              Warenkorb leider nicht möglich. Bitte wählen Sie eine andere
-              Bestellart oder ändern Sie Ihre Adresse.</span
-            >
+            <span>{{
+              $t("order.summary.shippingBlocked.alert", {
+                method: shippingMethodName,
+              })
+            }}</span>
           </p>
           <p
             v-else-if="isShippingMethodBlocked"
             class="mt-3 text-sm text-sb-ink-muted"
           >
-            Ob {{ shippingMethodName }} an Ihre Adresse möglich ist, sehen Sie,
-            sobald Sie Ihre Angaben gespeichert haben.
+            {{
+              $t("order.summary.shippingBlocked.hint", {
+                method: shippingMethodName,
+              })
+            }}
           </p>
         </template>
         <CheckoutDeliveryTimeSelect
@@ -332,7 +334,7 @@ const checkoutButtonLabel = computed<string>(() => {
       aria-labelledby="kasse-bestellung"
     >
       <h2 id="kasse-bestellung" class="font-display text-[28px] leading-none">
-        Ihre Bestellung
+        {{ $t("order.shared.yourOrder") }}
       </h2>
       <QuickView :with-upsell="true" />
       <CheckoutVoucherInput />
@@ -348,23 +350,32 @@ const checkoutButtonLabel = computed<string>(() => {
         @click="handleCreateOrder"
       >
         {{
-          isValidToProceed ? "Zahlungspflichtig bestellen" : checkoutButtonLabel
+          isValidToProceed
+            ? $t("order.summary.button.placeOrder")
+            : checkoutButtonLabel
         }}
       </SbButton>
-      <p class="text-sm text-sb-ink-muted">
-        Mit der Bestellung akzeptieren Sie unsere
-        <NuxtLink
-          :to="shopLocale.contentPaths.terms"
-          class="font-semibold text-sb-primary-ink underline"
-          >AGB</NuxtLink
-        >
-        und die
-        <NuxtLink
-          :to="shopLocale.contentPaths.privacy"
-          class="font-semibold text-sb-primary-ink underline"
-          >Datenschutzerklärung</NuxtLink
-        >.
-      </p>
+      <i18n-t
+        keypath="order.summary.legal.text"
+        tag="p"
+        scope="global"
+        class="text-sm text-sb-ink-muted"
+      >
+        <template #terms>
+          <NuxtLink
+            :to="shopLocale.contentPaths.terms"
+            class="font-semibold text-sb-primary-ink underline"
+            >{{ $t("order.summary.legal.terms") }}</NuxtLink
+          >
+        </template>
+        <template #privacy>
+          <NuxtLink
+            :to="shopLocale.contentPaths.privacy"
+            class="font-semibold text-sb-primary-ink underline"
+            >{{ $t("order.summary.legal.privacy") }}</NuxtLink
+          >
+        </template>
+      </i18n-t>
     </section>
   </div>
 </template>

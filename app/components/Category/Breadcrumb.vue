@@ -62,7 +62,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <nav aria-label="Brotkrumen" class="mb-2 font-body text-sm">
+  <nav :aria-label="$t('menu.breadcrumb.label')" class="mb-2 font-body text-sm">
     <ol class="flex flex-wrap items-center gap-1 text-sb-ink-muted">
       <li
         v-for="(item, index) in items"

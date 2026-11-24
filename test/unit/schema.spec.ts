@@ -138,6 +138,7 @@ describe("buildRestaurantSchema", () => {
         holiday({ id: "h", firstDay: "2026-07-12", lastDay: "2026-08-05" }),
       ],
       menuUrl: "https://www.pizzeria-esempio.example/speisekarte",
+      menuName: "Speisekarte",
       menuSections: [
         { name: "Pizza", url: "https://www.pizzeria-esempio.example/c/Pizza/" },
         {

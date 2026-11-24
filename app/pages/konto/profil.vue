@@ -5,8 +5,10 @@ definePageMeta({
   layout: "account",
 });
 
+const { t } = useI18n();
+
 useSeoMeta({
-  title: "Profil",
+  title: t("account.profile.title"),
 });
 
 // The profile through the BFF (ADR 0001, step 6): names, the e-mail (with
@@ -49,17 +51,17 @@ onMounted(async () => {
   loading.value = false;
 });
 
-// Validation, result and errors in the page (#445).
+// Validation, result and errors in the page (#445); the messages are keys.
 const schema = z.object({
-  firstName: z.string().min(1, "Bitte geben Sie Ihren Vornamen an."),
-  lastName: z.string().min(1, "Bitte geben Sie Ihren Nachnamen an."),
-  email: z.string().email("Bitte geben Sie eine gültige E-Mail-Adresse ein."),
+  firstName: z.string().min(1, "account.profile.validation.firstNameRequired"),
+  lastName: z.string().min(1, "account.profile.validation.lastNameRequired"),
+  email: z.string().email("account.profile.validation.emailInvalid"),
   emailPassword: z.string(),
 });
 type Schema = z.output<typeof schema>;
 const errors = ref<Partial<Record<keyof Schema, string>>>({});
 const saveResult = ref<"saved" | "failed" | null>(null);
-const saveMessage = ref("Bitte versuchen Sie es später noch einmal.");
+const saveMessage = ref(t("account.profile.tryLater"));
 const saving = ref(false);
 const deleting = ref(false);
 const deleteFailed = ref(false);
@@ -73,11 +75,11 @@ async function onSubmit() {
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       const key = issue.path[0] as keyof Schema;
-      next[key] ??= issue.message;
+      next[key] ??= t(issue.message);
     }
   }
   if (emailChanged.value && !state.emailPassword) {
-    next.emailPassword = "Bitte geben Sie Ihr Passwort zur Bestätigung an.";
+    next.emailPassword = t("account.profile.validation.emailPasswordRequired");
   }
   if (!parsed.success || Object.keys(next).length) {
     errors.value = next;
@@ -109,6 +111,7 @@ async function onSubmit() {
     // the code only: the error of a request carries its body
     console.error("Profile update error:", code ?? "no answer");
     saveMessage.value = credentialChangeMessage(
+      t,
       code,
       domainErrorDetails(error),
     );
@@ -124,14 +127,19 @@ async function onSubmit() {
 const MIN_PASSWORD_LENGTH = 8;
 const passwordSchema = z
   .object({
-    currentPassword: z.string().min(1, "Bitte geben Sie Ihr Passwort an."),
+    currentPassword: z
+      .string()
+      .min(1, "account.profile.validation.currentPasswordRequired"),
     newPassword: z
       .string()
-      .min(MIN_PASSWORD_LENGTH, "Das Passwort braucht mindestens 8 Zeichen."),
+      .min(
+        MIN_PASSWORD_LENGTH,
+        "account.profile.validation.newPasswordTooShort",
+      ),
     newPasswordConfirm: z.string(),
   })
   .refine((data) => data.newPassword === data.newPasswordConfirm, {
-    message: "Die Passwörter stimmen nicht überein.",
+    message: "account.profile.validation.passwordsDiffer",
     path: ["newPasswordConfirm"],
   });
 type PasswordSchema = z.output<typeof passwordSchema>;
@@ -155,7 +163,7 @@ async function onPasswordSubmit() {
     const next: typeof passwordErrors.value = {};
     for (const issue of parsed.error.issues) {
       const key = issue.path[0] as keyof PasswordSchema;
-      next[key] ??= issue.message;
+      next[key] ??= t(issue.message);
     }
     passwordErrors.value = next;
     return;
@@ -179,6 +187,7 @@ async function onPasswordSubmit() {
     const code = domainErrorCode(error);
     console.error("Password change error:", code ?? "no answer");
     passwordMessage.value = credentialChangeMessage(
+      t,
       code,
       domainErrorDetails(error),
     );
@@ -211,9 +220,9 @@ async function onDelete() {
 
 <template>
   <div class="font-body text-sb-ink">
-    <UserAccountHeader title="Profil" />
+    <UserAccountHeader :title="$t('account.profile.title')" />
     <p v-if="loading" role="status" class="text-sb-ink-muted">
-      Profil wird geladen …
+      {{ $t("account.profile.loading") }}
     </p>
     <template v-else>
       <form
@@ -223,7 +232,9 @@ async function onDelete() {
         class="flex max-w-xl flex-col gap-4 rounded-sb-card border border-sb-line bg-sb-surface p-6"
         @submit.prevent="onSubmit"
       >
-        <h2 id="profil-daten" class="sr-only">Persönliche Daten</h2>
+        <h2 id="profil-daten" class="sr-only">
+          {{ $t("account.profile.personalData") }}
+        </h2>
         <div
           v-if="saveResult"
           ref="resultBox"
@@ -236,17 +247,19 @@ async function onDelete() {
               : 'border-[1.5px] border-sb-danger',
           ]"
         >
-          <template v-if="saveResult === 'saved'"
-            >Ihre Änderungen sind gespeichert.</template
-          >
+          <template v-if="saveResult === 'saved'">{{
+            $t("account.profile.saved")
+          }}</template>
           <template v-else>
-            <strong class="block">Speichern fehlgeschlagen.</strong>
+            <strong class="block">{{
+              $t("account.profile.saveFailed")
+            }}</strong>
             {{ saveMessage }}
           </template>
         </div>
         <SbField
           v-slot="{ id, describedBy, invalid }"
-          label="Vorname"
+          :label="$t('account.profile.firstName')"
           :error="errors.firstName"
         >
           <SbInput
@@ -260,7 +273,7 @@ async function onDelete() {
         </SbField>
         <SbField
           v-slot="{ id, describedBy, invalid }"
-          label="Nachname"
+          :label="$t('account.profile.lastName')"
           :error="errors.lastName"
         >
           <SbInput
@@ -274,7 +287,7 @@ async function onDelete() {
         </SbField>
         <SbField
           v-slot="{ id, describedBy, invalid }"
-          label="E-Mail"
+          :label="$t('account.profile.email')"
           :error="errors.email"
         >
           <SbInput
@@ -290,8 +303,8 @@ async function onDelete() {
         <SbField
           v-if="emailChanged"
           v-slot="{ id, describedBy, invalid }"
-          label="Passwort zur Bestätigung"
-          hint="Für eine neue E-Mail-Adresse brauchen wir Ihr Passwort."
+          :label="$t('account.profile.emailPassword')"
+          :hint="$t('account.profile.emailPasswordHint')"
           :error="errors.emailPassword"
         >
           <SbInput
@@ -304,8 +317,12 @@ async function onDelete() {
             :invalid="invalid"
           />
         </SbField>
-        <SbButton type="submit" size="lg" :loading="saving" class="self-start"
-          >Speichern</SbButton
+        <SbButton
+          type="submit"
+          size="lg"
+          :loading="saving"
+          class="self-start"
+          >{{ $t("account.profile.save") }}</SbButton
         >
       </form>
       <form
@@ -315,7 +332,7 @@ async function onDelete() {
         @submit.prevent="onPasswordSubmit"
       >
         <h2 id="passwort-aendern" class="font-display text-xl">
-          Passwort ändern
+          {{ $t("account.profile.changePassword") }}
         </h2>
         <div
           v-if="passwordResult"
@@ -329,21 +346,22 @@ async function onDelete() {
               : 'bg-sb-primary-tint text-sb-primary-ink',
           ]"
         >
-          <template v-if="passwordResult === 'saved'"
-            >Ihr Passwort ist geändert.</template
-          >
-          <template v-else-if="passwordResult === 'saved-logged-out'"
-            >Ihr Passwort ist geändert. Bitte melden Sie sich mit dem neuen
-            Passwort wieder an.</template
-          >
+          <template v-if="passwordResult === 'saved'">{{
+            $t("account.profile.passwordChanged")
+          }}</template>
+          <template v-else-if="passwordResult === 'saved-logged-out'">{{
+            $t("account.profile.passwordChangedLoggedOut")
+          }}</template>
           <template v-else>
-            <strong class="block">Das Passwort ist nicht geändert.</strong>
+            <strong class="block">{{
+              $t("account.profile.passwordNotChanged")
+            }}</strong>
             {{ passwordMessage }}
           </template>
         </div>
         <SbField
           v-slot="{ id, describedBy, invalid }"
-          label="Aktuelles Passwort"
+          :label="$t('account.profile.currentPassword')"
           :error="passwordErrors.currentPassword"
         >
           <SbInput
@@ -358,8 +376,8 @@ async function onDelete() {
         </SbField>
         <SbField
           v-slot="{ id, describedBy, invalid }"
-          label="Neues Passwort"
-          hint="Mindestens 8 Zeichen"
+          :label="$t('account.profile.newPassword')"
+          :hint="$t('account.profile.newPasswordHint')"
           :error="passwordErrors.newPassword"
         >
           <SbInput
@@ -374,7 +392,7 @@ async function onDelete() {
         </SbField>
         <SbField
           v-slot="{ id, describedBy, invalid }"
-          label="Neues Passwort wiederholen"
+          :label="$t('account.profile.newPasswordConfirm')"
           :error="passwordErrors.newPasswordConfirm"
         >
           <SbInput
@@ -392,7 +410,7 @@ async function onDelete() {
           size="lg"
           :loading="passwordSaving"
           class="self-start"
-          >Passwort ändern</SbButton
+          >{{ $t("account.profile.changePassword") }}</SbButton
         >
       </form>
       <section
@@ -400,28 +418,26 @@ async function onDelete() {
         class="mt-10 flex max-w-xl flex-col items-start gap-3 border-t border-sb-line pt-6"
       >
         <h2 id="konto-loeschen" class="font-display text-xl">
-          Kundenkonto löschen
+          {{ $t("account.profile.deleteHeading") }}
         </h2>
         <p class="text-sb-ink-muted">
-          Löscht Ihr Kundenkonto mit Adressen und Merkliste. Bestellungen
-          bleiben für die gesetzliche Aufbewahrung gespeichert.
+          {{ $t("account.profile.deleteText") }}
         </p>
-        <SbButton variant="secondary" @click="open = true"
-          >Konto löschen</SbButton
-        >
+        <SbButton variant="secondary" @click="open = true">{{
+          $t("account.profile.deleteButton")
+        }}</SbButton>
       </section>
       <SbConfirmDialog
         v-if="open"
         v-model:open="open"
-        title="Kundenkonto löschen?"
-        description="Das lässt sich nicht rückgängig machen. Sie werden danach abgemeldet."
-        confirm-label="Endgültig löschen"
+        :title="$t('account.profile.deleteTitle')"
+        :description="$t('account.profile.deleteDescription')"
+        :confirm-label="$t('account.profile.deleteConfirm')"
         :loading="deleting"
         @confirm="onDelete"
       >
         <p v-if="deleteFailed" role="alert" class="text-sm font-semibold">
-          Das Konto konnte nicht gelöscht werden. Bitte versuchen Sie es später
-          noch einmal.
+          {{ $t("account.profile.deleteFailed") }}
         </p>
       </SbConfirmDialog>
     </template>

@@ -19,7 +19,8 @@ export const createAddressSchema = (state: any) =>
           );
         },
         {
-          message: "Als Geschäftskunde ist dieses Feld pflicht.",
+          // a message key (ADR 0002): the form translates it
+          message: "account.validation.businessFieldRequired",
         },
       ),
     department: z.string().optional(),

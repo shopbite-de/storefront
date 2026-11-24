@@ -6,7 +6,7 @@ defineProps<{ title: string; description?: string }>();
 <template>
   <header class="mb-6 flex flex-col gap-2 font-body">
     <p class="text-sm font-bold tracking-wide text-sb-accent uppercase">
-      Kundenkonto
+      {{ $t("account.shared.customerAccount") }}
     </p>
     <h1 class="font-display text-4xl leading-tight text-sb-ink sm:text-5xl">
       {{ title }}

@@ -1,1 +1,151 @@
-{ "common": { "skipToContent": "Zum Inhalt springen" } }
+{
+  "common": {
+    "skipToContent": "Zum Inhalt springen",
+    "hours": {
+      "days": {
+        "mon": "Mo",
+        "tue": "Di",
+        "wed": "Mi",
+        "thu": "Do",
+        "fri": "Fr",
+        "sat": "Sa",
+        "sun": "So"
+      },
+      "today": "Heute {intervals}",
+      "closedToday": "Heute Ruhetag",
+      "and": "und"
+    },
+    "error": {
+      "kicker": "Fehler {status}",
+      "notFoundTitle": "Diese Seite gibt es nicht",
+      "failedTitle": "Da ist etwas schiefgelaufen",
+      "notFoundText": "Vielleicht hat sich die Adresse geändert. Unsere Speisekarte finden Sie hier:",
+      "failedText": "Bitte laden Sie die Seite neu oder versuchen Sie es gleich noch einmal."
+    },
+    "shared": {
+      "toMenu": "Zur Speisekarte",
+      "toHome": "Zur Startseite",
+      "closingDay": "Ruhetag"
+    },
+    "storeStatus": {
+      "closed": "Geschlossen",
+      "header": {
+        "open": "Geöffnet bis {time}",
+        "opens": "Öffnet {when}"
+      },
+      "footer": {
+        "open": "Geöffnet bis {time} Uhr",
+        "opens": "Geschlossen, wir öffnen wieder {when}"
+      },
+      "hero": {
+        "open": "Jetzt geöffnet bis {time}",
+        "opens": "Geschlossen, öffnet {when}"
+      },
+      "nextOpening": {
+        "today": "{time} Uhr",
+        "tomorrow": "morgen um {time} Uhr",
+        "later": "{weekday}, {day}.{month}. um {time} Uhr"
+      }
+    },
+    "header": {
+      "cartLabel": "Warenkorb, 1 Artikel | Warenkorb, {count} Artikel",
+      "homeLink": "{name}, zur Startseite",
+      "mainNavigation": "Hauptnavigation",
+      "mainNavigationMobile": "Hauptnavigation mobil",
+      "call": "Anrufen: {phone}",
+      "account": "Mein Konto",
+      "login": "Anmelden",
+      "logout": "Abmelden",
+      "register": "Registrieren",
+      "orders": "Bestellungen",
+      "wishlist": "Merkliste",
+      "wishlistCount": "Merkliste, {count} gemerkt",
+      "cart": "Warenkorb",
+      "openMenu": "Menü öffnen",
+      "menu": "Menü",
+      "cartTitle": "Ihre Bestellung"
+    },
+    "footer": {
+      "google": "Auf Google ansehen",
+      "openingHours": "Öffnungszeiten",
+      "legal": "© {year} {name} · Alle Preise inkl. MwSt., zzgl. Liefergebühr, wenn nicht anders angegeben",
+      "poweredBy": "Online bestellen mit ShopBite"
+    },
+    "hero": {
+      "deliveryTime": "Lieferung ca. {minutes} Min",
+      "pickupTime": "Abholung ca. {minutes} Min",
+      "ratingOutOf": "{rating} von 5",
+      "ratingSource": "{reviews} bei Google",
+      "ratingCard": "von 5 bei Google"
+    },
+    "homeCategories": {
+      "title": "Speisekarte",
+      "openMenu": "Ganze Speisekarte öffnen"
+    },
+    "homeHighlights": {
+      "title": "Oft bestellt"
+    },
+    "homeFaq": {
+      "title": "Häufige Fragen"
+    },
+    "homeFacts": {
+      "label": "Auf einen Blick",
+      "deliveryLead": "In ca. {minutes} Minuten bei Ihnen",
+      "pickupLead": "Abholbereit in ca. {minutes} Minuten"
+    },
+    "homeSeo": {
+      "titleSuffix": "Online bestellen & liefern lassen",
+      "description": {
+        "cuisineAndCity": "{cuisine} in {city}: Bei {name} online bestellen und liefern lassen oder abholen.",
+        "city": "{name} in {city}: Online bestellen und liefern lassen oder abholen.",
+        "cuisine": "{cuisine}: Bei {name} online bestellen und liefern lassen oder abholen."
+      }
+    },
+    "maintenance": {
+      "title": "Wartungsmodus",
+      "heading": "Gleich wieder da",
+      "text": "Der Shop ist vorübergehend nicht erreichbar. Bitte versuchen Sie es in ein paar Minuten noch einmal."
+    },
+    "weekdays": {
+      "mon": "Montag",
+      "tue": "Dienstag",
+      "wed": "Mittwoch",
+      "thu": "Donnerstag",
+      "fri": "Freitag",
+      "sat": "Samstag",
+      "sun": "Sonntag"
+    },
+    "schema": {
+      "menuName": "Speisekarte"
+    },
+    "branchSwitch": {
+      "label": "Filiale"
+    },
+    "demoBanner": {
+      "text": "Demo-Shop: Bestellungen werden nicht bearbeitet und nicht ausgeliefert."
+    },
+    "mobileTop": {
+      "all": "Alle",
+      "label": "Kategorien der Speisekarte",
+      "subsections": "Unterkategorien von {section}"
+    },
+    "stepper": {
+      "quantity": "Menge {item}",
+      "remove": "{item} entfernen",
+      "decrease": "{item}, eine weniger",
+      "increase": "{item}, eine mehr"
+    },
+    "confirmDialog": {
+      "cancel": "Abbrechen"
+    },
+    "choiceGroup": {
+      "required": "Pflicht"
+    },
+    "field": {
+      "optional": "(optional)"
+    },
+    "sheet": {
+      "close": "Schließen"
+    }
+  }
+}

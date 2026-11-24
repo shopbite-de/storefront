@@ -1,6 +1,11 @@
 // schemas/registrationSchema.ts
 import * as z from "zod";
 
+/*
+ * The messages are message keys (`auth.validation.*`, ADR 0002): the form
+ * translates `issue.message` where it shows it.
+ */
+
 export const baseAddressSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
@@ -9,18 +14,18 @@ export const baseAddressSchema = z.object({
   salutationId: z.string().optional(),
   street: z
     .string()
-    .min(1, { message: "Bitte geben Sie Ihre Straße und Hausnummer an." })
+    .min(1, { message: "auth.validation.streetWithNumber" })
     .refine((val) => /[0-9]/.test(val), {
-      message: "Bitte geben Sie Ihre Straße und Hausnummer an.",
+      message: "auth.validation.streetWithNumber",
     }),
   additionalAddressLine1: z.string().optional(),
   zipcode: z.string().optional(),
   city: z.string().min(1, {
-    message: "Bitte geben Sie Ihren Ort an.",
+    message: "auth.validation.cityRequired",
   }),
-  countryId: z.string().min(1, { message: "Bitte wählen Sie ein Land aus." }),
+  countryId: z.string().min(1, { message: "auth.validation.countryRequired" }),
   phoneNumber: z.string().min(7, {
-    message: "Bitte geben Sie eine gültige Telefonnummer an (mind. 7 Zeichen).",
+    message: "auth.validation.phoneInvalid",
   }),
 });
 
@@ -28,18 +33,18 @@ export const baseAddressSchema = z.object({
 export const createRegistrationSchema = (state: any) =>
   z.object({
     accountType: z.enum(["private", "business"], {
-      errorMap: () => ({ message: "Bitte wählen Sie einen Kontotyp aus." }),
+      errorMap: () => ({ message: "auth.validation.accountTypeRequired" }),
     }),
-    email: z.string().email("Bitte geben Sie eine gültige E-Mail-Adresse ein."),
+    email: z.string().email("auth.shared.emailInvalid"),
     firstName: z
       .string()
-      .min(1, { message: "Bitte geben Sie Ihren Vornamen an." }),
+      .min(1, { message: "auth.validation.firstNameRequired" }),
     lastName: z
       .string()
-      .min(1, { message: "Bitte geben Sie Ihren Nachnamen an." }),
+      .min(1, { message: "auth.validation.lastNameRequired" }),
     guest: z.boolean(),
     acceptedDataProtection: z.boolean().refine((val) => val, {
-      message: "Bitte akzeptieren Sie die Datenschutzbestimmungen.",
+      message: "auth.validation.privacyRequired",
     }),
     password: z
       .string()
@@ -49,7 +54,7 @@ export const createRegistrationSchema = (state: any) =>
           return state.guest || (val && val.length >= 8);
         },
         {
-          message: "Das Passwort muss mindestens 8 Zeichen lang sein.",
+          message: "auth.validation.passwordTooShort",
         },
       ),
     passwordConfirm: z
@@ -60,7 +65,7 @@ export const createRegistrationSchema = (state: any) =>
           return state.guest || val === state.password;
         },
         {
-          message: "Die Passwörter stimmen nicht überein.",
+          message: "auth.shared.passwordMismatch",
         },
       ),
     billingAddress: baseAddressSchema.refine(
@@ -71,7 +76,7 @@ export const createRegistrationSchema = (state: any) =>
         );
       },
       {
-        message: "Als Geschäftskunde ist der Firmenname ein Pflichtfeld.",
+        message: "auth.validation.companyRequired",
         path: ["company"],
       },
     ),
@@ -99,13 +104,12 @@ export const createRegistrationSchema = (state: any) =>
         ];
 
         const fieldMessages: Record<string, string> = {
-          firstName: "Bitte geben Sie den Vornamen für die Lieferadresse an.",
-          lastName: "Bitte geben Sie den Nachnamen für die Lieferadresse an.",
-          company: "Bitte geben Sie den Firmennamen für die Lieferadresse an.",
-          phoneNumber:
-            "Bitte geben Sie eine Telefonnummer für die Lieferadresse an.",
-          street: "Bitte geben Sie die Straße für die Lieferadresse an.",
-          city: "Bitte geben Sie den Ort für die Lieferadresse an.",
+          firstName: "auth.validation.delivery.firstNameRequired",
+          lastName: "auth.validation.delivery.lastNameRequired",
+          company: "auth.validation.delivery.companyRequired",
+          phoneNumber: "auth.validation.delivery.phoneRequired",
+          street: "auth.validation.delivery.streetRequired",
+          city: "auth.validation.delivery.cityRequired",
         };
 
         requiredFields.forEach((field) => {
@@ -114,13 +118,13 @@ export const createRegistrationSchema = (state: any) =>
           if (!data[field] || data[field] === "") {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: fieldMessages[field] || "Dieses Feld ist erforderlich.",
+              message: fieldMessages[field] || "auth.validation.fieldRequired",
               path: [field],
             });
           } else if (field === "street" && !/[0-9]/.test(data.street || "")) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: "Bitte geben Sie Ihre Straße und Hausnummer an.",
+              message: "auth.validation.streetWithNumber",
               path: ["street"],
             });
           }

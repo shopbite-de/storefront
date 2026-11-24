@@ -145,8 +145,8 @@ async function openFilterDrawer() {
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <SbSelect
           v-model="currentSorting"
-          label="Sortierung"
-          placeholder="Bitte wählen"
+          :label="$t('menu.shared.sorting')"
+          :placeholder="$t('menu.shared.sortingPlaceholder')"
           :options="presetSortingOptions"
           class="max-w-72"
         />
@@ -158,16 +158,18 @@ async function openFilterDrawer() {
             aria-haspopup="dialog"
             @click="openFilterDrawer"
           >
-            Filter
+            {{ $t("menu.listing.filter") }}
             <span v-if="selectedPropertyFilters.length" class="tabular-nums"
               >({{ selectedPropertyFilters.length }}
-              <span class="sr-only">aktiv</span>)</span
+              <span class="sr-only">{{
+                $t("menu.listing.filterActive")
+              }}</span>)</span
             >
           </SbButton>
           <SbSheet
             v-if="filterDrawerMounted"
             v-model:open="filterDrawerOpen"
-            title="Filter"
+            :title="$t('menu.listing.filter')"
           >
             <div class="flex flex-col gap-4">
               <CategoryFilterGroup
@@ -179,12 +181,16 @@ async function openFilterDrawer() {
             </div>
             <template #footer>
               <div class="flex gap-3">
-                <SbButton variant="secondary" block @click="resetFilters"
-                  >Zurücksetzen</SbButton
-                >
-                <SbButton block @click="filterDrawerOpen = false"
-                  >{{ dishes.length }} Gerichte zeigen</SbButton
-                >
+                <SbButton variant="secondary" block @click="resetFilters">{{
+                  $t("menu.listing.resetFilters")
+                }}</SbButton>
+                <SbButton block @click="filterDrawerOpen = false">{{
+                  $t(
+                    "menu.listing.showDishes",
+                    { count: dishes.length },
+                    dishes.length,
+                  )
+                }}</SbButton>
               </div>
             </template>
           </SbSheet>
@@ -195,7 +201,7 @@ async function openFilterDrawer() {
         v-if="showSkeleton"
         class="grid grid-cols-1 gap-3"
         aria-busy="true"
-        aria-label="Gerichte werden geladen"
+        :aria-label="$t('menu.listing.loading')"
       >
         <LazyProductCardSkeleton v-for="i in 6" :key="i" />
       </div>

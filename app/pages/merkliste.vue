@@ -1,6 +1,7 @@
 <script setup lang="ts">
+const { t } = useI18n();
 useSeoMeta({
-  title: "Merkliste",
+  title: t("menu.wishlistPage.title"),
 });
 </script>
 
@@ -9,7 +10,7 @@ useSeoMeta({
     <h1
       class="mb-6 font-display text-4xl leading-tight text-sb-ink sm:text-5xl"
     >
-      Merkliste
+      {{ $t("menu.wishlistPage.title") }}
     </h1>
     <Wishlist :show-menu-button="true" />
   </div>

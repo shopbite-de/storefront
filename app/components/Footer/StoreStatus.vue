@@ -3,13 +3,19 @@
 // whose focus proxies Lighthouse flagged on every page (#275). Rendered on
 // the client only, see useStoreStatus.
 const { status } = useStoreStatus();
+const { t } = useI18n();
 
 const text = computed(() => {
   if (!status.value) return "";
-  if (status.value.open) return `Geöffnet bis ${status.value.closesAt} Uhr`;
+  if (status.value.open)
+    return t("common.storeStatus.footer.open", {
+      time: status.value.closesAt,
+    });
   return status.value.nextOpening
-    ? `Geschlossen, wir öffnen wieder ${status.value.nextOpening}`
-    : "Geschlossen";
+    ? t("common.storeStatus.footer.opens", {
+        when: status.value.nextOpening,
+      })
+    : t("common.storeStatus.closed");
 });
 </script>
 

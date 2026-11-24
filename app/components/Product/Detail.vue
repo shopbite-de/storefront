@@ -113,7 +113,10 @@ const onVariantSwitched = (variant: Variant) => {
 
 const onAddToCart = () => emit("product-added");
 
-const dishName = computed(() => selectedDish.value?.name || "Gericht");
+const { t } = useI18n();
+const dishName = computed(
+  () => selectedDish.value?.name || t("menu.detail.dishFallback"),
+);
 </script>
 
 <template>
@@ -178,7 +181,7 @@ const dishName = computed(() => selectedDish.value?.name || "Gericht");
         role="status"
         class="min-h-14 flex-1 py-2 text-sm font-semibold text-sb-ink-muted"
       >
-        Es werden aktuell keine weiteren Bestellungen mehr aufgenommen.
+        {{ $t("menu.detail.notOrdering") }}
       </p>
       <template v-else>
         <SbStepper
@@ -194,7 +197,11 @@ const dishName = computed(() => selectedDish.value?.name || "Gericht");
           :loading="isLoading"
           @click="addToCart(onAddToCart)"
         >
-          <span>{{ isAvailable ? "In den Warenkorb" : "Ausverkauft" }}</span>
+          <span>{{
+            isAvailable
+              ? $t("menu.detail.addToCart")
+              : $t("menu.shared.soldOut")
+          }}</span>
           <span v-if="isAvailable && !pending" class="tabular-nums">
             {{ getFormattedMoney(total) }}
           </span>
