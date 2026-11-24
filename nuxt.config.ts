@@ -296,15 +296,7 @@ export default defineNuxtConfig({
     ipx: { maxAge: 2592000 },
   },
 
-  shopware: {
-    endpoint: "",
-    accessToken: "",
-    devStorefrontUrl: "",
-    useUserContextInSSR: true,
-  },
-
   modules: [
-    "@shopware/nuxt-module",
     "@nuxt/image",
     // must be loaded before @nuxt/content for the content integration
     "@nuxtjs/sitemap",
@@ -403,7 +395,6 @@ export default defineNuxtConfig({
   },
 
   devtools: { enabled: true },
-  extends: ["@shopware/composables/nuxt-layer"],
   future: {
     compatibilityVersion: 4,
   },
@@ -443,10 +434,7 @@ export default defineNuxtConfig({
         "@vue/devtools-core",
         "@vue/devtools-kit",
         "zod",
-        "@shopware/api-client",
-        "@shopware/api-client/helpers",
         "uuid",
-        "@shopware/helpers",
         "@vueuse/core",
       ],
     },
