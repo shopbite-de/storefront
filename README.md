@@ -146,9 +146,11 @@ shopBite: { locale: "en", paths: { merkliste: "/saved-dishes", terms: "/terms-of
 shopBite: {
   locale: "nl",
   language: "nl-NL",
-  paths: { "bestellung-kasse": "/bestelling/kassa" },
+  paths: { suche: "/zoeken", merkliste: "/favorieten" },
 },
 ```
+
+A child page's path must lie below its parent's, so child pages move with their parent: moving the checkout means moving `bestellung`, `bestellung-kasse`, `bestellung-id`, `bestellung-id-erfolg` and `bestellung-id-fehler` together (e.g. `/bestelling`, `/bestelling/kassa`, `/bestelling/:id()`, `/bestelling/:id()/gelukt`, `/bestelling/:id()/mislukt`).
 
 Templates use `$t("area.key")` and `<i18n-t keypath="…">` with a slot per placeholder, scripts `const { t } = useI18n()`.
 
