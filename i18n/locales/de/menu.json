@@ -76,6 +76,9 @@
       "label": "{name} merken",
       "failed": "Merken hat nicht geklappt. Bitte versuchen Sie es erneut."
     },
+    "ingredientChip": {
+      "without": "ohne {name}"
+    },
     "wishlist": {
       "without": "ohne {name}",
       "rowLabel": "{name} ({configuration})",

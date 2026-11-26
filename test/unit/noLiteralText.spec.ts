@@ -37,6 +37,12 @@ new RuleTester({
     'const ld = { "@type": "Restaurant", openingHours: "Monday" };',
     'import x from "Some Module";',
     'const header = { "Content-Type": "application/json" };',
+    "const width = `${size}px`; const id = `${prefix}-fehler`;",
+    "const classes = `flex ${gap} sm:grid`;",
+    'const ok = header.startsWith("Bearer ");',
+    "const csp = [\"'self'\", \"'unsafe-inline'\"];",
+    'throw invalidValue("Money needs a finite amount.");',
+    'const mode = ref("delivery");',
   ],
   invalid: [
     { code: 'const price = "Preis";', errors: text },
@@ -48,6 +54,11 @@ new RuleTester({
       errors: [...text, ...text],
     },
     { code: 'setError({ message: "Bitte prüfen" });', errors: text },
+    // sentences from placeholders and lower-case words
+    { code: "const s = `${a} oder ${b}`;", errors: text },
+    { code: 'const s = names.join(" und ");', errors: text },
+    { code: "const s = `${n} min`;", errors: text },
+    { code: 'const item = { label: "bestellen" };', errors: text },
   ],
 });
 
@@ -64,11 +75,14 @@ new RuleTester({
     '<template><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></template>',
     '<template><img sizes="(min-width: 640px) 50vw, 100vw" src="/a.png" /></template>',
     '<template><SbButton variant="secondary" icon="i-lucide-pizza" /></template>',
+    "<template><input :autocomplete=\"open ? 'given-name' : 'off'\" /></template>",
+    '<template><div :class="`flex ${gap}`" :aria-label="$t(\'menu.close\')" /></template>',
+    '<script setup>\nconst mode = ref("delivery");\n</script>\n<template><p :data-mode="mode">{{ $t("a.b") }}</p></template>',
   ],
   invalid: [
     {
       code: '<template><p>{{ true ? "Lieferadresse" : "x" }}</p></template>',
-      errors: text,
+      errors: [...text, ...text], // both branches render
     },
     {
       code: '<template><SbBadge text="Neu" /></template>',
@@ -81,6 +95,18 @@ new RuleTester({
     {
       code: '<script setup>\nconst label = "Preis";\n</script>\n<template><p /></template>',
       errors: text,
+    },
+    {
+      code: '<script setup>\nconst label = ref("bestellen");\n</script>\n<template><button>{{ label }}</button></template>',
+      errors: text,
+    },
+    {
+      code: "<template><button :aria-label=\"open ? 'schliessen' : 'oeffnen'\" /></template>",
+      errors: [...text, ...text],
+    },
+    {
+      code: "<template><p>{{ open ? 'offen' : 'zu' }}</p></template>",
+      errors: [...text, ...text],
     },
   ],
 });

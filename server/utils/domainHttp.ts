@@ -30,6 +30,7 @@ export const DOMAIN_ERROR_STATUS: Readonly<Record<DomainErrorCode, number>> = {
   stale_session: 409,
 };
 
+/* eslint-disable shopbite/no-literal-text -- HTTP's reason phrases (RFC 9110), a protocol; the app shows its own message for data.code */
 const STATUS_MESSAGES: Readonly<Record<number, string>> = {
   400: "Bad Request",
   401: "Unauthorized",
@@ -41,6 +42,7 @@ const STATUS_MESSAGES: Readonly<Record<number, string>> = {
   501: "Not Implemented",
   503: "Service Unavailable",
 };
+/* eslint-enable shopbite/no-literal-text */
 
 /**
  * A DomainError as an HTTP error with `data: { code, details }`; its

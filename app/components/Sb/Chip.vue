@@ -16,9 +16,10 @@ const props = withDefaults(
 
 const pressed = defineModel<boolean>({ default: false });
 
+const { t } = useI18n();
 const text = computed(() =>
   props.variant === "ingredient" && !pressed.value
-    ? `ohne ${props.label}`
+    ? t("menu.ingredientChip.without", { name: props.label })
     : props.label,
 );
 </script>

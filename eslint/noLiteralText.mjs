@@ -7,15 +7,28 @@
  *
  * Checked: string and template literals in scripts and template
  * expressions, and static attribute values in templates (template text
- * itself is `vue/no-bare-strings-in-template`'s). Not text, by shape:
- * message keys and other lower-case identifiers (`order.cart.title`,
- * `konto-profil`, `produkt`, `isHydrating`), paths and URLs, constants and
- * codes (`EUR`, `UND_ERR_SOCKET`), CSS class lists, time zones and media
- * types, and strings without letters. Not text, by place: import sources,
- * object keys, type literals, comparisons with `===`/`!==`, messages for
- * developers (`new Error(…)`, `console.*(…)`, `createError(…)`,
- * `createNotFoundError(…)`). Anything
- * else that has to stay (a protocol word, backend data) gets an
+ * itself is `vue/no-bare-strings-in-template`'s).
+ *
+ * Text by shape: a string with a space or an upper-case word ("Preis",
+ * "Add to basket"); a word between placeholders (`${a} oder ${b}`,
+ * `${n} min`) unless the whole is a class list; a lone word with space
+ * around it (`.join(" und ")`).
+ *
+ * Text by position, any word but a message key: what a mustache renders
+ * (`{{ open ? "offen" : "zu" }}`), a text attribute or prop (`aria-*`,
+ * `title`, `alt`, `placeholder`, `label`, … bound or static), a
+ * `label`/`title`/`description`-like property, and a name the template
+ * renders that the script set to a string (`const label = ref("…")`).
+ *
+ * Not text, by shape: message keys and other lower-case identifiers
+ * (`order.cart.title`, `konto-profil`, `produkt`, `isHydrating`), paths and
+ * URLs, constants and codes (`EUR`, `UND_ERR_SOCKET`), CSS class lists and
+ * values, SVG path data, CSP keywords, time zones and media types, strings
+ * without letters. Not text, by place: code attributes (`:class`,
+ * `:autocomplete`, `:to`, …), import sources, object keys, type literals,
+ * comparisons with `===`/`!==`, the key of `t()`, messages for developers
+ * (`new Error(…)`, `console.*(…)`, `create…Error(…)`, `invalidValue(…)`).
+ * Anything else that has to stay (a protocol word, backend data) gets an
  * `eslint-disable-next-line` with the reason, or goes into `allow`.
  */
 
@@ -124,14 +137,73 @@ export function readsLikeText(value, allow = ALLOWED) {
   }
   if (URL_LIKE.test(text) || SLASHED.test(text)) return false;
   if (SVG_PATH.test(text) || CSS_VALUE.test(text)) return false;
+  if (CSP_KEYWORD.test(text)) return false;
   if (text.split(/\s+/).every((token) => CLASS_TOKEN.test(token))) {
     return false;
   }
   return true;
 }
 
+/**
+ * A letters-only word with a space on one side and a space or a placeholder
+ * on the other (`${a} oder ${b}`, `${n} min`), not a unit (`${n}px`).
+ */
+const SPACED_WORD = /(?:^|\s)\p{L}{2,}\s|\s\p{L}{2,}(?:\s|$)/u;
+/** A quoted CSP keyword (`'self'`, `'unsafe-inline'`). */
+const CSP_KEYWORD = /^'[a-z-]+'$/;
+/** A lone word with space around it, as `.join(" und ")` takes it. */
+const PADDED_WORD = /^(?:\s+\p{L}+\s*|\s*\p{L}+\s+)$/u;
+/** A class list token that only a class list has (`gap-2`, `sm:flex`). */
+const UTILITY_TOKEN = /[-:[\]/!0-9]/;
+/** A message key (`order.cart.title`). */
+const KEY = /^[a-z][\w-]*(?:\.[\w-]+)+$/;
+
+/**
+ * Template attributes and component props whose value people read, bound
+ * or static (the list of `vue/no-bare-strings-in-template` plus `text`).
+ */
+const TEXT_ATTRIBUTES = new Set([
+  "title",
+  "alt",
+  "placeholder",
+  "label",
+  "hint",
+  "legend",
+  "description",
+  "trailing",
+  "text",
+  "confirm-label",
+  "cancel-label",
+  "item-name",
+  "aria-label",
+  "aria-description",
+  "aria-placeholder",
+  "aria-roledescription",
+  "aria-valuetext",
+]);
+
+/** Object keys whose value people read (`{ label: … }`, a toast's fields). */
+const TEXT_KEYS = new Set([
+  "title",
+  "label",
+  "description",
+  "placeholder",
+  "alt",
+  "hint",
+  "text",
+  "ariaLabel",
+  "aria-label",
+]);
+
+/** `confirmLabel` → `confirm-label`. @param {string} name */
+const kebab = (name) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+
 /** Callees whose string arguments are for developers, not guests. */
-const DEVELOPER_CALL = /^(?:console\.\w+|(?:[A-Z]\w*)?Error|create\w*Error)$/;
+const DEVELOPER_CALL =
+  /^(?:console\.\w+|(?:[A-Z]\w*)?Error|create\w*Error|invalidValue)$/;
+
+/** Callees whose string argument is a message key. */
+const TRANSLATE_CALL = /^(?:\$?t|i18n\.t|\$i18n\.t)$/;
 
 /** @param {any} callee */
 function calleeName(callee) {
@@ -143,23 +215,35 @@ function calleeName(callee) {
   return "";
 }
 
-/** Whether a literal is in a place where it cannot be a UI text. @param {any} node */
-function exempt(node) {
+/**
+ * The node an expression's value flows into, through the nodes that pass a
+ * string on as it is (conditionals' branches, `||`/`??`, `+`, `as`).
+ * @param {any} node
+ */
+function valueTarget(node) {
   let child = node;
   let parent = node.parent;
-  // through template literals, concatenations, conditionals, arrays
   while (
     parent &&
     (parent.type === "TemplateLiteral" ||
       (parent.type === "BinaryExpression" && parent.operator === "+") ||
       (parent.type === "ConditionalExpression" && parent.test !== child) ||
       parent.type === "LogicalExpression" ||
-      parent.type === "ArrayExpression" ||
       parent.type === "TSAsExpression" ||
       parent.type === "TSSatisfiesExpression")
   ) {
     child = parent;
     parent = parent.parent;
+  }
+  return { child, parent };
+}
+
+/** Whether a literal is in a place where it cannot be a UI text. @param {any} node */
+function exempt(node) {
+  let { child, parent } = valueTarget(node);
+  // arrays of strings (`["Enter", "Escape"]`) count like their place
+  while (parent?.type === "ArrayExpression") {
+    ({ child, parent } = valueTarget(parent));
   }
   if (!parent) return false;
   switch (parent.type) {
@@ -191,10 +275,67 @@ function exempt(node) {
       return parent.test === child;
     case "NewExpression":
     case "CallExpression":
-      return DEVELOPER_CALL.test(calleeName(parent.callee));
+      return (
+        DEVELOPER_CALL.test(calleeName(parent.callee)) ||
+        TRANSLATE_CALL.test(calleeName(parent.callee))
+      );
     default:
       return false;
   }
+}
+
+/**
+ * Whether a string in a place people read it (a text attribute, a
+ * mustache, a `label` property) is text: any word that is no message key.
+ * @param {string} value
+ */
+const isTextValue = (value) => /\p{L}/u.test(value) && !KEY.test(value.trim());
+
+/** Whether a template literal is a class list (`flex ${gap} sm:grid`). @param {any} literal */
+function isClassList(literal) {
+  const whole = literal.quasis
+    .map((/** @type {any} */ quasi) => quasi.value.cooked ?? quasi.value.raw)
+    .join(" ")
+    .trim();
+  const tokens = whole.split(/\s+/).filter(Boolean);
+  return (
+    tokens.every((token) => CLASS_TOKEN.test(token)) &&
+    (tokens.length === 0 ||
+      tokens.some((token) => UTILITY_TOKEN.test(token)) ||
+      inClassPosition(literal))
+  );
+}
+
+/** Whether a value goes into a `class` (attribute, property, variable). @param {any} node */
+function inClassPosition(node) {
+  const { child, parent } = valueTarget(node);
+  if (!parent) return false;
+  if (parent.type === "Property" && parent.value === child) {
+    return /class/i.test(String(parent.key?.name ?? parent.key?.value ?? ""));
+  }
+  if (parent.type === "VariableDeclarator") {
+    return /class/i.test(String(parent.id?.name ?? ""));
+  }
+  return false;
+}
+
+/** The template attribute an expression belongs to, if any. @param {any} node */
+function attributeOf(node) {
+  for (let current = node.parent; current; current = current.parent) {
+    if (current.type === "VAttribute") return current;
+    if (current.type === "VElement") return null;
+  }
+  return null;
+}
+
+/** An attribute's name: `aria-label` for `:aria-label` and `:ariaLabel`. @param {any} attribute */
+function attributeName(attribute) {
+  const key = attribute.key;
+  if (!attribute.directive) return kebab(key?.rawName ?? "");
+  if (key?.name?.name !== "bind") return null;
+  return key.argument?.type === "VIdentifier"
+    ? kebab(key.argument.rawName)
+    : null;
 }
 
 /** @type {import("eslint").Rule.RuleModule} */
@@ -221,25 +362,110 @@ export const noLiteralText = {
   create(context) {
     const allow = new Set(context.options[0]?.allow ?? []);
     /** @param {any} node @param {string} value */
-    const check = (node, value) => {
-      if (readsLikeText(value, allow) && !exempt(node)) {
-        context.report({
-          node,
-          messageId: "text",
-          data: { text: value.trim().slice(0, 60) },
-        });
+    const report = (node, value) =>
+      context.report({
+        node,
+        messageId: "text",
+        data: { text: value.trim().slice(0, 60) },
+      });
+
+    /**
+     * Strings bound to a name in the script (`const label = ref("…")`,
+     * `const label = "…"`), reported when the template renders the name.
+     * @type {Map<string, { node: any, value: string }[]>}
+     */
+    const named = new Map();
+
+    /**
+     * Whether a literal's value lands in a text position: a `label`-like
+     * property in the script, a text attribute or a mustache in a template.
+     * @param {any} node
+     */
+    function textPosition(node) {
+      const { child, parent } = valueTarget(node);
+      if (parent?.type === "Property" && parent.value === child) {
+        const key = parent.key?.name ?? parent.key?.value;
+        return TEXT_KEYS.has(String(key));
       }
-    };
+      if (parent?.type === "VExpressionContainer") {
+        const attribute = attributeOf(parent);
+        if (!attribute) return true; // {{ … }}
+        const name = attributeName(attribute);
+        return name !== null && TEXT_ATTRIBUTES.has(name);
+      }
+      return false;
+    }
+
+    /** Whether a template literal sits in a code attribute (`:class`). @param {any} node */
+    function inCodeAttribute(node) {
+      const attribute = attributeOf(node);
+      if (!attribute) return false;
+      const name = attributeName(attribute);
+      return (
+        name !== null &&
+        (CODE_ATTRIBUTES.has(name) || /^(?:data|stroke|fill)-/.test(name))
+      );
+    }
+
+    /** @param {any} node @param {string} value */
+    function checkString(node, value) {
+      if (inCodeAttribute(node)) return;
+      if (textPosition(node)) {
+        if (isTextValue(value) && !exempt(node)) report(node, value);
+        return;
+      }
+      if (exempt(node)) return;
+      const padded =
+        PADDED_WORD.test(value) &&
+        !allow.has(value.trim()) &&
+        !ALLOWED.has(value.trim());
+      if (padded || readsLikeText(value, allow)) {
+        report(node, value);
+      }
+    }
+
     /** @param {any} node */
     const literal = (node) => {
-      if (typeof node.value === "string") check(node, node.value);
+      if (typeof node.value !== "string") return;
+      // `const label = ref("…")` / `const label = "…"`: maybe rendered
+      const holder =
+        node.parent?.type === "CallExpression" &&
+        /^(?:ref|shallowRef)$/.test(calleeName(node.parent.callee))
+          ? node.parent.parent
+          : node.parent;
+      if (
+        holder?.type === "VariableDeclarator" &&
+        holder.id?.type === "Identifier" &&
+        holder.init &&
+        (holder.init === node || holder.init === node.parent)
+      ) {
+        const list = named.get(holder.id.name) ?? [];
+        list.push({ node, value: node.value });
+        named.set(holder.id.name, list);
+      }
+      checkString(node, node.value);
     };
+
     /** @param {any} node */
     const templateElement = (node) => {
       const literalNode = node.parent;
       // a tagged template is code (`css\`…\``), its parts are no texts
       if (literalNode?.parent?.type === "TaggedTemplateExpression") return;
-      if (exempt(literalNode)) return;
+      if (inCodeAttribute(literalNode) || exempt(literalNode)) return;
+      const value = node.value.cooked ?? node.value.raw;
+      if (textPosition(literalNode)) {
+        if (isTextValue(value)) report(node, value);
+        return;
+      }
+      // a word between placeholders (`${a} oder ${b}`, `${n} min`)
+      if (
+        literalNode.expressions.length > 0 &&
+        SPACED_WORD.test(value) &&
+        !isClassList(literalNode)
+      ) {
+        report(node, value);
+        return;
+      }
       // a key or path built from parts (`auth.errors.${key}Moment`)
       const whole = literalNode.quasis
         .map(
@@ -247,30 +473,58 @@ export const noLiteralText = {
         )
         .join("x");
       if (!readsLikeText(whole, allow)) return;
-      const value = node.value.cooked ?? node.value.raw;
       // the static parts of `${count} Artikel`: text around placeholders
       if (readsLikeText(value.replace(/^\W+|\W+$/g, ""), allow)) {
-        context.report({
-          node,
-          messageId: "text",
-          data: { text: value.trim().slice(0, 60) },
-        });
+        report(node, value);
       }
     };
+
+    /** A name the template renders (`{{ label }}`, `:title="label"`). @param {any} node */
+    function renderedName(node) {
+      const target =
+        node.type === "MemberExpression" &&
+        !node.computed &&
+        node.property?.name === "value"
+          ? node.object
+          : node;
+      if (target.type !== "Identifier") return;
+      if (!textPosition(node)) return;
+      for (const entry of named.get(target.name) ?? []) {
+        // a string the script already reported stays one report
+        if (isTextValue(entry.value) && !readsLikeText(entry.value, allow)) {
+          report(entry.node, entry.value);
+        }
+      }
+      named.delete(target.name);
+    }
+
     const script = {
       Literal: literal,
       TemplateElement: templateElement,
     };
     const template = {
-      ...script,
+      Literal: (/** @type {any} */ node) => {
+        if (typeof node.value === "string") checkString(node, node.value);
+      },
+      TemplateElement: templateElement,
+      "VExpressionContainer > Identifier": renderedName,
+      "VExpressionContainer > MemberExpression": renderedName,
+      "VExpressionContainer > ConditionalExpression > Identifier": renderedName,
       /** @param {any} node */
       "VAttribute[directive=false]"(node) {
-        const name = node.key?.rawName ?? "";
+        const name = kebab(node.key?.rawName ?? "");
         if (node.value?.type !== "VLiteral") return;
         if (CODE_ATTRIBUTES.has(name) || /^(?:data|stroke|fill)-/.test(name)) {
           return;
         }
-        check(node.value, node.value.value);
+        const value = node.value.value;
+        if (
+          TEXT_ATTRIBUTES.has(name)
+            ? isTextValue(value)
+            : readsLikeText(value, allow)
+        ) {
+          report(node.value, value);
+        }
       },
     };
     const services = /** @type {any} */ (context.sourceCode.parserServices);
