@@ -101,7 +101,7 @@ export type CartMessageCode =
 export type CartMessage = Readonly<{
   code: CartMessageCode;
   severity: "info" | "warning" | "error";
-  /** The backend's text, shown when the storefront has none of its own. */
+  /** The backend's text, in the backend's language; the app shows its own message for the code (ADR 0002). */
   text: string;
   /** Line, voucher code or method the message is about. */
   subjectId: Id | null;
