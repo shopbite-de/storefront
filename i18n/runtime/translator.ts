@@ -68,6 +68,11 @@ export function createTranslator(options: TranslatorOptions) {
         ...args.filter((arg) => arg !== undefined),
       ),
     );
+  // one context per processor (`<i18n-t>` has one), made on first use
+  const partContexts = new WeakMap<
+    PartsProcessor,
+    ReturnType<typeof context>
+  >();
   /** A message's parts, its placeholders filled with `named` (`<i18n-t>`). */
   const parts = (
     processor: PartsProcessor,
@@ -75,7 +80,11 @@ export function createTranslator(options: TranslatorOptions) {
     named: Readonly<Record<string, unknown>>,
     plural?: number,
   ): unknown => {
-    const ctx = context(options, processor);
+    let ctx = partContexts.get(processor);
+    if (!ctx) {
+      ctx = context(options, processor);
+      partContexts.set(processor, ctx);
+    }
     return plural === undefined
       ? (translate as (...all: unknown[]) => unknown)(ctx, key, named)
       : (translate as (...all: unknown[]) => unknown)(ctx, key, named, plural);
