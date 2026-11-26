@@ -1,3 +1,4 @@
+/* eslint-disable shopbite/no-literal-text -- font family names and the presets' CSS, no texts */
 /**
  * Style presets of the storefront (#439). A preset gives a shop its look:
  * colours, fonts, shape and colour mode. The base components read only the

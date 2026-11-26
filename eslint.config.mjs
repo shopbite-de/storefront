@@ -91,15 +91,12 @@ export default withNuxt(
   },
   {
     // ADR 0002: a string that reads like text for people (any language)
-    // in the app's scripts, template expressions and attributes, and in
-    // the server's text for people (llms.txt), is a text outside the
-    // locale files. Keys, identifiers, paths, classes and codes are not.
+    // in the app, the server and the shared domain is a text outside the
+    // locale files. Keys, identifiers, paths, classes and codes are not;
+    // backend data lives in the adapters.
     name: "shopbite/literal-text",
-    files: [
-      "app/**/*.{ts,vue}",
-      "server/routes/llms.txt.ts",
-      "server/utils/llmsTxt.ts",
-    ],
+    files: ["app/**/*.{ts,vue}", "server/**/*.ts", "shared/**/*.ts"],
+    ignores: ["server/adapters/**"],
     plugins: { shopbite },
     rules: { "shopbite/no-literal-text": "error" },
   },

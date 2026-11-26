@@ -76,6 +76,9 @@
       "label": "Save {name} to favourites",
       "failed": "Saving did not work. Please try again."
     },
+    "ingredientChip": {
+      "without": "without {name}"
+    },
     "wishlist": {
       "without": "without {name}",
       "rowLabel": "{name} ({configuration})",

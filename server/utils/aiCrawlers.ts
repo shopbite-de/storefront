@@ -1,3 +1,4 @@
+/* eslint-disable shopbite/no-literal-text -- crawler user agents and robots.txt comments for operators, no texts for guests */
 // robots.txt groups for AI crawlers (#403). Pure, so it is unit-testable;
 // `server/plugins/ai-crawlers.ts` adds the groups at runtime.
 //
