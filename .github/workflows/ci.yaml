@@ -27,7 +27,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
         with:
-          version: 12.21.0
+          version: 12.23.0
 
       - uses: actions/setup-node@v7
         with:
@@ -80,7 +80,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
         with:
-          version: 12.21.0
+          version: 12.23.0
 
       - uses: actions/setup-node@v7
         with:
@@ -116,7 +116,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
         with:
-          version: 12.21.0
+          version: 12.23.0
 
       - uses: actions/setup-node@v7
         with:
@@ -145,7 +145,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
         with:
-          version: 12.21.0
+          version: 12.23.0
 
       - uses: actions/setup-node@v7
         with:
@@ -197,7 +197,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
         with:
-          version: 12.21.0
+          version: 12.23.0
 
       - uses: actions/setup-node@v7
         with:
@@ -248,7 +248,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
         with:
-          version: 12.21.0
+          version: 12.23.0
 
       - uses: actions/setup-node@v7
         with:
@@ -311,7 +311,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
         with:
-          version: 12.21.0
+          version: 12.23.0
 
       - uses: actions/setup-node@v7
         with:
