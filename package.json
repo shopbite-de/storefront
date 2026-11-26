@@ -45,7 +45,7 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "@intlify/core-base": "11.4.23",
+    "@intlify/core-base": "11.4.24",
     "@intlify/message-compiler": "11.4.23",
     "@nuxt/content": "3.17.0",
     "@nuxt/fonts": "^1.2.0",
